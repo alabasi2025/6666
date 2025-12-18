@@ -28,6 +28,20 @@ import {
   suppliers, InsertSupplier,
   purchaseRequests,
   purchaseOrders,
+  // HR System
+  departments, InsertDepartment,
+  jobTitles, InsertJobTitle,
+  salaryGrades, InsertSalaryGrade,
+  employees, InsertEmployee,
+  salaryDetails, InsertSalaryDetail,
+  payrollRuns, InsertPayrollRun,
+  payrollItems, InsertPayrollItem,
+  attendance, InsertAttendance,
+  leaveTypes, InsertLeaveType,
+  leaveRequests, InsertLeaveRequest,
+  leaveBalances, InsertLeaveBalance,
+  performanceEvaluations, InsertPerformanceEvaluation,
+  employeeContracts, InsertEmployeeContract,
   customers, InsertCustomer,
   meters,
   meterReadings,
@@ -1873,5 +1887,365 @@ export async function seedDemoTenants() {
       { id: business1Id, name: "شركة الكهرباء الوطنية" },
       { id: business2Id, name: "شركة الطاقة الشمسية" },
     ]
+  };
+}
+
+
+// ============================================
+// نظام الموارد البشرية - HR System
+// ============================================
+
+// الأقسام - Departments
+export async function getDepartments(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(departments).where(eq(departments.businessId, businessId)).orderBy(asc(departments.nameAr));
+}
+
+export async function createDepartment(data: InsertDepartment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(departments).values(data);
+  const [created] = await db.select().from(departments).where(eq(departments.code, data.code)).limit(1);
+  return created;
+}
+
+export async function updateDepartment(id: number, data: Partial<InsertDepartment>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(departments).set(data).where(eq(departments.id, id));
+}
+
+export async function deleteDepartment(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(departments).where(eq(departments.id, id));
+}
+
+// المسميات الوظيفية - Job Titles
+export async function getJobTitles(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(jobTitles).where(eq(jobTitles.businessId, businessId)).orderBy(asc(jobTitles.titleAr));
+}
+
+export async function createJobTitle(data: InsertJobTitle) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(jobTitles).values(data);
+  const [created] = await db.select().from(jobTitles).where(eq(jobTitles.code, data.code)).limit(1);
+  return created;
+}
+
+export async function updateJobTitle(id: number, data: Partial<InsertJobTitle>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(jobTitles).set(data).where(eq(jobTitles.id, id));
+}
+
+export async function deleteJobTitle(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(jobTitles).where(eq(jobTitles.id, id));
+}
+
+// سلم الرواتب - Salary Grades
+export async function getSalaryGrades(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(salaryGrades).where(eq(salaryGrades.businessId, businessId)).orderBy(asc(salaryGrades.code));
+}
+
+export async function createSalaryGrade(data: InsertSalaryGrade) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(salaryGrades).values(data);
+  return result[0].insertId;
+}
+
+// الموظفين - Employees
+export async function getEmployees(businessId: number, filters?: {
+  departmentId?: number;
+  status?: string;
+  search?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(employees.businessId, businessId)];
+  if (filters?.departmentId) conditions.push(eq(employees.departmentId, filters.departmentId));
+  if (filters?.status) conditions.push(eq(employees.status, filters.status as any));
+
+  return await db.select().from(employees).where(and(...conditions)).orderBy(desc(employees.createdAt));
+}
+
+export async function getEmployeeById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(employees).where(eq(employees.id, id));
+  return result[0] || null;
+}
+
+export async function createEmployee(data: InsertEmployee) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(employees).values(data);
+  const [created] = await db.select().from(employees).where(eq(employees.employeeNumber, data.employeeNumber)).limit(1);
+  return created;
+}
+
+export async function updateEmployee(id: number, data: Partial<InsertEmployee>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(employees).set(data).where(eq(employees.id, id));
+  const [updated] = await db.select().from(employees).where(eq(employees.id, id)).limit(1);
+  return updated;
+}
+
+export async function deleteEmployee(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(employees).where(eq(employees.id, id));
+}
+
+export async function getUnlinkedEmployees(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(employees)
+    .where(and(eq(employees.businessId, businessId), isNull(employees.fieldWorkerId)))
+    .orderBy(asc(employees.firstName));
+}
+
+export async function linkEmployeeToFieldWorker(employeeId: number, fieldWorkerId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(employees).set({ fieldWorkerId }).where(eq(employees.id, employeeId));
+  await db.update(fieldWorkers).set({ employeeId }).where(eq(fieldWorkers.id, fieldWorkerId));
+}
+
+export async function unlinkEmployeeFromFieldWorker(employeeId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const emp = await getEmployeeById(employeeId);
+  if (emp?.fieldWorkerId) {
+    await db.update(fieldWorkers).set({ employeeId: null }).where(eq(fieldWorkers.id, emp.fieldWorkerId));
+  }
+  await db.update(employees).set({ fieldWorkerId: null }).where(eq(employees.id, employeeId));
+}
+
+// بيانات الراتب - Salary Details
+export async function getSalaryDetailsByEmployee(employeeId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(salaryDetails)
+    .where(and(eq(salaryDetails.employeeId, employeeId), eq(salaryDetails.isActive, true)));
+  return result[0] || null;
+}
+
+export async function createSalaryDetails(data: InsertSalaryDetail) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // إلغاء تفعيل الراتب السابق
+  await db.update(salaryDetails)
+    .set({ isActive: false, endDate: data.effectiveDate })
+    .where(and(eq(salaryDetails.employeeId, data.employeeId), eq(salaryDetails.isActive, true)));
+  
+  const result = await db.insert(salaryDetails).values(data);
+  return result[0].insertId;
+}
+
+// مسيرات الرواتب - Payroll
+export async function getPayrollRuns(businessId: number, year?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(payrollRuns.businessId, businessId)];
+  if (year) conditions.push(eq(payrollRuns.periodYear, year));
+
+  return await db.select().from(payrollRuns)
+    .where(and(...conditions))
+    .orderBy(desc(payrollRuns.periodYear), desc(payrollRuns.periodMonth));
+}
+
+export async function createPayrollRun(data: InsertPayrollRun) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(payrollRuns).values(data);
+  const [created] = await db.select().from(payrollRuns).where(eq(payrollRuns.code, data.code)).limit(1);
+  return created;
+}
+
+export async function getPayrollItems(payrollRunId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(payrollItems).where(eq(payrollItems.payrollRunId, payrollRunId));
+}
+
+export async function createPayrollItem(data: InsertPayrollItem) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(payrollItems).values(data);
+  return result[0].insertId;
+}
+
+export async function updatePayrollRun(id: number, data: Partial<InsertPayrollRun>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(payrollRuns).set(data).where(eq(payrollRuns.id, id));
+}
+
+// الحضور والانصراف - Attendance
+export async function getAttendance(businessId: number, filters?: {
+  employeeId?: number;
+  startDate?: Date;
+  endDate?: Date;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(attendance.businessId, businessId)];
+  if (filters?.employeeId) conditions.push(eq(attendance.employeeId, filters.employeeId));
+
+  return await db.select().from(attendance)
+    .where(and(...conditions))
+    .orderBy(desc(attendance.attendanceDate));
+}
+
+export async function createAttendance(data: InsertAttendance) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(attendance).values(data);
+  const [created] = await db.select().from(attendance)
+    .where(and(eq(attendance.employeeId, data.employeeId), eq(attendance.attendanceDate, data.attendanceDate)))
+    .limit(1);
+  return created;
+}
+
+export async function updateAttendance(id: number, data: Partial<InsertAttendance>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(attendance).set(data).where(eq(attendance.id, id));
+}
+
+export async function getTodayAttendance(employeeId: number, date: Date) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(attendance)
+    .where(and(eq(attendance.employeeId, employeeId), eq(attendance.attendanceDate, date)));
+  return result[0] || null;
+}
+
+// أنواع الإجازات - Leave Types
+export async function getLeaveTypes(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(leaveTypes).where(eq(leaveTypes.businessId, businessId)).orderBy(asc(leaveTypes.nameAr));
+}
+
+export async function createLeaveType(data: InsertLeaveType) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(leaveTypes).values(data);
+  const [created] = await db.select().from(leaveTypes).where(eq(leaveTypes.code, data.code)).limit(1);
+  return created;
+}
+
+// طلبات الإجازات - Leave Requests
+export async function getLeaveRequests(businessId: number, filters?: {
+  employeeId?: number;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(leaveRequests.businessId, businessId)];
+  if (filters?.employeeId) conditions.push(eq(leaveRequests.employeeId, filters.employeeId));
+  if (filters?.status) conditions.push(eq(leaveRequests.status, filters.status as any));
+
+  return await db.select().from(leaveRequests)
+    .where(and(...conditions))
+    .orderBy(desc(leaveRequests.createdAt));
+}
+
+export async function createLeaveRequest(data: InsertLeaveRequest) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.insert(leaveRequests).values(data);
+  const [created] = await db.select().from(leaveRequests)
+    .where(and(eq(leaveRequests.employeeId, data.employeeId), eq(leaveRequests.startDate, data.startDate)))
+    .orderBy(desc(leaveRequests.id))
+    .limit(1);
+  return created;
+}
+
+export async function updateLeaveRequest(id: number, data: Partial<InsertLeaveRequest>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(leaveRequests).set(data).where(eq(leaveRequests.id, id));
+}
+
+export async function getLeaveRequestById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(leaveRequests).where(eq(leaveRequests.id, id));
+  return result[0] || null;
+}
+
+// أرصدة الإجازات - Leave Balances
+export async function getLeaveBalance(employeeId: number, leaveTypeId: number, year: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const result = await db.select().from(leaveBalances)
+    .where(and(
+      eq(leaveBalances.employeeId, employeeId),
+      eq(leaveBalances.leaveTypeId, leaveTypeId),
+      eq(leaveBalances.year, year)
+    ));
+  return result[0] || null;
+}
+
+export async function updateLeaveBalance(id: number, data: Partial<InsertLeaveBalance>) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(leaveBalances).set(data).where(eq(leaveBalances.id, id));
+}
+
+// تقييمات الأداء - Performance Evaluations
+export async function getPerformanceEvaluations(businessId: number, employeeId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(performanceEvaluations.businessId, businessId)];
+  if (employeeId) conditions.push(eq(performanceEvaluations.employeeId, employeeId));
+
+  return await db.select().from(performanceEvaluations)
+    .where(and(...conditions))
+    .orderBy(desc(performanceEvaluations.createdAt));
+}
+
+export async function createPerformanceEvaluation(data: InsertPerformanceEvaluation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(performanceEvaluations).values(data);
+  return result[0].insertId;
+}
+
+// إحصائيات الموارد البشرية
+export async function getHRDashboardStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return { totalEmployees: 0, activeEmployees: 0, pendingLeaves: 0, totalDepartments: 0 };
+
+  const [totalEmployees] = await db.select({ count: count() }).from(employees).where(eq(employees.businessId, businessId));
+  const [activeEmployees] = await db.select({ count: count() }).from(employees).where(and(eq(employees.businessId, businessId), eq(employees.status, "active")));
+  const [pendingLeaves] = await db.select({ count: count() }).from(leaveRequests).where(and(eq(leaveRequests.businessId, businessId), eq(leaveRequests.status, "pending")));
+  const [totalDepartments] = await db.select({ count: count() }).from(departments).where(eq(departments.businessId, businessId));
+
+  return {
+    totalEmployees: totalEmployees?.count || 0,
+    activeEmployees: activeEmployees?.count || 0,
+    pendingLeaves: pendingLeaves?.count || 0,
+    totalDepartments: totalDepartments?.count || 0,
   };
 }

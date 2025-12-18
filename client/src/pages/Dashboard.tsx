@@ -21,7 +21,7 @@ import {
   FolderKanban, Calendar, BarChart3, PieChart,
   Settings, LogOut, Menu, X, ChevronLeft, Bell,
   TrendingUp, TrendingDown, DollarSign, Wrench,
-  Home, Search, HelpCircle, Moon, Sun, Truck
+  Home, Search, HelpCircle, Moon, Sun, Truck, Users2, Clock, CalendarDays, Wallet
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -85,6 +85,14 @@ import FieldOperations from "./fieldops/FieldOperations";
 import FieldTeams from "./fieldops/FieldTeams";
 import FieldWorkers from "./fieldops/FieldWorkers";
 import FieldEquipment from "./fieldops/FieldEquipment";
+
+// HR Pages
+import HRDashboard from "./hr/HRDashboard";
+import Employees from "./hr/Employees";
+import Departments from "./hr/Departments";
+import Attendance from "./hr/Attendance";
+import Leaves from "./hr/Leaves";
+import Payroll from "./hr/Payroll";
 import Events from "./developer/Events";
 import AiModels from "./developer/AiModels";
 import TechnicalAlerts from "./developer/TechnicalAlerts";
@@ -207,6 +215,19 @@ const navigationItems = [
       { id: "field-teams", title: "الفرق", icon: Users, path: "/dashboard/fieldops/teams" },
       { id: "field-workers", title: "العاملين", icon: UserCircle, path: "/dashboard/fieldops/workers" },
       { id: "field-equipment", title: "المعدات", icon: Truck, path: "/dashboard/fieldops/equipment" },
+    ],
+  },
+  {
+    id: "hr",
+    title: "الموارد البشرية",
+    icon: Users2,
+    children: [
+      { id: "hr-dashboard", title: "لوحة التحكم", icon: Activity, path: "/dashboard/hr" },
+      { id: "employees", title: "الموظفين", icon: UserCircle, path: "/dashboard/hr/employees" },
+      { id: "departments", title: "الهيكل التنظيمي", icon: Building2, path: "/dashboard/hr/departments" },
+      { id: "attendance", title: "الحضور والانصراف", icon: Clock, path: "/dashboard/hr/attendance" },
+      { id: "leaves", title: "الإجازات", icon: CalendarDays, path: "/dashboard/hr/leaves" },
+      { id: "payroll", title: "الرواتب", icon: Wallet, path: "/dashboard/hr/payroll" },
     ],
   },
   {
@@ -893,6 +914,27 @@ export default function Dashboard() {
     if (location === "/dashboard/fieldops/equipment" || location === "/dashboard/fieldops/field-equipment") {
       return <FieldEquipment businessId={1} />;
     }
+
+    // HR Module
+    if (location === "/dashboard/hr") {
+      return <HRDashboard businessId={1} />;
+    }
+    if (location === "/dashboard/hr/employees") {
+      return <Employees businessId={1} />;
+    }
+    if (location === "/dashboard/hr/departments") {
+      return <Departments businessId={1} />;
+    }
+    if (location === "/dashboard/hr/attendance") {
+      return <Attendance businessId={1} />;
+    }
+    if (location === "/dashboard/hr/leaves") {
+      return <Leaves businessId={1} />;
+    }
+    if (location === "/dashboard/hr/payroll") {
+      return <Payroll businessId={1} />;
+    }
+
     return <PlaceholderContent title={getPageTitle()} />;
   };
 

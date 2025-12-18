@@ -36,6 +36,20 @@
       "when": 1766084103699,
       "tag": "0004_flat_namor",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "5",
+      "when": 1766085186081,
+      "tag": "0005_fast_shriek",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "5",
+      "when": 1766085494949,
+      "tag": "0006_productive_manta",
+      "breakpoints": true
     }
   ]
 }
