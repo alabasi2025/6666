@@ -63,6 +63,11 @@ import Alerts from "./scada/Alerts";
 import Sensors from "./scada/Sensors";
 import Cameras from "./scada/Cameras";
 
+// Projects Pages
+import ProjectsList from "./projects/ProjectsList";
+import ProjectDetails from "./projects/ProjectDetails";
+import GanttChart from "./projects/GanttChart";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -778,6 +783,19 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/scada/cameras") {
       return <Cameras />;
+    }
+    // Projects Module
+    if (location === "/dashboard/projects/list" || location === "/dashboard/projects") {
+      return <ProjectsList />;
+    }
+    if (location.startsWith("/dashboard/projects/view/")) {
+      return <ProjectDetails />;
+    }
+    if (location === "/dashboard/projects/gantt") {
+      return <GanttChart />;
+    }
+    if (location === "/dashboard/projects/tasks") {
+      return <ProjectsList />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };
