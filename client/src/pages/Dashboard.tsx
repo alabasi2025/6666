@@ -28,6 +28,13 @@ import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
 
+// Asset Pages
+import AssetsList from "./assets/AssetsList";
+import AssetDetails from "./assets/AssetDetails";
+import AssetCategories from "./assets/AssetCategories";
+import AssetMovements from "./assets/AssetMovements";
+import Depreciation from "./assets/Depreciation";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -659,6 +666,22 @@ export default function Dashboard() {
   const renderContent = () => {
     if (location === "/dashboard") {
       return <DashboardHome />;
+    }
+    // Assets Module
+    if (location === "/dashboard/assets/list" || location === "/dashboard/assets") {
+      return <AssetsList />;
+    }
+    if (location === "/dashboard/assets/categories") {
+      return <AssetCategories />;
+    }
+    if (location.startsWith("/dashboard/assets/view/")) {
+      return <AssetDetails />;
+    }
+    if (location === "/dashboard/assets/movements") {
+      return <AssetMovements />;
+    }
+    if (location === "/dashboard/assets/depreciation") {
+      return <Depreciation />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };

@@ -16,6 +16,7 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/:module" component={Dashboard} />
       <Route path="/dashboard/:module/:submodule" component={Dashboard} />
+      <Route path="/dashboard/:module/:action/:id" component={Dashboard} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
