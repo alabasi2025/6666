@@ -41,6 +41,14 @@ import WorkOrderDetails from "./maintenance/WorkOrderDetails";
 import MaintenancePlans from "./maintenance/MaintenancePlans";
 import Technicians from "./maintenance/Technicians";
 
+// Inventory Pages
+import Warehouses from "./inventory/Warehouses";
+import Items from "./inventory/Items";
+import Movements from "./inventory/Movements";
+import StockBalance from "./inventory/StockBalance";
+import Suppliers from "./inventory/Suppliers";
+import PurchaseOrders from "./inventory/PurchaseOrders";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -108,6 +116,7 @@ const navigationItems = [
     children: [
       { id: "warehouses", title: "المستودعات", icon: Warehouse, path: "/dashboard/inventory/warehouses" },
       { id: "items", title: "الأصناف", icon: Package, path: "/dashboard/inventory/items" },
+      { id: "movements", title: "حركات المخزون", icon: TrendingUp, path: "/dashboard/inventory/movements" },
       { id: "stock", title: "أرصدة المخزون", icon: BarChart3, path: "/dashboard/inventory/stock" },
       { id: "suppliers", title: "الموردين", icon: UserCircle, path: "/dashboard/inventory/suppliers" },
       { id: "purchase-orders", title: "أوامر الشراء", icon: ShoppingCart, path: "/dashboard/inventory/purchase-orders" },
@@ -701,6 +710,25 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/maintenance/technicians") {
       return <Technicians />;
+    }
+    // Inventory Module
+    if (location === "/dashboard/inventory/warehouses") {
+      return <Warehouses />;
+    }
+    if (location === "/dashboard/inventory/items") {
+      return <Items />;
+    }
+    if (location === "/dashboard/inventory/movements") {
+      return <Movements />;
+    }
+    if (location === "/dashboard/inventory/stock") {
+      return <StockBalance />;
+    }
+    if (location === "/dashboard/inventory/suppliers") {
+      return <Suppliers />;
+    }
+    if (location === "/dashboard/inventory/purchase-orders") {
+      return <PurchaseOrders />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };
