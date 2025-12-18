@@ -49,6 +49,14 @@ import StockBalance from "./inventory/StockBalance";
 import Suppliers from "./inventory/Suppliers";
 import PurchaseOrders from "./inventory/PurchaseOrders";
 
+// Customer Pages
+import CustomersList from "./customers/CustomersList";
+import CustomerDetails from "./customers/CustomerDetails";
+import Meters from "./customers/Meters";
+import Readings from "./customers/Readings";
+import Invoices from "./customers/Invoices";
+import Payments from "./customers/Payments";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -729,6 +737,28 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/inventory/purchase-orders") {
       return <PurchaseOrders />;
+    }
+    // Customers Module
+    if (location === "/dashboard/customers/list") {
+      return <CustomersList />;
+    }
+    if (location.startsWith("/dashboard/customers/view/")) {
+      return <CustomerDetails />;
+    }
+    if (location === "/dashboard/customers/meters") {
+      return <Meters />;
+    }
+    if (location.startsWith("/dashboard/customers/meters/view/")) {
+      return <Meters />;
+    }
+    if (location === "/dashboard/customers/readings") {
+      return <Readings />;
+    }
+    if (location === "/dashboard/customers/invoices") {
+      return <Invoices />;
+    }
+    if (location === "/dashboard/customers/payments") {
+      return <Payments />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };
