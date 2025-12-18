@@ -74,6 +74,14 @@ import JournalEntries from "./accounting/JournalEntries";
 import GeneralLedger from "./accounting/GeneralLedger";
 import TrialBalance from "./accounting/TrialBalance";
 
+// Developer System Pages
+import DeveloperDashboard from "./developer/DeveloperDashboard";
+import Integrations from "./developer/Integrations";
+import ApiKeys from "./developer/ApiKeys";
+import Events from "./developer/Events";
+import AiModels from "./developer/AiModels";
+import TechnicalAlerts from "./developer/TechnicalAlerts";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -191,6 +199,19 @@ const navigationItems = [
       { id: "operational-reports", title: "التقارير التشغيلية", icon: Activity, path: "/dashboard/reports/operational" },
       { id: "maintenance-reports", title: "تقارير الصيانة", icon: Wrench, path: "/dashboard/reports/maintenance" },
       { id: "customer-reports", title: "تقارير العملاء", icon: UserCircle, path: "/dashboard/reports/customers" },
+    ],
+  },
+  {
+    id: "developer",
+    title: "نظام المطور",
+    icon: Settings,
+    children: [
+      { id: "dev-dashboard", title: "لوحة التحكم", icon: Activity, path: "/dashboard/developer" },
+      { id: "integrations", title: "التكاملات", icon: Radio, path: "/dashboard/developer/integrations" },
+      { id: "api-keys", title: "مفاتيح API", icon: Shield, path: "/dashboard/developer/api-keys" },
+      { id: "events", title: "الأحداث", icon: Bell, path: "/dashboard/developer/events" },
+      { id: "ai-models", title: "الذكاء الاصطناعي", icon: TrendingUp, path: "/dashboard/developer/ai" },
+      { id: "tech-alerts", title: "التنبيهات التقنية", icon: AlertTriangle, path: "/dashboard/developer/alerts" },
     ],
   },
   {
@@ -817,6 +838,25 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/accounting/trial-balance") {
       return <TrialBalance />;
+    }
+    // Developer System Module
+    if (location === "/dashboard/developer") {
+      return <DeveloperDashboard />;
+    }
+    if (location === "/dashboard/developer/integrations") {
+      return <Integrations />;
+    }
+    if (location === "/dashboard/developer/api-keys") {
+      return <ApiKeys />;
+    }
+    if (location === "/dashboard/developer/events") {
+      return <Events />;
+    }
+    if (location === "/dashboard/developer/ai") {
+      return <AiModels />;
+    }
+    if (location === "/dashboard/developer/alerts") {
+      return <TechnicalAlerts />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };
