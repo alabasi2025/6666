@@ -15,6 +15,13 @@
       "when": 1766074550724,
       "tag": "0001_clumsy_galactus",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1766081698261,
+      "tag": "0002_windy_hydra",
+      "breakpoints": true
     }
   ]
 }

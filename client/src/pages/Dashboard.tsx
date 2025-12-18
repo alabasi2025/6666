@@ -68,6 +68,12 @@ import ProjectsList from "./projects/ProjectsList";
 import ProjectDetails from "./projects/ProjectDetails";
 import GanttChart from "./projects/GanttChart";
 
+// Accounting Pages
+import ChartOfAccounts from "./accounting/ChartOfAccounts";
+import JournalEntries from "./accounting/JournalEntries";
+import GeneralLedger from "./accounting/GeneralLedger";
+import TrialBalance from "./accounting/TrialBalance";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -103,6 +109,8 @@ const navigationItems = [
     children: [
       { id: "chart-of-accounts", title: "شجرة الحسابات", icon: Landmark, path: "/dashboard/accounting/accounts" },
       { id: "journal-entries", title: "القيود اليومية", icon: FileText, path: "/dashboard/accounting/journal" },
+      { id: "general-ledger", title: "دفتر الأستاذ", icon: FileText, path: "/dashboard/accounting/ledger" },
+      { id: "trial-balance", title: "ميزان المراجعة", icon: PieChart, path: "/dashboard/accounting/trial-balance" },
       { id: "cost-centers", title: "مراكز التكلفة", icon: PieChart, path: "/dashboard/accounting/cost-centers" },
       { id: "fiscal-periods", title: "الفترات المحاسبية", icon: Calendar, path: "/dashboard/accounting/periods" },
     ],
@@ -796,6 +804,19 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/projects/tasks") {
       return <ProjectsList />;
+    }
+    // Accounting Module
+    if (location === "/dashboard/accounting/accounts") {
+      return <ChartOfAccounts />;
+    }
+    if (location === "/dashboard/accounting/journal") {
+      return <JournalEntries />;
+    }
+    if (location === "/dashboard/accounting/ledger") {
+      return <GeneralLedger />;
+    }
+    if (location === "/dashboard/accounting/trial-balance") {
+      return <TrialBalance />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };

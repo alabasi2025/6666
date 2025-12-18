@@ -161,12 +161,15 @@ export const appRouter = router({
         nameAr: z.string().min(1),
         nameEn: z.string().optional(),
         parentId: z.number().optional(),
-        type: z.enum(["asset", "liability", "equity", "revenue", "expense"]),
+        systemModule: z.enum(["assets", "maintenance", "inventory", "procurement", "customers", "billing", "scada", "projects", "hr", "operations", "finance", "general"]),
+        accountType: z.enum(["main", "sub", "detail"]).default("detail"),
         nature: z.enum(["debit", "credit"]),
         isParent: z.boolean().default(false),
         isCashAccount: z.boolean().default(false),
         isBankAccount: z.boolean().default(false),
         description: z.string().optional(),
+        linkedEntityType: z.string().optional(),
+        linkedEntityId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
         const id = await db.createAccount(input);

@@ -167,7 +167,7 @@ export const userRoles = mysqlTable("user_roles", {
 // 3. النظام المحاسبي - Accounting System
 // ============================================
 
-// شجرة الحسابات
+// شجرة الحسابات - هيكل جديد يتفرع من أسماء الأنظمة
 export const accounts = mysqlTable("accounts", {
   id: int("id").autoincrement().primaryKey(),
   businessId: int("business_id").notNull(),
@@ -176,7 +176,27 @@ export const accounts = mysqlTable("accounts", {
   nameEn: varchar("name_en", { length: 255 }),
   parentId: int("parent_id"),
   level: int("level").default(1),
-  type: mysqlEnum("type", ["asset", "liability", "equity", "revenue", "expense"]).notNull(),
+  // النظام الذي ينتمي إليه الحساب (بدلاً من التصنيف المحاسبي التقليدي)
+  systemModule: mysqlEnum("system_module", [
+    "assets",           // إدارة الأصول
+    "maintenance",      // الصيانة
+    "inventory",        // المخزون
+    "procurement",      // المشتريات
+    "customers",        // العملاء
+    "billing",          // الفوترة
+    "scada",            // المراقبة والتحكم
+    "projects",         // المشاريع
+    "hr",               // الموارد البشرية
+    "operations",       // العمليات
+    "finance",          // المالية العامة
+    "general"           // عام
+  ]).notNull(),
+  // نوع الحساب داخل النظام
+  accountType: mysqlEnum("account_type", [
+    "main",             // حساب رئيسي
+    "sub",              // حساب فرعي
+    "detail"            // حساب تفصيلي
+  ]).default("detail"),
   nature: mysqlEnum("nature", ["debit", "credit"]).notNull(),
   isParent: boolean("is_parent").default(false),
   isActive: boolean("is_active").default(true),
@@ -186,6 +206,9 @@ export const accounts = mysqlTable("accounts", {
   openingBalance: decimal("opening_balance", { precision: 18, scale: 2 }).default("0"),
   currentBalance: decimal("current_balance", { precision: 18, scale: 2 }).default("0"),
   description: text("description"),
+  // ربط الحساب بكيان محدد (مستودع، عميل، مورد، مشروع، إلخ)
+  linkedEntityType: varchar("linked_entity_type", { length: 50 }),
+  linkedEntityId: int("linked_entity_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
 });
