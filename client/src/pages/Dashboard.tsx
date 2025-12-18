@@ -35,6 +35,12 @@ import AssetCategories from "./assets/AssetCategories";
 import AssetMovements from "./assets/AssetMovements";
 import Depreciation from "./assets/Depreciation";
 
+// Maintenance Pages
+import WorkOrdersList from "./maintenance/WorkOrdersList";
+import WorkOrderDetails from "./maintenance/WorkOrderDetails";
+import MaintenancePlans from "./maintenance/MaintenancePlans";
+import Technicians from "./maintenance/Technicians";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -682,6 +688,19 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/assets/depreciation") {
       return <Depreciation />;
+    }
+    // Maintenance Module
+    if (location === "/dashboard/maintenance/work-orders") {
+      return <WorkOrdersList />;
+    }
+    if (location.startsWith("/dashboard/maintenance/work-orders/view/")) {
+      return <WorkOrderDetails />;
+    }
+    if (location === "/dashboard/maintenance/plans") {
+      return <MaintenancePlans />;
+    }
+    if (location === "/dashboard/maintenance/technicians") {
+      return <Technicians />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };
