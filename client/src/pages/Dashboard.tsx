@@ -57,6 +57,12 @@ import Readings from "./customers/Readings";
 import Invoices from "./customers/Invoices";
 import Payments from "./customers/Payments";
 
+// SCADA Pages
+import MonitoringDashboard from "./scada/MonitoringDashboard";
+import Alerts from "./scada/Alerts";
+import Sensors from "./scada/Sensors";
+import Cameras from "./scada/Cameras";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -759,6 +765,19 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/customers/payments") {
       return <Payments />;
+    }
+    // SCADA Module
+    if (location === "/dashboard/scada/equipment" || location === "/dashboard/scada") {
+      return <MonitoringDashboard />;
+    }
+    if (location === "/dashboard/scada/alerts") {
+      return <Alerts />;
+    }
+    if (location === "/dashboard/scada/sensors") {
+      return <Sensors />;
+    }
+    if (location === "/dashboard/scada/cameras") {
+      return <Cameras />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };
