@@ -97,6 +97,41 @@ import Events from "./developer/Events";
 import AiModels from "./developer/AiModels";
 import TechnicalAlerts from "./developer/TechnicalAlerts";
 
+// Organization Pages
+import Businesses from "./organization/Businesses";
+
+// Custom System Pages
+import CustomDashboard from "./custom/CustomDashboard";
+import CustomAccounts from "./custom/CustomAccounts";
+import CustomNotes from "./custom/CustomNotes";
+import CustomMemos from "./custom/CustomMemos";
+
+// Customer System Pages (New)
+import CustomerDashboard from "./customers/CustomerDashboard";
+import CustomersManagement from "./customers/CustomersManagement";
+import MetersManagement from "./customers/MetersManagement";
+import BillingPeriods from "./customers/BillingPeriods";
+import MeterReadings from "./customers/MeterReadings";
+import InvoicesManagement from "./customers/InvoicesManagement";
+import PaymentsManagement from "./customers/PaymentsManagement";
+import TariffsManagement from "./customers/TariffsManagement";
+
+// Billing System Pages - نظام الفوترة الكامل
+import BillingDashboard from "./billing/BillingDashboard";
+import AreasManagement from "./billing/main-data/AreasManagement";
+import SquaresManagement from "./billing/main-data/SquaresManagement";
+import CabinetsManagement from "./billing/main-data/CabinetsManagement";
+import BillingTariffsManagement from "./billing/main-data/TariffsManagement";
+import FeeTypesManagement from "./billing/main-data/FeeTypesManagement";
+import PaymentMethodsManagement from "./billing/main-data/PaymentMethodsManagement";
+import CashboxesManagement from "./billing/main-data/CashboxesManagement";
+import BillingMetersManagement from "./billing/meters/MetersManagement";
+import BillingCustomersManagement from "./billing/customers/CustomersManagement";
+import BillingPeriodsManagement from "./billing/invoicing/BillingPeriodsManagement";
+import BillingMeterReadings from "./billing/invoicing/MeterReadingsManagement";
+import BillingInvoicesManagement from "./billing/invoicing/InvoicesManagement";
+import BillingPaymentsManagement from "./billing/payments/PaymentsManagement";
+
 // Navigation Structure
 const navigationItems = [
   {
@@ -177,8 +212,11 @@ const navigationItems = [
     title: "العملاء والفوترة",
     icon: UserCircle,
     children: [
+      { id: "customer-dashboard", title: "لوحة التحكم", icon: Activity, path: "/dashboard/customers" },
       { id: "customers-list", title: "العملاء", icon: UserCircle, path: "/dashboard/customers/list" },
       { id: "meters", title: "العدادات", icon: Gauge, path: "/dashboard/customers/meters" },
+      { id: "tariffs", title: "التعرفة", icon: DollarSign, path: "/dashboard/customers/tariffs" },
+      { id: "billing-periods", title: "فترات الفوترة", icon: Calendar, path: "/dashboard/customers/billing-periods" },
       { id: "readings", title: "القراءات", icon: Activity, path: "/dashboard/customers/readings" },
       { id: "invoices", title: "الفواتير", icon: Receipt, path: "/dashboard/customers/invoices" },
       { id: "payments", title: "المدفوعات", icon: CreditCard, path: "/dashboard/customers/payments" },
@@ -239,6 +277,38 @@ const navigationItems = [
       { id: "operational-reports", title: "التقارير التشغيلية", icon: Activity, path: "/dashboard/reports/operational" },
       { id: "maintenance-reports", title: "تقارير الصيانة", icon: Wrench, path: "/dashboard/reports/maintenance" },
       { id: "customer-reports", title: "تقارير العملاء", icon: UserCircle, path: "/dashboard/reports/customers" },
+    ],
+  },
+  {
+    id: "billing-system",
+    title: "نظام الفوترة",
+    icon: Receipt,
+    children: [
+      { id: "billing-dashboard", title: "لوحة التحكم", icon: Activity, path: "/dashboard/billing" },
+      { id: "billing-areas", title: "المناطق", icon: Building2, path: "/dashboard/billing/areas" },
+      { id: "billing-squares", title: "المربعات", icon: GitBranch, path: "/dashboard/billing/squares" },
+      { id: "billing-cabinets", title: "الكابينات", icon: Package, path: "/dashboard/billing/cabinets" },
+      { id: "billing-tariffs", title: "التعرفة", icon: Calculator, path: "/dashboard/billing/tariffs" },
+      { id: "billing-fee-types", title: "أنواع الرسوم", icon: DollarSign, path: "/dashboard/billing/fee-types" },
+      { id: "billing-payment-methods", title: "طرق الدفع", icon: CreditCard, path: "/dashboard/billing/payment-methods" },
+      { id: "billing-cashboxes", title: "الصناديق", icon: Wallet, path: "/dashboard/billing/cashboxes" },
+      { id: "billing-meters", title: "العدادات", icon: Gauge, path: "/dashboard/billing/meters" },
+      { id: "billing-customers", title: "العملاء", icon: Users, path: "/dashboard/billing/customers" },
+      { id: "billing-periods", title: "فترات الفوترة", icon: Calendar, path: "/dashboard/billing/periods" },
+      { id: "billing-readings", title: "القراءات", icon: ClipboardList, path: "/dashboard/billing/readings" },
+      { id: "billing-invoices", title: "الفواتير", icon: FileText, path: "/dashboard/billing/invoices" },
+      { id: "billing-payments", title: "المدفوعات", icon: DollarSign, path: "/dashboard/billing/payments" },
+    ],
+  },
+  {
+    id: "custom",
+    title: "النظام المخصص",
+    icon: Calculator,
+    children: [
+      { id: "custom-dashboard", title: "لوحة التحكم", icon: Activity, path: "/dashboard/custom" },
+      { id: "custom-accounts", title: "الحسابات", icon: Calculator, path: "/dashboard/custom/accounts" },
+      { id: "custom-notes", title: "الملاحظات", icon: FileText, path: "/dashboard/custom/notes" },
+      { id: "custom-memos", title: "المذكرات", icon: ClipboardList, path: "/dashboard/custom/memos" },
     ],
   },
   {
@@ -770,7 +840,12 @@ export default function Dashboard() {
     if (location === "/dashboard") {
       return <DashboardHome />;
     }
-    // Assets Module
+    // Organization Module
+    if (location === "/dashboard/organization/businesses") {
+      return <Businesses />;
+    }
+    
+    // Asset Module
     if (location === "/dashboard/assets/list" || location === "/dashboard/assets") {
       return <AssetsList />;
     }
@@ -818,27 +893,36 @@ export default function Dashboard() {
     if (location === "/dashboard/inventory/purchase-orders") {
       return <PurchaseOrders />;
     }
-    // Customers Module
+    // Customers Module (New System)
+    if (location === "/dashboard/customers") {
+      return <CustomerDashboard />;
+    }
     if (location === "/dashboard/customers/list") {
-      return <CustomersList />;
+      return <CustomersManagement />;
     }
     if (location.startsWith("/dashboard/customers/view/")) {
       return <CustomerDetails />;
     }
     if (location === "/dashboard/customers/meters") {
-      return <Meters />;
+      return <MetersManagement />;
     }
     if (location.startsWith("/dashboard/customers/meters/view/")) {
       return <Meters />;
     }
+    if (location === "/dashboard/customers/tariffs") {
+      return <TariffsManagement />;
+    }
+    if (location === "/dashboard/customers/billing-periods") {
+      return <BillingPeriods />;
+    }
     if (location === "/dashboard/customers/readings") {
-      return <Readings />;
+      return <MeterReadings />;
     }
     if (location === "/dashboard/customers/invoices") {
-      return <Invoices />;
+      return <InvoicesManagement />;
     }
     if (location === "/dashboard/customers/payments") {
-      return <Payments />;
+      return <PaymentsManagement />;
     }
     // SCADA Module
     if (location === "/dashboard/scada/equipment" || location === "/dashboard/scada") {
@@ -913,6 +997,64 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/fieldops/equipment" || location === "/dashboard/fieldops/field-equipment") {
       return <FieldEquipment businessId={1} />;
+    }
+
+    // Billing System Module - نظام الفوترة
+    if (location === "/dashboard/billing") {
+      return <BillingDashboard />;
+    }
+    if (location === "/dashboard/billing/areas") {
+      return <AreasManagement />;
+    }
+    if (location === "/dashboard/billing/squares") {
+      return <SquaresManagement />;
+    }
+    if (location === "/dashboard/billing/cabinets") {
+      return <CabinetsManagement />;
+    }
+    if (location === "/dashboard/billing/tariffs") {
+      return <BillingTariffsManagement />;
+    }
+    if (location === "/dashboard/billing/fee-types") {
+      return <FeeTypesManagement />;
+    }
+    if (location === "/dashboard/billing/payment-methods") {
+      return <PaymentMethodsManagement />;
+    }
+    if (location === "/dashboard/billing/cashboxes") {
+      return <CashboxesManagement />;
+    }
+    if (location === "/dashboard/billing/meters") {
+      return <BillingMetersManagement />;
+    }
+    if (location === "/dashboard/billing/customers") {
+      return <BillingCustomersManagement />;
+    }
+    if (location === "/dashboard/billing/periods") {
+      return <BillingPeriodsManagement />;
+    }
+    if (location === "/dashboard/billing/readings") {
+      return <BillingMeterReadings />;
+    }
+    if (location === "/dashboard/billing/invoices") {
+      return <BillingInvoicesManagement />;
+    }
+    if (location === "/dashboard/billing/payments") {
+      return <BillingPaymentsManagement />;
+    }
+
+    // Custom System Module
+    if (location === "/dashboard/custom") {
+      return <CustomDashboard />;
+    }
+    if (location === "/dashboard/custom/accounts") {
+      return <CustomAccounts />;
+    }
+    if (location === "/dashboard/custom/notes") {
+      return <CustomNotes />;
+    }
+    if (location === "/dashboard/custom/memos") {
+      return <CustomMemos />;
     }
 
     // HR Module

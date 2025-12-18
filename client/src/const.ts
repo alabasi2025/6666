@@ -7,6 +7,11 @@ export const getLoginUrl = () => {
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
   const state = btoa(redirectUri);
 
+  // إذا لم يتم تكوين OAuth، ارجع إلى صفحة تسجيل الدخول المحلية
+  if (!oauthPortalUrl) {
+    return "/login";
+  }
+
   const url = new URL(`${oauthPortalUrl}/app-auth`);
   url.searchParams.set("appId", appId);
   url.searchParams.set("redirectUri", redirectUri);

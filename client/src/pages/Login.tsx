@@ -1,33 +1,45 @@
-import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { getLoginUrl } from "@/const";
-import { Zap, Shield, BarChart3, Settings } from "lucide-react";
-import { useEffect } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Zap, Shield, BarChart3, Settings, Phone, Lock, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
+import { toast } from "sonner";
 
 export default function Login() {
-  const { isAuthenticated, loading } = useAuth();
   const [, setLocation] = useLocation();
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    if (isAuthenticated && !loading) {
+  const loginMutation = trpc.auth.loginWithPhone.useMutation({
+    onSuccess: () => {
+      toast.success("تم تسجيل الدخول بنجاح");
       setLocation("/dashboard");
-    }
-  }, [isAuthenticated, loading, setLocation]);
+    },
+    onError: (error) => {
+      toast.error(error.message || "فشل تسجيل الدخول");
+    },
+  });
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center">
-            <Zap className="w-8 h-8 text-primary animate-pulse" />
-          </div>
-          <p className="text-muted-foreground">جاري التحميل...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!phone || !password) {
+      toast.error("يرجى إدخال رقم الهاتف وكلمة المرور");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await loginMutation.mutateAsync({ phone, password });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const features = [
     { icon: BarChart3, title: "تحليلات متقدمة", description: "لوحات تحكم ذكية وتقارير شاملة" },
@@ -101,37 +113,79 @@ export default function Login() {
                   <Zap className="w-6 h-6 text-white" />
                 </div>
               </div>
-              <CardTitle className="text-2xl font-bold">مرحباً بك</CardTitle>
+              <CardTitle className="text-2xl font-bold">تسجيل الدخول</CardTitle>
               <CardDescription className="text-muted-foreground">
-                سجل دخولك للوصول إلى لوحة التحكم
+                أدخل رقم هاتفك وكلمة المرور للوصول إلى لوحة التحكم
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <div className="space-y-6">
-                <Button 
-                  className="w-full h-12 text-base font-medium gradient-energy hover:opacity-90 transition-opacity"
-                  onClick={() => window.location.href = getLoginUrl()}
-                >
-                  <Zap className="w-5 h-5 ml-2" />
-                  تسجيل الدخول
-                </Button>
-
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">أو</span>
+              <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Phone Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-foreground">رقم الهاتف</Label>
+                  <div className="relative">
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      type="tel"
+                      placeholder="05xxxxxxxx"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="pr-10 text-right"
+                      dir="ltr"
+                    />
                   </div>
                 </div>
 
-                <p className="text-center text-sm text-muted-foreground">
-                  ليس لديك حساب؟{" "}
-                  <a href={getLoginUrl()} className="text-primary hover:underline font-medium">
-                    إنشاء حساب جديد
+                {/* Password Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-foreground">كلمة المرور</Label>
+                  <div className="relative">
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="pr-10 pl-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Forgot Password Link */}
+                <div className="flex justify-end">
+                  <a href="#" className="text-sm text-primary hover:underline">
+                    نسيت كلمة المرور؟
                   </a>
-                </p>
-              </div>
+                </div>
+
+                {/* Submit Button */}
+                <Button 
+                  type="submit"
+                  className="w-full h-12 text-base font-medium gradient-energy hover:opacity-90 transition-opacity"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      جاري تسجيل الدخول...
+                    </div>
+                  ) : (
+                    <>
+                      <Zap className="w-5 h-5 ml-2" />
+                      تسجيل الدخول
+                    </>
+                  )}
+                </Button>
+              </form>
 
               <div className="mt-8 pt-6 border-t border-border">
                 <p className="text-xs text-center text-muted-foreground">

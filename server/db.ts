@@ -192,6 +192,41 @@ export async function getAllUsers(businessId?: number) {
   return await db.select().from(users).orderBy(desc(users.createdAt));
 }
 
+export async function getUserByPhone(phone: string) {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot get user by phone: database not available");
+    return undefined;
+  }
+
+  const result = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUserLastSignedIn(userId: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(users).set({ lastSignedIn: new Date() }).where(eq(users.id, userId));
+}
+
+export async function createUserWithPhone(data: { phone: string; password: string; name?: string; role?: 'user' | 'admin' | 'super_admin' }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const openId = `phone_${data.phone}_${Date.now()}`;
+  const result = await db.insert(users).values({
+    openId,
+    phone: data.phone,
+    password: data.password,
+    name: data.name || data.phone,
+    role: data.role || 'user',
+    loginMethod: 'phone',
+  });
+  
+  return result[0].insertId;
+}
+
 // ============================================
 // Business Management
 // ============================================

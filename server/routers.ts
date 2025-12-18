@@ -1,4 +1,5 @@
-import { COOKIE_NAME } from "@shared/const";
+import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
+import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
@@ -7,6 +8,9 @@ import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { fieldOpsRouter } from "./fieldOpsRouter";
 import { hrRouter } from "./hrRouter";
+import { customSystemRouter } from "./customSystemRouter";
+import { customerSystemRouter } from "./customerSystemRouter";
+import { billingRouter } from "./billingRouter";
 
 // Admin procedure - requires admin role
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -22,6 +26,38 @@ export const appRouter = router({
   // Authentication
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
+    
+    loginWithPhone: publicProcedure
+      .input(z.object({
+        phone: z.string().min(1),
+        password: z.string().min(1),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const user = await db.getUserByPhone(input.phone);
+        
+        if (!user) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'رقم الهاتف غير مسجل' });
+        }
+        
+        // التحقق من كلمة المرور (بسيط - يجب استخدام bcrypt في الإنتاج)
+        if (user.password !== input.password) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'كلمة المرور غير صحيحة' });
+        }
+        
+        // إنشاء جلسة JWT صحيحة
+        const sessionToken = await sdk.createSessionToken(user.openId, { 
+          name: user.name || user.phone || '',
+          expiresInMs: ONE_YEAR_MS 
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req);
+        ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+        
+        // تحديث وقت آخر تسجيل دخول
+        await db.updateUserLastSignedIn(user.id);
+        
+        return { success: true, user: { id: user.id, name: user.name, role: user.role } };
+      }),
+    
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
@@ -47,6 +83,7 @@ export const appRouter = router({
         nameAr: z.string().min(1),
         nameEn: z.string().optional(),
         type: z.enum(["holding", "subsidiary", "branch"]).default("subsidiary"),
+        systemType: z.enum(["energy", "custom"]).default("energy"),
         address: z.string().optional(),
         phone: z.string().optional(),
         email: z.string().email().optional(),
@@ -1166,6 +1203,11 @@ export const appRouter = router({
 
   // HR System - نظام الموارد البشرية
   hr: hrRouter,
+
+  // Custom System - النظام المخصص
+  customSystem: customSystemRouter,
+  customerSystem: customerSystemRouter,
+  billing: billingRouter,
 });
 
 export type AppRouter = typeof appRouter;

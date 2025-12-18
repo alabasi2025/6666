@@ -50,6 +50,27 @@
       "when": 1766085494949,
       "tag": "0006_productive_manta",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "5",
+      "when": 1766088889243,
+      "tag": "0007_powerful_runaways",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "5",
+      "when": 1766090188492,
+      "tag": "0008_nifty_corsair",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "5",
+      "when": 1766092091610,
+      "tag": "0009_reflective_lifeguard",
+      "breakpoints": true
     }
   ]
 }
