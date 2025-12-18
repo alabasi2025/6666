@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
+import { fieldOpsRouter } from "./fieldOpsRouter";
 
 // Admin procedure - requires admin role
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -1158,6 +1159,9 @@ export const appRouter = router({
         }),
     }),
   }),
+
+  // Field Operations System
+  fieldOps: fieldOpsRouter,
 });
 
 export type AppRouter = typeof appRouter;

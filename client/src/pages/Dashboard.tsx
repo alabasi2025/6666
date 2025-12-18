@@ -21,7 +21,7 @@ import {
   FolderKanban, Calendar, BarChart3, PieChart,
   Settings, LogOut, Menu, X, ChevronLeft, Bell,
   TrendingUp, TrendingDown, DollarSign, Wrench,
-  Home, Search, HelpCircle, Moon, Sun
+  Home, Search, HelpCircle, Moon, Sun, Truck
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -78,6 +78,13 @@ import TrialBalance from "./accounting/TrialBalance";
 import DeveloperDashboard from "./developer/DeveloperDashboard";
 import Integrations from "./developer/Integrations";
 import ApiKeys from "./developer/ApiKeys";
+
+// Field Operations Pages
+import FieldOpsDashboard from "./fieldops/FieldOpsDashboard";
+import FieldOperations from "./fieldops/FieldOperations";
+import FieldTeams from "./fieldops/FieldTeams";
+import FieldWorkers from "./fieldops/FieldWorkers";
+import FieldEquipment from "./fieldops/FieldEquipment";
 import Events from "./developer/Events";
 import AiModels from "./developer/AiModels";
 import TechnicalAlerts from "./developer/TechnicalAlerts";
@@ -188,6 +195,18 @@ const navigationItems = [
       { id: "projects-list", title: "المشاريع", icon: FolderKanban, path: "/dashboard/projects/list" },
       { id: "tasks", title: "المهام", icon: ClipboardList, path: "/dashboard/projects/tasks" },
       { id: "gantt", title: "مخطط جانت", icon: BarChart3, path: "/dashboard/projects/gantt" },
+    ],
+  },
+  {
+    id: "fieldops",
+    title: "العمليات الميدانية",
+    icon: Wrench,
+    children: [
+      { id: "fieldops-dashboard", title: "لوحة التحكم", icon: Activity, path: "/dashboard/fieldops" },
+      { id: "field-operations", title: "العمليات", icon: ClipboardList, path: "/dashboard/fieldops/operations" },
+      { id: "field-teams", title: "الفرق", icon: Users, path: "/dashboard/fieldops/teams" },
+      { id: "field-workers", title: "العاملين", icon: UserCircle, path: "/dashboard/fieldops/workers" },
+      { id: "field-equipment", title: "المعدات", icon: Truck, path: "/dashboard/fieldops/equipment" },
     ],
   },
   {
@@ -857,6 +876,22 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/developer/alerts") {
       return <TechnicalAlerts />;
+    }
+    // Field Operations Module
+    if (location === "/dashboard/fieldops") {
+      return <FieldOpsDashboard businessId={1} onNavigate={(screen) => setLocation(`/dashboard/fieldops/${screen}`)} />;
+    }
+    if (location === "/dashboard/fieldops/operations" || location === "/dashboard/fieldops/field-operations") {
+      return <FieldOperations businessId={1} />;
+    }
+    if (location === "/dashboard/fieldops/teams" || location === "/dashboard/fieldops/field-teams") {
+      return <FieldTeams businessId={1} />;
+    }
+    if (location === "/dashboard/fieldops/workers" || location === "/dashboard/fieldops/field-workers") {
+      return <FieldWorkers businessId={1} />;
+    }
+    if (location === "/dashboard/fieldops/equipment" || location === "/dashboard/fieldops/field-equipment") {
+      return <FieldEquipment businessId={1} />;
     }
     return <PlaceholderContent title={getPageTitle()} />;
   };

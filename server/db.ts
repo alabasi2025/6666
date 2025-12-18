@@ -44,6 +44,27 @@ import {
   sequences,
   // Developer System
   integrations, InsertIntegration,
+  // Field Operations System
+  fieldOperations, InsertFieldOperation,
+  operationStatusLog, InsertOperationStatusLog,
+  installationDetails, InsertInstallationDetail,
+  installationPhotos, InsertInstallationPhoto,
+  fieldTeams, InsertFieldTeam,
+  fieldWorkers, InsertFieldWorker,
+  workerLocations, InsertWorkerLocation,
+  workerPerformance, InsertWorkerPerformance,
+  workerIncentives, InsertWorkerIncentive,
+  materialRequests, InsertMaterialRequest,
+  materialRequestItems, InsertMaterialRequestItem,
+  fieldEquipment, InsertFieldEquipment,
+  equipmentMovements, InsertEquipmentMovement,
+  inspections, InsertInspection,
+  inspectionItems, InsertInspectionItem,
+  inspectionChecklists, InsertInspectionChecklist,
+  operationApprovals, InsertOperationApproval,
+  operationPayments, InsertOperationPayment,
+  periodSettlements, InsertPeriodSettlement,
+  settlementItems, InsertSettlementItem,
   integrationConfigs, InsertIntegrationConfig,
   integrationLogs, InsertIntegrationLog,
   systemEvents, InsertSystemEvent,
@@ -1189,5 +1210,668 @@ export async function getDeveloperDashboardStats(businessId: number) {
     activeAlerts: activeAlerts[0]?.count || 0,
     totalPredictions: totalPredictions[0]?.count || 0,
     aiModels: aiModelsCount[0]?.count || 0,
+  };
+}
+
+
+// ============================================
+// Field Operations System - العمليات الميدانية
+// ============================================
+
+// Field Operations - العمليات الميدانية
+export async function createFieldOperation(data: InsertFieldOperation) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(fieldOperations).values(data);
+  return result[0].insertId;
+}
+
+export async function getFieldOperations(businessId: number, filters?: {
+  status?: string;
+  operationType?: string;
+  teamId?: number;
+  workerId?: number;
+  customerId?: number;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(fieldOperations.businessId, businessId)];
+  
+  if (filters?.status) conditions.push(eq(fieldOperations.status, filters.status as any));
+  if (filters?.operationType) conditions.push(eq(fieldOperations.operationType, filters.operationType as any));
+  if (filters?.teamId) conditions.push(eq(fieldOperations.assignedTeamId, filters.teamId));
+  if (filters?.workerId) conditions.push(eq(fieldOperations.assignedWorkerId, filters.workerId));
+  if (filters?.customerId) conditions.push(eq(fieldOperations.customerId, filters.customerId));
+  if (filters?.fromDate) conditions.push(sql`${fieldOperations.scheduledDate} >= ${filters.fromDate}`);
+  if (filters?.toDate) conditions.push(sql`${fieldOperations.scheduledDate} <= ${filters.toDate}`);
+
+  return await db.select().from(fieldOperations)
+    .where(and(...conditions))
+    .orderBy(desc(fieldOperations.createdAt));
+}
+
+export async function getFieldOperationById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(fieldOperations).where(eq(fieldOperations.id, id));
+  return result[0] || null;
+}
+
+export async function updateFieldOperation(id: number, data: Partial<InsertFieldOperation>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(fieldOperations).set(data).where(eq(fieldOperations.id, id));
+}
+
+export async function updateOperationStatus(id: number, status: string, userId?: number, reason?: string) {
+  const db = await getDb();
+  if (!db) return;
+
+  const operation = await getFieldOperationById(id);
+  if (!operation) return;
+
+  // Log status change
+  await db.insert(operationStatusLog).values({
+    operationId: id,
+    fromStatus: operation.status,
+    toStatus: status,
+    changedBy: userId,
+    reason,
+  });
+
+  // Update operation status
+  const updateData: any = { status: status as any };
+  if (status === 'in_progress' && !operation.startedAt) {
+    updateData.startedAt = new Date();
+  }
+  if (status === 'completed') {
+    updateData.completedAt = new Date();
+    if (operation.startedAt) {
+      updateData.actualDuration = Math.round((Date.now() - new Date(operation.startedAt).getTime()) / 60000);
+    }
+  }
+
+  await db.update(fieldOperations).set(updateData).where(eq(fieldOperations.id, id));
+}
+
+// Field Teams - الفرق الميدانية
+export async function createFieldTeam(data: InsertFieldTeam) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(fieldTeams).values(data);
+  return result[0].insertId;
+}
+
+export async function getFieldTeams(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(fieldTeams)
+    .where(eq(fieldTeams.businessId, businessId))
+    .orderBy(asc(fieldTeams.nameAr));
+}
+
+export async function getFieldTeamById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(fieldTeams).where(eq(fieldTeams.id, id));
+  return result[0] || null;
+}
+
+export async function updateFieldTeam(id: number, data: Partial<InsertFieldTeam>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(fieldTeams).set(data).where(eq(fieldTeams.id, id));
+}
+
+// Field Workers - العاملين الميدانيين
+export async function createFieldWorker(data: InsertFieldWorker) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(fieldWorkers).values(data);
+  return result[0].insertId;
+}
+
+export async function getFieldWorkers(businessId: number, filters?: {
+  teamId?: number;
+  status?: string;
+  workerType?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(fieldWorkers.businessId, businessId)];
+  
+  if (filters?.teamId) conditions.push(eq(fieldWorkers.teamId, filters.teamId));
+  if (filters?.status) conditions.push(eq(fieldWorkers.status, filters.status as any));
+  if (filters?.workerType) conditions.push(eq(fieldWorkers.workerType, filters.workerType as any));
+
+  return await db.select().from(fieldWorkers)
+    .where(and(...conditions))
+    .orderBy(asc(fieldWorkers.nameAr));
+}
+
+export async function getFieldWorkerById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(fieldWorkers).where(eq(fieldWorkers.id, id));
+  return result[0] || null;
+}
+
+export async function updateFieldWorker(id: number, data: Partial<InsertFieldWorker>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(fieldWorkers).set(data).where(eq(fieldWorkers.id, id));
+}
+
+export async function updateWorkerLocation(workerId: number, lat: number, lng: number, operationId?: number) {
+  const db = await getDb();
+  if (!db) return;
+
+  // Insert location history
+  await db.insert(workerLocations).values({
+    workerId,
+    latitude: lat.toString(),
+    longitude: lng.toString(),
+    operationId,
+  });
+
+  // Update current location
+  await db.update(fieldWorkers).set({
+    currentLocationLat: lat.toString(),
+    currentLocationLng: lng.toString(),
+    lastLocationUpdate: new Date(),
+  }).where(eq(fieldWorkers.id, workerId));
+}
+
+// Field Equipment - المعدات الميدانية
+export async function createFieldEquipmentItem(data: InsertFieldEquipment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(fieldEquipment).values(data);
+  return result[0].insertId;
+}
+
+export async function getFieldEquipmentList(businessId: number, filters?: {
+  status?: string;
+  equipmentType?: string;
+  teamId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(fieldEquipment.businessId, businessId)];
+  
+  if (filters?.status) conditions.push(eq(fieldEquipment.status, filters.status as any));
+  if (filters?.equipmentType) conditions.push(eq(fieldEquipment.equipmentType, filters.equipmentType as any));
+  if (filters?.teamId) conditions.push(eq(fieldEquipment.assignedTeamId, filters.teamId));
+
+  return await db.select().from(fieldEquipment)
+    .where(and(...conditions))
+    .orderBy(asc(fieldEquipment.nameAr));
+}
+
+export async function updateFieldEquipmentItem(id: number, data: Partial<InsertFieldEquipment>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(fieldEquipment).set(data).where(eq(fieldEquipment.id, id));
+}
+
+export async function recordEquipmentMovement(data: InsertEquipmentMovement) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(equipmentMovements).values(data);
+  
+  // Update equipment status and holder
+  const updateData: any = {};
+  if (data.movementType === 'checkout') {
+    updateData.status = 'in_use';
+    updateData.currentHolderId = data.toHolderId;
+  } else if (data.movementType === 'return') {
+    updateData.status = 'available';
+    updateData.currentHolderId = null;
+  } else if (data.movementType === 'maintenance') {
+    updateData.status = 'maintenance';
+  }
+  if (data.conditionAfter) {
+    updateData.condition = data.conditionAfter;
+  }
+
+  await db.update(fieldEquipment).set(updateData).where(eq(fieldEquipment.id, data.equipmentId));
+  
+  return result[0].insertId;
+}
+
+// Inspections - الفحوصات
+export async function createInspection(data: InsertInspection) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(inspections).values(data);
+  return result[0].insertId;
+}
+
+export async function getInspections(businessId: number, filters?: {
+  operationId?: number;
+  status?: string;
+  inspectorId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(inspections.businessId, businessId)];
+  
+  if (filters?.operationId) conditions.push(eq(inspections.operationId, filters.operationId));
+  if (filters?.status) conditions.push(eq(inspections.status, filters.status as any));
+  if (filters?.inspectorId) conditions.push(eq(inspections.inspectorId, filters.inspectorId));
+
+  return await db.select().from(inspections)
+    .where(and(...conditions))
+    .orderBy(desc(inspections.inspectionDate));
+}
+
+export async function updateInspection(id: number, data: Partial<InsertInspection>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(inspections).set(data).where(eq(inspections.id, id));
+}
+
+export async function addInspectionItems(inspectionId: number, items: InsertInspectionItem[]) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(inspectionItems).values(items.map(item => ({ ...item, inspectionId })));
+}
+
+// Material Requests - طلبات المواد
+export async function createMaterialRequest(data: InsertMaterialRequest) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(materialRequests).values(data);
+  return result[0].insertId;
+}
+
+export async function getMaterialRequests(businessId: number, filters?: {
+  status?: string;
+  workerId?: number;
+  teamId?: number;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(materialRequests.businessId, businessId)];
+  
+  if (filters?.status) conditions.push(eq(materialRequests.status, filters.status as any));
+  if (filters?.workerId) conditions.push(eq(materialRequests.workerId, filters.workerId));
+  if (filters?.teamId) conditions.push(eq(materialRequests.teamId, filters.teamId));
+
+  return await db.select().from(materialRequests)
+    .where(and(...conditions))
+    .orderBy(desc(materialRequests.createdAt));
+}
+
+export async function updateMaterialRequest(id: number, data: Partial<InsertMaterialRequest>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(materialRequests).set(data).where(eq(materialRequests.id, id));
+}
+
+export async function addMaterialRequestItems(requestId: number, items: InsertMaterialRequestItem[]) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(materialRequestItems).values(items.map(item => ({ ...item, requestId })));
+}
+
+// Operation Payments - مستحقات العمليات
+export async function createOperationPayment(data: InsertOperationPayment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(operationPayments).values(data);
+  return result[0].insertId;
+}
+
+export async function getOperationPayments(businessId: number, filters?: {
+  workerId?: number;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(operationPayments.businessId, businessId)];
+  
+  if (filters?.workerId) conditions.push(eq(operationPayments.workerId, filters.workerId));
+  if (filters?.status) conditions.push(eq(operationPayments.status, filters.status as any));
+
+  return await db.select().from(operationPayments)
+    .where(and(...conditions))
+    .orderBy(desc(operationPayments.calculatedAt));
+}
+
+// Period Settlements - تسويات الفترة
+export async function createPeriodSettlement(data: InsertPeriodSettlement) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(periodSettlements).values(data);
+  return result[0].insertId;
+}
+
+export async function getPeriodSettlements(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(periodSettlements)
+    .where(eq(periodSettlements.businessId, businessId))
+    .orderBy(desc(periodSettlements.createdAt));
+}
+
+export async function updatePeriodSettlement(id: number, data: Partial<InsertPeriodSettlement>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(periodSettlements).set(data).where(eq(periodSettlements.id, id));
+}
+
+export async function addSettlementItems(settlementId: number, items: InsertSettlementItem[]) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.insert(settlementItems).values(items.map(item => ({ ...item, settlementId })));
+}
+
+// Installation Details - بيانات التركيب
+export async function createInstallationDetails(data: InsertInstallationDetail) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(installationDetails).values(data);
+  return result[0].insertId;
+}
+
+export async function getInstallationDetailsByOperation(operationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+
+  const result = await db.select().from(installationDetails).where(eq(installationDetails.operationId, operationId));
+  return result[0] || null;
+}
+
+export async function addInstallationPhoto(data: InsertInstallationPhoto) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(installationPhotos).values(data);
+  return result[0].insertId;
+}
+
+export async function getInstallationPhotos(operationId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(installationPhotos)
+    .where(eq(installationPhotos.operationId, operationId))
+    .orderBy(asc(installationPhotos.createdAt));
+}
+
+// Worker Performance - أداء العاملين
+export async function createWorkerPerformance(data: InsertWorkerPerformance) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(workerPerformance).values(data);
+  return result[0].insertId;
+}
+
+export async function getWorkerPerformanceHistory(workerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return await db.select().from(workerPerformance)
+    .where(eq(workerPerformance.workerId, workerId))
+    .orderBy(desc(workerPerformance.periodEnd));
+}
+
+// Worker Incentives - حوافز العاملين
+export async function createWorkerIncentive(data: InsertWorkerIncentive) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(workerIncentives).values(data);
+  return result[0].insertId;
+}
+
+export async function getWorkerIncentives(businessId: number, filters?: {
+  workerId?: number;
+  status?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(workerIncentives.businessId, businessId)];
+  
+  if (filters?.workerId) conditions.push(eq(workerIncentives.workerId, filters.workerId));
+  if (filters?.status) conditions.push(eq(workerIncentives.status, filters.status as any));
+
+  return await db.select().from(workerIncentives)
+    .where(and(...conditions))
+    .orderBy(desc(workerIncentives.createdAt));
+}
+
+export async function updateWorkerIncentive(id: number, data: Partial<InsertWorkerIncentive>) {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.update(workerIncentives).set(data).where(eq(workerIncentives.id, id));
+}
+
+// Inspection Checklists - قوائم الفحص
+export async function createInspectionChecklist(data: InsertInspectionChecklist) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db.insert(inspectionChecklists).values(data);
+  return result[0].insertId;
+}
+
+export async function getInspectionChecklists(businessId: number, operationType?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [eq(inspectionChecklists.businessId, businessId)];
+  if (operationType) conditions.push(eq(inspectionChecklists.operationType, operationType));
+
+  return await db.select().from(inspectionChecklists)
+    .where(and(...conditions))
+    .orderBy(asc(inspectionChecklists.nameAr));
+}
+
+// Field Operations Dashboard Stats
+export async function getFieldOperationsDashboardStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return {
+    totalOperations: 0,
+    scheduledOperations: 0,
+    inProgressOperations: 0,
+    completedOperations: 0,
+    totalTeams: 0,
+    activeTeams: 0,
+    totalWorkers: 0,
+    availableWorkers: 0,
+    totalEquipment: 0,
+    availableEquipment: 0,
+  };
+
+  const [
+    totalOps,
+    scheduledOps,
+    inProgressOps,
+    completedOps,
+    totalTeams,
+    activeTeams,
+    totalWorkers,
+    availableWorkers,
+    totalEquip,
+    availableEquip,
+  ] = await Promise.all([
+    db.select({ count: count() }).from(fieldOperations).where(eq(fieldOperations.businessId, businessId)),
+    db.select({ count: count() }).from(fieldOperations).where(and(eq(fieldOperations.businessId, businessId), eq(fieldOperations.status, 'scheduled'))),
+    db.select({ count: count() }).from(fieldOperations).where(and(eq(fieldOperations.businessId, businessId), eq(fieldOperations.status, 'in_progress'))),
+    db.select({ count: count() }).from(fieldOperations).where(and(eq(fieldOperations.businessId, businessId), eq(fieldOperations.status, 'completed'))),
+    db.select({ count: count() }).from(fieldTeams).where(eq(fieldTeams.businessId, businessId)),
+    db.select({ count: count() }).from(fieldTeams).where(and(eq(fieldTeams.businessId, businessId), eq(fieldTeams.status, 'active'))),
+    db.select({ count: count() }).from(fieldWorkers).where(eq(fieldWorkers.businessId, businessId)),
+    db.select({ count: count() }).from(fieldWorkers).where(and(eq(fieldWorkers.businessId, businessId), eq(fieldWorkers.status, 'available'))),
+    db.select({ count: count() }).from(fieldEquipment).where(eq(fieldEquipment.businessId, businessId)),
+    db.select({ count: count() }).from(fieldEquipment).where(and(eq(fieldEquipment.businessId, businessId), eq(fieldEquipment.status, 'available'))),
+  ]);
+
+  return {
+    totalOperations: totalOps[0]?.count || 0,
+    scheduledOperations: scheduledOps[0]?.count || 0,
+    inProgressOperations: inProgressOps[0]?.count || 0,
+    completedOperations: completedOps[0]?.count || 0,
+    totalTeams: totalTeams[0]?.count || 0,
+    activeTeams: activeTeams[0]?.count || 0,
+    totalWorkers: totalWorkers[0]?.count || 0,
+    availableWorkers: availableWorkers[0]?.count || 0,
+    totalEquipment: totalEquip[0]?.count || 0,
+    availableEquipment: availableEquip[0]?.count || 0,
+  };
+}
+
+// Seed Demo Data - بيانات تجريبية للمستأجرين
+export async function seedDemoTenants() {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Check if demo data already exists
+  const existingBusinesses = await db.select().from(businesses).limit(1);
+  if (existingBusinesses.length > 0) {
+    return { message: "Demo data already exists" };
+  }
+
+  // Create two tenant businesses
+  const [business1Result] = await db.insert(businesses).values({
+    code: "ELEC-001",
+    nameAr: "شركة الكهرباء الوطنية",
+    nameEn: "National Electricity Company",
+    type: "holding",
+    currency: "SAR",
+    isActive: true,
+  });
+  const business1Id = business1Result.insertId;
+
+  const [business2Result] = await db.insert(businesses).values({
+    code: "SOLAR-001",
+    nameAr: "شركة الطاقة الشمسية",
+    nameEn: "Solar Energy Company",
+    type: "subsidiary",
+    currency: "SAR",
+    isActive: true,
+  });
+  const business2Id = business2Result.insertId;
+
+  // Create branches for each business
+  await db.insert(branches).values([
+    { businessId: business1Id, code: "BR-RYD", nameAr: "فرع الرياض", nameEn: "Riyadh Branch", type: "main", city: "الرياض" },
+    { businessId: business1Id, code: "BR-JED", nameAr: "فرع جدة", nameEn: "Jeddah Branch", type: "regional", city: "جدة" },
+    { businessId: business2Id, code: "BR-DMM", nameAr: "فرع الدمام", nameEn: "Dammam Branch", type: "main", city: "الدمام" },
+  ]);
+
+  // Create field teams
+  await db.insert(fieldTeams).values([
+    { businessId: business1Id, code: "TEAM-001", nameAr: "فريق التركيبات", nameEn: "Installation Team", teamType: "installation", status: "active" },
+    { businessId: business1Id, code: "TEAM-002", nameAr: "فريق الصيانة", nameEn: "Maintenance Team", teamType: "maintenance", status: "active" },
+    { businessId: business2Id, code: "TEAM-003", nameAr: "فريق الفحص", nameEn: "Inspection Team", teamType: "inspection", status: "active" },
+  ]);
+
+  // Create field workers
+  await db.insert(fieldWorkers).values([
+    { businessId: business1Id, employeeNumber: "EMP-001", nameAr: "أحمد محمد", nameEn: "Ahmed Mohammed", phone: "0501234567", workerType: "technician", status: "available", teamId: 1 },
+    { businessId: business1Id, employeeNumber: "EMP-002", nameAr: "خالد علي", nameEn: "Khaled Ali", phone: "0507654321", workerType: "engineer", status: "available", teamId: 1 },
+    { businessId: business1Id, employeeNumber: "EMP-003", nameAr: "محمد سعيد", nameEn: "Mohammed Saeed", phone: "0509876543", workerType: "technician", status: "busy", teamId: 2 },
+    { businessId: business2Id, employeeNumber: "EMP-004", nameAr: "عبدالله فهد", nameEn: "Abdullah Fahd", phone: "0502345678", workerType: "supervisor", status: "available", teamId: 3 },
+  ]);
+
+  // Create field equipment
+  await db.insert(fieldEquipment).values([
+    { businessId: business1Id, equipmentCode: "EQ-001", nameAr: "جهاز قياس الجهد", nameEn: "Voltage Meter", equipmentType: "measuring", status: "available" },
+    { businessId: business1Id, equipmentCode: "EQ-002", nameAr: "سيارة خدمة", nameEn: "Service Vehicle", equipmentType: "vehicle", status: "in_use" },
+    { businessId: business2Id, equipmentCode: "EQ-003", nameAr: "معدات السلامة", nameEn: "Safety Equipment", equipmentType: "safety", status: "available" },
+  ]);
+
+  // Create sample field operations
+  await db.insert(fieldOperations).values([
+    { 
+      businessId: business1Id, 
+      operationNumber: "OP-2024-001", 
+      operationType: "installation", 
+      status: "scheduled",
+      priority: "high",
+      title: "تركيب عداد ذكي - حي النخيل",
+      description: "تركيب عداد ذكي جديد للعميل رقم 1234",
+      address: "حي النخيل، شارع الملك فهد",
+      scheduledDate: new Date(),
+      assignedTeamId: 1,
+      assignedWorkerId: 1,
+      estimatedDuration: 60,
+    },
+    { 
+      businessId: business1Id, 
+      operationNumber: "OP-2024-002", 
+      operationType: "maintenance", 
+      status: "in_progress",
+      priority: "urgent",
+      title: "صيانة طارئة - محطة التحويل",
+      description: "إصلاح عطل في محطة التحويل الرئيسية",
+      address: "محطة التحويل الرئيسية",
+      scheduledDate: new Date(),
+      assignedTeamId: 2,
+      assignedWorkerId: 3,
+      estimatedDuration: 120,
+      startedAt: new Date(),
+    },
+    { 
+      businessId: business2Id, 
+      operationNumber: "OP-2024-003", 
+      operationType: "inspection", 
+      status: "scheduled",
+      priority: "medium",
+      title: "فحص دوري - الألواح الشمسية",
+      description: "فحص دوري للألواح الشمسية في المشروع رقم 5",
+      address: "مشروع الطاقة الشمسية - الدمام",
+      scheduledDate: new Date(),
+      assignedTeamId: 3,
+      assignedWorkerId: 4,
+      estimatedDuration: 180,
+    },
+  ]);
+
+  return { 
+    message: "Demo data created successfully",
+    businesses: [
+      { id: business1Id, name: "شركة الكهرباء الوطنية" },
+      { id: business2Id, name: "شركة الطاقة الشمسية" },
+    ]
   };
 }
