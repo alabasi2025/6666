@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Zap, Shield, BarChart3, Settings, Phone, Lock, Eye, EyeOff } from "lucide-react";
 import { useState } from "react";
@@ -124,7 +123,7 @@ export default function Login() {
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="text-foreground">رقم الهاتف</Label>
                   <div className="relative">
-                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
                     <input
                       id="phone"
                       name="phone"
@@ -132,7 +131,7 @@ export default function Login() {
                       placeholder="05xxxxxxxx"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="pr-10 text-right file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                      className="w-full h-11 pr-10 pl-4 text-right rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       dir="ltr"
                       autoComplete="tel"
                     />
@@ -143,15 +142,15 @@ export default function Login() {
                 <div className="space-y-2">
                   <Label htmlFor="password" className="text-foreground">كلمة المرور</Label>
                   <div className="relative">
-                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <Lock className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground pointer-events-none" />
                     <input
                       id="password"
                       name="password"
                       type={showPassword ? "text" : "password"}
-                      placeholder="••••••••"
+                      placeholder="أدخل كلمة المرور"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="pr-10 pl-10 file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] md:text-sm"
+                      className="w-full h-11 pr-10 pl-10 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       autoComplete="current-password"
                     />
                     <button
@@ -191,7 +190,14 @@ export default function Login() {
                 </Button>
               </form>
 
-              <div className="mt-8 pt-6 border-t border-border">
+              {/* Demo Mode Notice */}
+              <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <p className="text-xs text-center text-primary">
+                  🎮 الوضع التجريبي: أدخل أي رقم وكلمة مرور للدخول
+                </p>
+              </div>
+
+              <div className="mt-6 pt-6 border-t border-border">
                 <p className="text-xs text-center text-muted-foreground">
                   بتسجيل الدخول، أنت توافق على{" "}
                   <a href="#" className="text-primary hover:underline">شروط الاستخدام</a>
