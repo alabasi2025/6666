@@ -33,6 +33,29 @@ export const appRouter = router({
         password: z.string().min(1),
       }))
       .mutation(async ({ input, ctx }) => {
+        // وضع تجريبي - السماح بالدخول بدون قاعدة بيانات
+        const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
+        
+        if (DEMO_MODE) {
+          // مستخدم تجريبي افتراضي
+          const demoUser = {
+            id: 1,
+            openId: 'demo_user_001',
+            name: 'مستخدم تجريبي',
+            phone: input.phone,
+            role: 'super_admin' as const,
+          };
+          
+          const sessionToken = await sdk.createSessionToken(demoUser.openId, { 
+            name: demoUser.name,
+            expiresInMs: ONE_YEAR_MS 
+          });
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          
+          return { success: true, user: { id: demoUser.id, name: demoUser.name, role: demoUser.role } };
+        }
+        
         const user = await db.getUserByPhone(input.phone);
         
         if (!user) {
