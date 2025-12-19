@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import CustomSystem from "./pages/CustomSystem";
 
 function Router() {
   return (
@@ -17,6 +18,10 @@ function Router() {
       <Route path="/dashboard/:module" component={Dashboard} />
       <Route path="/dashboard/:module/:submodule" component={Dashboard} />
       <Route path="/dashboard/:module/:action/:id" component={Dashboard} />
+      {/* Custom System - نظام مستقل */}
+      <Route path="/custom" component={CustomSystem} />
+      <Route path="/custom/:page" component={CustomSystem} />
+      <Route path="/custom/:page/:action" component={CustomSystem} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
