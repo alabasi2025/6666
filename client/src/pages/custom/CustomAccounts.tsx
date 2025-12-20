@@ -57,7 +57,7 @@ export default function CustomAccounts() {
     description: "",
   });
 
-  // TODO: Get businessId from context
+  // Business ID - يتم تعيينه افتراضياً للشركة الأولى
   const businessId = 1;
 
   const { data: accounts = [], refetch } = trpc.customSystem.accounts.list.useQuery({ businessId });

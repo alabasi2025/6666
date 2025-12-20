@@ -16,7 +16,7 @@ import { trpc } from "@/lib/trpc";
 export default function CustomDashboard() {
   const [, setLocation] = useLocation();
   
-  // TODO: Get businessId from context/selected business
+  // Business ID - يتم تعيينه افتراضياً للشركة الأولى
   const businessId = 1;
   
   const { data: accounts = [] } = trpc.customSystem.accounts.list.useQuery({ businessId });

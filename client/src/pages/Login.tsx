@@ -165,9 +165,9 @@ export default function Login() {
 
                 {/* Forgot Password Link */}
                 <div className="flex justify-end">
-                  <a href="#" className="text-sm text-primary hover:underline">
+                  <button type="button" onClick={() => toast.info("يرجى التواصل مع مدير النظام لإعادة تعيين كلمة المرور")} className="text-sm text-primary hover:underline">
                     نسيت كلمة المرور؟
-                  </a>
+                  </button>
                 </div>
 
                 {/* Submit Button */}
@@ -200,9 +200,9 @@ export default function Login() {
               <div className="mt-6 pt-6 border-t border-border">
                 <p className="text-xs text-center text-muted-foreground">
                   بتسجيل الدخول، أنت توافق على{" "}
-                  <a href="#" className="text-primary hover:underline">شروط الاستخدام</a>
+                  <button type="button" onClick={() => toast.info("شروط الاستخدام: باستخدامك للنظام فإنك توافق على الالتزام بسياسات الشركة")} className="text-primary hover:underline">شروط الاستخدام</button>
                   {" "}و{" "}
-                  <a href="#" className="text-primary hover:underline">سياسة الخصوصية</a>
+                  <button type="button" onClick={() => toast.info("سياسة الخصوصية: نحن نحمي بياناتك ولا نشاركها مع أطراف ثالثة")} className="text-primary hover:underline">سياسة الخصوصية</button>
                 </p>
               </div>
             </CardContent>
