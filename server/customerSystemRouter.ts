@@ -18,36 +18,38 @@ export const customerSystemRouter = router({
   // ============================================
   // العملاء - Customers
   // ============================================
-  getCustomers: publicProcedure
+    getCustomers: publicProcedure
     .input(z.object({
       businessId: z.number().optional(),
       page: z.number().default(1),
       limit: z.number().default(20),
       search: z.string().optional(),
-    }))
+    }).optional())
     .query(async ({ input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const offset = (input.page - 1) * input.limit;
-      let whereClause = input.businessId ? eq(customersEnhanced.businessId, input.businessId) : undefined;
+      const params = input || { page: 1, limit: 20 };
+      const offset = (params.page - 1) * params.limit;
+      let whereClause = params.businessId ? eq(customersEnhanced.businessId, params.businessId) : undefined;
       
-      if (input.search) {
+      if (params.search) {
         whereClause = and(
           whereClause,
-          like(customersEnhanced.fullName, `%${input.search}%`)
+          like(customersEnhanced.fullName, `%${params.search}%`)
         );
       }
       
       const result = await db.select().from(customersEnhanced)
         .where(whereClause)
         .orderBy(desc(customersEnhanced.createdAt))
-        .limit(input.limit)
+        .limit(params.limit)
         .offset(offset);
       
       const total = await db.select({ count: sql<number>`count(*)` }).from(customersEnhanced).where(whereClause);
-      return { data: result, total: total[0].count, page: input.page, limit: input.limit };
+      return { data: result, total: total[0].count, page: params.page, limit: params.limit };
     }),
+
 
   createCustomer: publicProcedure
     .input(z.object({
@@ -629,3 +631,4 @@ export const customerSystemRouter = router({
       };
     }),
 });
+

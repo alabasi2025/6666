@@ -95,17 +95,46 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _connectionTested = false;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       _db = drizzle(process.env.DATABASE_URL);
+      // Test connection
+      if (!_connectionTested) {
+        await _db.execute(sql`SELECT 1`);
+        console.log("✅ [Database] Connected successfully");
+        _connectionTested = true;
+      }
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
+      _connectionTested = false;
     }
   }
   return _db;
+}
+
+export async function testDatabaseConnection(): Promise<boolean> {
+  if (!process.env.DATABASE_URL) {
+    console.log("⚠️ [Database] DATABASE_URL not set, running in DEMO_MODE");
+    return false;
+  }
+  
+  try {
+    const db = await getDb();
+    if (!db) {
+      console.log("❌ [Database] Connection failed");
+      return false;
+    }
+    await db.execute(sql`SELECT 1`);
+    console.log("✅ [Database] Connection test successful");
+    return true;
+  } catch (error) {
+    console.error("❌ [Database] Connection test failed:", error);
+    return false;
+  }
 }
 
 // ============================================
@@ -241,9 +270,46 @@ export async function createBusiness(data: InsertBusiness) {
 
 export async function getBusinesses() {
   const db = await getDb();
-  if (!db) return [];
+  if (!db) {
+    console.warn("[DB] Database not available in getBusinesses");
+    return [];
+  }
 
-  return await db.select().from(businesses).where(eq(businesses.isActive, true)).orderBy(asc(businesses.nameAr));
+  try {
+    // Get all active businesses - try with boolean true first
+    let result = await db.select().from(businesses).where(eq(businesses.isActive, true)).orderBy(asc(businesses.nameAr));
+    console.log("[DB] getBusinesses (isActive=true) returned", result.length, "businesses");
+    
+    // If no results, try with number 1 (MySQL stores boolean as tinyint)
+    if (result.length === 0) {
+      console.log("[DB] Trying with isActive=1 (number)");
+      result = await db.select().from(businesses).where(eq(businesses.isActive, 1)).orderBy(asc(businesses.nameAr));
+      console.log("[DB] getBusinesses (isActive=1) returned", result.length, "businesses");
+    }
+    
+    // If still no results, get all businesses
+    if (result.length === 0) {
+      console.log("[DB] Trying without filter - getting all businesses");
+      result = await db.select().from(businesses).orderBy(asc(businesses.nameAr));
+      console.log("[DB] getBusinesses (all) returned", result.length, "businesses");
+    }
+    
+    if (result.length > 0) {
+      console.log("[DB] First business:", { id: result[0].id, code: result[0].code, nameAr: result[0].nameAr, nameEn: result[0].nameEn, isActive: result[0].isActive });
+    }
+    return result;
+  } catch (error) {
+    console.error("[DB] Error in getBusinesses:", error);
+    // Try without filter as fallback
+    try {
+      const allResult = await db.select().from(businesses).orderBy(asc(businesses.nameAr));
+      console.log("[DB] getBusinesses (fallback) returned", allResult.length, "businesses");
+      return allResult;
+    } catch (fallbackError) {
+      console.error("[DB] Fallback query also failed:", fallbackError);
+      return [];
+    }
+  }
 }
 
 export async function getBusinessById(id: number) {
@@ -252,6 +318,29 @@ export async function getBusinessById(id: number) {
 
   const result = await db.select().from(businesses).where(eq(businesses.id, id)).limit(1);
   return result[0] || null;
+}
+
+export async function updateBusiness(id: number, data: Partial<InsertBusiness>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(businesses)
+    .set({ ...data, updatedAt: new Date() })
+    .where(eq(businesses.id, id));
+  
+  return id;
+}
+
+export async function deleteBusiness(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Soft delete - set isActive to false
+  await db.update(businesses)
+    .set({ isActive: false, updatedAt: new Date() })
+    .where(eq(businesses.id, id));
+  
+  return id;
 }
 
 // ============================================

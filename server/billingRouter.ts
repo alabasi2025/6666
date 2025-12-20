@@ -156,7 +156,7 @@ export const billingRouter = router({
   // ==================== التعرفة ====================
   getTariffs: publicProcedure.query(async () => {
     const db = await getDb();
-    return await db.select().from(tariffs).orderBy(tariffs.fromUnit);
+    return await db.select().from(tariffs).orderBy\(desc\(tariffs.createdAt\)\);
   }),
 
   createTariff: publicProcedure.input(z.object({
@@ -368,11 +368,11 @@ export const billingRouter = router({
     const db = await getDb();
     const result = await db.select({
       id: metersEnhanced.id,
-      meterNumber: metersEnhanced.meterNumber,
+      meterNumber: invoicesEnhanced.meterNumber,
       serialNumber: metersEnhanced.serialNumber,
       customerId: metersEnhanced.customerId,
       customerName: customersEnhanced.fullName,
-      accountNumber: customersEnhanced.accountNumber,
+      
       cabinetId: metersEnhanced.cabinetId,
       serviceType: metersEnhanced.serviceType,
       meterType: metersEnhanced.meterType,
@@ -498,7 +498,7 @@ export const billingRouter = router({
     const result = await db.select({
       id: meterReadingsEnhanced.id,
       meterId: meterReadingsEnhanced.meterId,
-      meterNumber: metersEnhanced.meterNumber,
+      meterNumber: invoicesEnhanced.meterNumber,
       customerName: customersEnhanced.fullName,
       billingPeriodId: meterReadingsEnhanced.billingPeriodId,
       billingPeriodName: billingPeriods.name,
@@ -583,30 +583,30 @@ export const billingRouter = router({
     const db = await getDb();
     const result = await db.select({
       id: invoicesEnhanced.id,
-      invoiceNumber: invoicesEnhanced.invoiceNumber,
+      invoiceNumber: invoicesEnhanced.invoiceNo,
       customerId: invoicesEnhanced.customerId,
       customerName: customersEnhanced.fullName,
-      accountNumber: customersEnhanced.accountNumber,
+      
       meterId: invoicesEnhanced.meterId,
-      meterNumber: metersEnhanced.meterNumber,
+      meterNumber: invoicesEnhanced.meterNumber,
       billingPeriodId: invoicesEnhanced.billingPeriodId,
       billingPeriodName: billingPeriods.name,
       previousReading: invoicesEnhanced.previousReading,
       currentReading: invoicesEnhanced.currentReading,
-      consumption: invoicesEnhanced.consumption,
+      consumption: invoicesEnhanced.totalConsumptionKWH,
       consumptionAmount: invoicesEnhanced.consumptionAmount,
-      feesAmount: invoicesEnhanced.feesAmount,
+      feesAmount: invoicesEnhanced.totalFees,
       totalAmount: invoicesEnhanced.totalAmount,
       paidAmount: invoicesEnhanced.paidAmount,
-      remainingAmount: invoicesEnhanced.remainingAmount,
+      remainingAmount: invoicesEnhanced.balanceDue,
       status: invoicesEnhanced.status,
       dueDate: invoicesEnhanced.dueDate,
-      issueDate: invoicesEnhanced.issueDate,
-      isPaid: invoicesEnhanced.isPaid,
-      isApproved: invoicesEnhanced.isApproved,
+      issueDate: invoicesEnhanced.invoiceDate,
+      
+      
     }).from(invoicesEnhanced)
       .leftJoin(customersEnhanced, eq(invoicesEnhanced.customerId, customersEnhanced.id))
-      .leftJoin(metersEnhanced, eq(invoicesEnhanced.meterId, metersEnhanced.id))
+      
       .leftJoin(billingPeriods, eq(invoicesEnhanced.billingPeriodId, billingPeriods.id))
       .orderBy(desc(invoicesEnhanced.createdAt));
     return result;
@@ -727,14 +727,14 @@ export const billingRouter = router({
     const db = await getDb();
     const result = await db.select({
       id: paymentsEnhanced.id,
-      receiptNumber: paymentsEnhanced.receiptNumber,
+      paymentNumber: paymentsEnhanced.paymentNumber,
       customerId: paymentsEnhanced.customerId,
       customerName: customersEnhanced.fullName,
-      accountNumber: customersEnhanced.accountNumber,
+      
       invoiceId: paymentsEnhanced.invoiceId,
-      invoiceNumber: invoicesEnhanced.invoiceNumber,
+      invoiceNumber: invoicesEnhanced.invoiceNo,
       amount: paymentsEnhanced.amount,
-      paymentMethod: paymentsEnhanced.paymentMethod,
+      paymentMethodId: paymentsEnhanced.paymentMethodId,
       paymentDate: paymentsEnhanced.paymentDate,
       referenceNumber: paymentsEnhanced.referenceNumber,
       cashboxId: paymentsEnhanced.cashboxId,

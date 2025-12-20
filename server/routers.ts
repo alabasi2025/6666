@@ -25,7 +25,35 @@ export const appRouter = router({
   
   // Authentication
   auth: router({
-    me: publicProcedure.query(opts => opts.ctx.user),
+    me: publicProcedure.query(opts => {
+      // In DEMO_MODE, always return a demo user
+      const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
+      if (DEMO_MODE && !opts.ctx.user) {
+        return {
+          id: 1,
+          openId: 'demo_user_001',
+          name: 'مستخدم تجريبي',
+          role: 'super_admin',
+          email: null,
+          phone: null,
+          password: null,
+          avatar: null,
+          loginMethod: null,
+          businessId: null,
+          branchId: null,
+          stationId: null,
+          departmentId: null,
+          jobTitle: null,
+          isActive: true,
+          employeeId: null,
+          nameAr: null,
+          lastSignedIn: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+      }
+      return opts.ctx.user;
+    }),
     
     loginWithPhone: publicProcedure
       .input(z.object({
@@ -73,10 +101,24 @@ export const appRouter = router({
           expiresInMs: ONE_YEAR_MS 
         });
         const cookieOptions = getSessionCookieOptions(ctx.req);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log("[Login] Setting cookie:", {
+            name: COOKIE_NAME,
+            tokenLength: sessionToken.length,
+            options: cookieOptions,
+            maxAge: ONE_YEAR_MS,
+          });
+        }
+        
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         
         // تحديث وقت آخر تسجيل دخول
         await db.updateUserLastSignedIn(user.id);
+        
+        if (process.env.NODE_ENV === 'development') {
+          console.log("[Login] Cookie set successfully, returning user:", { id: user.id, name: user.name, role: user.role });
+        }
         
         return { success: true, user: { id: user.id, name: user.name, role: user.role } };
       }),
@@ -90,8 +132,15 @@ export const appRouter = router({
 
   // Business Management
   business: router({
-    list: protectedProcedure.query(async () => {
-      return await db.getBusinesses();
+    list: protectedProcedure.query(async ({ ctx }) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[Business.list] Called by user:", ctx.user?.id, ctx.user?.name);
+      }
+      const businesses = await db.getBusinesses();
+      if (process.env.NODE_ENV === 'development') {
+        console.log("[Business.list] Returning", businesses.length, "businesses");
+      }
+      return businesses;
     }),
     
     getById: protectedProcedure
@@ -116,6 +165,36 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         const id = await db.createBusiness(input);
         return { id, success: true };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        code: z.string().min(1).optional(),
+        nameAr: z.string().min(1).optional(),
+        nameEn: z.string().optional(),
+        type: z.enum(["holding", "subsidiary", "branch"]).optional(),
+        systemType: z.enum(["energy", "custom"]).optional(),
+        address: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional(),
+        website: z.string().optional(),
+        taxNumber: z.string().optional(),
+        commercialRegister: z.string().optional(),
+        currency: z.string().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateBusiness(id, data);
+        return { id, success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteBusiness(input.id);
+        return { id: input.id, success: true };
       }),
   }),
 

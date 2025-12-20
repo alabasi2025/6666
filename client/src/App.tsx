@@ -10,9 +10,11 @@ import Login from "./pages/Login";
 import CustomSystem from "./pages/CustomSystem";
 
 function Router() {
+  const DEMO_MODE = import.meta.env.DEV || !import.meta.env.VITE_REQUIRE_AUTH;
+  
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={DEMO_MODE ? Dashboard : Home} />
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/:module" component={Dashboard} />
