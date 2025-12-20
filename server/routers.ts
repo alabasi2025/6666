@@ -26,9 +26,17 @@ export const appRouter = router({
   // Authentication
   auth: router({
     me: publicProcedure.query(opts => {
-      // In DEMO_MODE, always return a demo user
+      // In development mode or when no user is logged in, return a demo user
+      const isDevelopment = process.env.NODE_ENV === 'development';
       const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
-      if (DEMO_MODE && !opts.ctx.user) {
+      
+      // If user is logged in, return the user
+      if (opts.ctx.user) {
+        return opts.ctx.user;
+      }
+      
+      // In development or DEMO_MODE, return a demo user for easier testing
+      if (isDevelopment || DEMO_MODE) {
         return {
           id: 1,
           openId: 'demo_user_001',
@@ -52,7 +60,8 @@ export const appRouter = router({
           updatedAt: new Date(),
         };
       }
-      return opts.ctx.user;
+      
+      return null;
     }),
     
     loginWithPhone: publicProcedure

@@ -156,7 +156,7 @@ export const billingRouter = router({
   // ==================== التعرفة ====================
   getTariffs: publicProcedure.query(async () => {
     const db = await getDb();
-    return await db.select().from(tariffs).orderBy\(desc\(tariffs.createdAt\)\);
+    return await db.select().from(tariffs).orderBy(desc(tariffs.createdAt));
   }),
 
   createTariff: publicProcedure.input(z.object({
