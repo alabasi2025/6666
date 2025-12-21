@@ -103,6 +103,11 @@ import Businesses from "./organization/Businesses";
 import Branches from "./organization/Branches";
 import Stations from "./organization/Stations";
 
+// Operations Pages
+import OperationalStructure from "./operations/OperationalStructure";
+import DistributionNetwork from "./operations/DistributionNetwork";
+import MiscAssets from "./operations/MiscAssets";
+
 // Users Management Pages
 import UsersManagement from "./users/UsersManagement";
 
@@ -154,6 +159,16 @@ const navigationItems = [
       { id: "businesses", title: "الشركات", icon: Building2, path: "/dashboard/organization/businesses" },
       { id: "branches", title: "الفروع", icon: GitBranch, path: "/dashboard/organization/branches" },
       { id: "stations", title: "المحطات", icon: Radio, path: "/dashboard/organization/stations" },
+    ],
+  },
+  {
+    id: "operations",
+    title: "المخطط التشغيلي",
+    icon: Zap,
+    children: [
+      { id: "operations-structure", title: "هيكل المحطات", icon: Radio, path: "/dashboard/operations/structure" },
+      { id: "operations-network", title: "شبكة التوزيع", icon: GitBranch, path: "/dashboard/operations/network" },
+      { id: "operations-misc", title: "الأصول المتنوعة", icon: Package, path: "/dashboard/operations/misc" },
     ],
   },
   {
@@ -864,6 +879,17 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/organization/stations") {
       return <Stations />;
+    }
+    
+    // Operations Module (المخطط التشغيلي)
+    if (location === "/dashboard/operations" || location === "/dashboard/operations/structure") {
+      return <OperationalStructure />;
+    }
+    if (location === "/dashboard/operations/network") {
+      return <DistributionNetwork />;
+    }
+    if (location === "/dashboard/operations/misc") {
+      return <MiscAssets />;
     }
     
     // Asset Module

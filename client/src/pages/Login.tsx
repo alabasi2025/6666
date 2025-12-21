@@ -27,14 +27,16 @@ export default function Login() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!phone || !password) {
-      toast.error("يرجى إدخال رقم الهاتف وكلمة المرور");
+    if (!phone) {
+      toast.error("يرجى إدخال رقم الهاتف");
       return;
     }
+    // في الوضع التجريبي، كلمة المرور اختيارية
+    const passwordToSend = password || "demo123";
 
     setIsLoading(true);
     try {
-      await loginMutation.mutateAsync({ phone, password });
+      await loginMutation.mutateAsync({ phone, password: passwordToSend });
     } finally {
       setIsLoading(false);
     }

@@ -8,18 +8,54 @@ export type TrpcContext = {
   user: User | null;
 };
 
+// مستخدم تجريبي للوضع التجريبي
+const demoUser: User = {
+  id: 1,
+  openId: 'demo_user_001',
+  name: 'مستخدم تجريبي',
+  role: 'super_admin',
+  email: null,
+  phone: null,
+  password: null,
+  avatar: null,
+  loginMethod: null,
+  businessId: null,
+  branchId: null,
+  stationId: null,
+  departmentId: null,
+  jobTitle: null,
+  isActive: true,
+  employeeId: null,
+  nameAr: null,
+  lastSignedIn: new Date(),
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
+  
   let user: User | null = null;
-
   try {
     user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
     // Authentication is optional for public procedures.
-    user = null;
+    // في الوضع التجريبي، نستخدم المستخدم التجريبي
+    if (isDevelopment || DEMO_MODE) {
+      user = demoUser;
+    } else {
+      user = null;
+    }
   }
-
+  
+  // في الوضع التجريبي، إذا لم يكن هناك مستخدم، نستخدم المستخدم التجريبي
+  if (!user && (isDevelopment || DEMO_MODE)) {
+    user = demoUser;
+  }
+  
   return {
     req: opts.req,
     res: opts.res,
