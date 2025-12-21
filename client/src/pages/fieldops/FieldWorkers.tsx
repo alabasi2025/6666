@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Search, User, Phone, Mail, Edit, MapPin } from "lucide-react";
+import { Plus, Search, User, Phone, Mail, Edit, MapPin, Eye, Trash2 } from "lucide-react";
 
 interface FieldWorkersProps {
   businessId: number;
@@ -20,6 +20,7 @@ export default function FieldWorkers({ businessId }: FieldWorkersProps) {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingWorker, setEditingWorker] = useState<any>(null);
+  const [viewingWorker, setViewingWorker] = useState<any>(null);
 
   const { data: workers, isLoading, refetch } = trpc.fieldOps.workers.list.useQuery({
     businessId,
@@ -43,6 +44,16 @@ export default function FieldWorkers({ businessId }: FieldWorkersProps) {
     onSuccess: () => {
       toast.success("تم تحديث بيانات العامل بنجاح");
       setEditingWorker(null);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error("حدث خطأ: " + error.message);
+    },
+  });
+
+  const deleteMutation = trpc.fieldOps.workers.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف العامل بنجاح");
       refetch();
     },
     onError: (error) => {
@@ -285,9 +296,26 @@ export default function FieldWorkers({ businessId }: FieldWorkersProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <h3 className="font-medium truncate">{worker.nameAr}</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setEditingWorker(worker)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => setViewingWorker(worker)} title="عرض">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setEditingWorker(worker)} title="تعديل">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            if (confirm("هل أنت متأكد من حذف هذا العامل؟")) {
+                              deleteMutation.mutate({ id: worker.id });
+                            }
+                          }}
+                          title="حذف"
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
                     <p className="text-sm text-muted-foreground font-mono">{worker.employeeNumber}</p>
                     <div className="flex items-center gap-2 mt-2">
@@ -344,6 +372,93 @@ export default function FieldWorkers({ businessId }: FieldWorkersProps) {
             <DialogTitle>تعديل بيانات العامل</DialogTitle>
           </DialogHeader>
           {editingWorker && <WorkerForm worker={editingWorker} onSubmit={handleUpdate} isLoading={updateMutation.isPending} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={!!viewingWorker} onOpenChange={() => setViewingWorker(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              عرض بيانات العامل
+            </DialogTitle>
+          </DialogHeader>
+          {viewingWorker && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-16 w-16">
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                    {viewingWorker.nameAr.charAt(0)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-bold">{viewingWorker.nameAr}</h3>
+                  {viewingWorker.nameEn && <p className="text-muted-foreground">{viewingWorker.nameEn}</p>}
+                  <p className="text-sm text-muted-foreground font-mono">{viewingWorker.employeeNumber}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">المعلومات الأساسية</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">نوع العامل</Label>
+                    <div className="mt-1">{getTypeBadge(viewingWorker.workerType || "technician")}</div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">الحالة</Label>
+                    <div className="mt-1">{getStatusBadge(viewingWorker.status || "available")}</div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">التخصص</Label>
+                    <p className="font-medium">{viewingWorker.specialization || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">الفريق</Label>
+                    <p className="font-medium">{teams?.find((t) => t.id === viewingWorker.teamId)?.nameAr || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">معلومات الاتصال</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">رقم الهاتف</Label>
+                    <p className="font-medium" dir="ltr">{viewingWorker.phone || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">البريد الإلكتروني</Label>
+                    <p className="font-medium">{viewingWorker.email || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">الأجور</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">الأجر اليومي</Label>
+                    <p className="font-medium">{viewingWorker.dailyRate ? `${viewingWorker.dailyRate} ر.س` : "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">أجر العملية</Label>
+                    <p className="font-medium">{viewingWorker.operationRate ? `${viewingWorker.operationRate} ر.س` : "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setViewingWorker(null)}>
+                  إغلاق
+                </Button>
+                <Button onClick={() => { setViewingWorker(null); setEditingWorker(viewingWorker); }}>
+                  تعديل
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

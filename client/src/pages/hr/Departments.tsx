@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Building2, Briefcase } from "lucide-react";
+import { Plus, Edit, Trash2, Building2, Briefcase, Eye } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -20,6 +20,8 @@ export default function Departments({ businessId }: DepartmentsProps) {
   const [isJobOpen, setIsJobOpen] = useState(false);
   const [selectedDept, setSelectedDept] = useState<any>(null);
   const [selectedJob, setSelectedJob] = useState<any>(null);
+  const [viewingDept, setViewingDept] = useState<any>(null);
+  const [viewingJob, setViewingJob] = useState<any>(null);
 
   const { data: departments, refetch: refetchDepts } = trpc.hr.departments.list.useQuery({ businessId });
   const { data: jobTitles, refetch: refetchJobs } = trpc.hr.jobTitles.list.useQuery({ businessId });
@@ -195,10 +197,19 @@ export default function Departments({ businessId }: DepartmentsProps) {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => setViewingDept(dept)}
+                            title="عرض"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => {
                               setSelectedDept(dept);
                               setIsDeptOpen(true);
                             }}
+                            title="تعديل"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -210,6 +221,7 @@ export default function Departments({ businessId }: DepartmentsProps) {
                                 deleteDeptMutation.mutate({ id: dept.id });
                               }
                             }}
+                            title="حذف"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -298,10 +310,19 @@ export default function Departments({ businessId }: DepartmentsProps) {
                           <Button
                             size="sm"
                             variant="ghost"
+                            onClick={() => setViewingJob(job)}
+                            title="عرض"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
                             onClick={() => {
                               setSelectedJob(job);
                               setIsJobOpen(true);
                             }}
+                            title="تعديل"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -313,6 +334,7 @@ export default function Departments({ businessId }: DepartmentsProps) {
                                 deleteJobMutation.mutate({ id: job.id });
                               }
                             }}
+                            title="حذف"
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
@@ -333,6 +355,104 @@ export default function Departments({ businessId }: DepartmentsProps) {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* View Department Dialog */}
+      <Dialog open={!!viewingDept} onOpenChange={() => setViewingDept(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              تفاصيل القسم
+            </DialogTitle>
+          </DialogHeader>
+          {viewingDept && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">رمز القسم</Label>
+                  <p className="font-medium font-mono">{viewingDept.code}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الحالة</Label>
+                  <div className="mt-1">
+                    <Badge variant={viewingDept.isActive ? "default" : "secondary"}>
+                      {viewingDept.isActive ? "نشط" : "غير نشط"}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الاسم (عربي)</Label>
+                  <p className="font-medium">{viewingDept.nameAr}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الاسم (إنجليزي)</Label>
+                  <p className="font-medium">{viewingDept.nameEn || "-"}</p>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setViewingDept(null)}>
+                  إغلاق
+                </Button>
+                <Button onClick={() => { setViewingDept(null); setSelectedDept(viewingDept); setIsDeptOpen(true); }}>
+                  تعديل
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Job Title Dialog */}
+      <Dialog open={!!viewingJob} onOpenChange={() => setViewingJob(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              تفاصيل المسمى الوظيفي
+            </DialogTitle>
+          </DialogHeader>
+          {viewingJob && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">الرمز</Label>
+                  <p className="font-medium font-mono">{viewingJob.code}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الحالة</Label>
+                  <div className="mt-1">
+                    <Badge variant={viewingJob.isActive ? "default" : "secondary"}>
+                      {viewingJob.isActive ? "نشط" : "غير نشط"}
+                    </Badge>
+                  </div>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">المسمى (عربي)</Label>
+                  <p className="font-medium">{viewingJob.titleAr}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">المسمى (إنجليزي)</Label>
+                  <p className="font-medium">{viewingJob.titleEn || "-"}</p>
+                </div>
+                {viewingJob.description && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">الوصف</Label>
+                    <p className="font-medium">{viewingJob.description}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setViewingJob(null)}>
+                  إغلاق
+                </Button>
+                <Button onClick={() => { setViewingJob(null); setSelectedJob(viewingJob); setIsJobOpen(true); }}>
+                  تعديل
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

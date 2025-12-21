@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Search, Edit, Trash2, Link2, Unlink } from "lucide-react";
+import { Plus, Search, Edit, Trash2, Link2, Unlink, Eye } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -18,7 +18,9 @@ interface EmployeesProps {
 export default function Employees({ businessId }: EmployeesProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isLinkOpen, setIsLinkOpen] = useState(false);
+  const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
+  const [viewingEmployee, setViewingEmployee] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
@@ -309,9 +311,21 @@ export default function Employees({ businessId }: EmployeesProps) {
                         size="sm"
                         variant="ghost"
                         onClick={() => {
+                          setViewingEmployee(emp);
+                          setIsViewOpen(true);
+                        }}
+                        title="عرض"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => {
                           setSelectedEmployee(emp);
                           setIsOpen(true);
                         }}
+                        title="تعديل"
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -397,6 +411,90 @@ export default function Employees({ businessId }: EmployeesProps) {
               )}
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Employee Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              عرض بيانات الموظف
+            </DialogTitle>
+          </DialogHeader>
+          {viewingEmployee && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">المعلومات الأساسية</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">رقم الموظف</Label>
+                    <p className="font-medium font-mono">{viewingEmployee.employeeNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">رقم الهوية</Label>
+                    <p className="font-medium">{viewingEmployee.idNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">الاسم الكامل</Label>
+                    <p className="font-medium">{viewingEmployee.firstName} {viewingEmployee.middleName} {viewingEmployee.lastName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">القسم</Label>
+                    <p className="font-medium">{departments?.find((d: any) => d.id === viewingEmployee.departmentId)?.nameAr || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">المسمى الوظيفي</Label>
+                    <p className="font-medium">{jobTitles?.find((j: any) => j.id === viewingEmployee.jobTitleId)?.titleAr || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">تاريخ التعيين</Label>
+                    <p className="font-medium">{viewingEmployee.hireDate ? new Date(viewingEmployee.hireDate).toLocaleDateString("ar-SA") : "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">معلومات الاتصال</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">الجوال</Label>
+                    <p className="font-medium" dir="ltr">{viewingEmployee.mobile}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">البريد الإلكتروني</Label>
+                    <p className="font-medium">{viewingEmployee.email || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">الحالة</h3>
+                <div className="flex items-center gap-4">
+                  {getStatusBadge(viewingEmployee.status)}
+                  {viewingEmployee.fieldWorkerId ? (
+                    <Badge variant="outline" className="bg-green-50 text-green-700">
+                      مرتبط بعامل ميداني
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="bg-gray-50 text-gray-500">
+                      غير مرتبط
+                    </Badge>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setIsViewOpen(false)}>
+                  إغلاق
+                </Button>
+                <Button onClick={() => { setIsViewOpen(false); setSelectedEmployee(viewingEmployee); setIsOpen(true); }}>
+                  تعديل
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

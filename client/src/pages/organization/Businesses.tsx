@@ -8,7 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, Search, Edit, Trash2, MoreHorizontal, Phone, Mail, Globe, FileText } from "lucide-react";
+import { Building2, Plus, Search, Edit, Trash2, MoreHorizontal, Phone, Mail, Globe, FileText, Eye } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -33,7 +33,9 @@ interface Business {
 export default function Businesses() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
+  const [viewingBusiness, setViewingBusiness] = useState<Business | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     code: "",
@@ -123,6 +125,11 @@ export default function Businesses() {
       taxNumber: formData.taxNumber || undefined,
       currency: formData.currency,
     });
+  };
+
+  const handleView = (business: Business) => {
+    setViewingBusiness(business);
+    setIsViewDialogOpen(true);
   };
 
   const handleEdit = (business: Business) => {
@@ -587,10 +594,13 @@ export default function Businesses() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(business)}>
+                          <Button variant="ghost" size="icon" onClick={() => handleView(business)} title="عرض">
+                            <Eye className="w-4 h-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(business)} title="تعديل">
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(business.id)}>
+                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(business.id)} title="حذف">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -752,6 +762,86 @@ export default function Businesses() {
                 </Button>
               </DialogFooter>
             </form>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              عرض بيانات الشركة
+            </DialogTitle>
+          </DialogHeader>
+          
+          {viewingBusiness && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">المعلومات الأساسية</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">كود الشركة</Label>
+                    <p className="font-medium">{viewingBusiness.code}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">نوع الشركة</Label>
+                    <p className="font-medium">{getTypeLabel(viewingBusiness.type)}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">الاسم بالعربي</Label>
+                    <p className="font-medium">{viewingBusiness.nameAr}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">الاسم بالإنجليزي</Label>
+                    <p className="font-medium">{viewingBusiness.nameEn || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">نوع النظام</Label>
+                    <p className="font-medium">{viewingBusiness.systemType === "energy" ? "نظام كهرباء" : "نظام مخصص"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">العملة</Label>
+                    <p className="font-medium">{viewingBusiness.currency}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">معلومات الاتصال</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">الهاتف</Label>
+                    <p className="font-medium">{viewingBusiness.phone || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">البريد الإلكتروني</Label>
+                    <p className="font-medium">{viewingBusiness.email || "-"}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">العنوان</Label>
+                    <p className="font-medium">{viewingBusiness.address || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">الحالة</h3>
+                <Badge variant={viewingBusiness.isActive ? "default" : "secondary"}>
+                  {viewingBusiness.isActive ? "نشط" : "غير نشط"}
+                </Badge>
+              </div>
+
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setIsViewDialogOpen(false)}>
+                  إغلاق
+                </Button>
+                <Button onClick={() => { setIsViewDialogOpen(false); handleEdit(viewingBusiness); }}>
+                  تعديل
+                </Button>
+              </DialogFooter>
+            </div>
           )}
         </DialogContent>
       </Dialog>

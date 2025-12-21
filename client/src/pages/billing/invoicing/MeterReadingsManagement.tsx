@@ -41,6 +41,8 @@ export default function MeterReadingsManagement() {
   const [showBulkEntryDialog, setShowBulkEntryDialog] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterPeriod, setFilterPeriod] = useState<string>("all");
+  const [selectedReading, setSelectedReading] = useState<MeterReading | null>(null);
+  const [editingReading, setEditingReading] = useState<MeterReading | null>(null);
   
   const [formData, setFormData] = useState({
     meterId: "",
@@ -59,6 +61,18 @@ export default function MeterReadingsManagement() {
   const createReadingMutation = trpc.billing.createMeterReading.useMutation();
   const approveReadingsMutation = trpc.billing.approveReadings.useMutation();
   const rejectReadingsMutation = trpc.billing.rejectReadings.useMutation();
+  const deleteReadingMutation = trpc.billing.deleteMeterReading.useMutation();
+
+  const handleDeleteReading = async (id: number) => {
+    if (confirm("هل أنت متأكد من حذف هذه القراءة؟")) {
+      try {
+        await deleteReadingMutation.mutateAsync({ id });
+        readingsQuery.refetch();
+      } catch (error) {
+        console.error("Error deleting reading:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     if (readingsQuery.data) {
@@ -286,6 +300,7 @@ export default function MeterReadingsManagement() {
                     <TableHead>النوع</TableHead>
                     <TableHead>التاريخ</TableHead>
                     <TableHead>الحالة</TableHead>
+                    <TableHead>الإجراءات</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -321,6 +336,23 @@ export default function MeterReadingsManagement() {
                           ) : (
                             <Badge className="bg-yellow-100 text-yellow-800">معلق</Badge>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" onClick={() => setSelectedReading(reading)} title="عرض">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            {!reading.isApproved && (
+                              <>
+                                <Button variant="ghost" size="icon" onClick={() => setEditingReading(reading)} title="تعديل">
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleDeleteReading(reading.id)} className="text-red-500" title="حذف">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
@@ -450,6 +482,77 @@ export default function MeterReadingsManagement() {
               <Button>حفظ الكل</Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Reading Dialog */}
+      <Dialog open={!!selectedReading} onOpenChange={() => setSelectedReading(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              تفاصيل القراءة
+            </DialogTitle>
+          </DialogHeader>
+          {selectedReading && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground">رقم العداد</Label>
+                  <p className="font-medium font-mono">{selectedReading.meterNumber}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">العميل</Label>
+                  <p className="font-medium">{selectedReading.customerName}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الفترة</Label>
+                  <p className="font-medium">{selectedReading.billingPeriodName}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">تاريخ القراءة</Label>
+                  <p className="font-medium">{new Date(selectedReading.readingDate).toLocaleDateString("ar-SA")}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">القراءة السابقة</Label>
+                  <p className="font-medium">{parseFloat(selectedReading.previousReading).toLocaleString()}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">القراءة الحالية</Label>
+                  <p className="font-medium">{parseFloat(selectedReading.currentReading).toLocaleString()}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الاستهلاك</Label>
+                  <p className="font-medium text-lg">{parseFloat(selectedReading.consumption).toLocaleString()} ك.و.س</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">نوع القراءة</Label>
+                  <p className="font-medium">{getReadingTypeLabel(selectedReading.readingType)}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground">الحالة</Label>
+                  <div className="mt-1">
+                    {selectedReading.isApproved ? (
+                      <Badge className="bg-green-100 text-green-800">معتمد</Badge>
+                    ) : (
+                      <Badge className="bg-yellow-100 text-yellow-800">معلق</Badge>
+                    )}
+                  </div>
+                </div>
+                {selectedReading.notes && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">ملاحظات</Label>
+                    <p className="font-medium">{selectedReading.notes}</p>
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setSelectedReading(null)}>
+                  إغلاق
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

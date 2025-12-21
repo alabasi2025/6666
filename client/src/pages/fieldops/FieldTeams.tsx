@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Plus, Search, Users, Edit, UserPlus } from "lucide-react";
+import { Plus, Search, Users, Edit, UserPlus, Eye, Trash2 } from "lucide-react";
 
 interface FieldTeamsProps {
   businessId: number;
@@ -19,6 +19,7 @@ export default function FieldTeams({ businessId }: FieldTeamsProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingTeam, setEditingTeam] = useState<any>(null);
+  const [viewingTeam, setViewingTeam] = useState<any>(null);
 
   const { data: teams, isLoading, refetch } = trpc.fieldOps.teams.list.useQuery({ businessId });
   const { data: workers } = trpc.fieldOps.workers.list.useQuery({ businessId });
@@ -38,6 +39,16 @@ export default function FieldTeams({ businessId }: FieldTeamsProps) {
     onSuccess: () => {
       toast.success("تم تحديث الفريق بنجاح");
       setEditingTeam(null);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error("حدث خطأ: " + error.message);
+    },
+  });
+
+  const deleteMutation = trpc.fieldOps.teams.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف الفريق بنجاح");
       refetch();
     },
     onError: (error) => {
@@ -245,9 +256,26 @@ export default function FieldTeams({ businessId }: FieldTeamsProps) {
                     <Users className="h-5 w-5" />
                     {team.nameAr}
                   </CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setEditingTeam(team)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setViewingTeam(team)} title="عرض">
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setEditingTeam(team)} title="تعديل">
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => {
+                        if (confirm("هل أنت متأكد من حذف هذا الفريق؟")) {
+                          deleteMutation.mutate({ id: team.id });
+                        }
+                      }}
+                      title="حذف"
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -295,6 +323,74 @@ export default function FieldTeams({ businessId }: FieldTeamsProps) {
             <DialogTitle>تعديل الفريق</DialogTitle>
           </DialogHeader>
           {editingTeam && <TeamForm team={editingTeam} onSubmit={handleUpdate} isLoading={updateMutation.isPending} />}
+        </DialogContent>
+      </Dialog>
+
+      {/* View Dialog */}
+      <Dialog open={!!viewingTeam} onOpenChange={() => setViewingTeam(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="w-5 h-5 text-primary" />
+              عرض بيانات الفريق
+            </DialogTitle>
+          </DialogHeader>
+          {viewingTeam && (
+            <div className="space-y-6">
+              <div className="flex items-center gap-4">
+                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Users className="h-8 w-8 text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{viewingTeam.nameAr}</h3>
+                  {viewingTeam.nameEn && <p className="text-muted-foreground">{viewingTeam.nameEn}</p>}
+                  <p className="text-sm text-muted-foreground font-mono">{viewingTeam.code}</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">المعلومات الأساسية</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">نوع الفريق</Label>
+                    <div className="mt-1">{getTypeBadge(viewingTeam.teamType || "mixed")}</div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">الحالة</Label>
+                    <div className="mt-1">{getStatusBadge(viewingTeam.status || "active")}</div>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">قائد الفريق</Label>
+                    <p className="font-medium">{workers?.find((w) => w.id === viewingTeam.leaderId)?.nameAr || "-"}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">الحد الأقصى للأعضاء</Label>
+                    <p className="font-medium">{viewingTeam.maxMembers}</p>
+                  </div>
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground">منطقة العمل</Label>
+                    <p className="font-medium">{viewingTeam.workingArea || "-"}</p>
+                  </div>
+                </div>
+              </div>
+
+              {viewingTeam.notes && (
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-foreground border-b pb-2">ملاحظات</h3>
+                  <p className="text-muted-foreground">{viewingTeam.notes}</p>
+                </div>
+              )}
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setViewingTeam(null)}>
+                  إغلاق
+                </Button>
+                <Button onClick={() => { setViewingTeam(null); setEditingTeam(viewingTeam); }}>
+                  تعديل
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
