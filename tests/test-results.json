@@ -1,0 +1,434 @@
+{
+  "passed": 0,
+  "failed": 53,
+  "authRequired": 0,
+  "skipped": 0,
+  "total": 53,
+  "avgTime": 3.2641509433962264,
+  "results": [
+    {
+      "router": "assets",
+      "endpoint": "assets.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.list\"}}}",
+      "responseTime": 50
+    },
+    {
+      "router": "assets",
+      "endpoint": "assets.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.getById\"}}}",
+      "responseTime": 5
+    },
+    {
+      "router": "assets",
+      "endpoint": "assets.categories.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.categories.list\"}}}",
+      "responseTime": 3
+    },
+    {
+      "router": "assets",
+      "endpoint": "assets.movements.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.movements.list\"}}}",
+      "responseTime": 3
+    },
+    {
+      "router": "assets",
+      "endpoint": "assets.depreciation.getHistory",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.depreciation.getHistory\"}}}",
+      "responseTime": 4
+    },
+    {
+      "router": "assets",
+      "endpoint": "assets.dashboardStats",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.dashboardStats\"}}}",
+      "responseTime": 3
+    },
+    {
+      "router": "assets",
+      "endpoint": "assets.stations.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.stations.list\"}}}",
+      "responseTime": 3
+    },
+    {
+      "router": "assets",
+      "endpoint": "assets.create",
+      "method": "POST",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"assets.create\"}}}",
+      "responseTime": 6
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.accounts.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.accounts.list\"}}}",
+      "responseTime": 4
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.accounts.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.accounts.getById\"}}}",
+      "responseTime": 4
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.journalEntries.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.journalEntries.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.journalEntries.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.journalEntries.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.generalLedger",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"No procedure found on path \\\"accounting.generalLedger\\\"\",\"code\":-32004,\"data\":{\"code\":\"NOT_FOUND\",\"httpStatus\":404,\"stack\":\"TRPCError: No procedure found on path \\\"accounting.generalLedger\\\"\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:325:17)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.generalLedger\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.reports.trialBalance",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.reports.trialBalance\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.reports.incomeStatement",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.reports.incomeStatement\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.reports.balanceSheet",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.reports.balanceSheet\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.fiscalPeriods.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.fiscalPeriods.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.costCenters.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.costCenters.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "accounting",
+      "endpoint": "accounting.accounts.create",
+      "method": "POST",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"accounting.accounts.create\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.items.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.items.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.items.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.items.getById\"}}}",
+      "responseTime": 1
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.warehouses.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.warehouses.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.warehouses.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.warehouses.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.categories.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.categories.list\"}}}",
+      "responseTime": 3
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.movements.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.movements.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.stock.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"No procedure found on path \\\"inventory.stock.list\\\"\",\"code\":-32004,\"data\":{\"code\":\"NOT_FOUND\",\"httpStatus\":404,\"stack\":\"TRPCError: No procedure found on path \\\"inventory.stock.list\\\"\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:325:17)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.stock.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.dashboardStats",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.dashboardStats\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "inventory",
+      "endpoint": "inventory.items.create",
+      "method": "POST",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"inventory.items.create\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.workOrders.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.workOrders.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.workOrders.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.workOrders.getById\"}}}",
+      "responseTime": 3
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.plans.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.plans.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.plans.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.plans.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.technicians.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.technicians.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.technicians.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.technicians.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.dashboardStats",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.dashboardStats\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "maintenance",
+      "endpoint": "maintenance.workOrders.create",
+      "method": "POST",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"Please login (10001)\",\"code\":-32001,\"data\":{\"code\":\"UNAUTHORIZED\",\"httpStatus\":401,\"stack\":\"TRPCError: Please login (10001)\\n    at <anonymous> (/home/ubuntu/6666/server/_core/trpc.ts:17:11)\\n    at callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:26)\\n    at procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:26)\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:37)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"maintenance.workOrders.create\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "projects",
+      "endpoint": "projects.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"projects.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "projects",
+      "endpoint": "projects.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"projects.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "projects",
+      "endpoint": "projects.stats",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"projects.stats\"}}}",
+      "responseTime": 1
+    },
+    {
+      "router": "projects",
+      "endpoint": "projects.phases.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"projects.phases.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "projects",
+      "endpoint": "projects.tasks.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"projects.tasks.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "projects",
+      "endpoint": "projects.gantt",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"No procedure found on path \\\"projects.gantt\\\"\",\"code\":-32004,\"data\":{\"code\":\"NOT_FOUND\",\"httpStatus\":404,\"stack\":\"TRPCError: No procedure found on path \\\"projects.gantt\\\"\\n    at <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:325:17)\\n    at Array.map (<anonymous>)\\n    at resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:317:33)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"projects.gantt\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "projects",
+      "endpoint": "projects.create",
+      "method": "POST",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"projects.create\"}}}",
+      "responseTime": 3
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.dashboard",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.dashboard\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.stats",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.stats\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.equipment.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.equipment.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.equipment.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.equipment.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.sensors.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.sensors.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.sensors.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.sensors.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.alerts.list",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.alerts.list\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.alerts.getById",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.alerts.getById\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.alerts.stats",
+      "method": "GET",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.alerts.stats\"}}}",
+      "responseTime": 2
+    },
+    {
+      "router": "scada",
+      "endpoint": "scada.equipment.create",
+      "method": "POST",
+      "status": "FAIL",
+      "message": "{\"json\":{\"message\":\"[\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\",\"code\":-32600,\"data\":{\"code\":\"BAD_REQUEST\",\"httpStatus\":400,\"stack\":\"TRPCError: [\\n  {\\n    \\\"expected\\\": \\\"object\\\",\\n    \\\"code\\\": \\\"invalid_type\\\",\\n    \\\"path\\\": [],\\n    \\\"message\\\": \\\"Invalid input: expected object, received undefined\\\"\\n  }\\n]\\n    at inputValidatorMiddleware (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/middleware.ts:191:15)\\n    at process.processTicksAndRejections (node:internal/process/task_queues:105:5)\\n    at async callRecursive (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:633:20)\\n    at async procedure (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/procedureBuilder.ts:673:20)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:347:31)\\n    at async resolveResponse (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/unstable-core-do-not-import/http/resolveResponse.ts:375:31)\\n    at async <anonymous> (/home/ubuntu/6666/node_modules/.pnpm/@trpc+server@11.6.0_typescript@5.9.3/node_modules/@trpc/server/src/adapters/node-http/nodeHTTPRequestHandler.ts:100:26)\",\"path\":\"scada.equipment.create\"}}}",
+      "responseTime": 3
+    }
+  ]
+}

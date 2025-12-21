@@ -1,0 +1,355 @@
+{
+  "passed": 29,
+  "failed": 9,
+  "skipped": 0,
+  "total": 38,
+  "avgTime": 0.05263157894736842,
+  "results": [
+    {
+      "module": "assets",
+      "function": "getAssets",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "assets",
+      "function": "getAssetCategories",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "assets",
+      "function": "createAsset",
+      "status": "FAIL",
+      "message": "Database not available",
+      "executionTime": 0
+    },
+    {
+      "module": "assets",
+      "function": "getAssetMovements",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "assets",
+      "function": "getAssetDashboardStats",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "totalAssets": 0,
+        "activeAssets": 0,
+        "totalValue": 0,
+        "totalDepreciation": 0
+      }
+    },
+    {
+      "module": "accounting",
+      "function": "getAccounts",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "accounting",
+      "function": "createAccount",
+      "status": "FAIL",
+      "message": "Database not available",
+      "executionTime": 0
+    },
+    {
+      "module": "accounting",
+      "function": "getJournalEntries",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "accounting",
+      "function": "getTrialBalance",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "accounting",
+      "function": "getIncomeStatement",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "revenues": [],
+        "expenses": [],
+        "totalRevenue": 0,
+        "totalExpense": 0,
+        "netIncome": 0
+      }
+    },
+    {
+      "module": "accounting",
+      "function": "getBalanceSheet",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 1,
+      "data": {
+        "assets": [],
+        "liabilities": [],
+        "equity": [],
+        "totalAssets": 0,
+        "totalLiabilities": 0,
+        "totalEquity": 0
+      }
+    },
+    {
+      "module": "accounting",
+      "function": "getFiscalPeriods",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "accounting",
+      "function": "getCostCenters",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "inventory",
+      "function": "getInventoryItems",
+      "status": "FAIL",
+      "message": "db.getInventoryItems is not a function",
+      "executionTime": 0
+    },
+    {
+      "module": "inventory",
+      "function": "createInventoryItem",
+      "status": "FAIL",
+      "message": "db.createInventoryItem is not a function",
+      "executionTime": 0
+    },
+    {
+      "module": "inventory",
+      "function": "getWarehouses",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "inventory",
+      "function": "createWarehouse",
+      "status": "FAIL",
+      "message": "Database not available",
+      "executionTime": 0
+    },
+    {
+      "module": "inventory",
+      "function": "getInventoryCategories",
+      "status": "FAIL",
+      "message": "db.getInventoryCategories is not a function",
+      "executionTime": 0
+    },
+    {
+      "module": "inventory",
+      "function": "getInventoryMovements",
+      "status": "FAIL",
+      "message": "db.getInventoryMovements is not a function",
+      "executionTime": 0
+    },
+    {
+      "module": "inventory",
+      "function": "getInventoryDashboardStats",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "totalItems": 0,
+        "totalWarehouses": 0,
+        "lowStockItems": 0,
+        "totalValue": 0
+      }
+    },
+    {
+      "module": "maintenance",
+      "function": "getWorkOrders",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "maintenance",
+      "function": "createWorkOrder",
+      "status": "FAIL",
+      "message": "Database not available",
+      "executionTime": 0
+    },
+    {
+      "module": "maintenance",
+      "function": "getMaintenancePlans",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "maintenance",
+      "function": "getTechnicians",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "maintenance",
+      "function": "getMaintenanceDashboardStats",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "totalWorkOrders": 0,
+        "pendingOrders": 0,
+        "completedOrders": 0,
+        "activePlans": 0
+      }
+    },
+    {
+      "module": "projects",
+      "function": "getProjects",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "projects",
+      "function": "createProject",
+      "status": "FAIL",
+      "message": "Database not available",
+      "executionTime": 0
+    },
+    {
+      "module": "projects",
+      "function": "getProjectsStats",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "total": 0,
+        "active": 0,
+        "completed": 0,
+        "onHold": 0,
+        "totalBudget": 0
+      }
+    },
+    {
+      "module": "projects",
+      "function": "getProjectGanttData",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 1,
+      "data": {
+        "phases": [],
+        "tasks": []
+      }
+    },
+    {
+      "module": "scada",
+      "function": "getScadaEquipment",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "scada",
+      "function": "createScadaEquipment",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0
+    },
+    {
+      "module": "scada",
+      "function": "getScadaSensors",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "scada",
+      "function": "createScadaSensor",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0
+    },
+    {
+      "module": "scada",
+      "function": "getScadaAlerts",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": []
+    },
+    {
+      "module": "scada",
+      "function": "createScadaAlert",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0
+    },
+    {
+      "module": "scada",
+      "function": "getScadaDashboard",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "equipment": [],
+        "sensors": [],
+        "alerts": []
+      }
+    },
+    {
+      "module": "scada",
+      "function": "getScadaStats",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "totalEquipment": 0,
+        "onlineEquipment": 0,
+        "offlineEquipment": 0,
+        "totalSensors": 0,
+        "activeSensors": 0,
+        "activeAlerts": 0,
+        "criticalAlerts": 0
+      }
+    },
+    {
+      "module": "scada",
+      "function": "getScadaAlertsStats",
+      "status": "PASS",
+      "message": "Success",
+      "executionTime": 0,
+      "data": {
+        "total": 0,
+        "active": 0,
+        "acknowledged": 0,
+        "resolved": 0
+      }
+    }
+  ]
+}
