@@ -3641,3 +3641,401 @@ export async function getEquipmentDowntimeReport(businessId: number, filters: an
   // TODO: Implement downtime tracking
   return [];
 }
+
+
+
+// ============================================
+// Projects System Functions (Extended)
+// ============================================
+
+export async function updateProject(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { ...data };
+  if (data.startDate) updateData.startDate = new Date(data.startDate);
+  if (data.endDate) updateData.endDate = new Date(data.endDate);
+  
+  await db.update(projects).set(updateData).where(eq(projects.id, id));
+}
+
+export async function deleteProject(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(projectTasks).where(eq(projectTasks.projectId, id));
+  await db.delete(projectPhases).where(eq(projectPhases.projectId, id));
+  await db.delete(projects).where(eq(projects.id, id));
+}
+
+export async function getProjectPhases(projectId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(projectPhases)
+    .where(eq(projectPhases.projectId, projectId))
+    .orderBy(asc(projectPhases.sortOrder));
+}
+
+export async function createProjectPhase(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(projectPhases).values({
+    projectId: data.projectId,
+    nameAr: data.nameAr,
+    nameEn: data.nameEn,
+    description: data.description,
+    startDate: data.startDate ? new Date(data.startDate) : null,
+    endDate: data.endDate ? new Date(data.endDate) : null,
+    status: data.status || "pending",
+    progress: data.progress || 0,
+    sortOrder: data.sortOrder || 0,
+  });
+  
+  return result.insertId;
+}
+
+export async function updateProjectPhase(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { ...data };
+  if (data.startDate) updateData.startDate = new Date(data.startDate);
+  if (data.endDate) updateData.endDate = new Date(data.endDate);
+  
+  await db.update(projectPhases).set(updateData).where(eq(projectPhases.id, id));
+}
+
+export async function deleteProjectPhase(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(projectPhases).where(eq(projectPhases.id, id));
+}
+
+export async function getProjectTasks(projectId: number, phaseId?: number, status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(projectTasks.projectId, projectId)];
+  if (phaseId) conditions.push(eq(projectTasks.phaseId, phaseId));
+  
+  return await db.select().from(projectTasks)
+    .where(and(...conditions))
+    .orderBy(asc(projectTasks.dueDate));
+}
+
+export async function createProjectTask(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(projectTasks).values({
+    projectId: data.projectId,
+    phaseId: data.phaseId,
+    nameAr: data.nameAr,
+    nameEn: data.nameEn,
+    description: data.description,
+    assigneeId: data.assigneeId,
+    startDate: data.startDate ? new Date(data.startDate) : null,
+    dueDate: data.dueDate ? new Date(data.dueDate) : null,
+    priority: data.priority || "medium",
+    status: data.status || "pending",
+    progress: data.progress || 0,
+    estimatedHours: data.estimatedHours,
+    actualHours: data.actualHours,
+  });
+  
+  return result.insertId;
+}
+
+export async function updateProjectTask(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { ...data };
+  if (data.startDate) updateData.startDate = new Date(data.startDate);
+  if (data.dueDate) updateData.dueDate = new Date(data.dueDate);
+  
+  await db.update(projectTasks).set(updateData).where(eq(projectTasks.id, id));
+}
+
+export async function deleteProjectTask(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(projectTasks).where(eq(projectTasks.id, id));
+}
+
+export async function getProjectsStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return { total: 0, active: 0, completed: 0, onHold: 0, totalBudget: 0 };
+  
+  const allProjects = await db.select().from(projects).where(eq(projects.businessId, businessId));
+  
+  return {
+    total: allProjects.length,
+    active: allProjects.filter(p => p.status === "in_progress").length,
+    completed: allProjects.filter(p => p.status === "completed").length,
+    onHold: allProjects.filter(p => p.status === "on_hold").length,
+    planning: allProjects.filter(p => p.status === "planning").length,
+    totalBudget: allProjects.reduce((sum, p) => sum + parseFloat(p.budget || "0"), 0),
+  };
+}
+
+export async function getProjectGanttData(projectId: number) {
+  const db = await getDb();
+  if (!db) return { phases: [], tasks: [] };
+  
+  const phases = await getProjectPhases(projectId);
+  const tasks = await getProjectTasks(projectId);
+  
+  return { phases, tasks };
+}
+
+// ============================================
+// SCADA System Functions
+// ============================================
+
+export async function getScadaEquipment(businessId: number, status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(equipment.businessId, businessId)];
+  if (status) conditions.push(eq(equipment.status, status as any));
+  
+  return await db.select().from(equipment)
+    .where(and(...conditions))
+    .orderBy(desc(equipment.createdAt));
+}
+
+export async function getScadaEquipmentById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(equipment).where(eq(equipment.id, id));
+  return result || null;
+}
+
+export async function createScadaEquipment(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(equipment).values({
+    businessId: data.businessId,
+    code: data.code,
+    nameAr: data.nameAr,
+    nameEn: data.nameEn,
+    type: data.type,
+    manufacturer: data.manufacturer,
+    model: data.model,
+    serialNumber: data.serialNumber,
+    location: data.location,
+    installationDate: data.installationDate ? new Date(data.installationDate) : null,
+    status: data.status || "active",
+    description: data.description,
+  });
+  
+  return result.insertId;
+}
+
+export async function updateScadaEquipment(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { ...data };
+  if (data.installationDate) updateData.installationDate = new Date(data.installationDate);
+  
+  await db.update(equipment).set(updateData).where(eq(equipment.id, id));
+}
+
+export async function deleteScadaEquipment(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(equipment).where(eq(equipment.id, id));
+}
+
+export async function getScadaSensors(businessId: number, status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(sensors.businessId, businessId)];
+  if (status) conditions.push(eq(sensors.status, status as any));
+  
+  return await db.select().from(sensors)
+    .where(and(...conditions))
+    .orderBy(desc(sensors.createdAt));
+}
+
+export async function getScadaSensorById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(sensors).where(eq(sensors.id, id));
+  return result || null;
+}
+
+export async function createScadaSensor(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(sensors).values({
+    businessId: data.businessId,
+    equipmentId: data.equipmentId,
+    code: data.code,
+    nameAr: data.nameAr,
+    nameEn: data.nameEn,
+    type: data.type,
+    unit: data.unit,
+    minValue: data.minValue,
+    maxValue: data.maxValue,
+    warningThreshold: data.warningThreshold,
+    criticalThreshold: data.criticalThreshold,
+    location: data.location,
+    status: data.status || "active",
+  });
+  
+  return result.insertId;
+}
+
+export async function updateScadaSensor(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(sensors).set(data).where(eq(sensors.id, id));
+}
+
+export async function deleteScadaSensor(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(sensors).where(eq(sensors.id, id));
+}
+
+export async function getScadaAlerts(businessId: number, type?: string, status?: string) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [eq(alerts.businessId, businessId)];
+  if (type) conditions.push(eq(alerts.alertType, type as any));
+  if (status) conditions.push(eq(alerts.status, status as any));
+  
+  return await db.select().from(alerts)
+    .where(and(...conditions))
+    .orderBy(desc(alerts.createdAt));
+}
+
+export async function getScadaAlertById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(alerts).where(eq(alerts.id, id));
+  return result || null;
+}
+
+export async function createScadaAlert(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(alerts).values({
+    businessId: data.businessId,
+    equipmentId: data.equipmentId,
+    sensorId: data.sensorId,
+    alertType: data.alertType || "warning",
+    title: data.title,
+    message: data.message,
+    priority: data.priority || "medium",
+    status: "active",
+  });
+  
+  return result.insertId;
+}
+
+export async function updateScadaAlertStatus(id: number, status: string, resolvedBy?: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { status };
+  if (status === "acknowledged") {
+    updateData.acknowledgedAt = new Date();
+  } else if (status === "resolved") {
+    updateData.resolvedAt = new Date();
+    if (resolvedBy) updateData.resolvedBy = resolvedBy;
+  }
+  
+  await db.update(alerts).set(updateData).where(eq(alerts.id, id));
+}
+
+export async function deleteScadaAlert(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(alerts).where(eq(alerts.id, id));
+}
+
+export async function getScadaDashboard(businessId: number) {
+  const db = await getDb();
+  if (!db) return { equipment: [], sensors: [], alerts: [] };
+  
+  const [equipmentList, sensorsList, alertsList] = await Promise.all([
+    db.select().from(equipment).where(eq(equipment.businessId, businessId)).limit(10),
+    db.select().from(sensors).where(eq(sensors.businessId, businessId)).limit(10),
+    db.select().from(alerts).where(and(
+      eq(alerts.businessId, businessId),
+      eq(alerts.status, "active")
+    )).limit(10),
+  ]);
+  
+  return {
+    equipment: equipmentList,
+    sensors: sensorsList,
+    alerts: alertsList,
+  };
+}
+
+export async function getScadaStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return {
+    totalEquipment: 0,
+    onlineEquipment: 0,
+    offlineEquipment: 0,
+    totalSensors: 0,
+    activeSensors: 0,
+    activeAlerts: 0,
+    criticalAlerts: 0,
+  };
+  
+  const [equipmentList, sensorsList, alertsList] = await Promise.all([
+    db.select().from(equipment).where(eq(equipment.businessId, businessId)),
+    db.select().from(sensors).where(eq(sensors.businessId, businessId)),
+    db.select().from(alerts).where(and(
+      eq(alerts.businessId, businessId),
+      eq(alerts.status, "active")
+    )),
+  ]);
+  
+  return {
+    totalEquipment: equipmentList.length,
+    onlineEquipment: equipmentList.filter(e => e.status === "online" || e.status === "active").length,
+    offlineEquipment: equipmentList.filter(e => e.status === "offline" || e.status === "inactive").length,
+    totalSensors: sensorsList.length,
+    activeSensors: sensorsList.filter(s => s.status === "active").length,
+    activeAlerts: alertsList.length,
+    criticalAlerts: alertsList.filter(a => a.alertType === "critical" || a.alertType === "emergency").length,
+  };
+}
+
+export async function getScadaAlertsStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return { total: 0, active: 0, acknowledged: 0, resolved: 0 };
+  
+  const alertsList = await db.select().from(alerts).where(eq(alerts.businessId, businessId));
+  
+  return {
+    total: alertsList.length,
+    active: alertsList.filter(a => a.status === "active").length,
+    acknowledged: alertsList.filter(a => a.status === "acknowledged").length,
+    resolved: alertsList.filter(a => a.status === "resolved").length,
+  };
+}

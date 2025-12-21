@@ -18,17 +18,25 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  FolderKanban, Plus, Search, Filter, Calendar, Users,
+  FolderKanban, Plus, Search, Calendar, Users,
   DollarSign, Clock, CheckCircle, AlertTriangle, Pause,
-  Play, MoreVertical, Eye, Edit, Trash2, BarChart3,
-  TrendingUp, Target, Briefcase, MapPin
+  Play, Eye, Edit, Trash2, Target, Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocation } from "wouter";
+import { trpc } from "@/lib/trpc";
 
 // Project Status Badge
 function ProjectStatusBadge({ status }: { status: string }) {
@@ -69,141 +77,137 @@ function PriorityBadge({ priority }: { priority: string }) {
   );
 }
 
-// Sample Projects Data
-const projectsData = [
-  {
-    id: 1,
-    name: "توسعة محطة الرياض الرئيسية",
-    code: "PRJ-2024-001",
-    description: "مشروع توسعة المحطة لزيادة القدرة الإنتاجية بنسبة 50%",
-    status: "in_progress",
-    priority: "high",
-    progress: 65,
-    startDate: "2024-01-15",
-    endDate: "2024-12-31",
-    budget: 5000000,
-    spent: 3250000,
-    manager: "أحمد محمد",
-    team: 12,
-    tasks: { total: 45, completed: 29 },
-    location: "الرياض",
-    client: "شركة الكهرباء السعودية",
-  },
-  {
-    id: 2,
-    name: "تحديث نظام SCADA",
-    code: "PRJ-2024-002",
-    description: "تحديث وتطوير نظام المراقبة والتحكم في جميع المحطات",
-    status: "in_progress",
-    priority: "critical",
-    progress: 40,
-    startDate: "2024-03-01",
-    endDate: "2024-09-30",
-    budget: 2500000,
-    spent: 1000000,
-    manager: "سارة أحمد",
-    team: 8,
-    tasks: { total: 32, completed: 13 },
-    location: "جميع المحطات",
-    client: "داخلي",
-  },
-  {
-    id: 3,
-    name: "إنشاء محطة جدة الفرعية",
-    code: "PRJ-2024-003",
-    description: "إنشاء محطة فرعية جديدة في منطقة جدة الصناعية",
-    status: "planning",
-    priority: "medium",
-    progress: 15,
-    startDate: "2024-06-01",
-    endDate: "2025-06-30",
-    budget: 8000000,
-    spent: 400000,
-    manager: "خالد العمري",
-    team: 20,
-    tasks: { total: 60, completed: 9 },
-    location: "جدة",
-    client: "شركة الكهرباء السعودية",
-  },
-  {
-    id: 4,
-    name: "تركيب العدادات الذكية",
-    code: "PRJ-2024-004",
-    description: "استبدال العدادات التقليدية بعدادات ذكية في المنطقة الشرقية",
-    status: "in_progress",
-    priority: "high",
-    progress: 78,
-    startDate: "2024-02-01",
-    endDate: "2024-08-31",
-    budget: 3500000,
-    spent: 2730000,
-    manager: "فاطمة الزهراني",
-    team: 15,
-    tasks: { total: 50, completed: 39 },
-    location: "الدمام",
-    client: "داخلي",
-  },
-  {
-    id: 5,
-    name: "صيانة شبكة التوزيع",
-    code: "PRJ-2024-005",
-    description: "صيانة شاملة لشبكة التوزيع في المنطقة الوسطى",
-    status: "completed",
-    priority: "medium",
-    progress: 100,
-    startDate: "2024-01-01",
-    endDate: "2024-04-30",
-    budget: 1500000,
-    spent: 1420000,
-    manager: "محمد السعيد",
-    team: 10,
-    tasks: { total: 28, completed: 28 },
-    location: "الرياض",
-    client: "داخلي",
-  },
-  {
-    id: 6,
-    name: "تطوير تطبيق العملاء",
-    code: "PRJ-2024-006",
-    description: "تطوير تطبيق جوال للعملاء لإدارة الفواتير والاستهلاك",
-    status: "on_hold",
-    priority: "low",
-    progress: 25,
-    startDate: "2024-04-01",
-    endDate: "2024-10-31",
-    budget: 800000,
-    spent: 200000,
-    manager: "نورة القحطاني",
-    team: 5,
-    tasks: { total: 20, completed: 5 },
-    location: "الرياض",
-    client: "داخلي",
-  },
-];
-
-const projectStats = [
-  { label: "إجمالي المشاريع", value: 12, icon: FolderKanban, color: "primary" },
-  { label: "قيد التنفيذ", value: 6, icon: Play, color: "success" },
-  { label: "متوقفة", value: 2, icon: Pause, color: "warning" },
-  { label: "مكتملة", value: 4, icon: CheckCircle, color: "accent" },
-];
-
 export default function ProjectsList() {
   const [, setLocation] = useLocation();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [priorityFilter, setPriorityFilter] = useState("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [editingProject, setEditingProject] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    code: "",
+    nameAr: "",
+    nameEn: "",
+    description: "",
+    startDate: "",
+    endDate: "",
+    budget: "",
+    status: "planning",
+    priority: "medium",
+    location: "",
+  });
 
-  const filteredProjects = projectsData.filter(project => {
-    if (searchQuery && !project.name.includes(searchQuery) && !project.code.includes(searchQuery)) {
-      return false;
+  // Fetch projects
+  const { data: projects = [], isLoading, refetch } = trpc.projects.list.useQuery({
+    businessId: 1,
+    status: statusFilter !== "all" ? statusFilter : undefined,
+    priority: priorityFilter !== "all" ? priorityFilter : undefined,
+  });
+
+  // Fetch stats
+  const { data: stats } = trpc.projects.stats.useQuery({ businessId: 1 });
+
+  // Mutations
+  const createMutation = trpc.projects.create.useMutation({
+    onSuccess: () => {
+      toast.success("تم إنشاء المشروع بنجاح");
+      setShowAddDialog(false);
+      resetForm();
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "حدث خطأ أثناء إنشاء المشروع");
+    },
+  });
+
+  const updateMutation = trpc.projects.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم تحديث المشروع بنجاح");
+      setEditingProject(null);
+      resetForm();
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "حدث خطأ أثناء تحديث المشروع");
+    },
+  });
+
+  const deleteMutation = trpc.projects.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف المشروع بنجاح");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "حدث خطأ أثناء حذف المشروع");
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      code: "",
+      nameAr: "",
+      nameEn: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+      budget: "",
+      status: "planning",
+      priority: "medium",
+      location: "",
+    });
+  };
+
+  const handleSubmit = () => {
+    if (!formData.code || !formData.nameAr) {
+      toast.error("يرجى ملء الحقول المطلوبة");
+      return;
     }
-    if (statusFilter !== "all" && project.status !== statusFilter) {
-      return false;
+
+    const data = {
+      businessId: 1,
+      code: formData.code,
+      nameAr: formData.nameAr,
+      nameEn: formData.nameEn || undefined,
+      description: formData.description || undefined,
+      startDate: formData.startDate || undefined,
+      endDate: formData.endDate || undefined,
+      budget: formData.budget ? parseFloat(formData.budget) : undefined,
+      status: formData.status,
+      priority: formData.priority,
+      location: formData.location || undefined,
+    };
+
+    if (editingProject) {
+      updateMutation.mutate({ id: editingProject.id, data });
+    } else {
+      createMutation.mutate(data);
     }
-    if (priorityFilter !== "all" && project.priority !== priorityFilter) {
+  };
+
+  const handleEdit = (project: any) => {
+    setEditingProject(project);
+    setFormData({
+      code: project.code || "",
+      nameAr: project.nameAr || "",
+      nameEn: project.nameEn || "",
+      description: project.description || "",
+      startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : "",
+      endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : "",
+      budget: project.budget?.toString() || "",
+      status: project.status || "planning",
+      priority: project.priority || "medium",
+      location: project.location || "",
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("هل أنت متأكد من حذف هذا المشروع؟")) {
+      deleteMutation.mutate({ id });
+    }
+  };
+
+  const filteredProjects = projects.filter((project: any) => {
+    if (searchQuery && !project.nameAr?.includes(searchQuery) && !project.code?.includes(searchQuery)) {
       return false;
     }
     return true;
@@ -218,8 +222,16 @@ export default function ProjectsList() {
   };
 
   const formatDate = (dateStr: string) => {
+    if (!dateStr) return "-";
     return new Date(dateStr).toLocaleDateString("ar-SA");
   };
+
+  const projectStats = [
+    { label: "إجمالي المشاريع", value: stats?.total || 0, icon: FolderKanban, color: "primary" },
+    { label: "قيد التنفيذ", value: stats?.active || 0, icon: Play, color: "success" },
+    { label: "متوقفة", value: stats?.onHold || 0, icon: Pause, color: "warning" },
+    { label: "مكتملة", value: stats?.completed || 0, icon: CheckCircle, color: "accent" },
+  ];
 
   return (
     <div className="space-y-6">
@@ -232,7 +244,7 @@ export default function ProjectsList() {
           </h1>
           <p className="text-muted-foreground">إدارة وتتبع جميع مشاريع الشركة</p>
         </div>
-        <Button onClick={() => setShowAddDialog(true)}>
+        <Button onClick={() => { resetForm(); setShowAddDialog(true); }}>
           <Plus className="w-4 h-4 ml-2" />
           مشروع جديد
         </Button>
@@ -305,205 +317,188 @@ export default function ProjectsList() {
         </CardContent>
       </Card>
 
-      {/* Projects Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filteredProjects.map((project) => (
-          <Card 
-            key={project.id} 
-            className="card-hover cursor-pointer"
-            onClick={() => setLocation(`/dashboard/projects/view/${project.id}`)}
-          >
-            <CardHeader className="pb-2">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-xs text-muted-foreground font-mono mb-1">{project.code}</p>
-                  <CardTitle className="text-lg line-clamp-1">{project.name}</CardTitle>
-                </div>
-                <PriorityBadge priority={project.priority} />
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-2">{project.description}</p>
-              
-              <div className="flex items-center justify-between">
-                <ProjectStatusBadge status={project.status} />
-                <span className="text-sm font-medium ltr-nums">{project.progress}%</span>
-              </div>
-              
-              <Progress value={project.progress} className="h-2" />
+      {/* Projects Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle>المشاريع</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              لا توجد مشاريع
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>الكود</TableHead>
+                  <TableHead>اسم المشروع</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>الأولوية</TableHead>
+                  <TableHead>التقدم</TableHead>
+                  <TableHead>تاريخ البداية</TableHead>
+                  <TableHead>تاريخ النهاية</TableHead>
+                  <TableHead>الميزانية</TableHead>
+                  <TableHead>إجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProjects.map((project: any) => (
+                  <TableRow key={project.id}>
+                    <TableCell className="font-mono">{project.code}</TableCell>
+                    <TableCell>{project.nameAr}</TableCell>
+                    <TableCell><ProjectStatusBadge status={project.status} /></TableCell>
+                    <TableCell><PriorityBadge priority={project.priority} /></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Progress value={project.progress || 0} className="w-20 h-2" />
+                        <span className="text-xs text-muted-foreground">{project.progress || 0}%</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>{formatDate(project.startDate)}</TableCell>
+                    <TableCell>{formatDate(project.endDate)}</TableCell>
+                    <TableCell>{project.budget ? formatCurrency(parseFloat(project.budget)) : "-"}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Button variant="ghost" size="icon" onClick={() => setLocation(`/dashboard/projects/${project.id}`)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(project)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(project.id)}>
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Calendar className="w-4 h-4" />
-                  <span>{formatDate(project.endDate)}</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="w-4 h-4" />
-                  <span>{project.team} عضو</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>{project.tasks.completed}/{project.tasks.total} مهمة</span>
-                </div>
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="w-4 h-4" />
-                  <span>{project.location}</span>
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-border">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">الميزانية</span>
-                  <span className="font-medium ltr-nums">{formatCurrency(project.budget)}</span>
-                </div>
-                <div className="flex items-center justify-between text-sm mt-1">
-                  <span className="text-muted-foreground">المصروف</span>
-                  <span className={cn(
-                    "font-medium ltr-nums",
-                    project.spent > project.budget * 0.9 && "text-destructive"
-                  )}>
-                    {formatCurrency(project.spent)}
-                  </span>
-                </div>
-                <Progress 
-                  value={(project.spent / project.budget) * 100} 
-                  className={cn(
-                    "h-1.5 mt-2",
-                    project.spent > project.budget * 0.9 && "[&>div]:bg-destructive"
-                  )}
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-primary text-xs font-medium">
-                    {project.manager.charAt(0)}
-                  </div>
-                  <span className="text-sm">{project.manager}</span>
-                </div>
-                <Button variant="ghost" size="sm" onClick={(e) => {
-                  e.stopPropagation();
-                  setLocation(`/dashboard/projects/view/${project.id}`);
-                }}>
-                  <Eye className="w-4 h-4 ml-1" />
-                  عرض
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredProjects.length === 0 && (
-        <Card>
-          <CardContent className="p-12 text-center">
-            <FolderKanban className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium mb-2">لا توجد مشاريع</h3>
-            <p className="text-muted-foreground mb-4">لم يتم العثور على مشاريع تطابق معايير البحث</p>
-            <Button onClick={() => setShowAddDialog(true)}>
-              <Plus className="w-4 h-4 ml-2" />
-              إضافة مشروع جديد
-            </Button>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Add Project Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      {/* Add/Edit Dialog */}
+      <Dialog open={showAddDialog || !!editingProject} onOpenChange={(open) => {
+        if (!open) {
+          setShowAddDialog(false);
+          setEditingProject(null);
+          resetForm();
+        }
+      }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FolderKanban className="w-5 h-5" />
-              إضافة مشروع جديد
-            </DialogTitle>
+            <DialogTitle>{editingProject ? "تعديل المشروع" : "إضافة مشروع جديد"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>اسم المشروع *</Label>
-                <Input placeholder="أدخل اسم المشروع" />
-              </div>
-              <div className="space-y-2">
-                <Label>كود المشروع *</Label>
-                <Input placeholder="PRJ-2024-XXX" />
-              </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>كود المشروع *</Label>
+              <Input
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                placeholder="PRJ-2024-001"
+              />
             </div>
             <div className="space-y-2">
-              <Label>وصف المشروع</Label>
-              <Textarea placeholder="أدخل وصف المشروع" rows={3} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>تاريخ البداية *</Label>
-                <Input type="date" />
-              </div>
-              <div className="space-y-2">
-                <Label>تاريخ النهاية المتوقع *</Label>
-                <Input type="date" />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>الميزانية (ريال) *</Label>
-                <Input type="number" placeholder="0" />
-              </div>
-              <div className="space-y-2">
-                <Label>الأولوية *</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الأولوية" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="critical">حرج</SelectItem>
-                    <SelectItem value="high">عالي</SelectItem>
-                    <SelectItem value="medium">متوسط</SelectItem>
-                    <SelectItem value="low">منخفض</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>مدير المشروع *</Label>
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر مدير المشروع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">أحمد محمد</SelectItem>
-                    <SelectItem value="2">سارة أحمد</SelectItem>
-                    <SelectItem value="3">خالد العمري</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label>الموقع</Label>
-                <Input placeholder="موقع المشروع" />
-              </div>
+              <Label>اسم المشروع (عربي) *</Label>
+              <Input
+                value={formData.nameAr}
+                onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
+                placeholder="اسم المشروع"
+              />
             </div>
             <div className="space-y-2">
-              <Label>العميل</Label>
-              <Select>
+              <Label>اسم المشروع (إنجليزي)</Label>
+              <Input
+                value={formData.nameEn}
+                onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
+                placeholder="Project Name"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>الموقع</Label>
+              <Input
+                value={formData.location}
+                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                placeholder="الموقع"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>تاريخ البداية</Label>
+              <Input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>تاريخ النهاية</Label>
+              <Input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>الميزانية</Label>
+              <Input
+                type="number"
+                value={formData.budget}
+                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>الحالة</Label>
+              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                 <SelectTrigger>
-                  <SelectValue placeholder="اختر العميل" />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="internal">داخلي</SelectItem>
-                  <SelectItem value="sec">شركة الكهرباء السعودية</SelectItem>
-                  <SelectItem value="other">عميل آخر</SelectItem>
+                  <SelectItem value="planning">تخطيط</SelectItem>
+                  <SelectItem value="in_progress">قيد التنفيذ</SelectItem>
+                  <SelectItem value="on_hold">متوقف</SelectItem>
+                  <SelectItem value="completed">مكتمل</SelectItem>
+                  <SelectItem value="cancelled">ملغي</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>الأولوية</Label>
+              <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="critical">حرج</SelectItem>
+                  <SelectItem value="high">عالي</SelectItem>
+                  <SelectItem value="medium">متوسط</SelectItem>
+                  <SelectItem value="low">منخفض</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label>الوصف</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="وصف المشروع..."
+                rows={3}
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+            <Button variant="outline" onClick={() => { setShowAddDialog(false); setEditingProject(null); resetForm(); }}>
               إلغاء
             </Button>
-            <Button onClick={() => {
-              toast.success("تم إضافة المشروع بنجاح");
-              setShowAddDialog(false);
-            }}>
-              إضافة المشروع
+            <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
+              {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
+              {editingProject ? "تحديث" : "إضافة"}
             </Button>
           </DialogFooter>
         </DialogContent>

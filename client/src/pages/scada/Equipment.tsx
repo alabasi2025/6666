@@ -25,10 +25,11 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import {
-  Gauge, Search, Plus, Edit, Trash2, Loader2,
-  CheckCircle, XCircle, Thermometer, Activity
+  Server, Search, Plus, Edit, Trash2, Loader2,
+  CheckCircle, XCircle, Settings, Wifi, WifiOff
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
@@ -37,11 +38,13 @@ import { trpc } from "@/lib/trpc";
 function StatusBadge({ status }: { status: string }) {
   const statusConfig: Record<string, { label: string; color: string; icon: typeof CheckCircle }> = {
     active: { label: "نشط", color: "bg-success/20 text-success", icon: CheckCircle },
+    online: { label: "متصل", color: "bg-success/20 text-success", icon: Wifi },
     inactive: { label: "غير نشط", color: "bg-destructive/20 text-destructive", icon: XCircle },
-    maintenance: { label: "صيانة", color: "bg-warning/20 text-warning", icon: Activity },
+    offline: { label: "غير متصل", color: "bg-destructive/20 text-destructive", icon: WifiOff },
+    maintenance: { label: "صيانة", color: "bg-warning/20 text-warning", icon: Settings },
   };
 
-  const config = statusConfig[status] || { label: status, color: "bg-gray-500/20 text-gray-500", icon: Gauge };
+  const config = statusConfig[status] || { label: status, color: "bg-gray-500/20 text-gray-500", icon: Server };
   const Icon = config.icon;
 
   return (
@@ -52,34 +55,34 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-export default function Sensors() {
+export default function Equipment() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [editingSensor, setEditingSensor] = useState<any>(null);
+  const [editingEquipment, setEditingEquipment] = useState<any>(null);
   const [formData, setFormData] = useState({
     code: "",
     nameAr: "",
     nameEn: "",
-    type: "temperature",
-    unit: "",
-    minValue: "",
-    maxValue: "",
-    warningThreshold: "",
-    criticalThreshold: "",
+    type: "",
+    manufacturer: "",
+    model: "",
+    serialNumber: "",
     location: "",
+    installationDate: "",
     status: "active",
+    description: "",
   });
 
-  // Fetch sensors
-  const { data: sensors = [], isLoading, refetch } = trpc.scada.sensors.list.useQuery({
+  // Fetch equipment
+  const { data: equipment = [], isLoading, refetch } = trpc.scada.equipment.list.useQuery({
     businessId: 1,
   });
 
   // Mutations
-  const createMutation = trpc.scada.sensors.create.useMutation({
+  const createMutation = trpc.scada.equipment.create.useMutation({
     onSuccess: () => {
-      toast.success("تم إضافة المستشعر بنجاح");
+      toast.success("تم إضافة المعدة بنجاح");
       setShowAddDialog(false);
       resetForm();
       refetch();
@@ -89,10 +92,10 @@ export default function Sensors() {
     },
   });
 
-  const updateMutation = trpc.scada.sensors.update.useMutation({
+  const updateMutation = trpc.scada.equipment.update.useMutation({
     onSuccess: () => {
-      toast.success("تم تحديث المستشعر بنجاح");
-      setEditingSensor(null);
+      toast.success("تم تحديث المعدة بنجاح");
+      setEditingEquipment(null);
       resetForm();
       refetch();
     },
@@ -101,9 +104,9 @@ export default function Sensors() {
     },
   });
 
-  const deleteMutation = trpc.scada.sensors.delete.useMutation({
+  const deleteMutation = trpc.scada.equipment.delete.useMutation({
     onSuccess: () => {
-      toast.success("تم حذف المستشعر");
+      toast.success("تم حذف المعدة");
       refetch();
     },
     onError: (error) => {
@@ -116,14 +119,14 @@ export default function Sensors() {
       code: "",
       nameAr: "",
       nameEn: "",
-      type: "temperature",
-      unit: "",
-      minValue: "",
-      maxValue: "",
-      warningThreshold: "",
-      criticalThreshold: "",
+      type: "",
+      manufacturer: "",
+      model: "",
+      serialNumber: "",
       location: "",
+      installationDate: "",
       status: "active",
+      description: "",
     });
   };
 
@@ -138,71 +141,61 @@ export default function Sensors() {
       code: formData.code,
       nameAr: formData.nameAr,
       nameEn: formData.nameEn || undefined,
-      type: formData.type,
-      unit: formData.unit || undefined,
-      minValue: formData.minValue ? parseFloat(formData.minValue) : undefined,
-      maxValue: formData.maxValue ? parseFloat(formData.maxValue) : undefined,
-      warningThreshold: formData.warningThreshold ? parseFloat(formData.warningThreshold) : undefined,
-      criticalThreshold: formData.criticalThreshold ? parseFloat(formData.criticalThreshold) : undefined,
+      type: formData.type || undefined,
+      manufacturer: formData.manufacturer || undefined,
+      model: formData.model || undefined,
+      serialNumber: formData.serialNumber || undefined,
       location: formData.location || undefined,
+      installationDate: formData.installationDate || undefined,
       status: formData.status,
+      description: formData.description || undefined,
     };
 
-    if (editingSensor) {
-      updateMutation.mutate({ id: editingSensor.id, data });
+    if (editingEquipment) {
+      updateMutation.mutate({ id: editingEquipment.id, data });
     } else {
       createMutation.mutate(data);
     }
   };
 
-  const handleEdit = (sensor: any) => {
-    setEditingSensor(sensor);
+  const handleEdit = (item: any) => {
+    setEditingEquipment(item);
     setFormData({
-      code: sensor.code || "",
-      nameAr: sensor.nameAr || "",
-      nameEn: sensor.nameEn || "",
-      type: sensor.type || "temperature",
-      unit: sensor.unit || "",
-      minValue: sensor.minValue?.toString() || "",
-      maxValue: sensor.maxValue?.toString() || "",
-      warningThreshold: sensor.warningThreshold?.toString() || "",
-      criticalThreshold: sensor.criticalThreshold?.toString() || "",
-      location: sensor.location || "",
-      status: sensor.status || "active",
+      code: item.code || "",
+      nameAr: item.nameAr || "",
+      nameEn: item.nameEn || "",
+      type: item.type || "",
+      manufacturer: item.manufacturer || "",
+      model: item.model || "",
+      serialNumber: item.serialNumber || "",
+      location: item.location || "",
+      installationDate: item.installationDate ? new Date(item.installationDate).toISOString().split('T')[0] : "",
+      status: item.status || "active",
+      description: item.description || "",
     });
   };
 
   const handleDelete = (id: number) => {
-    if (confirm("هل أنت متأكد من حذف هذا المستشعر؟")) {
+    if (confirm("هل أنت متأكد من حذف هذه المعدة؟")) {
       deleteMutation.mutate({ id });
     }
   };
 
-  const filteredSensors = sensors.filter((sensor: any) => {
-    if (searchQuery && !sensor.nameAr?.includes(searchQuery) && !sensor.code?.includes(searchQuery)) {
+  const filteredEquipment = equipment.filter((item: any) => {
+    if (searchQuery && !item.nameAr?.includes(searchQuery) && !item.code?.includes(searchQuery)) {
       return false;
     }
-    if (statusFilter !== "all" && sensor.status !== statusFilter) {
+    if (statusFilter !== "all" && item.status !== statusFilter) {
       return false;
     }
     return true;
   });
 
-  const sensorTypes = [
-    { value: "temperature", label: "درجة الحرارة" },
-    { value: "humidity", label: "الرطوبة" },
-    { value: "pressure", label: "الضغط" },
-    { value: "voltage", label: "الجهد" },
-    { value: "current", label: "التيار" },
-    { value: "power", label: "القدرة" },
-    { value: "flow", label: "التدفق" },
-    { value: "level", label: "المستوى" },
-  ];
-
   const statCards = [
-    { label: "إجمالي المستشعرات", value: sensors.length, icon: Gauge, color: "primary" },
-    { label: "نشطة", value: sensors.filter((s: any) => s.status === "active").length, icon: CheckCircle, color: "success" },
-    { label: "غير نشطة", value: sensors.filter((s: any) => s.status === "inactive").length, icon: XCircle, color: "destructive" },
+    { label: "إجمالي المعدات", value: equipment.length, icon: Server, color: "primary" },
+    { label: "متصلة", value: equipment.filter((e: any) => e.status === "active" || e.status === "online").length, icon: Wifi, color: "success" },
+    { label: "غير متصلة", value: equipment.filter((e: any) => e.status === "inactive" || e.status === "offline").length, icon: WifiOff, color: "destructive" },
+    { label: "صيانة", value: equipment.filter((e: any) => e.status === "maintenance").length, icon: Settings, color: "warning" },
   ];
 
   return (
@@ -211,19 +204,19 @@ export default function Sensors() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-            <Gauge className="w-7 h-7 text-primary" />
-            إدارة المستشعرات
+            <Server className="w-7 h-7 text-primary" />
+            إدارة المعدات
           </h1>
-          <p className="text-muted-foreground">إدارة ومراقبة مستشعرات النظام</p>
+          <p className="text-muted-foreground">إدارة ومراقبة معدات النظام</p>
         </div>
         <Button onClick={() => { resetForm(); setShowAddDialog(true); }}>
           <Plus className="w-4 h-4 ml-2" />
-          مستشعر جديد
+          معدة جديدة
         </Button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {statCards.map((stat, index) => (
           <Card key={index}>
             <CardContent className="p-4">
@@ -236,6 +229,7 @@ export default function Sensors() {
                   "p-3 rounded-xl",
                   stat.color === "primary" && "bg-primary/20 text-primary",
                   stat.color === "success" && "bg-success/20 text-success",
+                  stat.color === "warning" && "bg-warning/20 text-warning",
                   stat.color === "destructive" && "bg-destructive/20 text-destructive"
                 )}>
                   <stat.icon className="w-6 h-6" />
@@ -253,7 +247,7 @@ export default function Sensors() {
             <div className="relative flex-1">
               <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="بحث في المستشعرات..."
+                placeholder="بحث في المعدات..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pr-10"
@@ -274,19 +268,19 @@ export default function Sensors() {
         </CardContent>
       </Card>
 
-      {/* Sensors Table */}
+      {/* Equipment Table */}
       <Card>
         <CardHeader>
-          <CardTitle>المستشعرات</CardTitle>
+          <CardTitle>المعدات</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
-          ) : filteredSensors.length === 0 ? (
+          ) : filteredEquipment.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              لا توجد مستشعرات
+              لا توجد معدات
             </div>
           ) : (
             <Table>
@@ -295,27 +289,27 @@ export default function Sensors() {
                   <TableHead>الكود</TableHead>
                   <TableHead>الاسم</TableHead>
                   <TableHead>النوع</TableHead>
-                  <TableHead>الوحدة</TableHead>
+                  <TableHead>الشركة المصنعة</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>الموقع</TableHead>
                   <TableHead>إجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredSensors.map((sensor: any) => (
-                  <TableRow key={sensor.id}>
-                    <TableCell className="font-mono">{sensor.code}</TableCell>
-                    <TableCell>{sensor.nameAr}</TableCell>
-                    <TableCell>{sensorTypes.find(t => t.value === sensor.type)?.label || sensor.type}</TableCell>
-                    <TableCell>{sensor.unit || "-"}</TableCell>
-                    <TableCell><StatusBadge status={sensor.status} /></TableCell>
-                    <TableCell>{sensor.location || "-"}</TableCell>
+                {filteredEquipment.map((item: any) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-mono">{item.code}</TableCell>
+                    <TableCell>{item.nameAr}</TableCell>
+                    <TableCell>{item.type || "-"}</TableCell>
+                    <TableCell>{item.manufacturer || "-"}</TableCell>
+                    <TableCell><StatusBadge status={item.status} /></TableCell>
+                    <TableCell>{item.location || "-"}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(sensor)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(item)}>
                           <Edit className="w-4 h-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDelete(sensor.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDelete(item.id)}>
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </div>
@@ -329,16 +323,16 @@ export default function Sensors() {
       </Card>
 
       {/* Add/Edit Dialog */}
-      <Dialog open={showAddDialog || !!editingSensor} onOpenChange={(open) => {
+      <Dialog open={showAddDialog || !!editingEquipment} onOpenChange={(open) => {
         if (!open) {
           setShowAddDialog(false);
-          setEditingSensor(null);
+          setEditingEquipment(null);
           resetForm();
         }
       }}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>{editingSensor ? "تعديل المستشعر" : "إضافة مستشعر جديد"}</DialogTitle>
+            <DialogTitle>{editingEquipment ? "تعديل المعدة" : "إضافة معدة جديدة"}</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -346,7 +340,7 @@ export default function Sensors() {
               <Input
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                placeholder="SEN-001"
+                placeholder="EQP-001"
               />
             </div>
             <div className="space-y-2">
@@ -354,7 +348,7 @@ export default function Sensors() {
               <Input
                 value={formData.nameAr}
                 onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                placeholder="اسم المستشعر"
+                placeholder="اسم المعدة"
               />
             </div>
             <div className="space-y-2">
@@ -362,28 +356,47 @@ export default function Sensors() {
               <Input
                 value={formData.nameEn}
                 onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                placeholder="Sensor Name"
+                placeholder="Equipment Name"
               />
             </div>
             <div className="space-y-2">
               <Label>النوع</Label>
-              <Select value={formData.type} onValueChange={(value) => setFormData({ ...formData, type: value })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {sensorTypes.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                placeholder="نوع المعدة"
+              />
             </div>
             <div className="space-y-2">
-              <Label>الوحدة</Label>
+              <Label>الشركة المصنعة</Label>
               <Input
-                value={formData.unit}
-                onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                placeholder="°C, V, A, etc."
+                value={formData.manufacturer}
+                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                placeholder="الشركة المصنعة"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>الموديل</Label>
+              <Input
+                value={formData.model}
+                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                placeholder="رقم الموديل"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>الرقم التسلسلي</Label>
+              <Input
+                value={formData.serialNumber}
+                onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
+                placeholder="الرقم التسلسلي"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>تاريخ التركيب</Label>
+              <Input
+                type="date"
+                value={formData.installationDate}
+                onChange={(e) => setFormData({ ...formData, installationDate: e.target.value })}
               />
             </div>
             <div className="space-y-2">
@@ -400,57 +413,30 @@ export default function Sensors() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>الحد الأدنى</Label>
-              <Input
-                type="number"
-                value={formData.minValue}
-                onChange={(e) => setFormData({ ...formData, minValue: e.target.value })}
-                placeholder="0"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>الحد الأقصى</Label>
-              <Input
-                type="number"
-                value={formData.maxValue}
-                onChange={(e) => setFormData({ ...formData, maxValue: e.target.value })}
-                placeholder="100"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>حد التحذير</Label>
-              <Input
-                type="number"
-                value={formData.warningThreshold}
-                onChange={(e) => setFormData({ ...formData, warningThreshold: e.target.value })}
-                placeholder="80"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>الحد الحرج</Label>
-              <Input
-                type="number"
-                value={formData.criticalThreshold}
-                onChange={(e) => setFormData({ ...formData, criticalThreshold: e.target.value })}
-                placeholder="95"
-              />
-            </div>
-            <div className="col-span-2 space-y-2">
               <Label>الموقع</Label>
               <Input
                 value={formData.location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="موقع المستشعر"
+                placeholder="موقع المعدة"
+              />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label>الوصف</Label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="وصف المعدة..."
+                rows={3}
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowAddDialog(false); setEditingSensor(null); resetForm(); }}>
+            <Button variant="outline" onClick={() => { setShowAddDialog(false); setEditingEquipment(null); resetForm(); }}>
               إلغاء
             </Button>
             <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending}>
               {(createMutation.isPending || updateMutation.isPending) && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
-              {editingSensor ? "تحديث" : "إضافة"}
+              {editingEquipment ? "تحديث" : "إضافة"}
             </Button>
           </DialogFooter>
         </DialogContent>
