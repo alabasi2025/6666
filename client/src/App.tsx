@@ -7,6 +7,7 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import CustomSystem from "./pages/CustomSystem";
 
 function Router() {
@@ -16,6 +17,7 @@ function Router() {
     <Switch>
       <Route path="/" component={DEMO_MODE ? Dashboard : Home} />
       <Route path="/login" component={Login} />
+      <Route path="/register" component={Register} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/:module" component={Dashboard} />
       <Route path="/dashboard/:module/:submodule" component={Dashboard} />

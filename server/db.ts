@@ -256,6 +256,49 @@ export async function createUserWithPhone(data: { phone: string; password: strin
   return result[0].insertId;
 }
 
+export async function getUserById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateUser(id: number, data: Partial<{
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: 'user' | 'admin' | 'super_admin';
+  businessId: number | null;
+  branchId: number | null;
+  stationId: number | null;
+  departmentId: number | null;
+  jobTitle: string | null;
+  isActive: boolean;
+}>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Filter out undefined values
+  const updateData: Record<string, any> = {};
+  Object.entries(data).forEach(([key, value]) => {
+    if (value !== undefined) {
+      updateData[key] = value;
+    }
+  });
+
+  if (Object.keys(updateData).length === 0) return;
+
+  await db.update(users).set(updateData).where(eq(users.id, id));
+}
+
+export async function deleteUser(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.delete(users).where(eq(users.id, id));
+}
+
 // ============================================
 // Business Management
 // ============================================
@@ -358,13 +401,26 @@ export async function createBranch(data: InsertBranch) {
 export async function getBranches(businessId?: number) {
   const db = await getDb();
   if (!db) return [];
-
   if (businessId) {
     return await db.select().from(branches)
       .where(and(eq(branches.businessId, businessId), eq(branches.isActive, true)))
       .orderBy(asc(branches.nameAr));
   }
-  return await db.select().from(branches).where(eq(branches.isActive, true)).orderBy(asc(branches.nameAr));
+  return await db.select().from(branches).orderBy(asc(branches.nameAr));
+}
+
+export async function updateBranch(id: number, data: Partial<InsertBranch>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(branches).set(data).where(eq(branches.id, id));
+  return { success: true };
+}
+
+export async function deleteBranch(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(branches).set({ isActive: false }).where(eq(branches.id, id));
+  return { success: true };
 }
 
 // ============================================
@@ -396,6 +452,22 @@ export async function getStationById(id: number) {
 
   const result = await db.select().from(stations).where(eq(stations.id, id)).limit(1);
   return result[0] || null;
+}
+
+export async function updateStation(id: number, data: Partial<InsertStation>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(stations).set(data).where(eq(stations.id, id));
+  return { success: true };
+}
+
+export async function deleteStation(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.update(stations).set({ isActive: false }).where(eq(stations.id, id));
+  return { success: true };
 }
 
 // ============================================

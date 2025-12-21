@@ -6,6 +6,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
+import * as auth from "./auth";
 import { fieldOpsRouter } from "./fieldOpsRouter";
 import { hrRouter } from "./hrRouter";
 import { customSystemRouter } from "./customSystemRouter";
@@ -99,16 +100,14 @@ export const appRouter = router({
           return { success: true, user: { id: demoUser.id, name: demoUser.name, role: demoUser.role } };
         }
         
-        const user = await db.getUserByPhone(input.phone);
+        // استخدام نظام المصادقة الجديد مع bcrypt
+        const result = await auth.loginUser(input.phone, input.password);
         
-        if (!user) {
-          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'رقم الهاتف غير مسجل' });
+        if (!result.success || !result.user) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: result.error || 'فشل تسجيل الدخول' });
         }
         
-        // التحقق من كلمة المرور (بسيط - يجب استخدام bcrypt في الإنتاج)
-        if (user.password !== input.password) {
-          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'كلمة المرور غير صحيحة' });
-        }
+        const user = result.user;
         
         // إنشاء جلسة JWT صحيحة
         const sessionToken = await sdk.createSessionToken(user.openId, { 
@@ -128,14 +127,57 @@ export const appRouter = router({
         
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         
-        // تحديث وقت آخر تسجيل دخول
-        await db.updateUserLastSignedIn(user.id);
-        
         if (process.env.NODE_ENV === 'development') {
           console.log("[Login] Cookie set successfully, returning user:", { id: user.id, name: user.name, role: user.role });
         }
         
         return { success: true, user: { id: user.id, name: user.name, role: user.role } };
+      }),
+    
+    // تسجيل مستخدم جديد
+    register: publicProcedure
+      .input(z.object({
+        phone: z.string().min(10, 'رقم الهاتف يجب أن يكون 10 أرقام على الأقل'),
+        password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+        name: z.string().min(2, 'الاسم يجب أن يكون حرفين على الأقل'),
+        email: z.string().email('البريد الإلكتروني غير صالح').optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
+        
+        if (DEMO_MODE) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'التسجيل غير متاح في الوضع التجريبي' });
+        }
+        
+        const result = await auth.registerUser({
+          phone: input.phone,
+          password: input.password,
+          name: input.name,
+          email: input.email,
+          role: 'user',
+        });
+        
+        if (!result.success) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: result.error || 'فشل التسجيل' });
+        }
+        
+        return { success: true, userId: result.userId };
+      }),
+    
+    // تغيير كلمة المرور
+    changePassword: protectedProcedure
+      .input(z.object({
+        oldPassword: z.string().min(1),
+        newPassword: z.string().min(6, 'كلمة المرور الجديدة يجب أن تكون 6 أحرف على الأقل'),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await auth.changePassword(ctx.user.id, input.oldPassword, input.newPassword);
+        
+        if (!result.success) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: result.error || 'فشل تغيير كلمة المرور' });
+        }
+        
+        return { success: true };
       }),
     
     logout: publicProcedure.mutation(({ ctx }) => {
@@ -238,6 +280,29 @@ export const appRouter = router({
         const id = await db.createBranch(input);
         return { id, success: true };
       }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        code: z.string().min(1).optional(),
+        nameAr: z.string().min(1).optional(),
+        nameEn: z.string().optional(),
+        type: z.enum(["main", "regional", "local"]).optional(),
+        address: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        return await db.updateBranch(id, data);
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        return await db.deleteBranch(input.id);
+      }),
   }),
 
   // Station Management
@@ -285,6 +350,42 @@ export const appRouter = router({
         });
         return { id, success: true };
       }),
+
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        code: z.string().min(1).optional(),
+        nameAr: z.string().min(1).optional(),
+        nameEn: z.string().optional(),
+        type: z.enum([
+          "generation", "transmission", "distribution", "substation",
+          "solar", "wind", "hydro", "thermal", "nuclear", "storage"
+        ]).optional(),
+        status: z.enum(["operational", "maintenance", "offline", "construction", "decommissioned"]).optional(),
+        capacity: z.number().optional(),
+        capacityUnit: z.string().optional(),
+        voltageLevel: z.string().optional(),
+        address: z.string().optional(),
+        latitude: z.number().optional(),
+        longitude: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateStation(id, {
+          ...data,
+          capacity: data.capacity?.toString(),
+          latitude: data.latitude?.toString(),
+          longitude: data.longitude?.toString(),
+        });
+        return { success: true };
+      }),
+
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input }) => {
+        await db.deleteStation(input.id);
+        return { success: true };
+      }),
   }),
 
   // User Management
@@ -293,6 +394,108 @@ export const appRouter = router({
       .input(z.object({ businessId: z.number().optional() }).optional())
       .query(async ({ input }) => {
         return await db.getAllUsers(input?.businessId);
+      }),
+    
+    getById: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input }) => {
+        return await db.getUserById(input.id);
+      }),
+    
+    create: adminProcedure
+      .input(z.object({
+        phone: z.string().min(10, 'رقم الهاتف يجب أن يكون 10 أرقام على الأقل'),
+        password: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+        name: z.string().min(2, 'الاسم مطلوب'),
+        email: z.string().email().optional().nullable(),
+        role: z.enum(['user', 'admin', 'super_admin']).default('user'),
+        businessId: z.number().optional().nullable(),
+        branchId: z.number().optional().nullable(),
+        stationId: z.number().optional().nullable(),
+        departmentId: z.number().optional().nullable(),
+        jobTitle: z.string().optional().nullable(),
+        isActive: z.boolean().default(true),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await auth.registerUser({
+          phone: input.phone,
+          password: input.password,
+          name: input.name,
+          email: input.email || undefined,
+          role: input.role,
+        });
+        
+        if (!result.success) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: result.error || 'فشل إنشاء المستخدم' });
+        }
+        
+        // Update additional fields if provided
+        if (result.userId && (input.businessId || input.branchId || input.stationId || input.departmentId || input.jobTitle)) {
+          await db.updateUser(result.userId, {
+            businessId: input.businessId,
+            branchId: input.branchId,
+            stationId: input.stationId,
+            departmentId: input.departmentId,
+            jobTitle: input.jobTitle,
+          });
+        }
+        
+        return { success: true, userId: result.userId };
+      }),
+    
+    update: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        name: z.string().min(2).optional(),
+        email: z.string().email().optional().nullable(),
+        phone: z.string().min(10).optional(),
+        role: z.enum(['user', 'admin', 'super_admin']).optional(),
+        businessId: z.number().optional().nullable(),
+        branchId: z.number().optional().nullable(),
+        stationId: z.number().optional().nullable(),
+        departmentId: z.number().optional().nullable(),
+        jobTitle: z.string().optional().nullable(),
+        isActive: z.boolean().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...data } = input;
+        await db.updateUser(id, data);
+        return { success: true };
+      }),
+    
+    delete: adminProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        // Prevent self-deletion
+        if (input.id === ctx.user.id) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'لا يمكنك حذف حسابك الخاص' });
+        }
+        await db.deleteUser(input.id);
+        return { success: true };
+      }),
+    
+    toggleActive: adminProcedure
+      .input(z.object({ id: z.number(), isActive: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        // Prevent self-deactivation
+        if (input.id === ctx.user.id && !input.isActive) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: 'لا يمكنك تعطيل حسابك الخاص' });
+        }
+        await db.updateUser(input.id, { isActive: input.isActive });
+        return { success: true };
+      }),
+    
+    resetPassword: adminProcedure
+      .input(z.object({
+        id: z.number(),
+        newPassword: z.string().min(6, 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await auth.resetPassword(input.id, input.newPassword);
+        if (!result.success) {
+          throw new TRPCError({ code: 'BAD_REQUEST', message: result.error || 'فشل إعادة تعيين كلمة المرور' });
+        }
+        return { success: true };
       }),
   }),
 

@@ -100,6 +100,11 @@ import TechnicalAlerts from "./developer/TechnicalAlerts";
 
 // Organization Pages
 import Businesses from "./organization/Businesses";
+import Branches from "./organization/Branches";
+import Stations from "./organization/Stations";
+
+// Users Management Pages
+import UsersManagement from "./users/UsersManagement";
 
 // Custom System Pages
 import CustomDashboard from "./custom/CustomDashboard";
@@ -854,6 +859,12 @@ export default function Dashboard() {
     if (location === "/dashboard/organization/businesses") {
       return <Businesses />;
     }
+    if (location === "/dashboard/organization/branches") {
+      return <Branches />;
+    }
+    if (location === "/dashboard/organization/stations") {
+      return <Stations />;
+    }
     
     // Asset Module
     if (location === "/dashboard/assets/list" || location === "/dashboard/assets") {
@@ -1065,6 +1076,17 @@ export default function Dashboard() {
     }
     if (location === "/dashboard/custom/memos") {
       return <CustomMemos />;
+    }
+
+    // Users Management Module
+    if (location === "/dashboard/users/list" || location === "/dashboard/users") {
+      return <UsersManagement />;
+    }
+    if (location === "/dashboard/users/roles") {
+      return <UsersManagement />;
+    }
+    if (location === "/dashboard/users/permissions") {
+      return <UsersManagement />;
     }
 
     // HR Module

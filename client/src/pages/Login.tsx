@@ -190,10 +190,17 @@ export default function Login() {
                 </Button>
               </form>
 
-              {/* Demo Mode Notice */}
-              <div className="mt-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
-                <p className="text-xs text-center text-primary">
-                  🎮 الوضع التجريبي: أدخل أي رقم وكلمة مرور للدخول
+              {/* Register Link */}
+              <div className="mt-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  ليس لديك حساب؟{" "}
+                  <button 
+                    type="button" 
+                    onClick={() => setLocation("/register")} 
+                    className="text-primary hover:underline font-medium"
+                  >
+                    إنشاء حساب جديد
+                  </button>
                 </p>
               </div>
 
