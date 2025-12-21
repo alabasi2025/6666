@@ -572,7 +572,7 @@ export default function Dashboard() {
     <div className={cn("flex h-screen bg-background text-foreground", isDarkMode ? "dark" : "")}>
       {/* Sidebar */}
       <aside className={cn(
-        "fixed inset-y-0 right-0 z-50 flex flex-col bg-card border-l transition-all duration-300",
+        "fixed inset-y-0 right-0 z-50 flex flex-col bg-card border-l transition-all duration-300 h-screen",
         sidebarOpen ? "w-64" : "w-16"
       )}>
         {/* Logo */}
@@ -595,7 +595,7 @@ export default function Dashboard() {
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 py-2">
+        <ScrollArea className="flex-1 py-2 overflow-y-auto">
           <nav className="px-2 space-y-0.5">
             {navigationItems.map((item, index) => (
               <div key={item.id}>
