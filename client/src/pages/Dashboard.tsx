@@ -799,6 +799,15 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [location] = useLocation();
+  
+  // Initialize trpc utils for cache management
+  const utils = trpc.useUtils();
+  
+  // Fetch notifications count
+  const { data: alertsData } = trpc.scada.alerts.list.useQuery(
+    { businessId: 1, status: "active" },
+    { enabled: isAuthenticated }
+  );
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {

@@ -9,10 +9,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import {
   Calculator, FileText, Mail, Activity, LogOut, Menu, X, 
   ChevronLeft, Home, Settings, Bell, Search, HelpCircle,
-  LayoutDashboard, Wallet, ClipboardList
+  LayoutDashboard, Wallet, ClipboardList, Loader2
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -194,6 +195,14 @@ export default function CustomSystem() {
   const [matchMemos] = useRoute("/custom/memos");
   const [matchSettings] = useRoute("/custom/settings");
 
+  // Fetch notifications count from API
+  const { data: notesData } = trpc.customSystem.notes.list.useQuery(
+    { businessId: 1 },
+    { enabled: !!user }
+  );
+  
+  const unreadNotifications = notesData?.filter((n: any) => !n.isRead)?.length || 0;
+
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
@@ -290,7 +299,11 @@ export default function CustomSystem() {
               {/* Notifications */}
               <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white relative">
                 <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+                {unreadNotifications > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                    {unreadNotifications > 9 ? "9+" : unreadNotifications}
+                  </span>
+                )}
               </Button>
 
               {/* Help */}

@@ -2,10 +2,11 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getLoginUrl } from "@/const";
+import { trpc } from "@/lib/trpc";
 import {
   Zap, Building2, Package, Wrench, UserCircle, Activity,
   BarChart3, Shield, ArrowLeft, CheckCircle2, Globe,
-  Smartphone, Cloud, Lock, TrendingUp, Users
+  Smartphone, Cloud, Lock, TrendingUp, Users, Loader2
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
@@ -13,6 +14,12 @@ import { useLocation } from "wouter";
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
   const [, setLocation] = useLocation();
+
+  // Fetch public stats from API
+  const { data: billingStats } = trpc.billing.stats.useQuery(
+    { businessId: 1 },
+    { enabled: false } // Disabled for public page - will use static data
+  );
 
   useEffect(() => {
     if (isAuthenticated && !loading) {
