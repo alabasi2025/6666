@@ -294,6 +294,25 @@ export const billingRouter = router({
     return { id: result.insertId };
   }),
 
+  updatePaymentMethod: publicProcedure.input(z.object({
+    id: z.number(),
+    code: z.string().optional(),
+    name: z.string().optional(),
+    nameEn: z.string().optional(),
+    methodType: z.enum(["cash", "card", "bank_transfer", "check", "online"]).optional(),
+  })).mutation(async ({ input }) => {
+    const db = await getDb();
+    const { id, ...data } = input;
+    await db.update(paymentMethodsNew).set(data).where(eq(paymentMethodsNew.id, id));
+    return { success: true };
+  }),
+
+  deletePaymentMethod: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
+    const db = await getDb();
+    await db.delete(paymentMethodsNew).where(eq(paymentMethodsNew.id, input.id));
+    return { success: true };
+  }),
+
   // ==================== العملاء ====================
   getCustomers: publicProcedure.query(async () => {
     const db = await getDb();
@@ -439,9 +458,14 @@ export const billingRouter = router({
   linkMeterToCustomer: publicProcedure.input(z.object({
     meterId: z.number(),
     customerId: z.number(),
+    installationDate: z.string().optional(),
+    initialReading: z.number().optional(),
   })).mutation(async ({ input }) => {
     const db = await getDb();
-    await db.update(metersEnhanced).set({ customerId: input.customerId }).where(eq(metersEnhanced.id, input.meterId));
+    const updateData: any = { customerId: input.customerId };
+    if (input.installationDate) updateData.installationDate = new Date(input.installationDate);
+    if (input.initialReading !== undefined) updateData.lastReading = input.initialReading;
+    await db.update(metersEnhanced).set(updateData).where(eq(metersEnhanced.id, input.meterId));
     return { success: true };
   }),
 

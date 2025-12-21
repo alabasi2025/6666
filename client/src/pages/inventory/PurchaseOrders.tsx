@@ -124,8 +124,9 @@ export default function PurchaseOrders() {
       supplierId: parseInt(formData.get("supplierId") as string),
       warehouseId: parseInt(formData.get("warehouseId") as string),
       orderDate: formData.get("orderDate") as string,
-      expectedDeliveryDate: formData.get("expectedDeliveryDate") as string || undefined,
+      deliveryDate: formData.get("expectedDeliveryDate") as string || undefined,
       notes: formData.get("notes") as string || undefined,
+      items: [],
     });
   };
 

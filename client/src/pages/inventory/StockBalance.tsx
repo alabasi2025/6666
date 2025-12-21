@@ -51,7 +51,7 @@ export default function StockBalance() {
   });
 
   // Fetch stock balance
-  const { data: stockBalance = [] } = trpc.inventory.stock.balance.useQuery({
+  const { data: stockBalance = [] } = trpc.inventory.stockBalances.list.useQuery({
     businessId: 1,
     warehouseId: filterWarehouse !== "all" ? parseInt(filterWarehouse) : undefined,
   });

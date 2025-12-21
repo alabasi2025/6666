@@ -162,7 +162,7 @@ export default function PaymentsManagement() {
     const customerInvoices = invoicesQuery.data?.filter(i => i.customerId === customer.id) || [];
     const totalInvoices = customerInvoices.reduce((sum, i) => sum + parseFloat(i.totalAmount || "0"), 0);
     const totalPaid = customerInvoices.reduce((sum, i) => sum + parseFloat(i.paidAmount || "0"), 0);
-    const unpaidInvoices = customerInvoices.filter(i => !i.isPaid).length;
+    const unpaidInvoices = customerInvoices.filter(i => i.status !== 'paid').length;
     return {
       customerId: customer.id,
       customerName: customer.fullName,
@@ -419,7 +419,7 @@ export default function PaymentsManagement() {
                 <SelectTrigger><SelectValue placeholder="اختر العميل" /></SelectTrigger>
                 <SelectContent>
                   {customersQuery.data?.map(c => (
-                    <SelectItem key={c.id} value={c.id.toString()}>{c.fullName} - {c.accountNumber}</SelectItem>
+                    <SelectItem key={c.id} value={c.id.toString()}>{c.fullName}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -430,8 +430,8 @@ export default function PaymentsManagement() {
                 <SelectTrigger><SelectValue placeholder="اختر الفاتورة" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">بدون فاتورة محددة</SelectItem>
-                  {invoicesQuery.data?.filter(i => i.customerId.toString() === formData.customerId && !i.isPaid).map(i => (
-                    <SelectItem key={i.id} value={i.id.toString()}>{i.invoiceNumber} - {parseFloat(i.remainingAmount).toLocaleString()} ر.س</SelectItem>
+                  {invoicesQuery.data?.filter(i => i.customerId.toString() === formData.customerId && i.status !== 'paid').map(i => (
+                    <SelectItem key={i.id} value={i.id.toString()}>{i.invoiceNo} - {parseFloat(i.balanceDue || '0').toLocaleString()} ر.س</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

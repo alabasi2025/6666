@@ -63,6 +63,7 @@ export interface DataTableProps<T> {
   loading?: boolean;
   searchable?: boolean;
   searchPlaceholder?: string;
+  searchKeys?: string[];
   pageSize?: number;
   pageSizeOptions?: number[];
   onAdd?: () => void;
@@ -73,6 +74,7 @@ export interface DataTableProps<T> {
   onDelete?: (row: T) => void;
   actions?: boolean;
   emptyMessage?: string;
+  addButtonText?: string;
   getRowId?: (row: T) => string | number;
 }
 

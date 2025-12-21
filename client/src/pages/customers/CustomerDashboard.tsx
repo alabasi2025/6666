@@ -11,21 +11,21 @@ export default function CustomerDashboard() {
   const statCards = [
     {
       title: "إجمالي العملاء",
-      value: stats?.customersCount || 0,
+      value: stats?.totalCustomers || 0,
       icon: Users,
       color: "bg-blue-500",
       change: "+12%",
     },
     {
       title: "إجمالي العدادات",
-      value: stats?.metersCount || 0,
+      value: stats?.totalMeters || 0,
       icon: Gauge,
       color: "bg-green-500",
       change: "+8%",
     },
     {
       title: "الفواتير",
-      value: stats?.invoicesCount || 0,
+      value: stats?.pendingInvoices || 0,
       icon: FileText,
       color: "bg-purple-500",
       change: "+15%",
@@ -39,7 +39,7 @@ export default function CustomerDashboard() {
     },
     {
       title: "المستحقات المتأخرة",
-      value: `${(stats?.totalOutstanding || 0).toLocaleString()} ر.س`,
+      value: `${(stats?.totalDue || 0).toLocaleString()} ر.س`,
       icon: AlertCircle,
       color: "bg-red-500",
       change: "-5%",
