@@ -125,7 +125,7 @@ export default function AssetCategories() {
       code: formData.get("code") as string,
       nameAr: formData.get("nameAr") as string,
       nameEn: formData.get("nameEn") as string || undefined,
-      parentId: formData.get("parentId") ? parseInt(formData.get("parentId") as string) : undefined,
+      parentId: formData.get("parentId") && formData.get("parentId") !== "none" ? parseInt(formData.get("parentId") as string) : undefined,
       depreciationMethod: formData.get("depreciationMethod") as "straight_line" | "declining_balance" | "units_of_production" || undefined,
       usefulLife: formData.get("usefulLife") ? parseInt(formData.get("usefulLife") as string) : undefined,
       salvagePercentage: formData.get("salvagePercentage") as string || undefined,
@@ -329,7 +329,7 @@ export default function AssetCategories() {
                     <SelectValue placeholder="اختر الفئة الأم (اختياري)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">بدون فئة أم</SelectItem>
+                    <SelectItem value="none">بدون فئة أم</SelectItem>
                     {categories
                       .filter((c: Category) => c.id !== selectedCategory?.id)
                       .map((cat: Category) => (
