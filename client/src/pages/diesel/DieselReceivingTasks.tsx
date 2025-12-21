@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -35,104 +33,85 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Edit, Trash2, Eye, Play, CheckCircle, Clock, Truck, MapPin, Camera } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, Truck, Calendar, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
-import { format } from "date-fns";
-import { ar } from "date-fns/locale";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface ReceivingTask {
   id: number;
   taskNumber: string;
   taskDate: string;
-  employeeId: number;
-  tankerId: number;
-  supplierId: number;
   status: string;
-  startTime?: string;
-  arrivalAtSupplierTime?: string;
-  loadingStartTime?: string;
-  loadingEndTime?: string;
-  departureFromSupplierTime?: string;
-  arrivalAtStationTime?: string;
-  unloadingStartTime?: string;
-  unloadingEndTime?: string;
-  completionTime?: string;
-  supplierPumpReadingBefore?: number;
-  supplierPumpReadingAfter?: number;
-  supplierPumpReadingBeforeImage?: string;
-  supplierPumpReadingAfterImage?: string;
-  supplierInvoiceNumber?: string;
-  supplierInvoiceImage?: string;
-  supplierInvoiceAmount?: number;
-  quantityFromSupplier?: number;
-  compartment1Quantity?: number;
-  compartment2Quantity?: number;
-  intakePumpReadingBefore?: number;
-  intakePumpReadingAfter?: number;
-  intakePumpReadingBeforeImage?: string;
-  intakePumpReadingAfterImage?: string;
-  quantityReceivedAtStation?: number;
-  quantityDifference?: number;
-  notes?: string;
+  supplierId: number;
+  tankerId: number;
+  employeeId: number;
+  stationId: number;
+  quantityFromSupplier?: string | null;
+  quantityReceivedAtStation?: string | null;
+  notes?: string | null;
 }
 
-const statusLabels: Record<string, { label: string; color: string }> = {
-  pending: { label: "في الانتظار", color: "bg-gray-500" },
-  started: { label: "بدأت", color: "bg-blue-500" },
-  at_supplier: { label: "عند المورد", color: "bg-yellow-500" },
-  loading: { label: "جاري التحميل", color: "bg-orange-500" },
-  returning: { label: "في الطريق", color: "bg-purple-500" },
-  at_station: { label: "في المحطة", color: "bg-indigo-500" },
-  unloading: { label: "جاري التفريغ", color: "bg-pink-500" },
-  completed: { label: "مكتملة", color: "bg-green-500" },
-  cancelled: { label: "ملغاة", color: "bg-red-500" },
+const statusLabels: Record<string, string> = {
+  pending: "في الانتظار",
+  started: "بدأت",
+  at_supplier: "عند المورد",
+  loading: "جاري التحميل",
+  returning: "في طريق العودة",
+  at_station: "وصل المحطة",
+  unloading: "جاري التفريغ",
+  completed: "مكتملة",
+  cancelled: "ملغاة",
+};
+
+const statusColors: Record<string, string> = {
+  pending: "bg-gray-500",
+  started: "bg-blue-500",
+  at_supplier: "bg-yellow-500",
+  loading: "bg-orange-500",
+  returning: "bg-indigo-500",
+  at_station: "bg-purple-500",
+  unloading: "bg-pink-500",
+  completed: "bg-green-500",
+  cancelled: "bg-red-500",
 };
 
 export default function DieselReceivingTasks() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState<ReceivingTask | null>(null);
   const [formData, setFormData] = useState({
+    taskNumber: "",
     taskDate: new Date().toISOString().split("T")[0],
-    employeeId: "",
-    tankerId: "",
     supplierId: "",
+    tankerId: "",
+    employeeId: "",
+    stationId: "",
     notes: "",
   });
 
-  const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ["diesel-receiving-tasks"],
-    queryFn: () => trpc.diesel.receivingTasks.list.query({ businessId: user?.businessId }),
+  const utils = trpc.useUtils();
+
+  const { data: tasks = [], isLoading } = trpc.diesel.receivingTasks.list.useQuery({
+    businessId: user?.businessId ?? undefined,
   });
 
-  const { data: suppliers = [] } = useQuery({
-    queryKey: ["diesel-suppliers"],
-    queryFn: () => trpc.diesel.suppliers.list.query({ businessId: user?.businessId, isActive: true }),
+  const { data: suppliers = [] } = trpc.diesel.suppliers.list.useQuery({
+    businessId: user?.businessId ?? undefined,
   });
 
-  const { data: tankers = [] } = useQuery({
-    queryKey: ["diesel-tankers"],
-    queryFn: () => trpc.diesel.tankers.list.query({ businessId: user?.businessId, isActive: true }),
+  const { data: tankers = [] } = trpc.diesel.tankers.list.useQuery({
+    businessId: user?.businessId ?? undefined,
   });
 
-  const { data: employees = [] } = useQuery({
-    queryKey: ["employees"],
-    queryFn: () => trpc.hr.employees.list.query({ businessId: user?.businessId }),
+  const { data: stations = [] } = trpc.station.list.useQuery({
+    businessId: user?.businessId ?? undefined,
   });
 
-  const { data: stations = [] } = useQuery({
-    queryKey: ["stations"],
-    queryFn: () => trpc.stations.list.query({ businessId: user?.businessId }),
-  });
-
-  const createMutation = useMutation({
-    mutationFn: (data: any) => trpc.diesel.receivingTasks.create.mutate(data),
+  const createMutation = trpc.diesel.receivingTasks.create.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-receiving-tasks"] });
+      utils.diesel.receivingTasks.list.invalidate();
       setIsAddOpen(false);
       resetForm();
       toast({ title: "تم إنشاء المهمة بنجاح" });
@@ -142,10 +121,9 @@ export default function DieselReceivingTasks() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => trpc.diesel.receivingTasks.delete.mutate({ id }),
+  const deleteMutation = trpc.diesel.receivingTasks.delete.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-receiving-tasks"] });
+      utils.diesel.receivingTasks.list.invalidate();
       toast({ title: "تم حذف المهمة بنجاح" });
     },
     onError: (error: any) => {
@@ -155,33 +133,46 @@ export default function DieselReceivingTasks() {
 
   const resetForm = () => {
     setFormData({
+      taskNumber: "",
       taskDate: new Date().toISOString().split("T")[0],
-      employeeId: "",
-      tankerId: "",
       supplierId: "",
+      tankerId: "",
+      employeeId: "",
+      stationId: "",
       notes: "",
     });
+    setSelectedTask(null);
+  };
+
+  const generateTaskNumber = () => {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0");
+    return `DRT-${year}${month}${day}-${random}`;
   };
 
   const handleAdd = () => {
-    if (!formData.employeeId || !formData.tankerId || !formData.supplierId) {
+    if (!formData.taskNumber || !formData.supplierId || !formData.tankerId || !formData.stationId) {
       toast({ title: "خطأ", description: "يرجى ملء الحقول المطلوبة", variant: "destructive" });
       return;
     }
     createMutation.mutate({
-      businessId: user?.businessId,
-      stationId: stations[0]?.id || 1,
+      businessId: user?.businessId || 1,
+      stationId: parseInt(formData.stationId),
+      taskNumber: formData.taskNumber,
       taskDate: formData.taskDate,
-      employeeId: parseInt(formData.employeeId),
-      tankerId: parseInt(formData.tankerId),
       supplierId: parseInt(formData.supplierId),
+      tankerId: parseInt(formData.tankerId),
+      employeeId: user?.id || 1,
       notes: formData.notes || undefined,
     });
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه المهمة؟")) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate({ id });
     }
   };
 
@@ -195,30 +186,14 @@ export default function DieselReceivingTasks() {
     return supplier?.nameAr || "-";
   };
 
-  const getTankerCode = (id: number) => {
+  const getTankerInfo = (id: number) => {
     const tanker = tankers.find((t: any) => t.id === id);
-    return tanker?.code || "-";
+    return tanker ? `${tanker.code} - ${tanker.plateNumber}` : "-";
   };
 
-  const getEmployeeName = (id: number) => {
-    const employee = employees.find((e: any) => e.id === id);
-    return employee?.nameAr || "-";
-  };
-
-  const formatDateTime = (dateString?: string) => {
-    if (!dateString) return "-";
-    return format(new Date(dateString), "dd/MM/yyyy HH:mm", { locale: ar });
-  };
-
-  const calculateDuration = (start?: string, end?: string) => {
-    if (!start || !end) return "-";
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    const diffMs = endDate.getTime() - startDate.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const hours = Math.floor(diffMins / 60);
-    const mins = diffMins % 60;
-    return `${hours} ساعة ${mins} دقيقة`;
+  const getStationName = (id: number) => {
+    const station = stations.find((s: any) => s.id === id);
+    return station?.nameAr || "-";
   };
 
   return (
@@ -228,52 +203,34 @@ export default function DieselReceivingTasks() {
           <h1 className="text-3xl font-bold">مهام استلام الديزل</h1>
           <p className="text-muted-foreground">إدارة وتتبع مهام استلام الديزل من الموردين</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsAddOpen(true); }}>
+        <Button onClick={() => { 
+          resetForm(); 
+          setFormData(prev => ({ ...prev, taskNumber: generateTaskNumber() }));
+          setIsAddOpen(true); 
+        }}>
           <Plus className="ml-2 h-4 w-4" />
-          مهمة جديدة
+          إنشاء مهمة جديدة
         </Button>
       </div>
 
-      {/* إحصائيات سريعة */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">إجمالي المهام</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">{tasks.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">قيد التنفيذ</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-blue-600">
-              {tasks.filter((t: ReceivingTask) => !["completed", "cancelled", "pending"].includes(t.status)).length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">مكتملة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-green-600">
-              {tasks.filter((t: ReceivingTask) => t.status === "completed").length}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">في الانتظار</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-gray-600">
-              {tasks.filter((t: ReceivingTask) => t.status === "pending").length}
-            </p>
-          </CardContent>
-        </Card>
+      {/* ملخص الحالات */}
+      <div className="grid grid-cols-5 gap-4">
+        {["pending", "started", "loading", "returning", "completed"].map((status) => {
+          const count = tasks.filter((t: any) => t.status === status).length;
+          return (
+            <Card key={status}>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{statusLabels[status]}</p>
+                    <p className="text-2xl font-bold">{count}</p>
+                  </div>
+                  <div className={`w-3 h-3 rounded-full ${statusColors[status]}`} />
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       <Card>
@@ -296,29 +253,33 @@ export default function DieselReceivingTasks() {
                   <TableHead>التاريخ</TableHead>
                   <TableHead>المورد</TableHead>
                   <TableHead>الوايت</TableHead>
-                  <TableHead>الموظف</TableHead>
+                  <TableHead>المحطة</TableHead>
                   <TableHead>الكمية</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tasks.map((task: ReceivingTask) => (
+                {tasks.map((task: any) => (
                   <TableRow key={task.id}>
                     <TableCell className="font-mono">{task.taskNumber}</TableCell>
-                    <TableCell>{format(new Date(task.taskDate), "dd/MM/yyyy")}</TableCell>
-                    <TableCell>{getSupplierName(task.supplierId)}</TableCell>
-                    <TableCell>{getTankerCode(task.tankerId)}</TableCell>
-                    <TableCell>{getEmployeeName(task.employeeId)}</TableCell>
                     <TableCell>
-                      {task.quantityReceivedAtStation 
-                        ? `${task.quantityReceivedAtStation.toLocaleString()} لتر`
-                        : "-"
-                      }
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {new Date(task.taskDate).toLocaleDateString("ar-SA")}
+                      </div>
+                    </TableCell>
+                    <TableCell>{getSupplierName(task.supplierId)}</TableCell>
+                    <TableCell>{getTankerInfo(task.tankerId)}</TableCell>
+                    <TableCell>{getStationName(task.stationId)}</TableCell>
+                    <TableCell>
+                      {task.quantityFromSupplier 
+                        ? `${parseFloat(task.quantityFromSupplier).toLocaleString()} لتر` 
+                        : "-"}
                     </TableCell>
                     <TableCell>
-                      <Badge className={statusLabels[task.status]?.color || "bg-gray-500"}>
-                        {statusLabels[task.status]?.label || task.status}
+                      <Badge className={statusColors[task.status]}>
+                        {statusLabels[task.status]}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -330,15 +291,14 @@ export default function DieselReceivingTasks() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        {task.status === "pending" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(task.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500" />
-                          </Button>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDelete(task.id)}
+                          disabled={task.status !== "pending" && task.status !== "cancelled"}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -349,20 +309,47 @@ export default function DieselReceivingTasks() {
         </CardContent>
       </Card>
 
-      {/* Dialog إضافة مهمة */}
+      {/* Dialog إنشاء مهمة */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
         <DialogContent className="max-w-2xl" dir="rtl">
           <DialogHeader>
-            <DialogTitle>إنشاء مهمة استلام ديزل جديدة</DialogTitle>
+            <DialogTitle>إنشاء مهمة استلام جديدة</DialogTitle>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>تاريخ المهمة *</Label>
+              <Label>رقم المهمة *</Label>
+              <Input
+                value={formData.taskNumber}
+                onChange={(e) => setFormData({ ...formData, taskNumber: e.target.value })}
+                placeholder="DRT-20241222-001"
+                className="font-mono"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>التاريخ *</Label>
               <Input
                 type="date"
                 value={formData.taskDate}
                 onChange={(e) => setFormData({ ...formData, taskDate: e.target.value })}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>المحطة *</Label>
+              <Select
+                value={formData.stationId}
+                onValueChange={(value) => setFormData({ ...formData, stationId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر المحطة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stations.map((station: any) => (
+                    <SelectItem key={station.id} value={station.id.toString()}>
+                      {station.nameAr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>المورد *</Label>
@@ -382,7 +369,7 @@ export default function DieselReceivingTasks() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
+            <div className="col-span-2 space-y-2">
               <Label>الوايت *</Label>
               <Select
                 value={formData.tankerId}
@@ -394,25 +381,10 @@ export default function DieselReceivingTasks() {
                 <SelectContent>
                   {tankers.map((tanker: any) => (
                     <SelectItem key={tanker.id} value={tanker.id.toString()}>
-                      {tanker.code} - {tanker.plateNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>الموظف المسؤول *</Label>
-              <Select
-                value={formData.employeeId}
-                onValueChange={(value) => setFormData({ ...formData, employeeId: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="اختر الموظف" />
-                </SelectTrigger>
-                <SelectContent>
-                  {employees.map((employee: any) => (
-                    <SelectItem key={employee.id} value={employee.id.toString()}>
-                      {employee.nameAr}
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4" />
+                        {tanker.code} - {tanker.plateNumber} ({parseFloat(tanker.capacity).toLocaleString()} لتر)
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -420,7 +392,7 @@ export default function DieselReceivingTasks() {
             </div>
             <div className="col-span-2 space-y-2">
               <Label>ملاحظات</Label>
-              <Textarea
+              <Input
                 value={formData.notes}
                 onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 placeholder="أي ملاحظات إضافية..."
@@ -440,198 +412,76 @@ export default function DieselReceivingTasks() {
 
       {/* Dialog عرض تفاصيل المهمة */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" dir="rtl">
+        <DialogContent className="max-w-3xl" dir="rtl">
           <DialogHeader>
-            <DialogTitle>تفاصيل مهمة الاستلام</DialogTitle>
+            <DialogTitle>تفاصيل المهمة</DialogTitle>
           </DialogHeader>
           {selectedTask && (
             <div className="space-y-6">
-              {/* معلومات أساسية */}
               <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
                 <div>
-                  <h3 className="text-xl font-bold">{selectedTask.taskNumber}</h3>
-                  <p className="text-muted-foreground">
-                    {format(new Date(selectedTask.taskDate), "dd MMMM yyyy", { locale: ar })}
-                  </p>
+                  <p className="text-sm text-muted-foreground">رقم المهمة</p>
+                  <p className="text-xl font-mono font-bold">{selectedTask.taskNumber}</p>
                 </div>
-                <Badge className={statusLabels[selectedTask.status]?.color || "bg-gray-500"}>
-                  {statusLabels[selectedTask.status]?.label || selectedTask.status}
+                <Badge className={`${statusColors[selectedTask.status]} text-lg px-4 py-2`}>
+                  {statusLabels[selectedTask.status]}
                 </Badge>
               </div>
 
-              {/* معلومات المهمة */}
-              <div className="grid grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <MapPin className="h-4 w-4" /> المورد
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="font-bold">{getSupplierName(selectedTask.supplierId)}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Truck className="h-4 w-4" /> الوايت
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="font-bold">{getTankerCode(selectedTask.tankerId)}</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">الموظف</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="font-bold">{getEmployeeName(selectedTask.employeeId)}</p>
-                  </CardContent>
-                </Card>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">التاريخ</p>
+                  <p className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4" />
+                    {new Date(selectedTask.taskDate).toLocaleDateString("ar-SA")}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">المحطة</p>
+                  <p>{getStationName(selectedTask.stationId)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">المورد</p>
+                  <p>{getSupplierName(selectedTask.supplierId)}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">الوايت</p>
+                  <p className="flex items-center gap-1">
+                    <Truck className="h-4 w-4" />
+                    {getTankerInfo(selectedTask.tankerId)}
+                  </p>
+                </div>
               </div>
 
-              {/* الجدول الزمني */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" /> الجدول الزمني
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>بدء المهمة</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.startTime)}</span>
+              {(selectedTask.quantityFromSupplier || selectedTask.quantityReceivedAtStation) && (
+                <div className="border rounded-lg p-4">
+                  <p className="font-medium mb-2">الكميات</p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-sm text-muted-foreground">من المورد</p>
+                      <p className="text-lg font-bold">
+                        {selectedTask.quantityFromSupplier 
+                          ? `${parseFloat(selectedTask.quantityFromSupplier).toLocaleString()} لتر`
+                          : "-"}
+                      </p>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>الوصول للمورد</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.arrivalAtSupplierTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>بدء التحميل</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.loadingStartTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>انتهاء التحميل</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.loadingEndTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>المغادرة من المورد</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.departureFromSupplierTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>الوصول للمحطة</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.arrivalAtStationTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>بدء التفريغ</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.unloadingStartTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>انتهاء التفريغ</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.unloadingEndTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 border-b">
-                      <span>اكتمال المهمة</span>
-                      <span className="font-mono">{formatDateTime(selectedTask.completionTime)}</span>
-                    </div>
-                    <div className="flex justify-between items-center py-2 bg-muted rounded px-2">
-                      <span className="font-bold">إجمالي مدة الرحلة</span>
-                      <span className="font-bold">{calculateDuration(selectedTask.startTime, selectedTask.completionTime)}</span>
+                    <div>
+                      <p className="text-sm text-muted-foreground">المستلمة في المحطة</p>
+                      <p className="text-lg font-bold">
+                        {selectedTask.quantityReceivedAtStation 
+                          ? `${parseFloat(selectedTask.quantityReceivedAtStation).toLocaleString()} لتر`
+                          : "-"}
+                      </p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-
-              {/* قراءات الطرمبات والكميات */}
-              <div className="grid grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>قراءات طرمبة المورد</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>القراءة قبل:</span>
-                      <span className="font-mono">{selectedTask.supplierPumpReadingBefore?.toLocaleString() || "-"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>القراءة بعد:</span>
-                      <span className="font-mono">{selectedTask.supplierPumpReadingAfter?.toLocaleString() || "-"}</span>
-                    </div>
-                    <div className="flex justify-between font-bold border-t pt-2">
-                      <span>الكمية:</span>
-                      <span>{selectedTask.quantityFromSupplier?.toLocaleString() || "-"} لتر</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle>قراءات طرمبة المحطة</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex justify-between">
-                      <span>القراءة قبل:</span>
-                      <span className="font-mono">{selectedTask.intakePumpReadingBefore?.toLocaleString() || "-"}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>القراءة بعد:</span>
-                      <span className="font-mono">{selectedTask.intakePumpReadingAfter?.toLocaleString() || "-"}</span>
-                    </div>
-                    <div className="flex justify-between font-bold border-t pt-2">
-                      <span>الكمية المستلمة:</span>
-                      <span>{selectedTask.quantityReceivedAtStation?.toLocaleString() || "-"} لتر</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* الفرق والفاتورة */}
-              {selectedTask.status === "completed" && (
-                <div className="grid grid-cols-2 gap-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>فاتورة المورد</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      <div className="flex justify-between">
-                        <span>رقم الفاتورة:</span>
-                        <span>{selectedTask.supplierInvoiceNumber || "-"}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>المبلغ:</span>
-                        <span>{selectedTask.supplierInvoiceAmount?.toLocaleString() || "-"} ريال</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>الفرق</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex justify-between items-center">
-                        <span>فرق الكمية:</span>
-                        <span className={`font-bold ${(selectedTask.quantityDifference || 0) > 0 ? "text-red-500" : "text-green-500"}`}>
-                          {selectedTask.quantityDifference?.toLocaleString() || "0"} لتر
-                        </span>
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
               )}
 
-              {/* الملاحظات */}
               {selectedTask.notes && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>ملاحظات</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p>{selectedTask.notes}</p>
-                  </CardContent>
-                </Card>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">ملاحظات</p>
+                  <p className="p-3 bg-muted rounded">{selectedTask.notes}</p>
+                </div>
               )}
             </div>
           )}

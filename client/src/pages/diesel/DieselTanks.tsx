@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,20 +37,20 @@ import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Plus, Edit, Trash2, Eye, Droplet, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface Tank {
   id: number;
   code: string;
   nameAr: string;
-  nameEn?: string;
-  tankType: string;
-  capacity: number;
-  currentLevel: number;
-  minLevel?: number;
-  maxLevel?: number;
-  location?: string;
-  isActive: boolean;
+  nameEn?: string | null;
+  type: "receiving" | "main" | "rocket" | "generator";
+  capacity: string;
+  currentLevel: string | null;
+  minLevel: string | null;
+  linkedGeneratorId?: number | null;
+  isActive: boolean | null;
+  stationId: number;
 }
 
 const tankTypeLabels: Record<string, string> = {
@@ -61,10 +60,16 @@ const tankTypeLabels: Record<string, string> = {
   generator: "خزان مولد",
 };
 
+const tankTypeColors: Record<string, string> = {
+  receiving: "bg-blue-500",
+  main: "bg-green-500",
+  rocket: "bg-orange-500",
+  generator: "bg-purple-500",
+};
+
 export default function DieselTanks() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -73,24 +78,28 @@ export default function DieselTanks() {
     code: "",
     nameAr: "",
     nameEn: "",
-    tankType: "main",
+    type: "main" as "receiving" | "main" | "rocket" | "generator",
     capacity: "",
     currentLevel: "0",
-    minLevel: "",
-    maxLevel: "",
-    location: "",
+    minLevel: "0",
+    linkedGeneratorId: "",
     isActive: true,
+    stationId: "",
   });
 
-  const { data: tanks = [], isLoading } = useQuery({
-    queryKey: ["diesel-tanks"],
-    queryFn: () => trpc.diesel.tanks.list.query({ businessId: user?.businessId }),
+  const utils = trpc.useUtils();
+
+  const { data: tanks = [], isLoading } = trpc.diesel.tanks.list.useQuery({
+    businessId: user?.businessId ?? undefined,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: any) => trpc.diesel.tanks.create.mutate(data),
+  const { data: stations = [] } = trpc.station.list.useQuery({
+    businessId: user?.businessId ?? undefined,
+  });
+
+  const createMutation = trpc.diesel.tanks.create.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-tanks"] });
+      utils.diesel.tanks.list.invalidate();
       setIsAddOpen(false);
       resetForm();
       toast({ title: "تم إضافة الخزان بنجاح" });
@@ -100,10 +109,9 @@ export default function DieselTanks() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: (data: any) => trpc.diesel.tanks.update.mutate(data),
+  const updateMutation = trpc.diesel.tanks.update.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-tanks"] });
+      utils.diesel.tanks.list.invalidate();
       setIsEditOpen(false);
       resetForm();
       toast({ title: "تم تحديث الخزان بنجاح" });
@@ -113,10 +121,9 @@ export default function DieselTanks() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => trpc.diesel.tanks.delete.mutate({ id }),
+  const deleteMutation = trpc.diesel.tanks.delete.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-tanks"] });
+      utils.diesel.tanks.list.invalidate();
       toast({ title: "تم حذف الخزان بنجاح" });
     },
     onError: (error: any) => {
@@ -129,34 +136,33 @@ export default function DieselTanks() {
       code: "",
       nameAr: "",
       nameEn: "",
-      tankType: "main",
+      type: "main",
       capacity: "",
       currentLevel: "0",
-      minLevel: "",
-      maxLevel: "",
-      location: "",
+      minLevel: "0",
+      linkedGeneratorId: "",
       isActive: true,
+      stationId: "",
     });
     setSelectedTank(null);
   };
 
   const handleAdd = () => {
-    if (!formData.code || !formData.nameAr || !formData.capacity) {
+    if (!formData.code || !formData.nameAr || !formData.capacity || !formData.stationId) {
       toast({ title: "خطأ", description: "يرجى ملء الحقول المطلوبة", variant: "destructive" });
       return;
     }
     createMutation.mutate({
-      businessId: user?.businessId,
-      stationId: 1, // TODO: اختيار المحطة
+      businessId: user?.businessId || 1,
+      stationId: parseInt(formData.stationId),
       code: formData.code,
       nameAr: formData.nameAr,
       nameEn: formData.nameEn || undefined,
-      tankType: formData.tankType,
+      type: formData.type,
       capacity: parseFloat(formData.capacity),
       currentLevel: parseFloat(formData.currentLevel) || 0,
-      minLevel: formData.minLevel ? parseFloat(formData.minLevel) : undefined,
-      maxLevel: formData.maxLevel ? parseFloat(formData.maxLevel) : undefined,
-      location: formData.location || undefined,
+      minLevel: parseFloat(formData.minLevel) || 0,
+      linkedGeneratorId: formData.linkedGeneratorId ? parseInt(formData.linkedGeneratorId) : undefined,
       isActive: formData.isActive,
     });
   };
@@ -165,22 +171,21 @@ export default function DieselTanks() {
     if (!selectedTank) return;
     updateMutation.mutate({
       id: selectedTank.id,
-      code: formData.code,
-      nameAr: formData.nameAr,
+      code: formData.code || undefined,
+      nameAr: formData.nameAr || undefined,
       nameEn: formData.nameEn || undefined,
-      tankType: formData.tankType,
-      capacity: parseFloat(formData.capacity),
-      currentLevel: parseFloat(formData.currentLevel) || 0,
+      type: formData.type,
+      capacity: formData.capacity ? parseFloat(formData.capacity) : undefined,
+      currentLevel: formData.currentLevel ? parseFloat(formData.currentLevel) : undefined,
       minLevel: formData.minLevel ? parseFloat(formData.minLevel) : undefined,
-      maxLevel: formData.maxLevel ? parseFloat(formData.maxLevel) : undefined,
-      location: formData.location || undefined,
+      linkedGeneratorId: formData.linkedGeneratorId ? parseInt(formData.linkedGeneratorId) : undefined,
       isActive: formData.isActive,
     });
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا الخزان؟")) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate({ id });
     }
   };
 
@@ -190,13 +195,13 @@ export default function DieselTanks() {
       code: tank.code,
       nameAr: tank.nameAr,
       nameEn: tank.nameEn || "",
-      tankType: tank.tankType,
-      capacity: tank.capacity.toString(),
-      currentLevel: tank.currentLevel.toString(),
-      minLevel: tank.minLevel?.toString() || "",
-      maxLevel: tank.maxLevel?.toString() || "",
-      location: tank.location || "",
-      isActive: tank.isActive,
+      type: tank.type,
+      capacity: tank.capacity,
+      currentLevel: tank.currentLevel || "0",
+      minLevel: tank.minLevel || "0",
+      linkedGeneratorId: tank.linkedGeneratorId?.toString() || "",
+      isActive: tank.isActive ?? true,
+      stationId: tank.stationId.toString(),
     });
     setIsEditOpen(true);
   };
@@ -207,22 +212,15 @@ export default function DieselTanks() {
   };
 
   const getLevelPercentage = (tank: Tank) => {
-    return Math.round((tank.currentLevel / tank.capacity) * 100);
-  };
-
-  const getLevelColor = (tank: Tank) => {
-    const percentage = getLevelPercentage(tank);
-    if (percentage < 20) return "bg-red-500";
-    if (percentage < 40) return "bg-orange-500";
-    if (percentage < 60) return "bg-yellow-500";
-    return "bg-green-500";
+    const current = parseFloat(tank.currentLevel || "0");
+    const capacity = parseFloat(tank.capacity);
+    return capacity > 0 ? (current / capacity) * 100 : 0;
   };
 
   const isLowLevel = (tank: Tank) => {
-    if (tank.minLevel) {
-      return tank.currentLevel <= tank.minLevel;
-    }
-    return getLevelPercentage(tank) < 20;
+    const current = parseFloat(tank.currentLevel || "0");
+    const min = parseFloat(tank.minLevel || "0");
+    return current <= min;
   };
 
   return (
@@ -230,7 +228,7 @@ export default function DieselTanks() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold">خزانات الديزل</h1>
-          <p className="text-muted-foreground">إدارة خزانات الديزل في المحطة</p>
+          <p className="text-muted-foreground">إدارة خزانات الديزل في المحطات</p>
         </div>
         <Button onClick={() => { resetForm(); setIsAddOpen(true); }}>
           <Plus className="ml-2 h-4 w-4" />
@@ -238,114 +236,128 @@ export default function DieselTanks() {
         </Button>
       </div>
 
-      {/* إحصائيات */}
+      {/* ملخص الخزانات */}
       <div className="grid grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">إجمالي السعة</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {tanks.reduce((sum: number, t: Tank) => sum + t.capacity, 0).toLocaleString()} لتر
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">الكمية الحالية</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-blue-600">
-              {tanks.reduce((sum: number, t: Tank) => sum + t.currentLevel, 0).toLocaleString()} لتر
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground">نسبة الامتلاء</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold">
-              {tanks.length > 0 
-                ? Math.round((tanks.reduce((sum: number, t: Tank) => sum + t.currentLevel, 0) / 
-                    tanks.reduce((sum: number, t: Tank) => sum + t.capacity, 0)) * 100)
-                : 0}%
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-muted-foreground flex items-center gap-1">
-              <AlertTriangle className="h-4 w-4 text-red-500" /> منخفض المستوى
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-red-600">
-              {tanks.filter((t: Tank) => isLowLevel(t)).length}
-            </p>
-          </CardContent>
-        </Card>
+        {Object.entries(tankTypeLabels).map(([type, label]) => {
+          const typeTanks = tanks.filter(t => t.type === type);
+          const lowLevelCount = typeTanks.filter(t => isLowLevel(t)).length;
+          return (
+            <Card key={type}>
+              <CardContent className="pt-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">{label}</p>
+                    <p className="text-2xl font-bold">{typeTanks.length}</p>
+                  </div>
+                  <div className={`w-3 h-3 rounded-full ${tankTypeColors[type]}`} />
+                </div>
+                {lowLevelCount > 0 && (
+                  <div className="flex items-center gap-1 mt-2 text-orange-500 text-sm">
+                    <AlertTriangle className="h-4 w-4" />
+                    {lowLevelCount} منخفض المستوى
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* بطاقات الخزانات */}
-      <div className="grid grid-cols-3 gap-4">
-        {tanks.map((tank: Tank) => (
-          <Card key={tank.id} className={isLowLevel(tank) ? "border-red-500 border-2" : ""}>
-            <CardHeader className="pb-2">
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Droplet className={`h-5 w-5 ${getLevelColor(tank).replace("bg-", "text-")}`} />
-                    {tank.nameAr}
-                  </CardTitle>
-                  <CardDescription>{tank.code} - {tankTypeLabels[tank.tankType]}</CardDescription>
-                </div>
-                <Badge variant={tank.isActive ? "default" : "secondary"}>
-                  {tank.isActive ? "نشط" : "غير نشط"}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>المستوى الحالي</span>
-                  <span className="font-bold">{getLevelPercentage(tank)}%</span>
-                </div>
-                <Progress value={getLevelPercentage(tank)} className={getLevelColor(tank)} />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>{tank.currentLevel.toLocaleString()} لتر</span>
-                  <span>من {tank.capacity.toLocaleString()} لتر</span>
-                </div>
-              </div>
-              
-              {isLowLevel(tank) && (
-                <div className="flex items-center gap-2 text-red-500 text-sm">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>مستوى منخفض - يحتاج إعادة تعبئة</span>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-2 border-t">
-                <Button variant="ghost" size="sm" onClick={() => openViewDialog(tank)}>
-                  <Eye className="h-4 w-4 ml-1" /> عرض
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => openEditDialog(tank)}>
-                  <Edit className="h-4 w-4 ml-1" /> تعديل
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(tank.id)}>
-                  <Trash2 className="h-4 w-4 ml-1 text-red-500" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {tanks.length === 0 && !isLoading && (
-        <div className="text-center py-12 text-muted-foreground">
-          لا يوجد خزانات مسجلة
-        </div>
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>قائمة الخزانات</CardTitle>
+          <CardDescription>جميع خزانات الديزل المسجلة في النظام</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="text-center py-8">جاري التحميل...</div>
+          ) : tanks.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              لا يوجد خزانات مسجلة
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>الكود</TableHead>
+                  <TableHead>الاسم</TableHead>
+                  <TableHead>النوع</TableHead>
+                  <TableHead>السعة</TableHead>
+                  <TableHead>المستوى الحالي</TableHead>
+                  <TableHead>الحالة</TableHead>
+                  <TableHead>الإجراءات</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {tanks.map((tank) => {
+                  const percentage = getLevelPercentage(tank);
+                  const lowLevel = isLowLevel(tank);
+                  return (
+                    <TableRow key={tank.id}>
+                      <TableCell className="font-mono">{tank.code}</TableCell>
+                      <TableCell>{tank.nameAr}</TableCell>
+                      <TableCell>
+                        <Badge className={tankTypeColors[tank.type]}>
+                          {tankTypeLabels[tank.type]}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{parseFloat(tank.capacity).toLocaleString()} لتر</TableCell>
+                      <TableCell>
+                        <div className="space-y-1 w-32">
+                          <div className="flex justify-between text-xs">
+                            <span>{parseFloat(tank.currentLevel || "0").toLocaleString()} لتر</span>
+                            <span>{percentage.toFixed(0)}%</span>
+                          </div>
+                          <Progress 
+                            value={percentage} 
+                            className={lowLevel ? "bg-red-200" : ""} 
+                          />
+                          {lowLevel && (
+                            <div className="flex items-center gap-1 text-red-500 text-xs">
+                              <AlertTriangle className="h-3 w-3" />
+                              منخفض
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={tank.isActive ? "default" : "secondary"}>
+                          {tank.isActive ? "نشط" : "غير نشط"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openViewDialog(tank)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openEditDialog(tank)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(tank.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Dialog إضافة خزان */}
       <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -355,36 +367,37 @@ export default function DieselTanks() {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
+              <Label>المحطة *</Label>
+              <Select
+                value={formData.stationId}
+                onValueChange={(value) => setFormData({ ...formData, stationId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="اختر المحطة" />
+                </SelectTrigger>
+                <SelectContent>
+                  {stations.map((station: any) => (
+                    <SelectItem key={station.id} value={station.id.toString()}>
+                      {station.nameAr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>الكود *</Label>
               <Input
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                placeholder="TANK001"
+                placeholder="TNK001"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>نوع الخزان *</Label>
-              <Select
-                value={formData.tankType}
-                onValueChange={(value) => setFormData({ ...formData, tankType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="receiving">خزان استلام</SelectItem>
-                  <SelectItem value="main">خزان رئيسي</SelectItem>
-                  <SelectItem value="rocket">خزان صاروخ</SelectItem>
-                  <SelectItem value="generator">خزان مولد</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
             <div className="space-y-2">
               <Label>الاسم بالعربي *</Label>
               <Input
                 value={formData.nameAr}
                 onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
-                placeholder="الخزان الرئيسي 1"
+                placeholder="خزان الاستلام الرئيسي"
               />
             </div>
             <div className="space-y-2">
@@ -392,54 +405,55 @@ export default function DieselTanks() {
               <Input
                 value={formData.nameEn}
                 onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
-                placeholder="Main Tank 1"
+                placeholder="Main Receiving Tank"
               />
+            </div>
+            <div className="space-y-2">
+              <Label>نوع الخزان *</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value: any) => setFormData({ ...formData, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(tankTypeLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label>السعة (لتر) *</Label>
               <Input
-                type="number"
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                 placeholder="10000"
+                type="number"
               />
             </div>
             <div className="space-y-2">
               <Label>المستوى الحالي (لتر)</Label>
               <Input
-                type="number"
                 value={formData.currentLevel}
                 onChange={(e) => setFormData({ ...formData, currentLevel: e.target.value })}
                 placeholder="0"
+                type="number"
               />
             </div>
             <div className="space-y-2">
               <Label>الحد الأدنى (لتر)</Label>
               <Input
-                type="number"
                 value={formData.minLevel}
                 onChange={(e) => setFormData({ ...formData, minLevel: e.target.value })}
                 placeholder="1000"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>الحد الأقصى (لتر)</Label>
-              <Input
                 type="number"
-                value={formData.maxLevel}
-                onChange={(e) => setFormData({ ...formData, maxLevel: e.target.value })}
-                placeholder="9500"
               />
             </div>
-            <div className="space-y-2">
-              <Label>الموقع</Label>
-              <Input
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                placeholder="المنطقة الشمالية"
-              />
-            </div>
-            <div className="flex items-center gap-2">
+            <div className="col-span-2 flex items-center gap-2">
               <Switch
                 checked={formData.isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
@@ -452,7 +466,7 @@ export default function DieselTanks() {
               إلغاء
             </Button>
             <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+              {createMutation.isPending ? "جاري الإضافة..." : "إضافة"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -473,23 +487,6 @@ export default function DieselTanks() {
               />
             </div>
             <div className="space-y-2">
-              <Label>نوع الخزان *</Label>
-              <Select
-                value={formData.tankType}
-                onValueChange={(value) => setFormData({ ...formData, tankType: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="receiving">خزان استلام</SelectItem>
-                  <SelectItem value="main">خزان رئيسي</SelectItem>
-                  <SelectItem value="rocket">خزان صاروخ</SelectItem>
-                  <SelectItem value="generator">خزان مولد</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
               <Label>الاسم بالعربي *</Label>
               <Input
                 value={formData.nameAr}
@@ -504,42 +501,45 @@ export default function DieselTanks() {
               />
             </div>
             <div className="space-y-2">
+              <Label>نوع الخزان *</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(value: any) => setFormData({ ...formData, type: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {Object.entries(tankTypeLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label>السعة (لتر) *</Label>
               <Input
-                type="number"
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                type="number"
               />
             </div>
             <div className="space-y-2">
               <Label>المستوى الحالي (لتر)</Label>
               <Input
-                type="number"
                 value={formData.currentLevel}
                 onChange={(e) => setFormData({ ...formData, currentLevel: e.target.value })}
+                type="number"
               />
             </div>
             <div className="space-y-2">
               <Label>الحد الأدنى (لتر)</Label>
               <Input
-                type="number"
                 value={formData.minLevel}
                 onChange={(e) => setFormData({ ...formData, minLevel: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>الحد الأقصى (لتر)</Label>
-              <Input
                 type="number"
-                value={formData.maxLevel}
-                onChange={(e) => setFormData({ ...formData, maxLevel: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>الموقع</Label>
-              <Input
-                value={formData.location}
-                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -555,66 +555,68 @@ export default function DieselTanks() {
               إلغاء
             </Button>
             <Button onClick={handleEdit} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "جاري الحفظ..." : "حفظ التعديلات"}
+              {updateMutation.isPending ? "جاري التحديث..." : "تحديث"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog عرض الخزان */}
+      {/* Dialog عرض تفاصيل الخزان */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="max-w-lg" dir="rtl">
+        <DialogContent className="max-w-2xl" dir="rtl">
           <DialogHeader>
             <DialogTitle>تفاصيل الخزان</DialogTitle>
           </DialogHeader>
           {selectedTank && (
             <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-                <Droplet className={`h-12 w-12 ${getLevelColor(selectedTank).replace("bg-", "text-")}`} />
-                <div>
-                  <h3 className="text-xl font-bold">{selectedTank.nameAr}</h3>
-                  <p className="text-muted-foreground">{selectedTank.code}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">الكود</p>
+                  <p className="font-mono">{selectedTank.code}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">الاسم</p>
+                  <p>{selectedTank.nameAr}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">النوع</p>
+                  <Badge className={tankTypeColors[selectedTank.type]}>
+                    {tankTypeLabels[selectedTank.type]}
+                  </Badge>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm text-muted-foreground">الحالة</p>
+                  <Badge variant={selectedTank.isActive ? "default" : "secondary"}>
+                    {selectedTank.isActive ? "نشط" : "غير نشط"}
+                  </Badge>
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>نوع الخزان:</span>
-                  <span className="font-bold">{tankTypeLabels[selectedTank.tankType]}</span>
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center gap-2 mb-4">
+                  <Droplet className="h-5 w-5 text-blue-500" />
+                  <span className="font-medium">مستوى الخزان</span>
                 </div>
-                <div className="flex justify-between">
-                  <span>السعة:</span>
-                  <span className="font-bold">{selectedTank.capacity.toLocaleString()} لتر</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>المستوى الحالي:</span>
-                  <span className="font-bold">{selectedTank.currentLevel.toLocaleString()} لتر</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>نسبة الامتلاء:</span>
-                  <span className="font-bold">{getLevelPercentage(selectedTank)}%</span>
-                </div>
-                {selectedTank.minLevel && (
+                <div className="space-y-2">
                   <div className="flex justify-between">
-                    <span>الحد الأدنى:</span>
-                    <span>{selectedTank.minLevel.toLocaleString()} لتر</span>
+                    <span>المستوى الحالي</span>
+                    <span className="font-bold">
+                      {parseFloat(selectedTank.currentLevel || "0").toLocaleString()} لتر
+                    </span>
                   </div>
-                )}
-                {selectedTank.maxLevel && (
-                  <div className="flex justify-between">
-                    <span>الحد الأقصى:</span>
-                    <span>{selectedTank.maxLevel.toLocaleString()} لتر</span>
+                  <Progress value={getLevelPercentage(selectedTank)} className="h-4" />
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>الحد الأدنى: {parseFloat(selectedTank.minLevel || "0").toLocaleString()} لتر</span>
+                    <span>السعة: {parseFloat(selectedTank.capacity).toLocaleString()} لتر</span>
                   </div>
-                )}
-                {selectedTank.location && (
-                  <div className="flex justify-between">
-                    <span>الموقع:</span>
-                    <span>{selectedTank.location}</span>
-                  </div>
-                )}
+                  {isLowLevel(selectedTank) && (
+                    <div className="flex items-center gap-2 text-red-500 mt-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      <span>تحذير: مستوى الخزان منخفض!</span>
+                    </div>
+                  )}
+                </div>
               </div>
-
-              <Progress value={getLevelPercentage(selectedTank)} className={getLevelColor(selectedTank)} />
             </div>
           )}
           <DialogFooter>

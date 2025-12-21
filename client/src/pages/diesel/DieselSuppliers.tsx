@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,25 +29,24 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Edit, Trash2, Eye, MapPin, Phone, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface Supplier {
   id: number;
   code: string;
   nameAr: string;
-  nameEn?: string;
-  phone?: string;
-  address?: string;
-  latitude?: number;
-  longitude?: number;
-  contactPerson?: string;
-  isActive: boolean;
+  nameEn?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  latitude?: string | null;
+  longitude?: string | null;
+  contactPerson?: string | null;
+  isActive: boolean | null;
 }
 
 export default function DieselSuppliers() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -65,15 +63,15 @@ export default function DieselSuppliers() {
     isActive: true,
   });
 
-  const { data: suppliers = [], isLoading } = useQuery({
-    queryKey: ["diesel-suppliers"],
-    queryFn: () => trpc.diesel.suppliers.list.query({ businessId: user?.businessId }),
+  const utils = trpc.useUtils();
+
+  const { data: suppliers = [], isLoading } = trpc.diesel.suppliers.list.useQuery({
+    businessId: user?.businessId ?? undefined,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: any) => trpc.diesel.suppliers.create.mutate(data),
+  const createMutation = trpc.diesel.suppliers.create.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-suppliers"] });
+      utils.diesel.suppliers.list.invalidate();
       setIsAddOpen(false);
       resetForm();
       toast({ title: "تم إضافة المورد بنجاح" });
@@ -83,10 +81,9 @@ export default function DieselSuppliers() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: (data: any) => trpc.diesel.suppliers.update.mutate(data),
+  const updateMutation = trpc.diesel.suppliers.update.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-suppliers"] });
+      utils.diesel.suppliers.list.invalidate();
       setIsEditOpen(false);
       resetForm();
       toast({ title: "تم تحديث المورد بنجاح" });
@@ -96,10 +93,9 @@ export default function DieselSuppliers() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => trpc.diesel.suppliers.delete.mutate({ id }),
+  const deleteMutation = trpc.diesel.suppliers.delete.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-suppliers"] });
+      utils.diesel.suppliers.list.invalidate();
       toast({ title: "تم حذف المورد بنجاح" });
     },
     onError: (error: any) => {
@@ -128,10 +124,16 @@ export default function DieselSuppliers() {
       return;
     }
     createMutation.mutate({
-      businessId: user?.businessId,
-      ...formData,
+      businessId: user?.businessId || 1,
+      code: formData.code,
+      nameAr: formData.nameAr,
+      nameEn: formData.nameEn || undefined,
+      phone: formData.phone || undefined,
+      address: formData.address || undefined,
       latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
       longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
+      contactPerson: formData.contactPerson || undefined,
+      isActive: formData.isActive,
     });
   };
 
@@ -139,15 +141,21 @@ export default function DieselSuppliers() {
     if (!selectedSupplier) return;
     updateMutation.mutate({
       id: selectedSupplier.id,
-      ...formData,
+      code: formData.code || undefined,
+      nameAr: formData.nameAr || undefined,
+      nameEn: formData.nameEn || undefined,
+      phone: formData.phone || undefined,
+      address: formData.address || undefined,
       latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
       longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
+      contactPerson: formData.contactPerson || undefined,
+      isActive: formData.isActive,
     });
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا المورد؟")) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate({ id });
     }
   };
 
@@ -162,7 +170,7 @@ export default function DieselSuppliers() {
       latitude: supplier.latitude?.toString() || "",
       longitude: supplier.longitude?.toString() || "",
       contactPerson: supplier.contactPerson || "",
-      isActive: supplier.isActive,
+      isActive: supplier.isActive ?? true,
     });
     setIsEditOpen(true);
   };
@@ -210,7 +218,7 @@ export default function DieselSuppliers() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {suppliers.map((supplier: Supplier) => (
+                {suppliers.map((supplier) => (
                   <TableRow key={supplier.id}>
                     <TableCell className="font-mono">{supplier.code}</TableCell>
                     <TableCell>{supplier.nameAr}</TableCell>
@@ -302,7 +310,7 @@ export default function DieselSuppliers() {
                 placeholder="اسم الشخص المسؤول"
               />
             </div>
-            <div className="space-y-2">
+            <div className="col-span-2 space-y-2">
               <Label>العنوان</Label>
               <Input
                 value={formData.address}
@@ -317,6 +325,8 @@ export default function DieselSuppliers() {
                 onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                 placeholder="24.7136"
                 dir="ltr"
+                type="number"
+                step="any"
               />
             </div>
             <div className="space-y-2">
@@ -326,6 +336,8 @@ export default function DieselSuppliers() {
                 onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                 placeholder="46.6753"
                 dir="ltr"
+                type="number"
+                step="any"
               />
             </div>
             <div className="col-span-2 flex items-center gap-2">
@@ -341,7 +353,7 @@ export default function DieselSuppliers() {
               إلغاء
             </Button>
             <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+              {createMutation.isPending ? "جاري الإضافة..." : "إضافة"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -390,7 +402,7 @@ export default function DieselSuppliers() {
                 onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
+            <div className="col-span-2 space-y-2">
               <Label>العنوان</Label>
               <Input
                 value={formData.address}
@@ -403,6 +415,8 @@ export default function DieselSuppliers() {
                 value={formData.latitude}
                 onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                 dir="ltr"
+                type="number"
+                step="any"
               />
             </div>
             <div className="space-y-2">
@@ -411,6 +425,8 @@ export default function DieselSuppliers() {
                 value={formData.longitude}
                 onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                 dir="ltr"
+                type="number"
+                step="any"
               />
             </div>
             <div className="col-span-2 flex items-center gap-2">
@@ -426,65 +442,66 @@ export default function DieselSuppliers() {
               إلغاء
             </Button>
             <Button onClick={handleEdit} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "جاري الحفظ..." : "حفظ التعديلات"}
+              {updateMutation.isPending ? "جاري التحديث..." : "تحديث"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog عرض المورد */}
+      {/* Dialog عرض تفاصيل المورد */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-2xl" dir="rtl">
           <DialogHeader>
             <DialogTitle>تفاصيل المورد</DialogTitle>
           </DialogHeader>
           {selectedSupplier && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground">الكود</Label>
-                  <p className="font-mono">{selectedSupplier.code}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground">الحالة</Label>
-                  <Badge variant={selectedSupplier.isActive ? "default" : "secondary"}>
-                    {selectedSupplier.isActive ? "نشط" : "غير نشط"}
-                  </Badge>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground">الاسم بالعربي</Label>
-                  <p>{selectedSupplier.nameAr}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground">الاسم بالإنجليزي</Label>
-                  <p>{selectedSupplier.nameEn || "-"}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-4 w-4" /> الهاتف
-                  </Label>
-                  <p dir="ltr">{selectedSupplier.phone || "-"}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground flex items-center gap-1">
-                    <User className="h-4 w-4" /> جهة الاتصال
-                  </Label>
-                  <p>{selectedSupplier.contactPerson || "-"}</p>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">الكود</p>
+                <p className="font-mono">{selectedSupplier.code}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">الاسم بالعربي</p>
+                <p>{selectedSupplier.nameAr}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">الاسم بالإنجليزي</p>
+                <p>{selectedSupplier.nameEn || "-"}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">الهاتف</p>
+                <p dir="ltr" className="flex items-center gap-1">
+                  <Phone className="h-4 w-4" />
+                  {selectedSupplier.phone || "-"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">جهة الاتصال</p>
+                <p className="flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  {selectedSupplier.contactPerson || "-"}
+                </p>
+              </div>
+              <div className="col-span-2 space-y-1">
+                <p className="text-sm text-muted-foreground">العنوان</p>
+                <p className="flex items-center gap-1">
+                  <MapPin className="h-4 w-4" />
+                  {selectedSupplier.address || "-"}
+                </p>
+              </div>
+              {(selectedSupplier.latitude || selectedSupplier.longitude) && (
                 <div className="col-span-2 space-y-1">
-                  <Label className="text-muted-foreground flex items-center gap-1">
-                    <MapPin className="h-4 w-4" /> العنوان
-                  </Label>
-                  <p>{selectedSupplier.address || "-"}</p>
+                  <p className="text-sm text-muted-foreground">الإحداثيات</p>
+                  <p dir="ltr">
+                    {selectedSupplier.latitude}, {selectedSupplier.longitude}
+                  </p>
                 </div>
-                {(selectedSupplier.latitude || selectedSupplier.longitude) && (
-                  <div className="col-span-2 space-y-1">
-                    <Label className="text-muted-foreground">الإحداثيات</Label>
-                    <p dir="ltr">
-                      {selectedSupplier.latitude}, {selectedSupplier.longitude}
-                    </p>
-                  </div>
-                )}
+              )}
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">الحالة</p>
+                <Badge variant={selectedSupplier.isActive ? "default" : "secondary"}>
+                  {selectedSupplier.isActive ? "نشط" : "غير نشط"}
+                </Badge>
               </div>
             </div>
           )}

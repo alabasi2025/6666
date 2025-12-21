@@ -47,7 +47,13 @@ export const dieselRouter = router({
         isActive: z.boolean().default(true),
       }))
       .mutation(async ({ input }) => {
-        return db.createDieselSupplier(input);
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data = {
+          ...input,
+          latitude: input.latitude?.toString() ?? null,
+          longitude: input.longitude?.toString() ?? null,
+        };
+        return db.createDieselSupplier(data as any);
       }),
 
     update: protectedProcedure
@@ -64,7 +70,10 @@ export const dieselRouter = router({
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, latitude, longitude, ...rest } = input;
+        const data: any = { ...rest };
+        if (latitude !== undefined) data.latitude = latitude.toString();
+        if (longitude !== undefined) data.longitude = longitude.toString();
         return db.updateDieselSupplier(id, data);
       }),
 
@@ -112,7 +121,14 @@ export const dieselRouter = router({
         isActive: z.boolean().default(true),
       }))
       .mutation(async ({ input }) => {
-        return db.createDieselTanker(input);
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data = {
+          ...input,
+          capacity: input.capacity.toString(),
+          compartment1Capacity: input.compartment1Capacity?.toString() ?? null,
+          compartment2Capacity: input.compartment2Capacity?.toString() ?? null,
+        };
+        return db.createDieselTanker(data as any);
       }),
 
     update: protectedProcedure
@@ -128,7 +144,11 @@ export const dieselRouter = router({
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, capacity, compartment1Capacity, compartment2Capacity, ...rest } = input;
+        const data: any = { ...rest };
+        if (capacity !== undefined) data.capacity = capacity.toString();
+        if (compartment1Capacity !== undefined) data.compartment1Capacity = compartment1Capacity.toString();
+        if (compartment2Capacity !== undefined) data.compartment2Capacity = compartment2Capacity.toString();
         return db.updateDieselTanker(id, data);
       }),
 
@@ -180,7 +200,14 @@ export const dieselRouter = router({
         isActive: z.boolean().default(true),
       }))
       .mutation(async ({ input }) => {
-        return db.createDieselTank(input);
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data = {
+          ...input,
+          capacity: input.capacity.toString(),
+          currentLevel: input.currentLevel.toString(),
+          minLevel: input.minLevel.toString(),
+        };
+        return db.createDieselTank(data as any);
       }),
 
     update: protectedProcedure
@@ -197,7 +224,11 @@ export const dieselRouter = router({
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, capacity, currentLevel, minLevel, ...rest } = input;
+        const data: any = { ...rest };
+        if (capacity !== undefined) data.capacity = capacity.toString();
+        if (currentLevel !== undefined) data.currentLevel = currentLevel.toString();
+        if (minLevel !== undefined) data.minLevel = minLevel.toString();
         return db.updateDieselTank(id, data);
       }),
 
@@ -258,7 +289,12 @@ export const dieselRouter = router({
         isActive: z.boolean().default(true),
       }))
       .mutation(async ({ input }) => {
-        return db.createDieselPumpMeter(input);
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data = {
+          ...input,
+          currentReading: input.currentReading.toString(),
+        };
+        return db.createDieselPumpMeter(data as any);
       }),
 
     update: protectedProcedure
@@ -273,7 +309,9 @@ export const dieselRouter = router({
         isActive: z.boolean().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, currentReading, ...rest } = input;
+        const data: any = { ...rest };
+        if (currentReading !== undefined) data.currentReading = currentReading.toString();
         return db.updateDieselPumpMeter(id, data);
       }),
 
@@ -316,10 +354,12 @@ export const dieselRouter = router({
       .input(z.object({
         businessId: z.number(),
         stationId: z.number(),
+        taskNumber: z.string().min(1),
         taskDate: z.string(),
         employeeId: z.number(),
         tankerId: z.number(),
         supplierId: z.number(),
+        status: z.enum(["pending", "started", "at_supplier", "loading", "returning", "at_station", "unloading", "completed", "cancelled"]).default("pending"),
         notes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -329,148 +369,72 @@ export const dieselRouter = router({
         });
       }),
 
-    // بدء المهمة (الموظف يغادر للمورد)
-    startTask: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        return db.updateDieselReceivingTaskStatus(input.id, "started", {
-          startTime: new Date(),
-        });
-      }),
-
-    // الوصول للمورد
-    arriveAtSupplier: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        return db.updateDieselReceivingTaskStatus(input.id, "at_supplier", {
-          arrivalAtSupplierTime: new Date(),
-        });
-      }),
-
-    // بدء التحميل - تسجيل قراءة الطرمبة قبل
-    startLoading: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        supplierPumpId: z.number(),
-        supplierPumpReadingBefore: z.number(),
-        supplierPumpReadingBeforeImage: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        return db.updateDieselReceivingTaskStatus(id, "loading", {
-          loadingStartTime: new Date(),
-          ...data,
-        });
-      }),
-
-    // انتهاء التحميل - تسجيل قراءة الطرمبة بعد والفاتورة
-    endLoading: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        supplierPumpReadingAfter: z.number(),
-        supplierPumpReadingAfterImage: z.string().optional(),
-        supplierInvoiceNumber: z.string().optional(),
-        supplierInvoiceImage: z.string().optional(),
-        supplierInvoiceAmount: z.number().optional(),
-        quantityFromSupplier: z.number(),
-        compartment1Quantity: z.number().optional(),
-        compartment2Quantity: z.number().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        return db.updateDieselReceivingTaskStatus(id, "returning", {
-          loadingEndTime: new Date(),
-          departureFromSupplierTime: new Date(),
-          ...data,
-        });
-      }),
-
-    // الوصول للمحطة
-    arriveAtStation: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        return db.updateDieselReceivingTaskStatus(input.id, "at_station", {
-          arrivalAtStationTime: new Date(),
-        });
-      }),
-
-    // بدء التفريغ - تسجيل قراءة طرمبة الدخول قبل
-    startUnloading: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        intakePumpId: z.number(),
-        intakePumpReadingBefore: z.number(),
-        intakePumpReadingBeforeImage: z.string().optional(),
-        receivingTankId: z.number(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        return db.updateDieselReceivingTaskStatus(id, "unloading", {
-          unloadingStartTime: new Date(),
-          ...data,
-        });
-      }),
-
-    // انتهاء التفريغ وإتمام المهمة
-    completeTask: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        intakePumpReadingAfter: z.number(),
-        intakePumpReadingAfterImage: z.string().optional(),
-        quantityReceivedAtStation: z.number(),
-        differenceNotes: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        const { id, ...data } = input;
-        
-        // حساب الفرق
-        const task = await db.getDieselReceivingTaskById(id);
-        if (task) {
-          const quantityDifference = Number(task.quantityFromSupplier || 0) - data.quantityReceivedAtStation;
-          return db.updateDieselReceivingTaskStatus(id, "completed", {
-            unloadingEndTime: new Date(),
-            completionTime: new Date(),
-            quantityDifference,
-            ...data,
-          });
-        }
-        
-        return db.updateDieselReceivingTaskStatus(id, "completed", {
-          unloadingEndTime: new Date(),
-          completionTime: new Date(),
-          ...data,
-        });
-      }),
-
-    // إلغاء المهمة
-    cancelTask: protectedProcedure
-      .input(z.object({
-        id: z.number(),
-        notes: z.string().optional(),
-      }))
-      .mutation(async ({ input }) => {
-        return db.updateDieselReceivingTaskStatus(input.id, "cancelled", {
-          notes: input.notes,
-        });
-      }),
-
     update: protectedProcedure
       .input(z.object({
         id: z.number(),
-        taskDate: z.string().optional(),
-        employeeId: z.number().optional(),
-        tankerId: z.number().optional(),
-        supplierId: z.number().optional(),
+        status: z.enum(["pending", "started", "at_supplier", "loading", "returning", "at_station", "unloading", "completed", "cancelled"]).optional(),
         notes: z.string().optional(),
+        // توقيتات
+        startTime: z.string().optional(),
+        arrivalAtSupplierTime: z.string().optional(),
+        loadingStartTime: z.string().optional(),
+        loadingEndTime: z.string().optional(),
+        departureFromSupplierTime: z.string().optional(),
+        arrivalAtStationTime: z.string().optional(),
+        unloadingStartTime: z.string().optional(),
+        unloadingEndTime: z.string().optional(),
+        completionTime: z.string().optional(),
+        // قراءات طرمبة المورد
+        supplierPumpId: z.number().optional(),
+        supplierPumpReadingBefore: z.number().optional(),
+        supplierPumpReadingAfter: z.number().optional(),
+        supplierPumpReadingBeforeImage: z.string().optional(),
+        supplierPumpReadingAfterImage: z.string().optional(),
+        // فاتورة المورد
+        supplierInvoiceNumber: z.string().optional(),
+        supplierInvoiceImage: z.string().optional(),
+        supplierInvoiceAmount: z.number().optional(),
+        // الكميات
+        quantityFromSupplier: z.number().optional(),
+        compartment1Quantity: z.number().optional(),
+        compartment2Quantity: z.number().optional(),
+        // قراءات طرمبة الدخول
+        intakePumpId: z.number().optional(),
+        intakePumpReadingBefore: z.number().optional(),
+        intakePumpReadingAfter: z.number().optional(),
+        intakePumpReadingBeforeImage: z.string().optional(),
+        intakePumpReadingAfterImage: z.string().optional(),
+        // الاستلام
+        quantityReceivedAtStation: z.number().optional(),
+        receivingTankId: z.number().optional(),
+        // الفرق
+        quantityDifference: z.number().optional(),
+        differenceNotes: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, ...inputData } = input;
+        
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data: any = {};
+        for (const [key, value] of Object.entries(inputData)) {
+          if (value === undefined) continue;
+          
+          // الحقول الرقمية التي تحتاج تحويل
+          const decimalFields = [
+            'supplierPumpReadingBefore', 'supplierPumpReadingAfter',
+            'supplierInvoiceAmount', 'quantityFromSupplier',
+            'compartment1Quantity', 'compartment2Quantity',
+            'intakePumpReadingBefore', 'intakePumpReadingAfter',
+            'quantityReceivedAtStation', 'quantityDifference'
+          ];
+          
+          if (decimalFields.includes(key) && typeof value === 'number') {
+            data[key] = value.toString();
+          } else {
+            data[key] = value;
+          }
+        }
+        
         return db.updateDieselReceivingTask(id, data);
       }),
 
@@ -479,10 +443,38 @@ export const dieselRouter = router({
       .mutation(async ({ input }) => {
         return db.deleteDieselReceivingTask(input.id);
       }),
+
+    // تحديث حالة المهمة
+    updateStatus: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        status: z.enum(["pending", "started", "at_supplier", "loading", "returning", "at_station", "unloading", "completed", "cancelled"]),
+        timestamp: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const statusTimeMap: Record<string, string> = {
+          started: "startTime",
+          at_supplier: "arrivalAtSupplierTime",
+          loading: "loadingStartTime",
+          returning: "departureFromSupplierTime",
+          at_station: "arrivalAtStationTime",
+          unloading: "unloadingStartTime",
+          completed: "completionTime",
+        };
+
+        const timeField = statusTimeMap[input.status];
+        const updateData: any = { status: input.status };
+        
+        if (timeField && input.timestamp) {
+          updateData[timeField] = input.timestamp;
+        }
+
+        return db.updateDieselReceivingTask(input.id, updateData);
+      }),
   }),
 
   // ============================================
-  // قراءات الطرمبات - Pump Readings
+  // سجل قراءات الطرمبات - Pump Readings Log
   // ============================================
   
   pumpReadings: router({
@@ -511,10 +503,14 @@ export const dieselRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        return db.createDieselPumpReading({
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data = {
           ...input,
+          readingValue: input.readingValue.toString(),
+          quantity: input.quantity?.toString() ?? null,
           recordedBy: ctx.user?.id,
-        });
+        };
+        return db.createDieselPumpReading(data as any);
       }),
   }),
 
@@ -553,10 +549,15 @@ export const dieselRouter = router({
         notes: z.string().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        return db.createDieselTankMovement({
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data = {
           ...input,
+          quantity: input.quantity.toString(),
+          outputPumpReadingBefore: input.outputPumpReadingBefore?.toString() ?? null,
+          outputPumpReadingAfter: input.outputPumpReadingAfter?.toString() ?? null,
           recordedBy: ctx.user?.id,
-        });
+        };
+        return db.createDieselTankMovement(data as any);
       }),
   }),
 
@@ -592,16 +593,23 @@ export const dieselRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         // حساب معدل الاستهلاك
-        let consumptionRate: number | undefined;
+        let consumptionRate: string | null = null;
         if (input.runningHours && input.runningHours > 0) {
-          consumptionRate = input.quantityConsumed / input.runningHours;
+          consumptionRate = (input.quantityConsumed / input.runningHours).toString();
         }
         
-        return db.createGeneratorDieselConsumption({
+        // تحويل الأرقام إلى نصوص للحقول decimal
+        const data = {
           ...input,
+          startLevel: input.startLevel?.toString() ?? null,
+          endLevel: input.endLevel?.toString() ?? null,
+          quantityConsumed: input.quantityConsumed.toString(),
+          runningHours: input.runningHours?.toString() ?? null,
           consumptionRate,
           recordedBy: ctx.user?.id,
-        });
+        };
+        
+        return db.createGeneratorDieselConsumption(data as any);
       }),
 
     getStatistics: protectedProcedure

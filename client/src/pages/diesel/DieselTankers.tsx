@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,24 +29,23 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Edit, Trash2, Eye, Truck, Phone, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 interface Tanker {
   id: number;
   code: string;
   plateNumber: string;
-  capacity: number;
-  compartment1Capacity?: number;
-  compartment2Capacity?: number;
-  driverName?: string;
-  driverPhone?: string;
-  isActive: boolean;
+  capacity: string;
+  compartment1Capacity?: string | null;
+  compartment2Capacity?: string | null;
+  driverName?: string | null;
+  driverPhone?: string | null;
+  isActive: boolean | null;
 }
 
 export default function DieselTankers() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -63,15 +61,15 @@ export default function DieselTankers() {
     isActive: true,
   });
 
-  const { data: tankers = [], isLoading } = useQuery({
-    queryKey: ["diesel-tankers"],
-    queryFn: () => trpc.diesel.tankers.list.query({ businessId: user?.businessId }),
+  const utils = trpc.useUtils();
+
+  const { data: tankers = [], isLoading } = trpc.diesel.tankers.list.useQuery({
+    businessId: user?.businessId ?? undefined,
   });
 
-  const createMutation = useMutation({
-    mutationFn: (data: any) => trpc.diesel.tankers.create.mutate(data),
+  const createMutation = trpc.diesel.tankers.create.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-tankers"] });
+      utils.diesel.tankers.list.invalidate();
       setIsAddOpen(false);
       resetForm();
       toast({ title: "تم إضافة الوايت بنجاح" });
@@ -81,10 +79,9 @@ export default function DieselTankers() {
     },
   });
 
-  const updateMutation = useMutation({
-    mutationFn: (data: any) => trpc.diesel.tankers.update.mutate(data),
+  const updateMutation = trpc.diesel.tankers.update.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-tankers"] });
+      utils.diesel.tankers.list.invalidate();
       setIsEditOpen(false);
       resetForm();
       toast({ title: "تم تحديث الوايت بنجاح" });
@@ -94,10 +91,9 @@ export default function DieselTankers() {
     },
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => trpc.diesel.tankers.delete.mutate({ id }),
+  const deleteMutation = trpc.diesel.tankers.delete.useMutation({
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["diesel-tankers"] });
+      utils.diesel.tankers.list.invalidate();
       toast({ title: "تم حذف الوايت بنجاح" });
     },
     onError: (error: any) => {
@@ -125,7 +121,7 @@ export default function DieselTankers() {
       return;
     }
     createMutation.mutate({
-      businessId: user?.businessId,
+      businessId: user?.businessId || 1,
       code: formData.code,
       plateNumber: formData.plateNumber,
       capacity: parseFloat(formData.capacity),
@@ -141,9 +137,9 @@ export default function DieselTankers() {
     if (!selectedTanker) return;
     updateMutation.mutate({
       id: selectedTanker.id,
-      code: formData.code,
-      plateNumber: formData.plateNumber,
-      capacity: parseFloat(formData.capacity),
+      code: formData.code || undefined,
+      plateNumber: formData.plateNumber || undefined,
+      capacity: formData.capacity ? parseFloat(formData.capacity) : undefined,
       compartment1Capacity: formData.compartment1Capacity ? parseFloat(formData.compartment1Capacity) : undefined,
       compartment2Capacity: formData.compartment2Capacity ? parseFloat(formData.compartment2Capacity) : undefined,
       driverName: formData.driverName || undefined,
@@ -154,7 +150,7 @@ export default function DieselTankers() {
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا الوايت؟")) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate({ id });
     }
   };
 
@@ -163,12 +159,12 @@ export default function DieselTankers() {
     setFormData({
       code: tanker.code,
       plateNumber: tanker.plateNumber,
-      capacity: tanker.capacity.toString(),
-      compartment1Capacity: tanker.compartment1Capacity?.toString() || "",
-      compartment2Capacity: tanker.compartment2Capacity?.toString() || "",
+      capacity: tanker.capacity,
+      compartment1Capacity: tanker.compartment1Capacity || "",
+      compartment2Capacity: tanker.compartment2Capacity || "",
       driverName: tanker.driverName || "",
       driverPhone: tanker.driverPhone || "",
-      isActive: tanker.isActive,
+      isActive: tanker.isActive ?? true,
     });
     setIsEditOpen(true);
   };
@@ -176,6 +172,15 @@ export default function DieselTankers() {
   const openViewDialog = (tanker: Tanker) => {
     setSelectedTanker(tanker);
     setIsViewOpen(true);
+  };
+
+  // حساب السعة الإجمالية من العينين
+  const calculateTotalCapacity = () => {
+    const c1 = parseFloat(formData.compartment1Capacity) || 0;
+    const c2 = parseFloat(formData.compartment2Capacity) || 0;
+    if (c1 > 0 || c2 > 0) {
+      setFormData({ ...formData, capacity: (c1 + c2).toString() });
+    }
   };
 
   return (
@@ -210,21 +215,21 @@ export default function DieselTankers() {
                   <TableHead>الكود</TableHead>
                   <TableHead>رقم اللوحة</TableHead>
                   <TableHead>السعة الكلية</TableHead>
-                  <TableHead>العين 1</TableHead>
-                  <TableHead>العين 2</TableHead>
+                  <TableHead>عين 1</TableHead>
+                  <TableHead>عين 2</TableHead>
                   <TableHead>السائق</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>الإجراءات</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tankers.map((tanker: Tanker) => (
+                {tankers.map((tanker) => (
                   <TableRow key={tanker.id}>
                     <TableCell className="font-mono">{tanker.code}</TableCell>
-                    <TableCell dir="ltr">{tanker.plateNumber}</TableCell>
-                    <TableCell>{tanker.capacity.toLocaleString()} لتر</TableCell>
-                    <TableCell>{tanker.compartment1Capacity?.toLocaleString() || "-"} لتر</TableCell>
-                    <TableCell>{tanker.compartment2Capacity?.toLocaleString() || "-"} لتر</TableCell>
+                    <TableCell>{tanker.plateNumber}</TableCell>
+                    <TableCell>{parseFloat(tanker.capacity).toLocaleString()} لتر</TableCell>
+                    <TableCell>{tanker.compartment1Capacity ? `${parseFloat(tanker.compartment1Capacity).toLocaleString()} لتر` : "-"}</TableCell>
+                    <TableCell>{tanker.compartment2Capacity ? `${parseFloat(tanker.compartment2Capacity).toLocaleString()} لتر` : "-"}</TableCell>
                     <TableCell>{tanker.driverName || "-"}</TableCell>
                     <TableCell>
                       <Badge variant={tanker.isActive ? "default" : "secondary"}>
@@ -276,7 +281,7 @@ export default function DieselTankers() {
               <Input
                 value={formData.code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
-                placeholder="TNK001"
+                placeholder="TAN001"
               />
             </div>
             <div className="space-y-2">
@@ -284,36 +289,38 @@ export default function DieselTankers() {
               <Input
                 value={formData.plateNumber}
                 onChange={(e) => setFormData({ ...formData, plateNumber: e.target.value })}
-                placeholder="ABC 1234"
-                dir="ltr"
+                placeholder="أ ب ج 1234"
               />
             </div>
             <div className="space-y-2">
+              <Label>سعة عين 1 (لتر)</Label>
+              <Input
+                value={formData.compartment1Capacity}
+                onChange={(e) => setFormData({ ...formData, compartment1Capacity: e.target.value })}
+                onBlur={calculateTotalCapacity}
+                placeholder="3070"
+                type="number"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>سعة عين 2 (لتر)</Label>
+              <Input
+                value={formData.compartment2Capacity}
+                onChange={(e) => setFormData({ ...formData, compartment2Capacity: e.target.value })}
+                onBlur={calculateTotalCapacity}
+                placeholder="2970"
+                type="number"
+              />
+            </div>
+            <div className="col-span-2 space-y-2">
               <Label>السعة الكلية (لتر) *</Label>
               <Input
-                type="number"
                 value={formData.capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                 placeholder="6040"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>سعة العين 1 (لتر)</Label>
-              <Input
                 type="number"
-                value={formData.compartment1Capacity}
-                onChange={(e) => setFormData({ ...formData, compartment1Capacity: e.target.value })}
-                placeholder="3070"
               />
-            </div>
-            <div className="space-y-2">
-              <Label>سعة العين 2 (لتر)</Label>
-              <Input
-                type="number"
-                value={formData.compartment2Capacity}
-                onChange={(e) => setFormData({ ...formData, compartment2Capacity: e.target.value })}
-                placeholder="2970"
-              />
+              <p className="text-xs text-muted-foreground">يتم حسابها تلقائياً من مجموع العينين</p>
             </div>
             <div className="space-y-2">
               <Label>اسم السائق</Label>
@@ -332,7 +339,7 @@ export default function DieselTankers() {
                 dir="ltr"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="col-span-2 flex items-center gap-2">
               <Switch
                 checked={formData.isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
@@ -345,7 +352,7 @@ export default function DieselTankers() {
               إلغاء
             </Button>
             <Button onClick={handleAdd} disabled={createMutation.isPending}>
-              {createMutation.isPending ? "جاري الحفظ..." : "حفظ"}
+              {createMutation.isPending ? "جاري الإضافة..." : "إضافة"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -370,31 +377,32 @@ export default function DieselTankers() {
               <Input
                 value={formData.plateNumber}
                 onChange={(e) => setFormData({ ...formData, plateNumber: e.target.value })}
-                dir="ltr"
               />
             </div>
             <div className="space-y-2">
-              <Label>السعة الكلية (لتر) *</Label>
+              <Label>سعة عين 1 (لتر)</Label>
               <Input
-                type="number"
-                value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>سعة العين 1 (لتر)</Label>
-              <Input
-                type="number"
                 value={formData.compartment1Capacity}
                 onChange={(e) => setFormData({ ...formData, compartment1Capacity: e.target.value })}
+                onBlur={calculateTotalCapacity}
+                type="number"
               />
             </div>
             <div className="space-y-2">
-              <Label>سعة العين 2 (لتر)</Label>
+              <Label>سعة عين 2 (لتر)</Label>
               <Input
-                type="number"
                 value={formData.compartment2Capacity}
                 onChange={(e) => setFormData({ ...formData, compartment2Capacity: e.target.value })}
+                onBlur={calculateTotalCapacity}
+                type="number"
+              />
+            </div>
+            <div className="col-span-2 space-y-2">
+              <Label>السعة الكلية (لتر) *</Label>
+              <Input
+                value={formData.capacity}
+                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                type="number"
               />
             </div>
             <div className="space-y-2">
@@ -412,7 +420,7 @@ export default function DieselTankers() {
                 dir="ltr"
               />
             </div>
-            <div className="flex items-center gap-2">
+            <div className="col-span-2 flex items-center gap-2">
               <Switch
                 checked={formData.isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
@@ -425,74 +433,75 @@ export default function DieselTankers() {
               إلغاء
             </Button>
             <Button onClick={handleEdit} disabled={updateMutation.isPending}>
-              {updateMutation.isPending ? "جاري الحفظ..." : "حفظ التعديلات"}
+              {updateMutation.isPending ? "جاري التحديث..." : "تحديث"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Dialog عرض الوايت */}
+      {/* Dialog عرض تفاصيل الوايت */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-2xl" dir="rtl">
           <DialogHeader>
             <DialogTitle>تفاصيل الوايت</DialogTitle>
           </DialogHeader>
           {selectedTanker && (
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 p-4 bg-muted rounded-lg">
-                <Truck className="h-12 w-12 text-primary" />
-                <div>
-                  <h3 className="text-xl font-bold">{selectedTanker.code}</h3>
-                  <p className="text-muted-foreground">{selectedTanker.plateNumber}</p>
-                </div>
-                <Badge variant={selectedTanker.isActive ? "default" : "secondary"} className="mr-auto">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">الكود</p>
+                <p className="font-mono">{selectedTanker.code}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">رقم اللوحة</p>
+                <p className="flex items-center gap-1">
+                  <Truck className="h-4 w-4" />
+                  {selectedTanker.plateNumber}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">السعة الكلية</p>
+                <p className="font-bold text-lg">{parseFloat(selectedTanker.capacity).toLocaleString()} لتر</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">الحالة</p>
+                <Badge variant={selectedTanker.isActive ? "default" : "secondary"}>
                   {selectedTanker.isActive ? "نشط" : "غير نشط"}
                 </Badge>
               </div>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-muted-foreground">السعة الكلية</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{selectedTanker.capacity.toLocaleString()}</p>
-                    <p className="text-sm text-muted-foreground">لتر</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-muted-foreground">العين 1</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{selectedTanker.compartment1Capacity?.toLocaleString() || "-"}</p>
-                    <p className="text-sm text-muted-foreground">لتر</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-muted-foreground">العين 2</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{selectedTanker.compartment2Capacity?.toLocaleString() || "-"}</p>
-                    <p className="text-sm text-muted-foreground">لتر</p>
-                  </CardContent>
-                </Card>
+              <div className="col-span-2 border rounded-lg p-4 bg-muted/50">
+                <p className="text-sm text-muted-foreground mb-2">تفاصيل العينين</p>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-3 bg-background rounded">
+                    <p className="text-xs text-muted-foreground">عين 1</p>
+                    <p className="text-xl font-bold">
+                      {selectedTanker.compartment1Capacity 
+                        ? `${parseFloat(selectedTanker.compartment1Capacity).toLocaleString()} لتر` 
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="text-center p-3 bg-background rounded">
+                    <p className="text-xs text-muted-foreground">عين 2</p>
+                    <p className="text-xl font-bold">
+                      {selectedTanker.compartment2Capacity 
+                        ? `${parseFloat(selectedTanker.compartment2Capacity).toLocaleString()} لتر` 
+                        : "-"}
+                    </p>
+                  </div>
+                </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground flex items-center gap-1">
-                    <User className="h-4 w-4" /> السائق
-                  </Label>
-                  <p>{selectedTanker.driverName || "-"}</p>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-muted-foreground flex items-center gap-1">
-                    <Phone className="h-4 w-4" /> هاتف السائق
-                  </Label>
-                  <p dir="ltr">{selectedTanker.driverPhone || "-"}</p>
-                </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">اسم السائق</p>
+                <p className="flex items-center gap-1">
+                  <User className="h-4 w-4" />
+                  {selectedTanker.driverName || "-"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm text-muted-foreground">هاتف السائق</p>
+                <p dir="ltr" className="flex items-center gap-1">
+                  <Phone className="h-4 w-4" />
+                  {selectedTanker.driverPhone || "-"}
+                </p>
               </div>
             </div>
           )}
