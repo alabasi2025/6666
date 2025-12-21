@@ -65,12 +65,8 @@ const Suppliers = lazy(() => import("./inventory/Suppliers"));
 const PurchaseOrders = lazy(() => import("./inventory/PurchaseOrders"));
 
 // Customer Pages - Lazy Loaded
-const CustomersList = lazy(() => import("./customers/CustomersList"));
 const CustomerDetails = lazy(() => import("./customers/CustomerDetails"));
 const Meters = lazy(() => import("./customers/Meters"));
-const Readings = lazy(() => import("./customers/Readings"));
-const Invoices = lazy(() => import("./customers/Invoices"));
-const Payments = lazy(() => import("./customers/Payments"));
 
 // SCADA Pages - Lazy Loaded
 const MonitoringDashboard = lazy(() => import("./scada/MonitoringDashboard"));
