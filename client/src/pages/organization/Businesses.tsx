@@ -32,6 +32,8 @@ interface Business {
 
 export default function Businesses() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingBusiness, setEditingBusiness] = useState<Business | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [formData, setFormData] = useState({
     code: "",
@@ -59,6 +61,28 @@ export default function Businesses() {
     },
     onError: (error) => {
       toast.error(error.message || "فشل إضافة الشركة");
+    },
+  });
+
+  const updateMutation = trpc.business.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم تعديل الشركة بنجاح");
+      setIsEditDialogOpen(false);
+      setEditingBusiness(null);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "فشل تعديل الشركة");
+    },
+  });
+
+  const deleteMutation = trpc.business.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف الشركة بنجاح");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "فشل حذف الشركة");
     },
   });
 
@@ -99,6 +123,37 @@ export default function Businesses() {
       taxNumber: formData.taxNumber || undefined,
       currency: formData.currency,
     });
+  };
+
+  const handleEdit = (business: Business) => {
+    setEditingBusiness(business);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingBusiness) return;
+
+    await updateMutation.mutateAsync({
+      id: editingBusiness.id,
+      code: editingBusiness.code,
+      nameAr: editingBusiness.nameAr,
+      nameEn: editingBusiness.nameEn || undefined,
+      type: editingBusiness.type,
+      systemType: editingBusiness.systemType,
+      address: editingBusiness.address || undefined,
+      phone: editingBusiness.phone || undefined,
+      email: editingBusiness.email || undefined,
+      taxNumber: editingBusiness.taxNumber || undefined,
+      currency: editingBusiness.currency,
+      isActive: editingBusiness.isActive,
+    });
+  };
+
+  const handleDelete = async (id: number) => {
+    if (confirm("هل أنت متأكد من حذف هذه الشركة؟")) {
+      await deleteMutation.mutateAsync({ id });
+    }
   };
 
   const getTypeLabel = (type: string) => {
@@ -532,10 +587,10 @@ export default function Businesses() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" onClick={() => handleEdit(business)}>
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" className="text-destructive">
+                          <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(business.id)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -548,6 +603,158 @@ export default function Businesses() {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="w-5 h-5 text-primary" />
+              تعديل الشركة
+            </DialogTitle>
+            <DialogDescription>
+              تعديل بيانات الشركة
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingBusiness && (
+            <form onSubmit={handleEditSubmit} className="space-y-6">
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">المعلومات الأساسية</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-code">كود الشركة</Label>
+                    <Input
+                      id="edit-code"
+                      value={editingBusiness.code}
+                      onChange={(e) => setEditingBusiness({ ...editingBusiness, code: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-type">نوع الشركة</Label>
+                    <Select
+                      value={editingBusiness.type}
+                      onValueChange={(value: "holding" | "subsidiary" | "branch") => 
+                        setEditingBusiness({ ...editingBusiness, type: value })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="holding">شركة قابضة</SelectItem>
+                        <SelectItem value="subsidiary">شركة تابعة</SelectItem>
+                        <SelectItem value="branch">فرع</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-nameAr">الاسم بالعربي</Label>
+                    <Input
+                      id="edit-nameAr"
+                      value={editingBusiness.nameAr}
+                      onChange={(e) => setEditingBusiness({ ...editingBusiness, nameAr: e.target.value })}
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-nameEn">الاسم بالإنجليزي</Label>
+                    <Input
+                      id="edit-nameEn"
+                      value={editingBusiness.nameEn || ""}
+                      onChange={(e) => setEditingBusiness({ ...editingBusiness, nameEn: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-systemType">نوع النظام</Label>
+                  <Select
+                    value={editingBusiness.systemType}
+                    onValueChange={(value: "energy" | "custom") => 
+                      setEditingBusiness({ ...editingBusiness, systemType: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="energy">نظام كهرباء</SelectItem>
+                      <SelectItem value="custom">نظام مخصص</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">معلومات الاتصال</h3>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-phone">الهاتف</Label>
+                    <Input
+                      id="edit-phone"
+                      value={editingBusiness.phone || ""}
+                      onChange={(e) => setEditingBusiness({ ...editingBusiness, phone: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-email">البريد الإلكتروني</Label>
+                    <Input
+                      id="edit-email"
+                      type="email"
+                      value={editingBusiness.email || ""}
+                      onChange={(e) => setEditingBusiness({ ...editingBusiness, email: e.target.value })}
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-address">العنوان</Label>
+                  <Textarea
+                    id="edit-address"
+                    value={editingBusiness.address || ""}
+                    onChange={(e) => setEditingBusiness({ ...editingBusiness, address: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h3 className="font-semibold text-foreground border-b pb-2">الحالة</h3>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="edit-isActive"
+                    checked={editingBusiness.isActive}
+                    onChange={(e) => setEditingBusiness({ ...editingBusiness, isActive: e.target.checked })}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="edit-isActive">الشركة نشطة</Label>
+                </div>
+              </div>
+
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  إلغاء
+                </Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "جاري الحفظ..." : "حفظ التعديلات"}
+                </Button>
+              </DialogFooter>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
