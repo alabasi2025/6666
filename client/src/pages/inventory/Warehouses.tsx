@@ -1,7 +1,8 @@
 import { useState } from "react";
+import { trpc } from "@/lib/trpc";
 import { DataTable, Column, StatusBadge } from "@/components/DataTable";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -20,252 +21,205 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
-import {
-  Warehouse,
-  MapPin,
-  Package,
-  TrendingUp,
-  AlertTriangle,
-  CheckCircle,
-  Building2,
-  Boxes,
-  BarChart3,
-} from "lucide-react";
+import { Loader2, Warehouse, Package, BarChart3, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-// Status mapping
-const warehouseStatusMap: Record<string, { label: string; variant: "default" | "success" | "warning" | "destructive" | "secondary" }> = {
-  active: { label: "نشط", variant: "success" },
-  inactive: { label: "غير نشط", variant: "secondary" },
-  maintenance: { label: "صيانة", variant: "warning" },
-  full: { label: "ممتلئ", variant: "destructive" },
+// Type mapping
+const warehouseTypeMap: Record<string, { label: string; variant: "default" | "success" | "warning" | "destructive" | "secondary" }> = {
+  main: { label: "رئيسي", variant: "success" },
+  sub: { label: "فرعي", variant: "default" },
+  transit: { label: "عبور", variant: "warning" },
+  quarantine: { label: "حجر", variant: "destructive" },
 };
-
-// Warehouse type mapping
-const warehouseTypeMap: Record<string, string> = {
-  main: "رئيسي",
-  branch: "فرعي",
-  transit: "عبور",
-  spare_parts: "قطع غيار",
-  consumables: "مستهلكات",
-  equipment: "معدات",
-};
-
-// Mock warehouses data
-const mockWarehouses = [
-  {
-    id: 1,
-    code: "WH-001",
-    name: "المستودع الرئيسي",
-    type: "main",
-    status: "active",
-    location: "محطة التوليد الرئيسية",
-    address: "الرياض - المنطقة الصناعية",
-    capacity: 10000,
-    usedCapacity: 7500,
-    itemsCount: 1250,
-    categoriesCount: 45,
-    manager: "أحمد محمد",
-    phone: "0501234567",
-    lastInventory: "2024-05-15",
-  },
-  {
-    id: 2,
-    code: "WH-002",
-    name: "مستودع قطع الغيار",
-    type: "spare_parts",
-    status: "active",
-    location: "محطة التوليد الرئيسية",
-    address: "الرياض - المنطقة الصناعية",
-    capacity: 5000,
-    usedCapacity: 3200,
-    itemsCount: 850,
-    categoriesCount: 32,
-    manager: "خالد عمر",
-    phone: "0507654321",
-    lastInventory: "2024-05-20",
-  },
-  {
-    id: 3,
-    code: "WH-003",
-    name: "مستودع المحطة الشمالية",
-    type: "branch",
-    status: "active",
-    location: "محطة التوزيع الشمالية",
-    address: "الدمام - الحي الصناعي",
-    capacity: 3000,
-    usedCapacity: 2100,
-    itemsCount: 420,
-    categoriesCount: 28,
-    manager: "سالم أحمد",
-    phone: "0509876543",
-    lastInventory: "2024-05-10",
-  },
-  {
-    id: 4,
-    code: "WH-004",
-    name: "مستودع المستهلكات",
-    type: "consumables",
-    status: "maintenance",
-    location: "محطة التوليد الرئيسية",
-    address: "الرياض - المنطقة الصناعية",
-    capacity: 2000,
-    usedCapacity: 1800,
-    itemsCount: 320,
-    categoriesCount: 15,
-    manager: "محمد علي",
-    phone: "0503456789",
-    lastInventory: "2024-04-25",
-  },
-  {
-    id: 5,
-    code: "WH-005",
-    name: "مستودع العبور",
-    type: "transit",
-    status: "active",
-    location: "المقر الرئيسي",
-    address: "الرياض - طريق الملك فهد",
-    capacity: 1500,
-    usedCapacity: 450,
-    itemsCount: 85,
-    categoriesCount: 12,
-    manager: "فهد سعد",
-    phone: "0502345678",
-    lastInventory: "2024-06-01",
-  },
-];
-
-// Stats
-const stats = [
-  { title: "إجمالي المستودعات", value: "8", icon: Warehouse, color: "primary" },
-  { title: "إجمالي الأصناف", value: "2,925", icon: Package, color: "success" },
-  { title: "نسبة الإشغال", value: "68%", icon: BarChart3, color: "warning" },
-  { title: "تحت الحد الأدنى", value: "45", icon: AlertTriangle, color: "destructive" },
-];
 
 export default function Warehouses() {
-  const [showDialog, setShowDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
 
-  const columns: Column<typeof mockWarehouses[0]>[] = [
+  // Form state
+  const [formData, setFormData] = useState({
+    code: "",
+    nameAr: "",
+    nameEn: "",
+    type: "main",
+    address: "",
+    phone: "",
+    managerId: "",
+    description: "",
+  });
+
+  // Fetch warehouses from API
+  const { data: warehouses = [], isLoading, refetch } = trpc.inventory.warehouses.list.useQuery({
+    businessId: 1,
+  });
+
+  // Fetch dashboard stats
+  const { data: stats } = trpc.inventory.dashboardStats.useQuery({
+    businessId: 1,
+  });
+
+  // Mutations
+  const createWarehouse = trpc.inventory.warehouses.create.useMutation({
+    onSuccess: () => {
+      toast.success("تم إضافة المستودع بنجاح");
+      setShowAddDialog(false);
+      resetForm();
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "حدث خطأ أثناء إضافة المستودع");
+    },
+  });
+
+  const updateWarehouse = trpc.inventory.warehouses.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم تحديث المستودع بنجاح");
+      setShowAddDialog(false);
+      resetForm();
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "حدث خطأ أثناء تحديث المستودع");
+    },
+  });
+
+  const deleteWarehouse = trpc.inventory.warehouses.delete.useMutation({
+    onSuccess: () => {
+      toast.success("تم حذف المستودع بنجاح");
+      setShowDeleteDialog(false);
+      setSelectedWarehouse(null);
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "حدث خطأ أثناء حذف المستودع");
+    },
+  });
+
+  const resetForm = () => {
+    setFormData({
+      code: "",
+      nameAr: "",
+      nameEn: "",
+      type: "main",
+      address: "",
+      phone: "",
+      managerId: "",
+      description: "",
+    });
+    setSelectedWarehouse(null);
+  };
+
+  // Stats cards
+  const statsCards = [
+    { title: "إجمالي المستودعات", value: stats?.totalWarehouses?.toString() || "0", icon: Warehouse, color: "primary" },
+    { title: "إجمالي الأصناف", value: stats?.totalItems?.toLocaleString() || "0", icon: Package, color: "success" },
+    { title: "قيمة المخزون", value: `${((stats?.totalValue || 0) / 1000).toFixed(0)}K`, icon: BarChart3, color: "warning" },
+    { title: "أصناف منخفضة", value: stats?.lowStockItems?.toString() || "0", icon: AlertTriangle, color: "destructive" },
+  ];
+
+  // Table columns
+  const columns: Column<any>[] = [
     {
       key: "code",
-      title: "الرمز",
-      render: (value) => <span className="font-mono text-primary">{value}</span>,
+      title: "الكود",
+      render: (value) => (
+        <span className="font-mono text-primary">{value}</span>
+      ),
     },
     {
-      key: "name",
+      key: "nameAr",
       title: "اسم المستودع",
       render: (value, row) => (
         <div>
           <p className="font-medium">{value}</p>
-          <p className="text-xs text-muted-foreground flex items-center gap-1">
-            <MapPin className="w-3 h-3" />
-            {row.location}
-          </p>
+          {row.nameEn && <p className="text-xs text-muted-foreground">{row.nameEn}</p>}
         </div>
       ),
     },
     {
       key: "type",
       title: "النوع",
-      render: (value) => (
-        <Badge variant="outline">
-          {warehouseTypeMap[value] || value}
-        </Badge>
-      ),
+      render: (value) => <StatusBadge status={value} statusMap={warehouseTypeMap} />,
     },
     {
-      key: "usedCapacity",
-      title: "الإشغال",
-      render: (value, row) => {
-        const percentage = Math.round((value / row.capacity) * 100);
-        const color = percentage >= 90 ? "destructive" : percentage >= 70 ? "warning" : "success";
-        return (
-          <div className="w-32">
-            <div className="flex items-center justify-between text-xs mb-1">
-              <span className="ltr-nums">{percentage}%</span>
-              <span className="text-muted-foreground ltr-nums">{value.toLocaleString()} / {row.capacity.toLocaleString()}</span>
-            </div>
-            <Progress value={percentage} className={cn(
-              "h-2",
-              color === "destructive" && "[&>div]:bg-destructive",
-              color === "warning" && "[&>div]:bg-warning",
-              color === "success" && "[&>div]:bg-success"
-            )} />
-          </div>
-        );
-      },
+      key: "address",
+      title: "العنوان",
+      render: (value) => value || "-",
     },
     {
-      key: "itemsCount",
-      title: "الأصناف",
-      render: (value, row) => (
-        <div className="text-center">
-          <p className="font-bold ltr-nums">{value.toLocaleString()}</p>
-          <p className="text-xs text-muted-foreground">{row.categoriesCount} تصنيف</p>
-        </div>
-      ),
-    },
-    {
-      key: "manager",
-      title: "المسؤول",
-      render: (value, row) => (
-        <div>
-          <p className="text-sm">{value}</p>
-          <p className="text-xs text-muted-foreground ltr-nums">{row.phone}</p>
-        </div>
-      ),
-    },
-    {
-      key: "lastInventory",
-      title: "آخر جرد",
-      render: (value) => (
-        <span className="text-sm">{new Date(value).toLocaleDateString("ar-SA")}</span>
-      ),
-    },
-    {
-      key: "status",
-      title: "الحالة",
-      render: (value) => <StatusBadge status={value} statusMap={warehouseStatusMap} />,
+      key: "phone",
+      title: "الهاتف",
+      render: (value) => value || "-",
     },
   ];
 
   const handleAdd = () => {
-    setSelectedWarehouse(null);
-    setShowDialog(true);
-  };
-
-  const handleView = (warehouse: any) => {
-    setSelectedWarehouse(warehouse);
-    setShowDetailsDialog(true);
+    resetForm();
+    setShowAddDialog(true);
   };
 
   const handleEdit = (warehouse: any) => {
     setSelectedWarehouse(warehouse);
-    setShowDialog(true);
+    setFormData({
+      code: warehouse.code || "",
+      nameAr: warehouse.nameAr || "",
+      nameEn: warehouse.nameEn || "",
+      type: warehouse.type || "main",
+      address: warehouse.address || "",
+      phone: warehouse.phone || "",
+      managerId: warehouse.managerId?.toString() || "",
+      description: warehouse.description || "",
+    });
+    setShowAddDialog(true);
+  };
+
+  const handleDelete = (warehouse: any) => {
+    setSelectedWarehouse(warehouse);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = () => {
+    if (selectedWarehouse) {
+      deleteWarehouse.mutate({ id: selectedWarehouse.id });
+    }
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedWarehouse) {
-      toast.success("تم تحديث بيانات المستودع بنجاح");
-    } else {
-      toast.success("تم إضافة المستودع بنجاح");
+    
+    if (!formData.code || !formData.nameAr) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة");
+      return;
     }
-    setShowDialog(false);
-    setSelectedWarehouse(null);
+
+    const data = {
+      ...formData,
+      managerId: formData.managerId ? parseInt(formData.managerId) : undefined,
+      businessId: 1,
+    };
+
+    if (selectedWarehouse) {
+      updateWarehouse.mutate({ id: selectedWarehouse.id, ...data });
+    } else {
+      createWarehouse.mutate(data);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
+        {statsCards.map((stat, index) => {
           const colorClasses = {
             primary: "text-primary bg-primary/10",
             success: "text-success bg-success/10",
@@ -293,243 +247,134 @@ export default function Warehouses() {
 
       {/* Data Table */}
       <DataTable
-        data={mockWarehouses}
+        title="المستودعات"
+        description="إدارة مستودعات المخزون"
         columns={columns}
-        title="إدارة المستودعات"
-        description="عرض وإدارة جميع المستودعات ومواقع التخزين"
-        searchPlaceholder="بحث بالاسم أو الرمز..."
+        data={warehouses}
         onAdd={handleAdd}
-        onView={handleView}
         onEdit={handleEdit}
-        onRefresh={() => toast.info("جاري تحديث البيانات...")}
-        emptyMessage="لا توجد مستودعات"
+        onDelete={handleDelete}
+        addButtonText="إضافة مستودع"
+        searchPlaceholder="البحث في المستودعات..."
+        searchKeys={["code", "nameAr", "address"]}
       />
 
-      {/* Add/Edit Warehouse Dialog */}
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
-        <DialogContent className="max-w-2xl">
+      {/* Add/Edit Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
-              {selectedWarehouse ? "تعديل بيانات المستودع" : "إضافة مستودع جديد"}
+              {selectedWarehouse ? "تعديل المستودع" : "إضافة مستودع جديد"}
             </DialogTitle>
             <DialogDescription>
-              {selectedWarehouse
-                ? "قم بتعديل بيانات المستودع"
-                : "أدخل بيانات المستودع الجديد"}
+              {selectedWarehouse ? "قم بتعديل بيانات المستودع" : "أدخل بيانات المستودع الجديد"}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSave}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="code">الكود *</Label>
+                  <Input
+                    id="code"
+                    value={formData.code}
+                    onChange={(e) => setFormData({ ...formData, code: e.target.value })}
+                    placeholder="WH-001"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="type">النوع</Label>
+                  <Select
+                    value={formData.type}
+                    onValueChange={(value) => setFormData({ ...formData, type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="main">رئيسي</SelectItem>
+                      <SelectItem value="sub">فرعي</SelectItem>
+                      <SelectItem value="transit">عبور</SelectItem>
+                      <SelectItem value="quarantine">حجر</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
               <div className="space-y-2">
-                <Label htmlFor="code">رمز المستودع *</Label>
+                <Label htmlFor="nameAr">اسم المستودع *</Label>
                 <Input
-                  id="code"
-                  placeholder="WH-XXX"
-                  defaultValue={selectedWarehouse?.code}
+                  id="nameAr"
+                  value={formData.nameAr}
+                  onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="name">اسم المستودع *</Label>
+                <Label htmlFor="nameEn">الاسم بالإنجليزية</Label>
                 <Input
-                  id="name"
-                  placeholder="أدخل اسم المستودع"
-                  defaultValue={selectedWarehouse?.name}
-                  required
+                  id="nameEn"
+                  value={formData.nameEn}
+                  onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="type">نوع المستودع *</Label>
-                <Select defaultValue={selectedWarehouse?.type || ""}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر النوع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(warehouseTypeMap).map(([key, label]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">الحالة *</Label>
-                <Select defaultValue={selectedWarehouse?.status || "active"}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الحالة" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(warehouseStatusMap).map(([key, { label }]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="location">الموقع *</Label>
-                <Select defaultValue="">
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر الموقع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="1">محطة التوليد الرئيسية</SelectItem>
-                    <SelectItem value="2">محطة التوزيع الشمالية</SelectItem>
-                    <SelectItem value="3">محطة التوزيع الجنوبية</SelectItem>
-                    <SelectItem value="4">المقر الرئيسي</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="capacity">السعة الإجمالية</Label>
-                <Input
-                  id="capacity"
-                  type="number"
-                  placeholder="0"
-                  defaultValue={selectedWarehouse?.capacity}
-                />
-              </div>
-              <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="address">العنوان</Label>
-                <Textarea
-                  id="address"
-                  placeholder="أدخل العنوان التفصيلي"
-                  defaultValue={selectedWarehouse?.address}
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="manager">المسؤول</Label>
                 <Input
-                  id="manager"
-                  placeholder="اسم المسؤول"
-                  defaultValue={selectedWarehouse?.manager}
+                  id="address"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">رقم الهاتف</Label>
+                <Label htmlFor="phone">الهاتف</Label>
                 <Input
                   id="phone"
-                  placeholder="05XXXXXXXX"
-                  defaultValue={selectedWarehouse?.phone}
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="description">الوصف</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={3}
                 />
               </div>
             </div>
             <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
+              <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)}>
                 إلغاء
               </Button>
-              <Button type="submit" className="gradient-energy">
-                {selectedWarehouse ? "حفظ التغييرات" : "إضافة المستودع"}
+              <Button type="submit" disabled={createWarehouse.isPending || updateWarehouse.isPending}>
+                {(createWarehouse.isPending || updateWarehouse.isPending) && (
+                  <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+                )}
+                {selectedWarehouse ? "حفظ التغييرات" : "إضافة"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
-      {/* Warehouse Details Dialog */}
-      <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-3xl">
+      {/* Delete Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle>تفاصيل المستودع</DialogTitle>
+            <DialogTitle>تأكيد الحذف</DialogTitle>
+            <DialogDescription>
+              هل أنت متأكد من حذف المستودع "{selectedWarehouse?.nameAr}"؟
+            </DialogDescription>
           </DialogHeader>
-          {selectedWarehouse && (
-            <div className="space-y-6 py-4">
-              {/* Header */}
-              <div className="flex items-center gap-4">
-                <div className="p-4 rounded-xl bg-primary/10">
-                  <Warehouse className="w-8 h-8 text-primary" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold">{selectedWarehouse.name}</h3>
-                  <p className="text-muted-foreground font-mono">{selectedWarehouse.code}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StatusBadge status={selectedWarehouse.status} statusMap={warehouseStatusMap} />
-                    <Badge variant="outline">{warehouseTypeMap[selectedWarehouse.type]}</Badge>
-                  </div>
-                </div>
-              </div>
-
-              {/* Stats */}
-              <div className="grid grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Boxes className="w-6 h-6 mx-auto text-primary mb-2" />
-                    <p className="text-2xl font-bold ltr-nums">{selectedWarehouse.itemsCount.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">صنف</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Package className="w-6 h-6 mx-auto text-success mb-2" />
-                    <p className="text-2xl font-bold ltr-nums">{selectedWarehouse.categoriesCount}</p>
-                    <p className="text-xs text-muted-foreground">تصنيف</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <TrendingUp className="w-6 h-6 mx-auto text-warning mb-2" />
-                    <p className="text-2xl font-bold ltr-nums">{Math.round((selectedWarehouse.usedCapacity / selectedWarehouse.capacity) * 100)}%</p>
-                    <p className="text-xs text-muted-foreground">نسبة الإشغال</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <CheckCircle className="w-6 h-6 mx-auto text-success mb-2" />
-                    <p className="text-2xl font-bold ltr-nums">{selectedWarehouse.capacity.toLocaleString()}</p>
-                    <p className="text-xs text-muted-foreground">السعة الكلية</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Capacity Progress */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-base">سعة التخزين</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>المستخدم: <span className="font-bold ltr-nums">{selectedWarehouse.usedCapacity.toLocaleString()}</span></span>
-                      <span>المتاح: <span className="font-bold ltr-nums">{(selectedWarehouse.capacity - selectedWarehouse.usedCapacity).toLocaleString()}</span></span>
-                    </div>
-                    <Progress 
-                      value={(selectedWarehouse.usedCapacity / selectedWarehouse.capacity) * 100} 
-                      className="h-3"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Details */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-muted-foreground">الموقع</Label>
-                  <p className="font-medium">{selectedWarehouse.location}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">العنوان</Label>
-                  <p className="font-medium">{selectedWarehouse.address}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">المسؤول</Label>
-                  <p className="font-medium">{selectedWarehouse.manager}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">رقم الهاتف</Label>
-                  <p className="font-medium ltr-nums">{selectedWarehouse.phone}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground">آخر جرد</Label>
-                  <p className="font-medium">{new Date(selectedWarehouse.lastInventory).toLocaleDateString("ar-SA")}</p>
-                </div>
-              </div>
-            </div>
-          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowDetailsDialog(false)}>
-              إغلاق
+            <Button variant="outline" onClick={() => setShowDeleteDialog(false)}>
+              إلغاء
             </Button>
-            <Button className="gradient-energy" onClick={() => { setShowDetailsDialog(false); handleEdit(selectedWarehouse); }}>
-              تعديل
+            <Button variant="destructive" onClick={confirmDelete} disabled={deleteWarehouse.isPending}>
+              {deleteWarehouse.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
+              حذف
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -11,6 +11,10 @@ import { hrRouter } from "./hrRouter";
 import { customSystemRouter } from "./customSystemRouter";
 import { customerSystemRouter } from "./customerSystemRouter";
 import { billingRouter } from "./billingRouter";
+import { assetsRouter } from "./assetsRouter";
+import { accountingRouter } from "./accountingRouter";
+import { inventoryRouter } from "./inventoryRouter";
+import { maintenanceRouter } from "./maintenanceRouter";
 
 // Admin procedure - requires admin role
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -1319,6 +1323,14 @@ export const appRouter = router({
   customSystem: customSystemRouter,
   customerSystem: customerSystemRouter,
   billing: billingRouter,
+  // Asset Management System - نظام إدارة الأصول
+  assets: assetsRouter,
+  // Accounting System - النظام المحاسبي
+  accounting: accountingRouter,
+  // Inventory System - نظام المخزون
+  inventory: inventoryRouter,
+  // Maintenance System - نظام الصيانة
+  maintenance: maintenanceRouter,
 });
 
 export type AppRouter = typeof appRouter;

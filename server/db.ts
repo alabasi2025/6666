@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql, like, or, isNull, count } from "drizzle-orm";
+import { eq, and, desc, asc, sql, like, or, isNull, count, inArray, ne } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -2372,4 +2372,1272 @@ export async function getHRDashboardStats(businessId: number) {
     pendingLeaves: pendingLeaves?.count || 0,
     totalDepartments: totalDepartments?.count || 0,
   };
+}
+
+
+// ============================================
+// Asset Management Extended Functions
+// ============================================
+
+export async function getAssetCategories(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(assetCategories)
+    .where(and(eq(assetCategories.businessId, businessId), eq(assetCategories.isActive, true)))
+    .orderBy(asc(assetCategories.code));
+}
+
+export async function createAssetCategory(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(assetCategories).values(data);
+  return result[0].insertId;
+}
+
+export async function updateAssetCategory(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(assetCategories).set(data).where(eq(assetCategories.id, id));
+}
+
+export async function deleteAssetCategory(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(assetCategories).set({ isActive: false }).where(eq(assetCategories.id, id));
+}
+
+export async function updateAsset(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(assets).set(data).where(eq(assets.id, id));
+}
+
+export async function deleteAsset(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(assets).set({ status: "disposed" }).where(eq(assets.id, id));
+}
+
+export async function getAssetMovements(filters: { assetId?: number; businessId?: number; movementType?: string }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions: any[] = [];
+  if (filters.assetId) conditions.push(eq(assetMovements.assetId, filters.assetId));
+  if (filters.movementType) conditions.push(eq(assetMovements.movementType, filters.movementType as any));
+  
+  if (conditions.length === 0) return [];
+  
+  return await db.select().from(assetMovements)
+    .where(and(...conditions))
+    .orderBy(desc(assetMovements.movementDate));
+}
+
+export async function createAssetMovement(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(assetMovements).values(data);
+  return result[0].insertId;
+}
+
+export async function calculateDepreciation(params: { businessId: number; periodId?: number; assetIds?: number[]; userId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get assets for depreciation
+  let conditions = [eq(assets.businessId, params.businessId), eq(assets.status, "active")];
+  if (params.assetIds && params.assetIds.length > 0) {
+    conditions.push(inArray(assets.id, params.assetIds));
+  }
+  
+  const assetsList = await db.select().from(assets).where(and(...conditions));
+  
+  let totalDepreciation = 0;
+  const results: any[] = [];
+  
+  for (const asset of assetsList) {
+    if (!asset.purchaseCost || !asset.usefulLife) continue;
+    
+    const purchaseCost = parseFloat(asset.purchaseCost);
+    const salvageValue = parseFloat(asset.salvageValue || "0");
+    const usefulLife = asset.usefulLife;
+    
+    // Straight-line depreciation
+    const annualDepreciation = (purchaseCost - salvageValue) / usefulLife;
+    const monthlyDepreciation = annualDepreciation / 12;
+    
+    // Update accumulated depreciation
+    const newAccumulated = parseFloat(asset.accumulatedDepreciation || "0") + monthlyDepreciation;
+    const newCurrentValue = purchaseCost - newAccumulated;
+    
+    await db.update(assets).set({
+      accumulatedDepreciation: newAccumulated.toFixed(2),
+      currentValue: newCurrentValue.toFixed(2),
+    }).where(eq(assets.id, asset.id));
+    
+    // Create movement record
+    await db.insert(assetMovements).values({
+      assetId: asset.id,
+      movementType: "depreciation",
+      movementDate: new Date().toISOString().split('T')[0],
+      amount: monthlyDepreciation.toFixed(2),
+      description: "إهلاك شهري",
+      createdBy: params.userId,
+    });
+    
+    totalDepreciation += monthlyDepreciation;
+    results.push({
+      assetId: asset.id,
+      assetName: asset.nameAr,
+      depreciation: monthlyDepreciation,
+    });
+  }
+  
+  return { totalDepreciation, count: results.length, results };
+}
+
+export async function getDepreciationHistory(filters: { assetId?: number; businessId?: number; year?: number }) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions = [eq(assetMovements.movementType, "depreciation")];
+  if (filters.assetId) conditions.push(eq(assetMovements.assetId, filters.assetId));
+  
+  return await db.select().from(assetMovements)
+    .where(and(...conditions))
+    .orderBy(desc(assetMovements.movementDate));
+}
+
+export async function getAssetDashboardStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return { totalAssets: 0, activeAssets: 0, totalValue: 0, totalDepreciation: 0 };
+  
+  const [total] = await db.select({ count: count() }).from(assets).where(eq(assets.businessId, businessId));
+  const [active] = await db.select({ count: count() }).from(assets).where(and(eq(assets.businessId, businessId), eq(assets.status, "active")));
+  const [values] = await db.select({ 
+    totalValue: sql<number>`COALESCE(SUM(current_value), 0)`,
+    totalDepreciation: sql<number>`COALESCE(SUM(accumulated_depreciation), 0)`,
+  }).from(assets).where(eq(assets.businessId, businessId));
+  
+  return {
+    totalAssets: total?.count || 0,
+    activeAssets: active?.count || 0,
+    totalValue: values?.totalValue || 0,
+    totalDepreciation: values?.totalDepreciation || 0,
+  };
+}
+
+// ============================================
+// Accounting Extended Functions
+// ============================================
+
+export async function updateAccount(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(accounts).set(data).where(eq(accounts.id, id));
+}
+
+export async function deleteAccount(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(accounts).set({ isActive: false }).where(eq(accounts.id, id));
+}
+
+export async function getAccountsTree(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const allAccounts = await db.select().from(accounts)
+    .where(and(eq(accounts.businessId, businessId), eq(accounts.isActive, true)))
+    .orderBy(asc(accounts.code));
+  
+  // Build tree structure
+  const buildTree = (parentId: number | null): any[] => {
+    return allAccounts
+      .filter(acc => acc.parentId === parentId)
+      .map(acc => ({
+        ...acc,
+        children: buildTree(acc.id),
+      }));
+  };
+  
+  return buildTree(null);
+}
+
+export async function getJournalEntries(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions = [eq(journalEntries.businessId, businessId)];
+  if (filters.periodId) conditions.push(eq(journalEntries.periodId, filters.periodId));
+  if (filters.type) conditions.push(eq(journalEntries.type, filters.type as any));
+  if (filters.status) conditions.push(eq(journalEntries.status, filters.status as any));
+  
+  return await db.select().from(journalEntries)
+    .where(and(...conditions))
+    .orderBy(desc(journalEntries.entryDate))
+    .limit(filters.limit || 100);
+}
+
+export async function getJournalEntryById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [entry] = await db.select().from(journalEntries).where(eq(journalEntries.id, id));
+  if (!entry) return null;
+  
+  const lines = await db.select().from(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
+  
+  return { ...entry, lines };
+}
+
+export async function createJournalEntry(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { lines, ...entryData } = data;
+  
+  // Generate entry number
+  const entryNumber = `JE-${Date.now()}`;
+  
+  // Calculate totals
+  let totalDebit = 0;
+  let totalCredit = 0;
+  lines.forEach((line: any) => {
+    totalDebit += parseFloat(line.debit || "0");
+    totalCredit += parseFloat(line.credit || "0");
+  });
+  
+  const result = await db.insert(journalEntries).values({
+    ...entryData,
+    entryNumber,
+    totalDebit: totalDebit.toFixed(2),
+    totalCredit: totalCredit.toFixed(2),
+    status: "draft",
+  });
+  
+  const entryId = result[0].insertId;
+  
+  // Insert lines
+  for (let i = 0; i < lines.length; i++) {
+    await db.insert(journalEntryLines).values({
+      journalEntryId: entryId,
+      lineNumber: i + 1,
+      accountId: lines[i].accountId,
+      debit: lines[i].debit || "0",
+      credit: lines[i].credit || "0",
+      description: lines[i].description,
+      costCenterId: lines[i].costCenterId,
+    });
+  }
+  
+  return entryId;
+}
+
+export async function updateJournalEntry(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const { lines, ...entryData } = data;
+  
+  if (Object.keys(entryData).length > 0) {
+    await db.update(journalEntries).set(entryData).where(eq(journalEntries.id, id));
+  }
+  
+  if (lines) {
+    // Delete existing lines and insert new ones
+    await db.delete(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
+    
+    let totalDebit = 0;
+    let totalCredit = 0;
+    
+    for (let i = 0; i < lines.length; i++) {
+      totalDebit += parseFloat(lines[i].debit || "0");
+      totalCredit += parseFloat(lines[i].credit || "0");
+      
+      await db.insert(journalEntryLines).values({
+        journalEntryId: id,
+        lineNumber: i + 1,
+        accountId: lines[i].accountId,
+        debit: lines[i].debit || "0",
+        credit: lines[i].credit || "0",
+        description: lines[i].description,
+        costCenterId: lines[i].costCenterId,
+      });
+    }
+    
+    await db.update(journalEntries).set({
+      totalDebit: totalDebit.toFixed(2),
+      totalCredit: totalCredit.toFixed(2),
+    }).where(eq(journalEntries.id, id));
+  }
+}
+
+export async function deleteJournalEntry(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Only delete draft entries
+  const [entry] = await db.select().from(journalEntries).where(eq(journalEntries.id, id));
+  if (entry?.status !== "draft") {
+    throw new Error("لا يمكن حذف قيد مرحّل");
+  }
+  
+  await db.delete(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
+  await db.delete(journalEntries).where(eq(journalEntries.id, id));
+}
+
+export async function postJournalEntry(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [entry] = await db.select().from(journalEntries).where(eq(journalEntries.id, id));
+  if (!entry) throw new Error("القيد غير موجود");
+  if (entry.status !== "draft") throw new Error("القيد مرحّل بالفعل");
+  
+  // Verify debit = credit
+  if (entry.totalDebit !== entry.totalCredit) {
+    throw new Error("مجموع المدين لا يساوي مجموع الدائن");
+  }
+  
+  // Update account balances
+  const lines = await db.select().from(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
+  
+  for (const line of lines) {
+    const [account] = await db.select().from(accounts).where(eq(accounts.id, line.accountId));
+    if (!account) continue;
+    
+    const currentBalance = parseFloat(account.currentBalance || "0");
+    const debit = parseFloat(line.debit || "0");
+    const credit = parseFloat(line.credit || "0");
+    
+    let newBalance: number;
+    if (account.nature === "debit") {
+      newBalance = currentBalance + debit - credit;
+    } else {
+      newBalance = currentBalance + credit - debit;
+    }
+    
+    await db.update(accounts).set({ currentBalance: newBalance.toFixed(2) }).where(eq(accounts.id, line.accountId));
+  }
+  
+  await db.update(journalEntries).set({
+    status: "posted",
+    postedBy: userId,
+    postedAt: new Date(),
+  }).where(eq(journalEntries.id, id));
+}
+
+export async function reverseJournalEntry(id: number, userId: number, reason?: string) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const entry = await getJournalEntryById(id);
+  if (!entry) throw new Error("القيد غير موجود");
+  if (entry.status !== "posted") throw new Error("لا يمكن عكس قيد غير مرحّل");
+  
+  // Create reverse entry
+  const reversedLines = entry.lines.map((line: any) => ({
+    accountId: line.accountId,
+    debit: line.credit,
+    credit: line.debit,
+    description: `عكس: ${line.description || ""}`,
+    costCenterId: line.costCenterId,
+  }));
+  
+  const newId = await createJournalEntry({
+    businessId: entry.businessId,
+    branchId: entry.branchId,
+    entryDate: new Date().toISOString().split('T')[0],
+    periodId: entry.periodId,
+    type: "adjustment",
+    description: `عكس القيد ${entry.entryNumber}: ${reason || ""}`,
+    lines: reversedLines,
+    createdBy: userId,
+  });
+  
+  // Post the reverse entry
+  await postJournalEntry(newId, userId);
+  
+  // Mark original as reversed
+  await db.update(journalEntries).set({ status: "reversed" }).where(eq(journalEntries.id, id));
+  
+  return newId;
+}
+
+export async function getFiscalPeriods(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions = [eq(fiscalPeriods.businessId, businessId)];
+  if (filters.year) conditions.push(eq(fiscalPeriods.year, filters.year));
+  if (filters.status) conditions.push(eq(fiscalPeriods.status, filters.status as any));
+  
+  return await db.select().from(fiscalPeriods)
+    .where(and(...conditions))
+    .orderBy(desc(fiscalPeriods.year), desc(fiscalPeriods.period));
+}
+
+export async function createFiscalPeriod(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(fiscalPeriods).values(data);
+  return result[0].insertId;
+}
+
+export async function closeFiscalPeriod(id: number, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(fiscalPeriods).set({
+    status: "closed",
+    closedBy: userId,
+    closedAt: new Date(),
+  }).where(eq(fiscalPeriods.id, id));
+}
+
+export async function reopenFiscalPeriod(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(fiscalPeriods).set({
+    status: "open",
+    closedBy: null,
+    closedAt: null,
+  }).where(eq(fiscalPeriods.id, id));
+}
+
+export async function getCostCenters(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(costCenters)
+    .where(and(eq(costCenters.businessId, businessId), eq(costCenters.isActive, true)))
+    .orderBy(asc(costCenters.code));
+}
+
+export async function createCostCenter(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(costCenters).values(data);
+  return result[0].insertId;
+}
+
+export async function updateCostCenter(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(costCenters).set(data).where(eq(costCenters.id, id));
+}
+
+export async function deleteCostCenter(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(costCenters).set({ isActive: false }).where(eq(costCenters.id, id));
+}
+
+export async function getTrialBalance(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select({
+    id: accounts.id,
+    code: accounts.code,
+    nameAr: accounts.nameAr,
+    nature: accounts.nature,
+    openingBalance: accounts.openingBalance,
+    currentBalance: accounts.currentBalance,
+  }).from(accounts)
+    .where(and(eq(accounts.businessId, businessId), eq(accounts.isActive, true)))
+    .orderBy(asc(accounts.code));
+}
+
+export async function getGeneralLedger(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions: any[] = [eq(journalEntries.businessId, businessId), eq(journalEntries.status, "posted")];
+  
+  const entries = await db.select({
+    entryId: journalEntries.id,
+    entryNumber: journalEntries.entryNumber,
+    entryDate: journalEntries.entryDate,
+    description: journalEntries.description,
+    lineId: journalEntryLines.id,
+    accountId: journalEntryLines.accountId,
+    debit: journalEntryLines.debit,
+    credit: journalEntryLines.credit,
+    lineDescription: journalEntryLines.description,
+  })
+    .from(journalEntries)
+    .innerJoin(journalEntryLines, eq(journalEntries.id, journalEntryLines.journalEntryId))
+    .where(and(...conditions))
+    .orderBy(desc(journalEntries.entryDate));
+  
+  if (filters.accountId) {
+    return entries.filter(e => e.accountId === filters.accountId);
+  }
+  
+  return entries;
+}
+
+export async function getIncomeStatement(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return { revenues: [], expenses: [], totalRevenue: 0, totalExpense: 0, netIncome: 0 };
+  
+  // Get revenue and expense accounts
+  const revenueAccounts = await db.select().from(accounts)
+    .where(and(eq(accounts.businessId, businessId), eq(accounts.nature, "credit"), eq(accounts.isActive, true)));
+  
+  const expenseAccounts = await db.select().from(accounts)
+    .where(and(eq(accounts.businessId, businessId), eq(accounts.nature, "debit"), eq(accounts.isActive, true)));
+  
+  const totalRevenue = revenueAccounts.reduce((sum, acc) => sum + parseFloat(acc.currentBalance || "0"), 0);
+  const totalExpense = expenseAccounts.reduce((sum, acc) => sum + parseFloat(acc.currentBalance || "0"), 0);
+  
+  return {
+    revenues: revenueAccounts,
+    expenses: expenseAccounts,
+    totalRevenue,
+    totalExpense,
+    netIncome: totalRevenue - totalExpense,
+  };
+}
+
+export async function getBalanceSheet(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 };
+  
+  const allAccounts = await db.select().from(accounts)
+    .where(and(eq(accounts.businessId, businessId), eq(accounts.isActive, true)));
+  
+  // Simple categorization based on account nature
+  const assetAccounts = allAccounts.filter(acc => acc.nature === "debit");
+  const liabilityAccounts = allAccounts.filter(acc => acc.nature === "credit");
+  
+  const totalAssets = assetAccounts.reduce((sum, acc) => sum + parseFloat(acc.currentBalance || "0"), 0);
+  const totalLiabilities = liabilityAccounts.reduce((sum, acc) => sum + parseFloat(acc.currentBalance || "0"), 0);
+  
+  return {
+    assets: assetAccounts,
+    liabilities: liabilityAccounts,
+    equity: [],
+    totalAssets,
+    totalLiabilities,
+    totalEquity: totalAssets - totalLiabilities,
+  };
+}
+
+export async function getAccountingDashboardStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return { totalAccounts: 0, totalEntries: 0, pendingEntries: 0, currentPeriod: null };
+  
+  const [totalAccounts] = await db.select({ count: count() }).from(accounts).where(eq(accounts.businessId, businessId));
+  const [totalEntries] = await db.select({ count: count() }).from(journalEntries).where(eq(journalEntries.businessId, businessId));
+  const [pendingEntries] = await db.select({ count: count() }).from(journalEntries).where(and(eq(journalEntries.businessId, businessId), eq(journalEntries.status, "draft")));
+  const [currentPeriod] = await db.select().from(fiscalPeriods).where(and(eq(fiscalPeriods.businessId, businessId), eq(fiscalPeriods.status, "open"))).limit(1);
+  
+  return {
+    totalAccounts: totalAccounts?.count || 0,
+    totalEntries: totalEntries?.count || 0,
+    pendingEntries: pendingEntries?.count || 0,
+    currentPeriod,
+  };
+}
+
+// ============================================
+// Inventory Extended Functions
+// ============================================
+
+export async function getWarehouses(businessId: number, filters?: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions = [eq(warehouses.businessId, businessId), eq(warehouses.isActive, true)];
+  if (filters?.branchId) conditions.push(eq(warehouses.branchId, filters.branchId));
+  if (filters?.type) conditions.push(eq(warehouses.type, filters.type as any));
+  
+  return await db.select().from(warehouses)
+    .where(and(...conditions))
+    .orderBy(asc(warehouses.nameAr));
+}
+
+export async function getWarehouseById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.select().from(warehouses).where(eq(warehouses.id, id));
+  return result || null;
+}
+
+export async function createWarehouse(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(warehouses).values(data);
+  return result[0].insertId;
+}
+
+export async function updateWarehouse(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(warehouses).set(data).where(eq(warehouses.id, id));
+}
+
+export async function deleteWarehouse(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(warehouses).set({ isActive: false }).where(eq(warehouses.id, id));
+}
+
+export async function getItemCategories(businessId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(itemCategories)
+    .where(and(eq(itemCategories.businessId, businessId), eq(itemCategories.isActive, true)))
+    .orderBy(asc(itemCategories.code));
+}
+
+export async function createItemCategory(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(itemCategories).values(data);
+  return result[0].insertId;
+}
+
+export async function updateItemCategory(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(itemCategories).set(data).where(eq(itemCategories.id, id));
+}
+
+export async function deleteItemCategory(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(itemCategories).set({ isActive: false }).where(eq(itemCategories.id, id));
+}
+
+export async function getItemById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.select().from(items).where(eq(items.id, id));
+  return result || null;
+}
+
+export async function updateItem(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(items).set(data).where(eq(items.id, id));
+}
+
+export async function deleteItem(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(items).set({ isActive: false }).where(eq(items.id, id));
+}
+
+export async function getStockBalances(filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions: any[] = [];
+  if (filters.warehouseId) conditions.push(eq(stockBalances.warehouseId, filters.warehouseId));
+  if (filters.itemId) conditions.push(eq(stockBalances.itemId, filters.itemId));
+  
+  const query = db.select({
+    id: stockBalances.id,
+    itemId: stockBalances.itemId,
+    warehouseId: stockBalances.warehouseId,
+    quantity: stockBalances.quantity,
+    reservedQty: stockBalances.reservedQty,
+    availableQty: stockBalances.availableQty,
+    averageCost: stockBalances.averageCost,
+    totalValue: stockBalances.totalValue,
+    itemCode: items.code,
+    itemName: items.nameAr,
+    warehouseName: warehouses.nameAr,
+  })
+    .from(stockBalances)
+    .leftJoin(items, eq(stockBalances.itemId, items.id))
+    .leftJoin(warehouses, eq(stockBalances.warehouseId, warehouses.id));
+  
+  if (conditions.length > 0) {
+    return await query.where(and(...conditions));
+  }
+  
+  return await query;
+}
+
+export async function getStockBalancesByItem(itemId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(stockBalances).where(eq(stockBalances.itemId, itemId));
+}
+
+export async function getStockBalancesByWarehouse(warehouseId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(stockBalances).where(eq(stockBalances.warehouseId, warehouseId));
+}
+
+export async function getStockMovements(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions = [eq(stockMovements.businessId, businessId)];
+  if (filters.warehouseId) conditions.push(eq(stockMovements.warehouseId, filters.warehouseId));
+  if (filters.itemId) conditions.push(eq(stockMovements.itemId, filters.itemId));
+  if (filters.movementType) conditions.push(eq(stockMovements.movementType, filters.movementType as any));
+  
+  return await db.select().from(stockMovements)
+    .where(and(...conditions))
+    .orderBy(desc(stockMovements.movementDate))
+    .limit(filters.limit || 100);
+}
+
+export async function createStockMovement(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get current balance
+  const [currentBalance] = await db.select().from(stockBalances)
+    .where(and(eq(stockBalances.itemId, data.itemId), eq(stockBalances.warehouseId, data.warehouseId)));
+  
+  const balanceBefore = currentBalance ? parseFloat(currentBalance.quantity || "0") : 0;
+  const quantity = parseFloat(data.quantity);
+  
+  let balanceAfter: number;
+  if (["receipt", "transfer_in", "adjustment_in", "return"].includes(data.movementType)) {
+    balanceAfter = balanceBefore + quantity;
+  } else {
+    balanceAfter = balanceBefore - quantity;
+  }
+  
+  // Insert movement
+  const result = await db.insert(stockMovements).values({
+    ...data,
+    balanceBefore: balanceBefore.toFixed(3),
+    balanceAfter: balanceAfter.toFixed(3),
+  });
+  
+  // Update or create stock balance
+  if (currentBalance) {
+    await db.update(stockBalances).set({
+      quantity: balanceAfter.toFixed(3),
+      availableQty: balanceAfter.toFixed(3),
+      lastMovementDate: new Date(),
+    }).where(eq(stockBalances.id, currentBalance.id));
+  } else {
+    await db.insert(stockBalances).values({
+      itemId: data.itemId,
+      warehouseId: data.warehouseId,
+      quantity: balanceAfter.toFixed(3),
+      availableQty: balanceAfter.toFixed(3),
+      lastMovementDate: new Date(),
+    });
+  }
+  
+  return result[0].insertId;
+}
+
+export async function transferStock(data: { businessId: number; itemId: number; fromWarehouseId: number; toWarehouseId: number; quantity: string; notes?: string; userId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const now = new Date().toISOString();
+  
+  // Create transfer out movement
+  await createStockMovement({
+    businessId: data.businessId,
+    itemId: data.itemId,
+    warehouseId: data.fromWarehouseId,
+    movementType: "transfer_out",
+    movementDate: now,
+    quantity: data.quantity,
+    notes: data.notes,
+    createdBy: data.userId,
+  });
+  
+  // Create transfer in movement
+  await createStockMovement({
+    businessId: data.businessId,
+    itemId: data.itemId,
+    warehouseId: data.toWarehouseId,
+    movementType: "transfer_in",
+    movementDate: now,
+    quantity: data.quantity,
+    notes: data.notes,
+    createdBy: data.userId,
+  });
+  
+  return { success: true };
+}
+
+export async function adjustStock(data: { businessId: number; itemId: number; warehouseId: number; adjustmentType: string; quantity: string; reason?: string; userId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const movementType = data.adjustmentType === "in" ? "adjustment_in" : "adjustment_out";
+  
+  return await createStockMovement({
+    businessId: data.businessId,
+    itemId: data.itemId,
+    warehouseId: data.warehouseId,
+    movementType,
+    movementDate: new Date().toISOString(),
+    quantity: data.quantity,
+    notes: data.reason,
+    createdBy: data.userId,
+  });
+}
+
+export async function getSupplierById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.select().from(suppliers).where(eq(suppliers.id, id));
+  return result || null;
+}
+
+export async function updateSupplier(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(suppliers).set(data).where(eq(suppliers.id, id));
+}
+
+export async function deleteSupplier(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(suppliers).set({ isActive: false }).where(eq(suppliers.id, id));
+}
+
+export async function getPurchaseOrders(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions = [eq(purchaseOrders.businessId, businessId)];
+  if (filters.supplierId) conditions.push(eq(purchaseOrders.supplierId, filters.supplierId));
+  if (filters.status) conditions.push(eq(purchaseOrders.status, filters.status as any));
+  
+  return await db.select().from(purchaseOrders)
+    .where(and(...conditions))
+    .orderBy(desc(purchaseOrders.orderDate))
+    .limit(filters.limit || 100);
+}
+
+export async function getPurchaseOrderById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
+  return result || null;
+}
+
+export async function createPurchaseOrder(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const { items: orderItems, ...orderData } = data;
+  
+  // Generate order number
+  const orderNumber = `PO-${Date.now()}`;
+  
+  // Calculate totals
+  let subtotal = 0;
+  let taxAmount = 0;
+  
+  for (const item of orderItems) {
+    const lineTotal = parseFloat(item.quantity) * parseFloat(item.unitPrice);
+    const lineTax = lineTotal * (parseFloat(item.taxRate || "0") / 100);
+    subtotal += lineTotal;
+    taxAmount += lineTax;
+  }
+  
+  const totalAmount = subtotal + taxAmount - parseFloat(orderData.discountAmount || "0");
+  
+  const result = await db.insert(purchaseOrders).values({
+    ...orderData,
+    orderNumber,
+    subtotal: subtotal.toFixed(2),
+    taxAmount: taxAmount.toFixed(2),
+    totalAmount: totalAmount.toFixed(2),
+    status: "draft",
+  });
+  
+  return result[0].insertId;
+}
+
+export async function updatePurchaseOrderStatus(id: number, status: string, userId: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { status };
+  
+  if (status === "approved") {
+    updateData.approvedBy = userId;
+    updateData.approvedAt = new Date();
+  }
+  
+  await db.update(purchaseOrders).set(updateData).where(eq(purchaseOrders.id, id));
+}
+
+export async function receivePurchaseOrder(data: { id: number; items: any[]; warehouseId: number; notes?: string; userId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const [order] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, data.id));
+  if (!order) throw new Error("أمر الشراء غير موجود");
+  
+  // Create stock movements for received items
+  for (const item of data.items) {
+    await createStockMovement({
+      businessId: order.businessId,
+      itemId: item.itemId,
+      warehouseId: data.warehouseId,
+      movementType: "receipt",
+      movementDate: new Date().toISOString(),
+      documentType: "purchase_order",
+      documentId: data.id,
+      documentNumber: order.orderNumber,
+      quantity: item.receivedQty,
+      notes: data.notes,
+      createdBy: data.userId,
+    });
+  }
+  
+  // Update order status
+  await db.update(purchaseOrders).set({ status: "received" }).where(eq(purchaseOrders.id, data.id));
+}
+
+export async function getInventoryDashboardStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return { totalItems: 0, totalWarehouses: 0, lowStockItems: 0, totalValue: 0 };
+  
+  const [totalItems] = await db.select({ count: count() }).from(items).where(eq(items.businessId, businessId));
+  const [totalWarehouses] = await db.select({ count: count() }).from(warehouses).where(eq(warehouses.businessId, businessId));
+  const [totalValue] = await db.select({ total: sql<number>`COALESCE(SUM(total_value), 0)` }).from(stockBalances);
+  
+  return {
+    totalItems: totalItems?.count || 0,
+    totalWarehouses: totalWarehouses?.count || 0,
+    lowStockItems: 0, // TODO: Calculate based on min stock
+    totalValue: totalValue?.total || 0,
+  };
+}
+
+// ============================================
+// Maintenance Extended Functions
+// ============================================
+
+export async function updateWorkOrder(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(workOrders).set(data).where(eq(workOrders.id, id));
+}
+
+export async function completeWorkOrder(data: { id: number; actualHours?: string; actualCost?: string; laborCost?: string; partsCost?: string; completionNotes?: string; failureCode?: string; rootCause?: string; userId: number }) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(workOrders).set({
+    status: "completed",
+    actualEnd: new Date(),
+    actualHours: data.actualHours,
+    actualCost: data.actualCost,
+    laborCost: data.laborCost,
+    partsCost: data.partsCost,
+    completionNotes: data.completionNotes,
+    failureCode: data.failureCode,
+    rootCause: data.rootCause,
+  }).where(eq(workOrders.id, data.id));
+}
+
+export async function deleteWorkOrder(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // Only delete draft work orders
+  const [order] = await db.select().from(workOrders).where(eq(workOrders.id, id));
+  if (order?.status !== "draft") {
+    throw new Error("لا يمكن حذف أمر عمل غير مسودة");
+  }
+  
+  await db.delete(workOrderTasks).where(eq(workOrderTasks.workOrderId, id));
+  await db.delete(workOrders).where(eq(workOrders.id, id));
+}
+
+export async function getWorkOrderTasks(workOrderId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(workOrderTasks)
+    .where(eq(workOrderTasks.workOrderId, workOrderId))
+    .orderBy(asc(workOrderTasks.taskNumber));
+}
+
+export async function createWorkOrderTask(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Get next task number
+  const [lastTask] = await db.select({ maxNum: sql<number>`MAX(task_number)` })
+    .from(workOrderTasks)
+    .where(eq(workOrderTasks.workOrderId, data.workOrderId));
+  
+  const taskNumber = (lastTask?.maxNum || 0) + 1;
+  
+  const result = await db.insert(workOrderTasks).values({
+    ...data,
+    taskNumber,
+    status: "pending",
+  });
+  
+  return result[0].insertId;
+}
+
+export async function updateWorkOrderTask(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(workOrderTasks).set(data).where(eq(workOrderTasks.id, id));
+}
+
+export async function completeWorkOrderTask(id: number, data: { actualHours?: string; notes?: string }) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(workOrderTasks).set({
+    status: "completed",
+    actualHours: data.actualHours,
+    notes: data.notes,
+    completedAt: new Date(),
+  }).where(eq(workOrderTasks.id, id));
+}
+
+export async function deleteWorkOrderTask(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.delete(workOrderTasks).where(eq(workOrderTasks.id, id));
+}
+
+export async function getMaintenancePlans(businessId: number, filters?: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  let conditions = [eq(maintenancePlans.businessId, businessId)];
+  if (filters?.assetCategoryId) conditions.push(eq(maintenancePlans.assetCategoryId, filters.assetCategoryId));
+  if (filters?.frequency) conditions.push(eq(maintenancePlans.frequency, filters.frequency as any));
+  if (filters?.isActive !== undefined) conditions.push(eq(maintenancePlans.isActive, filters.isActive));
+  
+  return await db.select().from(maintenancePlans)
+    .where(and(...conditions))
+    .orderBy(asc(maintenancePlans.nameAr));
+}
+
+export async function getMaintenancePlanById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.select().from(maintenancePlans).where(eq(maintenancePlans.id, id));
+  return result || null;
+}
+
+export async function createMaintenancePlan(data: any) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(maintenancePlans).values(data);
+  return result[0].insertId;
+}
+
+export async function updateMaintenancePlan(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(maintenancePlans).set(data).where(eq(maintenancePlans.id, id));
+}
+
+export async function deleteMaintenancePlan(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(maintenancePlans).set({ isActive: false }).where(eq(maintenancePlans.id, id));
+}
+
+export async function generateWorkOrdersFromPlan(data: { planId: number; assetIds?: number[]; scheduledDate?: string; userId: number }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const plan = await getMaintenancePlanById(data.planId);
+  if (!plan) throw new Error("خطة الصيانة غير موجودة");
+  
+  // Get assets for this plan
+  let assetConditions = [eq(assets.businessId, plan.businessId), eq(assets.status, "active")];
+  if (plan.assetCategoryId) assetConditions.push(eq(assets.categoryId, plan.assetCategoryId));
+  if (data.assetIds && data.assetIds.length > 0) assetConditions.push(inArray(assets.id, data.assetIds));
+  
+  const assetsList = await db.select().from(assets).where(and(...assetConditions));
+  
+  const createdOrders: number[] = [];
+  
+  for (const asset of assetsList) {
+    const orderNumber = `WO-${Date.now()}-${asset.id}`;
+    
+    const result = await db.insert(workOrders).values({
+      businessId: plan.businessId,
+      branchId: asset.branchId,
+      stationId: asset.stationId,
+      orderNumber,
+      type: "preventive",
+      priority: "medium",
+      status: "pending",
+      assetId: asset.id,
+      title: `${plan.nameAr} - ${asset.nameAr}`,
+      description: plan.description,
+      scheduledStart: data.scheduledDate ? new Date(data.scheduledDate) : new Date(),
+      estimatedHours: plan.estimatedHours,
+      estimatedCost: plan.estimatedCost,
+      createdBy: data.userId,
+    });
+    
+    createdOrders.push(result[0].insertId);
+    
+    // Create tasks from plan
+    if (plan.tasks) {
+      const tasks = typeof plan.tasks === "string" ? JSON.parse(plan.tasks) : plan.tasks;
+      for (let i = 0; i < tasks.length; i++) {
+        await db.insert(workOrderTasks).values({
+          workOrderId: result[0].insertId,
+          taskNumber: i + 1,
+          description: tasks[i].description,
+          estimatedHours: tasks[i].estimatedHours,
+          status: "pending",
+        });
+      }
+    }
+  }
+  
+  return { count: createdOrders.length, orderIds: createdOrders };
+}
+
+// Technicians (using employees or field workers)
+export async function getTechnicians(businessId: number, filters?: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  // Return employees who can be technicians
+  return await db.select().from(employees)
+    .where(and(eq(employees.businessId, businessId), eq(employees.status, "active")))
+    .orderBy(asc(employees.firstName));
+}
+
+export async function getTechnicianById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [result] = await db.select().from(employees).where(eq(employees.id, id));
+  return result || null;
+}
+
+export async function createTechnician(data: any) {
+  // Create as employee
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(employees).values({
+    businessId: data.businessId,
+    employeeNumber: data.code,
+    firstName: data.nameAr,
+    lastName: "",
+    phone: data.phone,
+    email: data.email,
+    status: "active",
+  });
+  
+  return result[0].insertId;
+}
+
+export async function updateTechnician(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = {};
+  if (data.nameAr) updateData.firstName = data.nameAr;
+  if (data.phone) updateData.phone = data.phone;
+  if (data.email) updateData.email = data.email;
+  if (data.isActive !== undefined) updateData.status = data.isActive ? "active" : "inactive";
+  
+  await db.update(employees).set(updateData).where(eq(employees.id, id));
+}
+
+export async function deleteTechnician(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(employees).set({ status: "inactive" }).where(eq(employees.id, id));
+}
+
+export async function getTechnicianWorkload(data: { technicianId: number; startDate?: string; endDate?: string }) {
+  const db = await getDb();
+  if (!db) return { assignedOrders: 0, completedOrders: 0, totalHours: 0 };
+  
+  const [assigned] = await db.select({ count: count() }).from(workOrders)
+    .where(and(eq(workOrders.assignedTo, data.technicianId), ne(workOrders.status, "completed"), ne(workOrders.status, "cancelled")));
+  
+  const [completed] = await db.select({ count: count() }).from(workOrders)
+    .where(and(eq(workOrders.assignedTo, data.technicianId), eq(workOrders.status, "completed")));
+  
+  const [hours] = await db.select({ total: sql<number>`COALESCE(SUM(actual_hours), 0)` }).from(workOrders)
+    .where(eq(workOrders.assignedTo, data.technicianId));
+  
+  return {
+    assignedOrders: assigned?.count || 0,
+    completedOrders: completed?.count || 0,
+    totalHours: hours?.total || 0,
+  };
+}
+
+export async function getWorkOrderSpareParts(workOrderId: number) {
+  // TODO: Implement when spare parts table is available
+  return [];
+}
+
+export async function addSparePartToWorkOrder(data: any) {
+  // TODO: Implement when spare parts table is available
+  return 0;
+}
+
+export async function removeSparePartFromWorkOrder(id: number) {
+  // TODO: Implement when spare parts table is available
+}
+
+export async function getMaintenanceDashboardStats(businessId: number) {
+  const db = await getDb();
+  if (!db) return { totalWorkOrders: 0, pendingOrders: 0, completedOrders: 0, activePlans: 0 };
+  
+  const [total] = await db.select({ count: count() }).from(workOrders).where(eq(workOrders.businessId, businessId));
+  const [pending] = await db.select({ count: count() }).from(workOrders).where(and(eq(workOrders.businessId, businessId), eq(workOrders.status, "pending")));
+  const [completed] = await db.select({ count: count() }).from(workOrders).where(and(eq(workOrders.businessId, businessId), eq(workOrders.status, "completed")));
+  const [plans] = await db.select({ count: count() }).from(maintenancePlans).where(and(eq(maintenancePlans.businessId, businessId), eq(maintenancePlans.isActive, true)));
+  
+  return {
+    totalWorkOrders: total?.count || 0,
+    pendingOrders: pending?.count || 0,
+    completedOrders: completed?.count || 0,
+    activePlans: plans?.count || 0,
+  };
+}
+
+export async function getWorkOrderSummaryReport(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select({
+    status: workOrders.status,
+    count: count(),
+  }).from(workOrders)
+    .where(eq(workOrders.businessId, businessId))
+    .groupBy(workOrders.status);
+}
+
+export async function getMaintenanceCostsReport(businessId: number, filters: any) {
+  const db = await getDb();
+  if (!db) return { totalCost: 0, laborCost: 0, partsCost: 0 };
+  
+  const [costs] = await db.select({
+    totalCost: sql<number>`COALESCE(SUM(actual_cost), 0)`,
+    laborCost: sql<number>`COALESCE(SUM(labor_cost), 0)`,
+    partsCost: sql<number>`COALESCE(SUM(parts_cost), 0)`,
+  }).from(workOrders)
+    .where(and(eq(workOrders.businessId, businessId), eq(workOrders.status, "completed")));
+  
+  return costs || { totalCost: 0, laborCost: 0, partsCost: 0 };
+}
+
+export async function getEquipmentDowntimeReport(businessId: number, filters: any) {
+  // TODO: Implement downtime tracking
+  return [];
 }
