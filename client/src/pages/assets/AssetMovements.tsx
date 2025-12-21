@@ -1,7 +1,24 @@
 import { useState } from "react";
-import { DataTable, Column, StatusBadge } from "@/components/DataTable";
+import { trpc } from "@/lib/trpc";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -10,9 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -21,411 +35,347 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { toast } from "sonner";
 import {
-  ArrowLeftRight,
-  Package,
-  MapPin,
+  Plus,
+  ArrowRightLeft,
+  Search,
+  Loader2,
   Calendar,
-  AlertTriangle,
   CheckCircle,
   Clock,
   XCircle,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
+import { useQueryClient } from "@tanstack/react-query";
 
-// Movement status mapping
-const movementStatusMap: Record<string, { label: string; variant: "default" | "success" | "warning" | "destructive" | "secondary" }> = {
-  pending: { label: "قيد الانتظار", variant: "warning" },
-  approved: { label: "معتمد", variant: "success" },
-  in_transit: { label: "قيد النقل", variant: "default" },
-  completed: { label: "مكتمل", variant: "success" },
-  rejected: { label: "مرفوض", variant: "destructive" },
-  cancelled: { label: "ملغي", variant: "secondary" },
-};
-
-// Movement type mapping
-const movementTypeMap: Record<string, { label: string; color: string }> = {
-  transfer: { label: "نقل", color: "bg-primary/20 text-primary" },
-  disposal: { label: "استبعاد", color: "bg-destructive/20 text-destructive" },
-  maintenance: { label: "صيانة", color: "bg-warning/20 text-warning" },
-  inspection: { label: "فحص", color: "bg-success/20 text-success" },
-  revaluation: { label: "إعادة تقييم", color: "bg-accent/20 text-accent" },
-};
-
-// Mock movements data
-const mockMovements = [
-  {
-    id: 1,
-    movementNumber: "MOV-2024-001",
-    assetCode: "AST-000001",
-    assetName: "محول كهربائي 500 كيلو فولت",
-    type: "transfer",
-    fromLocation: "المستودع الرئيسي",
-    toLocation: "محطة التوليد الرئيسية",
-    requestDate: "2024-06-01",
-    completionDate: "2024-06-05",
-    reason: "تركيب جديد في المحطة",
-    requestedBy: "أحمد محمد",
-    approvedBy: "المدير الفني",
-    status: "completed",
-  },
-  {
-    id: 2,
-    movementNumber: "MOV-2024-002",
-    assetCode: "AST-000003",
-    assetName: "لوحة توزيع رئيسية",
-    type: "maintenance",
-    fromLocation: "محطة التوزيع الشمالية",
-    toLocation: "ورشة الصيانة",
-    requestDate: "2024-06-10",
-    completionDate: null,
-    reason: "صيانة دورية مجدولة",
-    requestedBy: "خالد عمر",
-    approvedBy: "مدير الصيانة",
-    status: "in_transit",
-  },
-  {
-    id: 3,
-    movementNumber: "MOV-2024-003",
-    assetCode: "AST-000005",
-    assetName: "قاطع دائرة 220 فولت",
-    type: "disposal",
-    fromLocation: "محطة التوزيع الشمالية",
-    toLocation: "مستودع الأصول المستبعدة",
-    requestDate: "2024-06-15",
-    completionDate: "2024-06-20",
-    reason: "انتهاء العمر الافتراضي",
-    requestedBy: "سالم أحمد",
-    approvedBy: "المدير المالي",
-    status: "completed",
-  },
-  {
-    id: 4,
-    movementNumber: "MOV-2024-004",
-    assetCode: "AST-000007",
-    assetName: "محول جهد متوسط",
-    type: "inspection",
-    fromLocation: "محطة التوليد الرئيسية",
-    toLocation: "محطة التوليد الرئيسية",
-    requestDate: "2024-06-18",
-    completionDate: null,
-    reason: "فحص سنوي إلزامي",
-    requestedBy: "محمد علي",
-    approvedBy: null,
-    status: "pending",
-  },
-  {
-    id: 5,
-    movementNumber: "MOV-2024-005",
-    assetCode: "AST-000002",
-    assetName: "مولد ديزل احتياطي",
-    type: "revaluation",
-    fromLocation: "محطة التوليد الرئيسية",
-    toLocation: "محطة التوليد الرئيسية",
-    requestDate: "2024-06-20",
-    completionDate: "2024-06-22",
-    reason: "إعادة تقييم سنوية",
-    requestedBy: "المحاسب",
-    approvedBy: "المدير المالي",
-    status: "completed",
-  },
-];
-
-// Stats
-const stats = [
-  { title: "إجمالي الحركات", value: "156", icon: ArrowLeftRight, color: "primary" },
-  { title: "قيد الانتظار", value: "12", icon: Clock, color: "warning" },
-  { title: "مكتملة هذا الشهر", value: "28", icon: CheckCircle, color: "success" },
-  { title: "مرفوضة", value: "3", icon: XCircle, color: "destructive" },
+const movementTypes = [
+  { value: "purchase", label: "شراء", color: "bg-green-500" },
+  { value: "transfer", label: "نقل", color: "bg-blue-500" },
+  { value: "maintenance", label: "صيانة", color: "bg-yellow-500" },
+  { value: "upgrade", label: "ترقية", color: "bg-purple-500" },
+  { value: "revaluation", label: "إعادة تقييم", color: "bg-indigo-500" },
+  { value: "impairment", label: "اضمحلال", color: "bg-red-500" },
+  { value: "disposal", label: "استبعاد", color: "bg-gray-500" },
+  { value: "depreciation", label: "إهلاك", color: "bg-orange-500" },
 ];
 
 export default function AssetMovements() {
-  const [showDialog, setShowDialog] = useState(false);
-  const [showApproveDialog, setShowApproveDialog] = useState(false);
-  const [selectedMovement, setSelectedMovement] = useState<any>(null);
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
-  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [showDialog, setShowDialog] = useState(false);
 
-  // Filter data
-  const filteredMovements = mockMovements.filter((movement) => {
-    if (filterType !== "all" && movement.type !== filterType) return false;
-    if (filterStatus !== "all" && movement.status !== filterStatus) return false;
-    return true;
+  // Fetch movements
+  const { data: movements = [], isLoading } = trpc.assets.movements.list.useQuery({
+    businessId: 1,
   });
 
-  const columns: Column<typeof mockMovements[0]>[] = [
-    {
-      key: "movementNumber",
-      title: "رقم الحركة",
-      render: (value) => <span className="font-mono text-primary">{value}</span>,
+  // Fetch assets for dropdown
+  const { data: assets = [] } = trpc.assets.list.useQuery({
+    businessId: 1,
+  });
+
+  // Fetch stations for dropdown
+  const { data: stations = [] } = trpc.assets.stations.list.useQuery({
+    businessId: 1,
+  });
+
+  // Create mutation
+  const createMutation = trpc.assets.movements.create.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [["assets", "movements", "list"]] });
+      toast({ title: "تم تسجيل الحركة بنجاح" });
+      setShowDialog(false);
     },
-    {
-      key: "assetName",
-      title: "الأصل",
-      render: (value, row) => (
-        <div>
-          <p className="font-medium">{value}</p>
-          <p className="text-xs text-muted-foreground font-mono">{row.assetCode}</p>
-        </div>
-      ),
+    onError: (error) => {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
     },
-    {
-      key: "type",
-      title: "نوع الحركة",
-      render: (value) => (
-        <Badge variant="outline" className={movementTypeMap[value]?.color}>
-          {movementTypeMap[value]?.label}
-        </Badge>
-      ),
-    },
-    {
-      key: "fromLocation",
-      title: "من",
-      render: (value) => (
-        <div className="flex items-center gap-1">
-          <MapPin className="w-3 h-3 text-muted-foreground" />
-          <span className="text-sm">{value}</span>
-        </div>
-      ),
-    },
-    {
-      key: "toLocation",
-      title: "إلى",
-      render: (value) => (
-        <div className="flex items-center gap-1">
-          <MapPin className="w-3 h-3 text-muted-foreground" />
-          <span className="text-sm">{value}</span>
-        </div>
-      ),
-    },
-    {
-      key: "requestDate",
-      title: "تاريخ الطلب",
-      render: (value) => new Date(value).toLocaleDateString("ar-SA"),
-    },
-    {
-      key: "requestedBy",
-      title: "مقدم الطلب",
-    },
-    {
-      key: "status",
-      title: "الحالة",
-      render: (value) => <StatusBadge status={value} statusMap={movementStatusMap} />,
-    },
+  });
+
+  const filteredMovements = movements.filter((mov: any) => {
+    const matchesSearch =
+      mov.asset?.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mov.asset?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      mov.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesType = filterType === "all" || mov.movementType === filterType;
+    return matchesSearch && matchesType;
+  });
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+
+    createMutation.mutate({
+      assetId: parseInt(formData.get("assetId") as string),
+      movementType: formData.get("movementType") as any,
+      movementDate: formData.get("movementDate") as string,
+      fromStationId: formData.get("fromStationId") ? parseInt(formData.get("fromStationId") as string) : undefined,
+      toStationId: formData.get("toStationId") ? parseInt(formData.get("toStationId") as string) : undefined,
+      amount: formData.get("amount") as string || undefined,
+      description: formData.get("description") as string || undefined,
+    });
+  };
+
+  const getMovementTypeInfo = (type: string) => {
+    return movementTypes.find((t) => t.value === type) || { label: type, color: "bg-gray-500" };
+  };
+
+  // Stats
+  const stats = [
+    { title: "إجمالي الحركات", value: movements.length, icon: ArrowRightLeft, color: "text-primary bg-primary/10" },
+    { title: "حركات النقل", value: movements.filter((m: any) => m.movementType === "transfer").length, icon: ArrowRightLeft, color: "text-blue-500 bg-blue-500/10" },
+    { title: "حركات الصيانة", value: movements.filter((m: any) => m.movementType === "maintenance").length, icon: Clock, color: "text-yellow-500 bg-yellow-500/10" },
+    { title: "حركات الإهلاك", value: movements.filter((m: any) => m.movementType === "depreciation").length, icon: CheckCircle, color: "text-orange-500 bg-orange-500/10" },
   ];
 
-  const handleAdd = () => {
-    setSelectedMovement(null);
-    setShowDialog(true);
-  };
-
-  const handleView = (movement: any) => {
-    setSelectedMovement(movement);
-    setShowApproveDialog(true);
-  };
-
-  const handleEdit = (movement: any) => {
-    setSelectedMovement(movement);
-    setShowDialog(true);
-  };
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (selectedMovement) {
-      toast.success("تم تحديث الحركة بنجاح");
-    } else {
-      toast.success("تم إنشاء طلب الحركة بنجاح");
-    }
-    setShowDialog(false);
-    setSelectedMovement(null);
-  };
-
-  const handleApprove = () => {
-    toast.success(`تم اعتماد الحركة ${selectedMovement?.movementNumber}`);
-    setShowApproveDialog(false);
-    setSelectedMovement(null);
-  };
-
-  const handleReject = () => {
-    toast.error(`تم رفض الحركة ${selectedMovement?.movementNumber}`);
-    setShowApproveDialog(false);
-    setSelectedMovement(null);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const colorClasses = {
-            primary: "text-primary bg-primary/10",
-            success: "text-success bg-success/10",
-            warning: "text-warning bg-warning/10",
-            destructive: "text-destructive bg-destructive/10",
-          };
-
-          return (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className={cn("p-3 rounded-xl", colorClasses[stat.color as keyof typeof colorClasses])}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold ltr-nums">{stat.value}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <ArrowRightLeft className="w-8 h-8 text-primary" />
+            حركات الأصول
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            تتبع جميع حركات الأصول من نقل وصيانة وإهلاك
+          </p>
+        </div>
+        <Button onClick={() => setShowDialog(true)} className="gradient-energy">
+          <Plus className="w-4 h-4 ml-2" />
+          تسجيل حركة
+        </Button>
       </div>
 
-      {/* Filters */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
+          <Card key={index}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">{stat.title}</p>
+                  <p className="text-2xl font-bold">{stat.value}</p>
+                </div>
+                <div className={`w-12 h-12 rounded-full ${stat.color} flex items-center justify-center`}>
+                  <stat.icon className="w-6 h-6" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
       <Card>
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label>نوع الحركة</Label>
+        <CardHeader>
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <CardTitle>سجل الحركات</CardTitle>
+              <CardDescription>
+                {filteredMovements.length} حركة مسجلة
+              </CardDescription>
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="relative w-64">
+                <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="بحث..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pr-9"
+                />
+              </div>
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="جميع الأنواع" />
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="نوع الحركة" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع الأنواع</SelectItem>
-                  {Object.entries(movementTypeMap).map(([key, { label }]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>الحالة</Label>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
-                <SelectTrigger>
-                  <SelectValue placeholder="جميع الحالات" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">جميع الحالات</SelectItem>
-                  {Object.entries(movementStatusMap).map(([key, { label }]) => (
-                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                  {movementTypes.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>التاريخ</TableHead>
+                <TableHead>الأصل</TableHead>
+                <TableHead>نوع الحركة</TableHead>
+                <TableHead>من</TableHead>
+                <TableHead>إلى</TableHead>
+                <TableHead>المبلغ</TableHead>
+                <TableHead>الوصف</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredMovements.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    لا توجد حركات مسجلة
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredMovements.map((movement: any) => {
+                  const typeInfo = getMovementTypeInfo(movement.movementType);
+                  return (
+                    <TableRow key={movement.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                          {movement.movementDate
+                            ? format(new Date(movement.movementDate), "yyyy/MM/dd", { locale: ar })
+                            : "-"}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{movement.asset?.nameAr || "-"}</p>
+                          <p className="text-sm text-muted-foreground">{movement.asset?.code}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${typeInfo.color} text-white`}>
+                          {typeInfo.label}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {movement.fromStation?.nameAr || "-"}
+                      </TableCell>
+                      <TableCell>
+                        {movement.toStation?.nameAr || "-"}
+                      </TableCell>
+                      <TableCell>
+                        {movement.amount ? `${parseFloat(movement.amount).toLocaleString()} ر.س` : "-"}
+                      </TableCell>
+                      <TableCell className="max-w-xs truncate">
+                        {movement.description || "-"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Data Table */}
-      <DataTable
-        data={filteredMovements}
-        columns={columns}
-        title="حركات الأصول"
-        description="سجل جميع حركات نقل واستبعاد وصيانة الأصول"
-        searchPlaceholder="بحث برقم الحركة أو اسم الأصل..."
-        onAdd={handleAdd}
-        onView={handleView}
-        onEdit={handleEdit}
-        onRefresh={() => toast.info("جاري تحديث البيانات...")}
-        emptyMessage="لا توجد حركات مسجلة"
-      />
-
-      {/* Add/Edit Movement Dialog */}
+      {/* Add Movement Dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle>
-              {selectedMovement ? "تعديل حركة" : "طلب حركة جديدة"}
-            </DialogTitle>
+            <DialogTitle>تسجيل حركة جديدة</DialogTitle>
             <DialogDescription>
-              {selectedMovement
-                ? "قم بتعديل بيانات الحركة"
-                : "أدخل بيانات طلب الحركة الجديد"}
+              أدخل بيانات حركة الأصل
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSave}>
+          <form onSubmit={handleSubmit}>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="asset">الأصل *</Label>
-                <Select defaultValue="">
+                <Label htmlFor="assetId">الأصل *</Label>
+                <Select name="assetId" required>
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الأصل" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="AST-000001">AST-000001 - محول كهربائي</SelectItem>
-                    <SelectItem value="AST-000002">AST-000002 - مولد ديزل</SelectItem>
-                    <SelectItem value="AST-000003">AST-000003 - لوحة توزيع</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="type">نوع الحركة *</Label>
-                <Select defaultValue={selectedMovement?.type || ""}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="اختر النوع" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(movementTypeMap).map(([key, { label }]) => (
-                      <SelectItem key={key} value={key}>{label}</SelectItem>
+                    {assets.map((asset: any) => (
+                      <SelectItem key={asset.id} value={asset.id.toString()}>
+                        {asset.nameAr} ({asset.code})
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="fromLocation">من الموقع *</Label>
-                <Select defaultValue="">
+                <Label htmlFor="movementType">نوع الحركة *</Label>
+                <Select name="movementType" required>
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر الموقع" />
+                    <SelectValue placeholder="اختر نوع الحركة" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="warehouse">المستودع الرئيسي</SelectItem>
-                    <SelectItem value="station1">محطة التوليد الرئيسية</SelectItem>
-                    <SelectItem value="station2">محطة التوزيع الشمالية</SelectItem>
-                    <SelectItem value="workshop">ورشة الصيانة</SelectItem>
+                    {movementTypes.map((type) => (
+                      <SelectItem key={type.value} value={type.value}>
+                        {type.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="toLocation">إلى الموقع *</Label>
-                <Select defaultValue="">
+                <Label htmlFor="movementDate">تاريخ الحركة *</Label>
+                <Input
+                  id="movementDate"
+                  name="movementDate"
+                  type="date"
+                  required
+                  defaultValue={new Date().toISOString().split("T")[0]}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">المبلغ</Label>
+                <Input
+                  id="amount"
+                  name="amount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="fromStationId">من محطة</Label>
+                <Select name="fromStationId">
                   <SelectTrigger>
-                    <SelectValue placeholder="اختر الموقع" />
+                    <SelectValue placeholder="اختر المحطة المصدر" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="warehouse">المستودع الرئيسي</SelectItem>
-                    <SelectItem value="station1">محطة التوليد الرئيسية</SelectItem>
-                    <SelectItem value="station2">محطة التوزيع الشمالية</SelectItem>
-                    <SelectItem value="workshop">ورشة الصيانة</SelectItem>
-                    <SelectItem value="disposal">مستودع الأصول المستبعدة</SelectItem>
+                    <SelectItem value="">-</SelectItem>
+                    {stations.map((station: any) => (
+                      <SelectItem key={station.id} value={station.id.toString()}>
+                        {station.nameAr}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="requestDate">تاريخ الطلب</Label>
-                <Input
-                  id="requestDate"
-                  type="date"
-                  defaultValue={selectedMovement?.requestDate || new Date().toISOString().split("T")[0]}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="expectedDate">التاريخ المتوقع للتنفيذ</Label>
-                <Input
-                  id="expectedDate"
-                  type="date"
-                />
+                <Label htmlFor="toStationId">إلى محطة</Label>
+                <Select name="toStationId">
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المحطة الوجهة" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">-</SelectItem>
+                    {stations.map((station: any) => (
+                      <SelectItem key={station.id} value={station.id.toString()}>
+                        {station.nameAr}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="reason">سبب الحركة *</Label>
+                <Label htmlFor="description">الوصف</Label>
                 <Textarea
-                  id="reason"
-                  placeholder="أدخل سبب طلب الحركة"
-                  defaultValue={selectedMovement?.reason}
+                  id="description"
+                  name="description"
+                  placeholder="أدخل وصف الحركة"
                   rows={3}
-                  required
                 />
               </div>
             </div>
@@ -433,76 +383,16 @@ export default function AssetMovements() {
               <Button type="button" variant="outline" onClick={() => setShowDialog(false)}>
                 إلغاء
               </Button>
-              <Button type="submit" className="gradient-energy">
-                {selectedMovement ? "حفظ التغييرات" : "إرسال الطلب"}
+              <Button
+                type="submit"
+                className="gradient-energy"
+                disabled={createMutation.isPending}
+              >
+                {createMutation.isPending && <Loader2 className="w-4 h-4 ml-2 animate-spin" />}
+                تسجيل الحركة
               </Button>
             </DialogFooter>
           </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Approve/Reject Dialog */}
-      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>تفاصيل الحركة</DialogTitle>
-            <DialogDescription>
-              مراجعة واعتماد طلب الحركة
-            </DialogDescription>
-          </DialogHeader>
-          {selectedMovement && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm text-muted-foreground">رقم الحركة</p>
-                  <p className="font-mono font-medium">{selectedMovement.movementNumber}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">نوع الحركة</p>
-                  <Badge variant="outline" className={movementTypeMap[selectedMovement.type]?.color}>
-                    {movementTypeMap[selectedMovement.type]?.label}
-                  </Badge>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">الأصل</p>
-                  <p className="font-medium">{selectedMovement.assetName}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">الحالة</p>
-                  <StatusBadge status={selectedMovement.status} statusMap={movementStatusMap} />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">من</p>
-                  <p className="font-medium">{selectedMovement.fromLocation}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">إلى</p>
-                  <p className="font-medium">{selectedMovement.toLocation}</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground">السبب</p>
-                <p className="font-medium">{selectedMovement.reason}</p>
-              </div>
-            </div>
-          )}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
-              إغلاق
-            </Button>
-            {selectedMovement?.status === "pending" && (
-              <>
-                <Button variant="destructive" onClick={handleReject}>
-                  <XCircle className="w-4 h-4 ml-2" />
-                  رفض
-                </Button>
-                <Button className="gradient-energy" onClick={handleApprove}>
-                  <CheckCircle className="w-4 h-4 ml-2" />
-                  اعتماد
-                </Button>
-              </>
-            )}
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

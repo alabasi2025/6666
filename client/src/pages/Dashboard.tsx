@@ -1,4 +1,5 @@
 import { useAuth } from "@/_core/hooks/useAuth";
+import DashboardHomeNew from "./DashboardHome";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -838,7 +839,7 @@ export default function Dashboard() {
 
   const renderContent = () => {
     if (location === "/dashboard") {
-      return <DashboardHome />;
+      return <DashboardHomeNew />;
     }
     // Organization Module
     if (location === "/dashboard/organization/businesses") {

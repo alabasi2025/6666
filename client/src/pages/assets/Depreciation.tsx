@@ -1,7 +1,24 @@
 import { useState } from "react";
-import { DataTable, Column } from "@/components/DataTable";
+import { trpc } from "@/lib/trpc";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -10,8 +27,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -20,467 +35,340 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { toast } from "sonner";
 import {
   TrendingDown,
   Calculator,
+  Search,
+  Loader2,
   Calendar,
   DollarSign,
-  AlertTriangle,
-  CheckCircle,
+  Package,
   Play,
-  BarChart3,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-
-// Mock depreciation data
-const mockDepreciation = [
-  {
-    id: 1,
-    assetCode: "AST-000001",
-    assetName: "محول كهربائي 500 كيلو فولت",
-    category: "محولات",
-    acquisitionDate: "2020-01-15",
-    acquisitionCost: 5000000,
-    usefulLife: 25,
-    depreciationMethod: "straight_line",
-    depreciationRate: 4,
-    accumulatedDepreciation: 800000,
-    bookValue: 4200000,
-    monthlyDepreciation: 16666.67,
-    yearsRemaining: 21,
-    depreciationPercent: 16,
-  },
-  {
-    id: 2,
-    assetCode: "AST-000002",
-    assetName: "مولد ديزل احتياطي 1000 كيلو واط",
-    category: "مولدات",
-    acquisitionDate: "2019-06-20",
-    acquisitionCost: 3500000,
-    usefulLife: 20,
-    depreciationMethod: "straight_line",
-    depreciationRate: 5,
-    accumulatedDepreciation: 875000,
-    bookValue: 2625000,
-    monthlyDepreciation: 14583.33,
-    yearsRemaining: 15,
-    depreciationPercent: 25,
-  },
-  {
-    id: 3,
-    assetCode: "AST-000003",
-    assetName: "لوحة توزيع رئيسية",
-    category: "لوحات كهربائية",
-    acquisitionDate: "2018-03-10",
-    acquisitionCost: 850000,
-    usefulLife: 15,
-    depreciationMethod: "straight_line",
-    depreciationRate: 6.67,
-    accumulatedDepreciation: 340000,
-    bookValue: 510000,
-    monthlyDepreciation: 4722.22,
-    yearsRemaining: 9,
-    depreciationPercent: 40,
-  },
-  {
-    id: 4,
-    assetCode: "AST-000005",
-    assetName: "قاطع دائرة 220 فولت",
-    category: "قواطع",
-    acquisitionDate: "2015-08-25",
-    acquisitionCost: 120000,
-    usefulLife: 10,
-    depreciationMethod: "straight_line",
-    depreciationRate: 10,
-    accumulatedDepreciation: 108000,
-    bookValue: 12000,
-    monthlyDepreciation: 1000,
-    yearsRemaining: 1,
-    depreciationPercent: 90,
-  },
-  {
-    id: 5,
-    assetCode: "AST-000007",
-    assetName: "محول جهد متوسط",
-    category: "محولات",
-    acquisitionDate: "2021-11-01",
-    acquisitionCost: 2800000,
-    usefulLife: 25,
-    depreciationMethod: "straight_line",
-    depreciationRate: 4,
-    accumulatedDepreciation: 336000,
-    bookValue: 2464000,
-    monthlyDepreciation: 9333.33,
-    yearsRemaining: 22,
-    depreciationPercent: 12,
-  },
-];
-
-// Mock depreciation schedule
-const mockSchedule = [
-  { period: "يناير 2024", amount: 46305.55, accumulated: 2459000, bookValue: 9841000 },
-  { period: "فبراير 2024", amount: 46305.55, accumulated: 2505305.55, bookValue: 9794694.45 },
-  { period: "مارس 2024", amount: 46305.55, accumulated: 2551611.1, bookValue: 9748388.9 },
-  { period: "أبريل 2024", amount: 46305.55, accumulated: 2597916.65, bookValue: 9702083.35 },
-  { period: "مايو 2024", amount: 46305.55, accumulated: 2644222.2, bookValue: 9655777.8 },
-  { period: "يونيو 2024", amount: 46305.55, accumulated: 2690527.75, bookValue: 9609472.25 },
-];
-
-// Stats
-const stats = [
-  { 
-    title: "إجمالي تكلفة الأصول", 
-    value: "12.3M", 
-    subValue: "ر.س",
-    icon: DollarSign, 
-    color: "primary" 
-  },
-  { 
-    title: "مجمع الإهلاك", 
-    value: "2.46M", 
-    subValue: "ر.س",
-    icon: TrendingDown, 
-    color: "warning" 
-  },
-  { 
-    title: "صافي القيمة الدفترية", 
-    value: "9.84M", 
-    subValue: "ر.س",
-    icon: Calculator, 
-    color: "success" 
-  },
-  { 
-    title: "إهلاك الشهر الحالي", 
-    value: "46.3K", 
-    subValue: "ر.س",
-    icon: Calendar, 
-    color: "accent" 
-  },
-];
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
 export default function Depreciation() {
-  const [showRunDialog, setShowRunDialog] = useState(false);
-  const [showScheduleDialog, setShowScheduleDialog] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<any>(null);
-  const [selectedPeriod, setSelectedPeriod] = useState("2024-06");
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+  const [showCalculateDialog, setShowCalculateDialog] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<string>(new Date().getFullYear().toString());
 
-  const columns: Column<typeof mockDepreciation[0]>[] = [
-    {
-      key: "assetCode",
-      title: "رمز الأصل",
-      render: (value) => <span className="font-mono text-primary">{value}</span>,
-    },
-    {
-      key: "assetName",
-      title: "اسم الأصل",
-      render: (value, row) => (
-        <div>
-          <p className="font-medium">{value}</p>
-          <p className="text-xs text-muted-foreground">{row.category}</p>
-        </div>
-      ),
-    },
-    {
-      key: "acquisitionCost",
-      title: "تكلفة الاقتناء",
-      align: "right",
-      render: (value) => (
-        <span className="font-mono ltr-nums">
-          {value.toLocaleString()} ر.س
-        </span>
-      ),
-    },
-    {
-      key: "accumulatedDepreciation",
-      title: "مجمع الإهلاك",
-      align: "right",
-      render: (value) => (
-        <span className="font-mono ltr-nums text-warning">
-          {value.toLocaleString()} ر.س
-        </span>
-      ),
-    },
-    {
-      key: "bookValue",
-      title: "القيمة الدفترية",
-      align: "right",
-      render: (value) => (
-        <span className="font-mono ltr-nums text-success">
-          {value.toLocaleString()} ر.س
-        </span>
-      ),
-    },
-    {
-      key: "depreciationPercent",
-      title: "نسبة الإهلاك",
-      align: "center",
-      render: (value, row) => (
-        <div className="w-full max-w-[120px]">
-          <div className="flex justify-between text-xs mb-1">
-            <span>{value}%</span>
-            <span className="text-muted-foreground">{row.yearsRemaining} سنة متبقية</span>
-          </div>
-          <Progress 
-            value={value} 
-            className={cn(
-              "h-2",
-              value >= 90 ? "[&>div]:bg-destructive" : 
-              value >= 70 ? "[&>div]:bg-warning" : 
-              "[&>div]:bg-success"
-            )}
-          />
-        </div>
-      ),
-    },
-    {
-      key: "monthlyDepreciation",
-      title: "الإهلاك الشهري",
-      align: "right",
-      render: (value) => (
-        <span className="font-mono ltr-nums">
-          {value.toLocaleString()} ر.س
-        </span>
-      ),
-    },
-    {
-      key: "depreciationMethod",
-      title: "طريقة الإهلاك",
-      render: (value) => (
-        <Badge variant="outline">
-          {value === "straight_line" ? "القسط الثابت" : "القسط المتناقص"}
-        </Badge>
-      ),
-    },
-  ];
+  // Fetch assets with depreciation info
+  const { data: assets = [], isLoading } = trpc.assets.list.useQuery({
+    businessId: 1,
+  });
 
-  const handleViewSchedule = (asset: any) => {
-    setSelectedAsset(asset);
-    setShowScheduleDialog(true);
+  // Fetch depreciation history
+  const { data: depreciationHistory = [] } = trpc.assets.depreciation.getHistory.useQuery({
+    businessId: 1,
+    year: parseInt(selectedYear),
+  });
+
+  // Calculate depreciation mutation
+  const calculateMutation = trpc.assets.depreciation.calculate.useMutation({
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: [["assets"]] });
+      toast({ 
+        title: "تم حساب الإهلاك بنجاح",
+        description: `تم حساب الإهلاك لـ ${result.processedCount || 0} أصل`
+      });
+      setShowCalculateDialog(false);
+    },
+    onError: (error) => {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Filter assets that have depreciation
+  const depreciableAssets = assets.filter((asset: any) => 
+    asset.purchaseCost && asset.usefulLife && asset.status === "active"
+  );
+
+  const filteredAssets = depreciableAssets.filter((asset: any) =>
+    asset.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    asset.code?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Calculate totals
+  const totalPurchaseCost = depreciableAssets.reduce((sum: number, asset: any) => 
+    sum + (parseFloat(asset.purchaseCost) || 0), 0
+  );
+  const totalCurrentValue = depreciableAssets.reduce((sum: number, asset: any) => 
+    sum + (parseFloat(asset.currentValue) || 0), 0
+  );
+  const totalAccumulatedDepreciation = depreciableAssets.reduce((sum: number, asset: any) => 
+    sum + (parseFloat(asset.accumulatedDepreciation) || 0), 0
+  );
+
+  const handleCalculateDepreciation = () => {
+    calculateMutation.mutate({
+      businessId: 1,
+    });
   };
 
-  const handleRunDepreciation = (e: React.FormEvent) => {
-    e.preventDefault();
-    toast.success(`تم تشغيل الإهلاك لفترة ${selectedPeriod}`);
-    setShowRunDialog(false);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {stats.map((stat, index) => {
-          const colorClasses = {
-            primary: "text-primary bg-primary/10",
-            success: "text-success bg-success/10",
-            warning: "text-warning bg-warning/10",
-            accent: "text-accent bg-accent/10",
-          };
-
-          return (
-            <Card key={index}>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className={cn("p-3 rounded-xl", colorClasses[stat.color as keyof typeof colorClasses])}>
-                    <stat.icon className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">{stat.title}</p>
-                    <p className="text-2xl font-bold ltr-nums">
-                      {stat.value}
-                      <span className="text-sm font-normal text-muted-foreground mr-1">{stat.subValue}</span>
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <TrendingDown className="w-8 h-8 text-primary" />
+            إدارة الإهلاك
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            حساب ومتابعة إهلاك الأصول الثابتة
+          </p>
+        </div>
+        <Button onClick={() => setShowCalculateDialog(true)} className="gradient-energy">
+          <Calculator className="w-4 h-4 ml-2" />
+          حساب الإهلاك
+        </Button>
       </div>
 
-      {/* Actions */}
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <Package className="w-6 h-6 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">الأصول القابلة للإهلاك</p>
+                <p className="text-2xl font-bold">{depreciableAssets.length}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">إجمالي تكلفة الشراء</p>
+                <p className="text-2xl font-bold">{totalPurchaseCost.toLocaleString()} ر.س</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-purple-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">إجمالي القيمة الحالية</p>
+                <p className="text-2xl font-bold">{totalCurrentValue.toLocaleString()} ر.س</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                <TrendingDown className="w-6 h-6 text-orange-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">مجمع الإهلاك</p>
+                <p className="text-2xl font-bold">{totalAccumulatedDepreciation.toLocaleString()} ر.س</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Assets Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="w-5 h-5 text-primary" />
-            عمليات الإهلاك
-          </CardTitle>
-          <CardDescription>تشغيل وإدارة عمليات الإهلاك الدورية</CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>الأصول القابلة للإهلاك</CardTitle>
+              <CardDescription>
+                {filteredAssets.length} أصل
+              </CardDescription>
+            </div>
+            <div className="relative w-64">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="بحث..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pr-9"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap gap-4">
-            <Button className="gradient-energy" onClick={() => setShowRunDialog(true)}>
-              <Play className="w-4 h-4 ml-2" />
-              تشغيل الإهلاك الشهري
-            </Button>
-            <Button variant="outline">
-              <BarChart3 className="w-4 h-4 ml-2" />
-              تقرير الإهلاك
-            </Button>
-            <Button variant="outline">
-              <Calendar className="w-4 h-4 ml-2" />
-              جدول الإهلاك السنوي
-            </Button>
-          </div>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>الرمز</TableHead>
+                <TableHead>اسم الأصل</TableHead>
+                <TableHead>تكلفة الشراء</TableHead>
+                <TableHead>القيمة الحالية</TableHead>
+                <TableHead>مجمع الإهلاك</TableHead>
+                <TableHead>العمر الإنتاجي</TableHead>
+                <TableHead>طريقة الإهلاك</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAssets.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                    لا توجد أصول قابلة للإهلاك
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredAssets.map((asset: any) => (
+                  <TableRow key={asset.id}>
+                    <TableCell className="font-mono">{asset.code}</TableCell>
+                    <TableCell className="font-medium">{asset.nameAr}</TableCell>
+                    <TableCell>
+                      {asset.purchaseCost ? `${parseFloat(asset.purchaseCost).toLocaleString()} ر.س` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {asset.currentValue ? `${parseFloat(asset.currentValue).toLocaleString()} ر.س` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {asset.accumulatedDepreciation ? `${parseFloat(asset.accumulatedDepreciation).toLocaleString()} ر.س` : "0 ر.س"}
+                    </TableCell>
+                    <TableCell>{asset.usefulLife ? `${asset.usefulLife} سنة` : "-"}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {asset.depreciationMethod === "straight_line" && "القسط الثابت"}
+                        {asset.depreciationMethod === "declining_balance" && "القسط المتناقص"}
+                        {asset.depreciationMethod === "units_of_production" && "وحدات الإنتاج"}
+                        {!asset.depreciationMethod && "غير محدد"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Depreciation Schedule Preview */}
+      {/* Depreciation History */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-primary" />
-            جدول الإهلاك - 2024
-          </CardTitle>
-          <CardDescription>ملخص الإهلاك الشهري للسنة الحالية</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-border">
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">الفترة</th>
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">مبلغ الإهلاك</th>
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">مجمع الإهلاك</th>
-                  <th className="text-right py-3 px-4 font-medium text-muted-foreground">القيمة الدفترية</th>
-                  <th className="text-center py-3 px-4 font-medium text-muted-foreground">الحالة</th>
-                </tr>
-              </thead>
-              <tbody>
-                {mockSchedule.map((row, index) => (
-                  <tr key={index} className="border-b border-border/50 hover:bg-muted/30">
-                    <td className="py-3 px-4 font-medium">{row.period}</td>
-                    <td className="py-3 px-4 font-mono ltr-nums">{row.amount.toLocaleString()} ر.س</td>
-                    <td className="py-3 px-4 font-mono ltr-nums text-warning">{row.accumulated.toLocaleString()} ر.س</td>
-                    <td className="py-3 px-4 font-mono ltr-nums text-success">{row.bookValue.toLocaleString()} ر.س</td>
-                    <td className="py-3 px-4 text-center">
-                      {index < 5 ? (
-                        <Badge variant="outline" className="bg-success/20 text-success border-success/30">
-                          <CheckCircle className="w-3 h-3 ml-1" />
-                          مكتمل
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="bg-warning/20 text-warning border-warning/30">
-                          <AlertTriangle className="w-3 h-3 ml-1" />
-                          قيد الانتظار
-                        </Badge>
-                      )}
-                    </td>
-                  </tr>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>سجل الإهلاك</CardTitle>
+              <CardDescription>تاريخ عمليات الإهلاك</CardDescription>
+            </div>
+            <Select value={selectedYear} onValueChange={setSelectedYear}>
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="السنة" />
+              </SelectTrigger>
+              <SelectContent>
+                {[2024, 2025, 2026].map((year) => (
+                  <SelectItem key={year} value={year.toString()}>
+                    {year}
+                  </SelectItem>
                 ))}
-              </tbody>
-            </table>
+              </SelectContent>
+            </Select>
           </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>الأصل</TableHead>
+                <TableHead>الفترة</TableHead>
+                <TableHead>مبلغ الإهلاك</TableHead>
+                <TableHead>القيمة الدفترية</TableHead>
+                <TableHead>التاريخ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {depreciationHistory.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                    لا يوجد سجل إهلاك لهذه السنة
+                  </TableCell>
+                </TableRow>
+              ) : (
+                depreciationHistory.map((record: any) => (
+                  <TableRow key={record.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{record.asset?.nameAr || "-"}</p>
+                        <p className="text-sm text-muted-foreground">{record.asset?.code}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{record.period?.name || "-"}</TableCell>
+                    <TableCell>
+                      {record.amount ? `${parseFloat(record.amount).toLocaleString()} ر.س` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {record.bookValue ? `${parseFloat(record.bookValue).toLocaleString()} ر.س` : "-"}
+                    </TableCell>
+                    <TableCell>
+                      {record.createdAt
+                        ? format(new Date(record.createdAt), "yyyy/MM/dd", { locale: ar })
+                        : "-"}
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
-      {/* Data Table */}
-      <DataTable
-        data={mockDepreciation}
-        columns={columns}
-        title="تفاصيل إهلاك الأصول"
-        description="عرض تفصيلي لإهلاك كل أصل"
-        searchPlaceholder="بحث برمز أو اسم الأصل..."
-        onView={handleViewSchedule}
-        onRefresh={() => toast.info("جاري تحديث البيانات...")}
-        emptyMessage="لا توجد أصول مسجلة"
-      />
-
-      {/* Run Depreciation Dialog */}
-      <Dialog open={showRunDialog} onOpenChange={setShowRunDialog}>
+      {/* Calculate Depreciation Dialog */}
+      <Dialog open={showCalculateDialog} onOpenChange={setShowCalculateDialog}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Play className="w-5 h-5 text-primary" />
-              تشغيل الإهلاك الشهري
+              <Calculator className="w-5 h-5" />
+              حساب الإهلاك
             </DialogTitle>
             <DialogDescription>
-              حدد الفترة المحاسبية لتشغيل عملية الإهلاك
+              سيتم حساب الإهلاك لجميع الأصول النشطة القابلة للإهلاك
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleRunDepreciation}>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="period">الفترة المحاسبية</Label>
-                <Input
-                  id="period"
-                  type="month"
-                  value={selectedPeriod}
-                  onChange={(e) => setSelectedPeriod(e.target.value)}
-                />
-              </div>
-              <div className="p-4 rounded-lg bg-muted/30 space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">عدد الأصول</span>
-                  <span className="font-medium">5 أصول</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">إجمالي الإهلاك المتوقع</span>
-                  <span className="font-medium font-mono ltr-nums">46,305.55 ر.س</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-warning/10 text-warning">
-                <AlertTriangle className="w-5 h-5" />
-                <p className="text-sm">سيتم إنشاء قيود محاسبية تلقائياً</p>
-              </div>
+          <div className="py-4">
+            <div className="bg-muted p-4 rounded-lg space-y-2">
+              <p className="text-sm">
+                <strong>عدد الأصول:</strong> {depreciableAssets.length} أصل
+              </p>
+              <p className="text-sm">
+                <strong>إجمالي القيمة:</strong> {totalCurrentValue.toLocaleString()} ر.س
+              </p>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setShowRunDialog(false)}>
-                إلغاء
-              </Button>
-              <Button type="submit" className="gradient-energy">
-                <Play className="w-4 h-4 ml-2" />
-                تشغيل الإهلاك
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      {/* Asset Schedule Dialog */}
-      <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>جدول إهلاك الأصل</DialogTitle>
-            <DialogDescription>
-              {selectedAsset?.assetName} ({selectedAsset?.assetCode})
-            </DialogDescription>
-          </DialogHeader>
-          {selectedAsset && (
-            <div className="space-y-4 py-4">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <p className="text-xs text-muted-foreground">تكلفة الاقتناء</p>
-                  <p className="font-bold font-mono ltr-nums">{selectedAsset.acquisitionCost.toLocaleString()}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <p className="text-xs text-muted-foreground">مجمع الإهلاك</p>
-                  <p className="font-bold font-mono ltr-nums text-warning">{selectedAsset.accumulatedDepreciation.toLocaleString()}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <p className="text-xs text-muted-foreground">القيمة الدفترية</p>
-                  <p className="font-bold font-mono ltr-nums text-success">{selectedAsset.bookValue.toLocaleString()}</p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/30">
-                  <p className="text-xs text-muted-foreground">السنوات المتبقية</p>
-                  <p className="font-bold">{selectedAsset.yearsRemaining} سنة</p>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">نسبة الإهلاك</p>
-                <Progress value={selectedAsset.depreciationPercent} className="h-3" />
-                <p className="text-xs text-muted-foreground mt-1 text-left ltr-nums">{selectedAsset.depreciationPercent}%</p>
-              </div>
-            </div>
-          )}
+          </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowScheduleDialog(false)}>
-              إغلاق
+            <Button variant="outline" onClick={() => setShowCalculateDialog(false)}>
+              إلغاء
             </Button>
-            <Button className="gradient-energy">
-              <BarChart3 className="w-4 h-4 ml-2" />
-              تصدير الجدول
+            <Button
+              onClick={handleCalculateDepreciation}
+              className="gradient-energy"
+              disabled={calculateMutation.isPending}
+            >
+              {calculateMutation.isPending ? (
+                <Loader2 className="w-4 h-4 ml-2 animate-spin" />
+              ) : (
+                <Play className="w-4 h-4 ml-2" />
+              )}
+              تنفيذ الحساب
             </Button>
           </DialogFooter>
         </DialogContent>

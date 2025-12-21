@@ -1,10 +1,15 @@
-import { useState } from "react";
-import { useLocation, useParams } from "wouter";
+import { useParams, useNavigate } from "react-router-dom";
+import { trpc } from "@/lib/trpc";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
 import {
   Table,
   TableBody,
@@ -15,255 +20,160 @@ import {
 } from "@/components/ui/table";
 import {
   ArrowRight,
-  Edit,
-  Trash2,
   Package,
-  MapPin,
   Calendar,
+  MapPin,
   DollarSign,
-  Building,
-  Wrench,
+  Settings,
   FileText,
-  History,
-  AlertTriangle,
+  ArrowRightLeft,
   TrendingDown,
-  QrCode,
-  Printer,
-  Download,
+  Loader2,
+  Pencil,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 
-// Mock asset data
-const mockAsset = {
-  id: 1,
-  code: "AST-000001",
-  nameAr: "محول كهربائي 500 كيلو فولت",
-  nameEn: "500KV Electrical Transformer",
-  description: "محول كهربائي عالي الجهد للاستخدام في محطات التوليد الرئيسية. يتميز بكفاءة عالية وعمر افتراضي طويل.",
-  categoryId: 1,
-  categoryName: "محولات",
-  businessId: 1,
-  businessName: "شركة الكهرباء الوطنية",
-  branchId: 1,
-  branchName: "الفرع الرئيسي",
-  stationId: 1,
-  stationName: "محطة التوليد الرئيسية",
-  status: "active",
-  serialNumber: "TR-2023-001-XYZ",
-  manufacturer: "ABB",
-  model: "POWER-500",
-  purchaseDate: "2023-01-15",
-  purchaseCost: "2500000",
-  currentValue: "2250000",
-  accumulatedDepreciation: "250000",
-  usefulLife: 25,
-  salvageValue: "250000",
-  depreciationMethod: "straight_line",
-  warrantyExpiry: "2028-01-15",
-  location: "المبنى A - الطابق 1 - الغرفة 101",
-  gpsCoordinates: "24.7136° N, 46.6753° E",
-  barcode: "1234567890123",
-  qrCode: "AST-000001",
-  lastMaintenanceDate: "2024-06-15",
-  nextMaintenanceDate: "2024-12-15",
-  createdAt: "2023-01-15T10:00:00Z",
-  updatedAt: "2024-06-15T14:30:00Z",
-  createdBy: "أحمد محمد",
+const statusColors: Record<string, string> = {
+  active: "bg-green-500",
+  maintenance: "bg-yellow-500",
+  disposed: "bg-gray-500",
+  transferred: "bg-blue-500",
+  idle: "bg-orange-500",
 };
 
-// Mock maintenance history
-const maintenanceHistory = [
-  {
-    id: 1,
-    orderNumber: "WO-2024-001",
-    type: "preventive",
-    description: "صيانة دورية - فحص الزيت والعوازل",
-    date: "2024-06-15",
-    cost: "15000",
-    technician: "محمد علي",
-    status: "completed",
-  },
-  {
-    id: 2,
-    orderNumber: "WO-2024-002",
-    type: "corrective",
-    description: "إصلاح تسريب زيت",
-    date: "2024-03-20",
-    cost: "8500",
-    technician: "أحمد سالم",
-    status: "completed",
-  },
-  {
-    id: 3,
-    orderNumber: "WO-2023-015",
-    type: "preventive",
-    description: "صيانة دورية - فحص شامل",
-    date: "2023-12-10",
-    cost: "12000",
-    technician: "خالد عمر",
-    status: "completed",
-  },
-];
-
-// Mock movement history
-const movementHistory = [
-  {
-    id: 1,
-    type: "transfer",
-    fromLocation: "المستودع الرئيسي",
-    toLocation: "محطة التوليد الرئيسية",
-    date: "2023-01-20",
-    reason: "تركيب جديد",
-    approvedBy: "المدير الفني",
-  },
-  {
-    id: 2,
-    type: "inspection",
-    fromLocation: "محطة التوليد الرئيسية",
-    toLocation: "محطة التوليد الرئيسية",
-    date: "2024-01-15",
-    reason: "فحص سنوي",
-    approvedBy: "مدير الصيانة",
-  },
-];
-
-// Mock depreciation schedule
-const depreciationSchedule = [
-  { year: 2023, openingValue: "2500000", depreciation: "90000", closingValue: "2410000" },
-  { year: 2024, openingValue: "2410000", depreciation: "90000", closingValue: "2320000" },
-  { year: 2025, openingValue: "2320000", depreciation: "90000", closingValue: "2230000" },
-  { year: 2026, openingValue: "2230000", depreciation: "90000", closingValue: "2140000" },
-  { year: 2027, openingValue: "2140000", depreciation: "90000", closingValue: "2050000" },
-];
-
-// Mock documents
-const documents = [
-  { id: 1, name: "شهادة الضمان", type: "pdf", size: "1.2 MB", uploadDate: "2023-01-15" },
-  { id: 2, name: "دليل المستخدم", type: "pdf", size: "5.8 MB", uploadDate: "2023-01-15" },
-  { id: 3, name: "تقرير الفحص الأولي", type: "pdf", size: "2.1 MB", uploadDate: "2023-01-20" },
-  { id: 4, name: "صورة الأصل", type: "jpg", size: "3.5 MB", uploadDate: "2023-01-20" },
-];
-
-const statusConfig: Record<string, { label: string; color: string }> = {
-  active: { label: "نشط", color: "bg-success/20 text-success border-success/30" },
-  inactive: { label: "غير نشط", color: "bg-muted text-muted-foreground border-border" },
-  maintenance: { label: "تحت الصيانة", color: "bg-warning/20 text-warning border-warning/30" },
-  disposed: { label: "مستبعد", color: "bg-destructive/20 text-destructive border-destructive/30" },
-};
-
-const maintenanceTypeConfig: Record<string, { label: string; color: string }> = {
-  preventive: { label: "وقائية", color: "bg-primary/20 text-primary" },
-  corrective: { label: "تصحيحية", color: "bg-warning/20 text-warning" },
-  emergency: { label: "طارئة", color: "bg-destructive/20 text-destructive" },
+const statusLabels: Record<string, string> = {
+  active: "نشط",
+  maintenance: "قيد الصيانة",
+  disposed: "مستبعد",
+  transferred: "منقول",
+  idle: "خامل",
 };
 
 export default function AssetDetails() {
-  const [, setLocation] = useLocation();
-  const params = useParams();
-  const assetId = params.id;
+  const { id } = useParams();
+  const navigate = useNavigate();
 
-  // In real app, fetch asset data using assetId
-  const asset = mockAsset;
+  // Fetch asset details
+  const { data: asset, isLoading } = trpc.assets.getById.useQuery({
+    id: parseInt(id || "0"),
+  });
 
-  const handleBack = () => {
-    setLocation("/dashboard/assets");
-  };
+  // Fetch movements for this asset
+  const { data: movements = [] } = trpc.assets.movements.list.useQuery({
+    assetId: parseInt(id || "0"),
+  });
 
-  const handleEdit = () => {
-    setLocation(`/dashboard/assets/edit/${assetId}`);
-  };
+  // Fetch depreciation history
+  const { data: depreciationHistory = [] } = trpc.assets.depreciation.getHistory.useQuery({
+    assetId: parseInt(id || "0"),
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!asset) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96 gap-4">
+        <p className="text-muted-foreground">الأصل غير موجود</p>
+        <Button onClick={() => navigate("/dashboard/assets")}>
+          <ArrowRight className="w-4 h-4 ml-2" />
+          العودة للقائمة
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={handleBack}>
-            <ArrowRight className="w-5 h-5" />
+          <Button variant="ghost" onClick={() => navigate("/dashboard/assets")}>
+            <ArrowRight className="w-4 h-4 ml-2" />
+            العودة
           </Button>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold">{asset.nameAr}</h1>
-              <Badge variant="outline" className={cn("font-medium", statusConfig[asset.status].color)}>
-                {statusConfig[asset.status].label}
-              </Badge>
-            </div>
-            <p className="text-muted-foreground">{asset.code}</p>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Package className="w-8 h-8 text-primary" />
+              {asset.nameAr}
+            </h1>
+            <p className="text-muted-foreground mt-1 font-mono">{asset.code}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon">
-            <QrCode className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="icon">
-            <Printer className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" onClick={handleEdit}>
-            <Edit className="w-4 h-4 ml-2" />
+          <Badge className={`${statusColors[asset.status || "active"]} text-white`}>
+            {statusLabels[asset.status || "active"]}
+          </Badge>
+          <Button variant="outline" onClick={() => navigate(`/dashboard/assets/edit/${asset.id}`)}>
+            <Pencil className="w-4 h-4 ml-2" />
             تعديل
-          </Button>
-          <Button variant="destructive">
-            <Trash2 className="w-4 h-4 ml-2" />
-            حذف
           </Button>
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                <DollarSign className="w-5 h-5" />
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-green-500" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">تكلفة الشراء</p>
-                <p className="text-xl font-bold ltr-nums">
-                  {Number(asset.purchaseCost).toLocaleString()} ر.س
+                <p className="text-2xl font-bold">
+                  {asset.purchaseCost ? `${parseFloat(asset.purchaseCost).toLocaleString()} ر.س` : "-"}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-success/10 text-success">
-                <TrendingDown className="w-5 h-5" />
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+                <DollarSign className="w-6 h-6 text-blue-500" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">القيمة الحالية</p>
-                <p className="text-xl font-bold ltr-nums text-success">
-                  {Number(asset.currentValue).toLocaleString()} ر.س
+                <p className="text-2xl font-bold">
+                  {asset.currentValue ? `${parseFloat(asset.currentValue).toLocaleString()} ر.س` : "-"}
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-warning/10 text-warning">
-                <Calendar className="w-5 h-5" />
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-orange-500/10 flex items-center justify-center">
+                <TrendingDown className="w-6 h-6 text-orange-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">العمر الإنتاجي</p>
-                <p className="text-xl font-bold">{asset.usefulLife} سنة</p>
+                <p className="text-sm text-muted-foreground">مجمع الإهلاك</p>
+                <p className="text-2xl font-bold">
+                  {asset.accumulatedDepreciation ? `${parseFloat(asset.accumulatedDepreciation).toLocaleString()} ر.س` : "0 ر.س"}
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-destructive/10 text-destructive">
-                <Wrench className="w-5 h-5" />
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
+                <Calendar className="w-6 h-6 text-purple-500" />
               </div>
               <div>
-                <p className="text-sm text-muted-foreground">الصيانة القادمة</p>
-                <p className="text-xl font-bold">
-                  {new Date(asset.nextMaintenanceDate).toLocaleDateString("ar-SA")}
+                <p className="text-sm text-muted-foreground">العمر الإنتاجي</p>
+                <p className="text-2xl font-bold">
+                  {asset.usefulLife ? `${asset.usefulLife} سنة` : "-"}
                 </p>
               </div>
             </div>
@@ -272,380 +182,214 @@ export default function AssetDetails() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="details" className="w-full">
-        <TabsList className="w-full justify-start border-b rounded-none h-auto p-0 bg-transparent">
-          <TabsTrigger
-            value="details"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            <Package className="w-4 h-4 ml-2" />
-            التفاصيل
+      <Tabs defaultValue="info" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="info">
+            <FileText className="w-4 h-4 ml-2" />
+            المعلومات الأساسية
           </TabsTrigger>
-          <TabsTrigger
-            value="maintenance"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            <Wrench className="w-4 h-4 ml-2" />
-            سجل الصيانة
+          <TabsTrigger value="movements">
+            <ArrowRightLeft className="w-4 h-4 ml-2" />
+            الحركات
           </TabsTrigger>
-          <TabsTrigger
-            value="depreciation"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
+          <TabsTrigger value="depreciation">
             <TrendingDown className="w-4 h-4 ml-2" />
             الإهلاك
           </TabsTrigger>
-          <TabsTrigger
-            value="movements"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            <History className="w-4 h-4 ml-2" />
-            الحركات
-          </TabsTrigger>
-          <TabsTrigger
-            value="documents"
-            className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent"
-          >
-            <FileText className="w-4 h-4 ml-2" />
-            المستندات
+          <TabsTrigger value="specs">
+            <Settings className="w-4 h-4 ml-2" />
+            المواصفات
           </TabsTrigger>
         </TabsList>
 
-        {/* Details Tab */}
-        <TabsContent value="details" className="mt-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Basic Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">المعلومات الأساسية</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">رقم الأصل</p>
-                    <p className="font-medium font-mono">{asset.code}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الرقم التسلسلي</p>
-                    <p className="font-medium font-mono">{asset.serialNumber}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الفئة</p>
-                    <p className="font-medium">{asset.categoryName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الشركة المصنعة</p>
-                    <p className="font-medium">{asset.manufacturer}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الموديل</p>
-                    <p className="font-medium">{asset.model}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">تاريخ الشراء</p>
-                    <p className="font-medium">
-                      {new Date(asset.purchaseDate).toLocaleDateString("ar-SA")}
-                    </p>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">الوصف</p>
-                  <p className="text-sm">{asset.description}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Location Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
-                  معلومات الموقع
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">الشركة</p>
-                    <p className="font-medium">{asset.businessName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الفرع</p>
-                    <p className="font-medium">{asset.branchName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">المحطة</p>
-                    <p className="font-medium">{asset.stationName}</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الإحداثيات</p>
-                    <p className="font-medium font-mono text-sm">{asset.gpsCoordinates}</p>
-                  </div>
-                </div>
-                <Separator />
-                <div>
-                  <p className="text-sm text-muted-foreground mb-2">الموقع التفصيلي</p>
-                  <p className="font-medium">{asset.location}</p>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Financial Info */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <DollarSign className="w-5 h-5" />
-                  المعلومات المالية
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">تكلفة الشراء</p>
-                    <p className="font-medium ltr-nums">
-                      {Number(asset.purchaseCost).toLocaleString()} ر.س
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">القيمة الحالية</p>
-                    <p className="font-medium ltr-nums text-success">
-                      {Number(asset.currentValue).toLocaleString()} ر.س
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الإهلاك المتراكم</p>
-                    <p className="font-medium ltr-nums text-destructive">
-                      {Number(asset.accumulatedDepreciation).toLocaleString()} ر.س
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">قيمة الخردة</p>
-                    <p className="font-medium ltr-nums">
-                      {Number(asset.salvageValue).toLocaleString()} ر.س
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">طريقة الإهلاك</p>
-                    <p className="font-medium">القسط الثابت</p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">العمر الإنتاجي</p>
-                    <p className="font-medium">{asset.usefulLife} سنة</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Warranty & Maintenance */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Wrench className="w-5 h-5" />
-                  الضمان والصيانة
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">انتهاء الضمان</p>
-                    <p className="font-medium">
-                      {new Date(asset.warrantyExpiry).toLocaleDateString("ar-SA")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">حالة الضمان</p>
-                    <Badge variant="outline" className="bg-success/20 text-success border-success/30">
-                      ساري
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">آخر صيانة</p>
-                    <p className="font-medium">
-                      {new Date(asset.lastMaintenanceDate).toLocaleDateString("ar-SA")}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">الصيانة القادمة</p>
-                    <p className="font-medium text-warning">
-                      {new Date(asset.nextMaintenanceDate).toLocaleDateString("ar-SA")}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Maintenance Tab */}
-        <TabsContent value="maintenance" className="mt-6">
+        <TabsContent value="info">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>سجل الصيانة</CardTitle>
-                <Button className="gradient-energy">
-                  <Wrench className="w-4 h-4 ml-2" />
-                  أمر عمل جديد
-                </Button>
+              <CardTitle>المعلومات الأساسية</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div>
+                  <p className="text-sm text-muted-foreground">الاسم بالإنجليزية</p>
+                  <p className="font-medium">{asset.nameEn || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الفئة</p>
+                  <p className="font-medium">{asset.category?.nameAr || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">المحطة</p>
+                  <p className="font-medium">{asset.station?.nameAr || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الرقم التسلسلي</p>
+                  <p className="font-medium font-mono">{asset.serialNumber || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الشركة المصنعة</p>
+                  <p className="font-medium">{asset.manufacturer || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الموديل</p>
+                  <p className="font-medium">{asset.model || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">تاريخ الشراء</p>
+                  <p className="font-medium">
+                    {asset.purchaseDate
+                      ? format(new Date(asset.purchaseDate), "yyyy/MM/dd", { locale: ar })
+                      : "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">تاريخ التشغيل</p>
+                  <p className="font-medium">
+                    {asset.commissionDate
+                      ? format(new Date(asset.commissionDate), "yyyy/MM/dd", { locale: ar })
+                      : "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">انتهاء الضمان</p>
+                  <p className="font-medium">
+                    {asset.warrantyExpiry
+                      ? format(new Date(asset.warrantyExpiry), "yyyy/MM/dd", { locale: ar })
+                      : "-"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">الموقع</p>
+                  <p className="font-medium">{asset.location || "-"}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-muted-foreground">طريقة الإهلاك</p>
+                  <p className="font-medium">
+                    {asset.depreciationMethod === "straight_line" && "القسط الثابت"}
+                    {asset.depreciationMethod === "declining_balance" && "القسط المتناقص"}
+                    {asset.depreciationMethod === "units_of_production" && "وحدات الإنتاج"}
+                    {!asset.depreciationMethod && "-"}
+                  </p>
+                </div>
+                <div className="md:col-span-2 lg:col-span-3">
+                  <p className="text-sm text-muted-foreground">الوصف</p>
+                  <p className="font-medium">{asset.description || "-"}</p>
+                </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>رقم الأمر</TableHead>
-                    <TableHead>النوع</TableHead>
-                    <TableHead>الوصف</TableHead>
-                    <TableHead>التاريخ</TableHead>
-                    <TableHead>الفني</TableHead>
-                    <TableHead>التكلفة</TableHead>
-                    <TableHead>الحالة</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {maintenanceHistory.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-mono">{item.orderNumber}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={maintenanceTypeConfig[item.type].color}>
-                          {maintenanceTypeConfig[item.type].label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{item.description}</TableCell>
-                      <TableCell>{new Date(item.date).toLocaleDateString("ar-SA")}</TableCell>
-                      <TableCell>{item.technician}</TableCell>
-                      <TableCell className="ltr-nums">{Number(item.cost).toLocaleString()} ر.س</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className="bg-success/20 text-success border-success/30">
-                          مكتمل
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Depreciation Tab */}
-        <TabsContent value="depreciation" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>جدول الإهلاك</CardTitle>
-              <CardDescription>
-                طريقة الإهلاك: القسط الثابت | معدل الإهلاك السنوي: {((1 / asset.usefulLife) * 100).toFixed(2)}%
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>السنة</TableHead>
-                    <TableHead>القيمة الافتتاحية</TableHead>
-                    <TableHead>الإهلاك السنوي</TableHead>
-                    <TableHead>القيمة الختامية</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {depreciationSchedule.map((item) => (
-                    <TableRow key={item.year}>
-                      <TableCell className="font-medium">{item.year}</TableCell>
-                      <TableCell className="ltr-nums">{Number(item.openingValue).toLocaleString()} ر.س</TableCell>
-                      <TableCell className="ltr-nums text-destructive">
-                        ({Number(item.depreciation).toLocaleString()}) ر.س
-                      </TableCell>
-                      <TableCell className="ltr-nums font-medium">
-                        {Number(item.closingValue).toLocaleString()} ر.س
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Movements Tab */}
-        <TabsContent value="movements" className="mt-6">
+        <TabsContent value="movements">
           <Card>
             <CardHeader>
               <CardTitle>سجل الحركات</CardTitle>
+              <CardDescription>جميع حركات الأصل</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>النوع</TableHead>
+                    <TableHead>التاريخ</TableHead>
+                    <TableHead>نوع الحركة</TableHead>
                     <TableHead>من</TableHead>
                     <TableHead>إلى</TableHead>
-                    <TableHead>التاريخ</TableHead>
-                    <TableHead>السبب</TableHead>
-                    <TableHead>الموافقة</TableHead>
+                    <TableHead>المبلغ</TableHead>
+                    <TableHead>الوصف</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {movementHistory.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell>
-                        <Badge variant="outline">
-                          {item.type === "transfer" ? "نقل" : "فحص"}
-                        </Badge>
+                  {movements.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        لا توجد حركات مسجلة
                       </TableCell>
-                      <TableCell>{item.fromLocation}</TableCell>
-                      <TableCell>{item.toLocation}</TableCell>
-                      <TableCell>{new Date(item.date).toLocaleDateString("ar-SA")}</TableCell>
-                      <TableCell>{item.reason}</TableCell>
-                      <TableCell>{item.approvedBy}</TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    movements.map((movement: any) => (
+                      <TableRow key={movement.id}>
+                        <TableCell>
+                          {movement.movementDate
+                            ? format(new Date(movement.movementDate), "yyyy/MM/dd")
+                            : "-"}
+                        </TableCell>
+                        <TableCell>{movement.movementType}</TableCell>
+                        <TableCell>{movement.fromStation?.nameAr || "-"}</TableCell>
+                        <TableCell>{movement.toStation?.nameAr || "-"}</TableCell>
+                        <TableCell>
+                          {movement.amount ? `${parseFloat(movement.amount).toLocaleString()} ر.س` : "-"}
+                        </TableCell>
+                        <TableCell>{movement.description || "-"}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Documents Tab */}
-        <TabsContent value="documents" className="mt-6">
+        <TabsContent value="depreciation">
           <Card>
             <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>المستندات المرفقة</CardTitle>
-                <Button className="gradient-energy">
-                  <FileText className="w-4 h-4 ml-2" />
-                  رفع مستند
-                </Button>
-              </div>
+              <CardTitle>سجل الإهلاك</CardTitle>
+              <CardDescription>تاريخ إهلاك الأصل</CardDescription>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>اسم الملف</TableHead>
-                    <TableHead>النوع</TableHead>
-                    <TableHead>الحجم</TableHead>
-                    <TableHead>تاريخ الرفع</TableHead>
-                    <TableHead>إجراءات</TableHead>
+                    <TableHead>الفترة</TableHead>
+                    <TableHead>مبلغ الإهلاك</TableHead>
+                    <TableHead>القيمة الدفترية</TableHead>
+                    <TableHead>التاريخ</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {documents.map((doc) => (
-                    <TableRow key={doc.id}>
-                      <TableCell className="font-medium">{doc.name}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline">{doc.type.toUpperCase()}</Badge>
-                      </TableCell>
-                      <TableCell>{doc.size}</TableCell>
-                      <TableCell>{new Date(doc.uploadDate).toLocaleDateString("ar-SA")}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon">
-                          <Download className="w-4 h-4" />
-                        </Button>
+                  {depreciationHistory.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                        لا يوجد سجل إهلاك
                       </TableCell>
                     </TableRow>
-                  ))}
+                  ) : (
+                    depreciationHistory.map((record: any) => (
+                      <TableRow key={record.id}>
+                        <TableCell>{record.period?.name || "-"}</TableCell>
+                        <TableCell>
+                          {record.amount ? `${parseFloat(record.amount).toLocaleString()} ر.س` : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {record.bookValue ? `${parseFloat(record.bookValue).toLocaleString()} ر.س` : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {record.createdAt
+                            ? format(new Date(record.createdAt), "yyyy/MM/dd")
+                            : "-"}
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
                 </TableBody>
               </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="specs">
+          <Card>
+            <CardHeader>
+              <CardTitle>المواصفات الفنية</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {asset.specifications ? (
+                <pre className="bg-muted p-4 rounded-lg overflow-auto">
+                  {JSON.stringify(asset.specifications, null, 2)}
+                </pre>
+              ) : (
+                <p className="text-center py-8 text-muted-foreground">
+                  لا توجد مواصفات فنية مسجلة
+                </p>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
