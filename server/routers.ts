@@ -18,6 +18,7 @@ import { inventoryRouter } from "./inventoryRouter";
 import { maintenanceRouter } from "./maintenanceRouter";
 import { projectsRouter } from "./projectsRouter";
 import { scadaRouter } from "./scadaRouter";
+import { dieselRouter } from "./dieselRouter";
 
 // Admin procedure - requires admin role
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -1540,6 +1541,8 @@ export const appRouter = router({
   projects: projectsRouter,
   // SCADA System - نظام المراقبة والتحكم
   scada: scadaRouter,
+  // Diesel System - نظام استهلاك الديزل
+  diesel: dieselRouter,
 });
 
 export type AppRouter = typeof appRouter;

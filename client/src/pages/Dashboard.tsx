@@ -100,6 +100,12 @@ const FieldTeams = lazy(() => import("./fieldops/FieldTeams"));
 const FieldWorkers = lazy(() => import("./fieldops/FieldWorkers"));
 const FieldEquipment = lazy(() => import("./fieldops/FieldEquipment"));
 
+// Diesel System Pages - Lazy Loaded
+const DieselSuppliers = lazy(() => import("./diesel/DieselSuppliers"));
+const DieselTankers = lazy(() => import("./diesel/DieselTankers"));
+const DieselTanks = lazy(() => import("./diesel/DieselTanks"));
+const DieselReceivingTasks = lazy(() => import("./diesel/DieselReceivingTasks"));
+
 // HR Pages - Lazy Loaded
 const HRDashboard = lazy(() => import("./hr/HRDashboard"));
 const Employees = lazy(() => import("./hr/Employees"));
@@ -300,6 +306,18 @@ const navigationItems = [
       { id: "teams", title: "الفرق", icon: Users2, path: "/dashboard/fieldops/teams" },
       { id: "workers", title: "العمال", icon: Users, path: "/dashboard/fieldops/workers" },
       { id: "equipment", title: "المعدات", icon: Wrench, path: "/dashboard/fieldops/equipment" },
+    ],
+  },
+  {
+    id: "diesel",
+    title: "إدارة الديزل",
+    icon: Truck,
+    color: "text-yellow-500",
+    children: [
+      { id: "diesel-suppliers", title: "الموردين", icon: Users, path: "/dashboard/diesel/suppliers" },
+      { id: "diesel-tankers", title: "الوايتات", icon: Truck, path: "/dashboard/diesel/tankers" },
+      { id: "diesel-tanks", title: "الخزانات", icon: Package, path: "/dashboard/diesel/tanks" },
+      { id: "diesel-receiving", title: "مهام الاستلام", icon: ClipboardList, path: "/dashboard/diesel/receiving" },
     ],
   },
   {
@@ -506,6 +524,12 @@ export default function Dashboard() {
         {path === "/dashboard/fieldops/teams" && <FieldTeams />}
         {path === "/dashboard/fieldops/workers" && <FieldWorkers />}
         {path === "/dashboard/fieldops/equipment" && <FieldEquipment />}
+        
+        {/* Diesel System */}
+        {path === "/dashboard/diesel/suppliers" && <DieselSuppliers />}
+        {path === "/dashboard/diesel/tankers" && <DieselTankers />}
+        {path === "/dashboard/diesel/tanks" && <DieselTanks />}
+        {path === "/dashboard/diesel/receiving" && <DieselReceivingTasks />}
         
         {/* HR */}
         {path === "/dashboard/hr/dashboard" && <HRDashboard />}

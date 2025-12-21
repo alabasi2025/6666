@@ -1,4 +1,4 @@
-import { eq, and, desc, asc, sql, like, or, isNull, count, inArray, ne } from "drizzle-orm";
+import { eq, and, desc, asc, sql, like, or, isNull, count, inArray, ne, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {
   InsertUser, users,
@@ -91,6 +91,15 @@ import {
   technicalAlerts, InsertTechnicalAlert,
   performanceMetrics, InsertPerformanceMetric,
   incomingWebhooks, InsertIncomingWebhook,
+  // Diesel System
+  dieselSuppliers, InsertDieselSupplier,
+  dieselTankers, InsertDieselTanker,
+  dieselTanks, InsertDieselTank,
+  dieselPumpMeters, InsertDieselPumpMeter,
+  dieselReceivingTasks, InsertDieselReceivingTask,
+  dieselPumpReadings, InsertDieselPumpReading,
+  dieselTankMovements, InsertDieselTankMovement,
+  generatorDieselConsumption, InsertGeneratorDieselConsumption,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -4132,4 +4141,553 @@ export async function getScadaAlertsStats(businessId: number) {
     acknowledged: alertsList.filter(a => a.status === "acknowledged").length,
     resolved: alertsList.filter(a => a.status === "resolved").length,
   };
+}
+
+
+// ============================================
+// نظام استهلاك الديزل - Diesel Consumption System
+// ============================================
+
+
+
+// ============================================
+// موردي الديزل - Diesel Suppliers
+// ============================================
+
+export async function getDieselSuppliers(businessId?: number, isActive?: boolean) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (businessId) conditions.push(eq(dieselSuppliers.businessId, businessId));
+  if (isActive !== undefined) conditions.push(eq(dieselSuppliers.isActive, isActive));
+  
+  return await db.select().from(dieselSuppliers)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(dieselSuppliers.createdAt));
+}
+
+export async function getDieselSupplierById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(dieselSuppliers).where(eq(dieselSuppliers.id, id));
+  return result || null;
+}
+
+export async function createDieselSupplier(data: InsertDieselSupplier) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(dieselSuppliers).values(data);
+  return result.insertId;
+}
+
+export async function updateDieselSupplier(id: number, data: Partial<InsertDieselSupplier>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(dieselSuppliers).set(data).where(eq(dieselSuppliers.id, id));
+}
+
+export async function deleteDieselSupplier(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(dieselSuppliers).where(eq(dieselSuppliers.id, id));
+}
+
+// ============================================
+// الوايتات - Diesel Tankers
+// ============================================
+
+export async function getDieselTankers(businessId?: number, isActive?: boolean) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (businessId) conditions.push(eq(dieselTankers.businessId, businessId));
+  if (isActive !== undefined) conditions.push(eq(dieselTankers.isActive, isActive));
+  
+  return await db.select().from(dieselTankers)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(dieselTankers.createdAt));
+}
+
+export async function getDieselTankerById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(dieselTankers).where(eq(dieselTankers.id, id));
+  return result || null;
+}
+
+export async function createDieselTanker(data: InsertDieselTanker) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(dieselTankers).values(data);
+  return result.insertId;
+}
+
+export async function updateDieselTanker(id: number, data: Partial<InsertDieselTanker>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(dieselTankers).set(data).where(eq(dieselTankers.id, id));
+}
+
+export async function deleteDieselTanker(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(dieselTankers).where(eq(dieselTankers.id, id));
+}
+
+// ============================================
+// خزانات المحطة - Diesel Tanks
+// ============================================
+
+export async function getDieselTanks(businessId?: number, stationId?: number, type?: string, isActive?: boolean) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (businessId) conditions.push(eq(dieselTanks.businessId, businessId));
+  if (stationId) conditions.push(eq(dieselTanks.stationId, stationId));
+  if (type) conditions.push(eq(dieselTanks.type, type as any));
+  if (isActive !== undefined) conditions.push(eq(dieselTanks.isActive, isActive));
+  
+  return await db.select().from(dieselTanks)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(dieselTanks.createdAt));
+}
+
+export async function getDieselTankById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(dieselTanks).where(eq(dieselTanks.id, id));
+  return result || null;
+}
+
+export async function createDieselTank(data: InsertDieselTank) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(dieselTanks).values(data);
+  return result.insertId;
+}
+
+export async function updateDieselTank(id: number, data: Partial<InsertDieselTank>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(dieselTanks).set(data).where(eq(dieselTanks.id, id));
+}
+
+export async function deleteDieselTank(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(dieselTanks).where(eq(dieselTanks.id, id));
+}
+
+export async function updateDieselTankLevel(id: number, newLevel: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(dieselTanks).set({ currentLevel: newLevel.toString() }).where(eq(dieselTanks.id, id));
+}
+
+// ============================================
+// طرمبات العدادات - Pump Meters
+// ============================================
+
+export async function getDieselPumpMeters(businessId?: number, stationId?: number, supplierId?: number, type?: string, isActive?: boolean) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (businessId) conditions.push(eq(dieselPumpMeters.businessId, businessId));
+  if (stationId) conditions.push(eq(dieselPumpMeters.stationId, stationId));
+  if (supplierId) conditions.push(eq(dieselPumpMeters.supplierId, supplierId));
+  if (type) conditions.push(eq(dieselPumpMeters.type, type as any));
+  if (isActive !== undefined) conditions.push(eq(dieselPumpMeters.isActive, isActive));
+  
+  return await db.select().from(dieselPumpMeters)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(dieselPumpMeters.createdAt));
+}
+
+export async function getDieselPumpMeterById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(dieselPumpMeters).where(eq(dieselPumpMeters.id, id));
+  return result || null;
+}
+
+export async function createDieselPumpMeter(data: InsertDieselPumpMeter) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(dieselPumpMeters).values(data);
+  return result.insertId;
+}
+
+export async function updateDieselPumpMeter(id: number, data: Partial<InsertDieselPumpMeter>) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(dieselPumpMeters).set(data).where(eq(dieselPumpMeters.id, id));
+}
+
+export async function deleteDieselPumpMeter(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(dieselPumpMeters).where(eq(dieselPumpMeters.id, id));
+}
+
+// ============================================
+// مهام استلام الديزل - Diesel Receiving Tasks
+// ============================================
+
+export async function getDieselReceivingTasks(filters?: {
+  businessId?: number;
+  stationId?: number;
+  employeeId?: number;
+  status?: string;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (filters?.businessId) conditions.push(eq(dieselReceivingTasks.businessId, filters.businessId));
+  if (filters?.stationId) conditions.push(eq(dieselReceivingTasks.stationId, filters.stationId));
+  if (filters?.employeeId) conditions.push(eq(dieselReceivingTasks.employeeId, filters.employeeId));
+  if (filters?.status) conditions.push(eq(dieselReceivingTasks.status, filters.status as any));
+  if (filters?.fromDate) conditions.push(gte(dieselReceivingTasks.taskDate, new Date(filters.fromDate)));
+  if (filters?.toDate) conditions.push(lte(dieselReceivingTasks.taskDate, new Date(filters.toDate)));
+  
+  return await db.select().from(dieselReceivingTasks)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(dieselReceivingTasks.createdAt));
+}
+
+export async function getDieselReceivingTaskById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const [result] = await db.select().from(dieselReceivingTasks).where(eq(dieselReceivingTasks.id, id));
+  return result || null;
+}
+
+export async function createDieselReceivingTask(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  // توليد رقم المهمة
+  const taskNumber = `DRT-${Date.now()}`;
+  
+  const [result] = await db.insert(dieselReceivingTasks).values({
+    ...data,
+    taskNumber,
+    taskDate: new Date(data.taskDate),
+    status: "pending",
+  });
+  return result.insertId;
+}
+
+export async function updateDieselReceivingTaskStatus(id: number, status: string, additionalData?: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { status, ...additionalData };
+  
+  await db.update(dieselReceivingTasks).set(updateData).where(eq(dieselReceivingTasks.id, id));
+}
+
+export async function updateDieselReceivingTask(id: number, data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const updateData: any = { ...data };
+  if (data.taskDate) updateData.taskDate = new Date(data.taskDate);
+  
+  await db.update(dieselReceivingTasks).set(updateData).where(eq(dieselReceivingTasks.id, id));
+}
+
+export async function deleteDieselReceivingTask(id: number) {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.delete(dieselReceivingTasks).where(eq(dieselReceivingTasks.id, id));
+}
+
+// ============================================
+// قراءات الطرمبات - Pump Readings
+// ============================================
+
+export async function getDieselPumpReadings(filters?: {
+  businessId?: number;
+  pumpMeterId?: number;
+  taskId?: number;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (filters?.businessId) conditions.push(eq(dieselPumpReadings.businessId, filters.businessId));
+  if (filters?.pumpMeterId) conditions.push(eq(dieselPumpReadings.pumpMeterId, filters.pumpMeterId));
+  if (filters?.taskId) conditions.push(eq(dieselPumpReadings.taskId, filters.taskId));
+  if (filters?.fromDate) conditions.push(gte(dieselPumpReadings.readingDate, new Date(filters.fromDate)));
+  if (filters?.toDate) conditions.push(lte(dieselPumpReadings.readingDate, new Date(filters.toDate)));
+  
+  return await db.select().from(dieselPumpReadings)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(dieselPumpReadings.createdAt));
+}
+
+export async function createDieselPumpReading(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(dieselPumpReadings).values({
+    ...data,
+    readingDate: new Date(data.readingDate),
+  });
+  
+  // تحديث القراءة الحالية للطرمبة
+  if (data.readingType === "after") {
+    await db.update(dieselPumpMeters)
+      .set({ currentReading: data.readingValue.toString() })
+      .where(eq(dieselPumpMeters.id, data.pumpMeterId));
+  }
+  
+  return result.insertId;
+}
+
+// ============================================
+// حركات الديزل - Tank Movements
+// ============================================
+
+export async function getDieselTankMovements(filters?: {
+  businessId?: number;
+  stationId?: number;
+  tankId?: number;
+  movementType?: string;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (filters?.businessId) conditions.push(eq(dieselTankMovements.businessId, filters.businessId));
+  if (filters?.stationId) conditions.push(eq(dieselTankMovements.stationId, filters.stationId));
+  if (filters?.tankId) {
+    conditions.push(
+      or(
+        eq(dieselTankMovements.fromTankId, filters.tankId),
+        eq(dieselTankMovements.toTankId, filters.tankId)
+      )
+    );
+  }
+  if (filters?.movementType) conditions.push(eq(dieselTankMovements.movementType, filters.movementType as any));
+  if (filters?.fromDate) conditions.push(gte(dieselTankMovements.movementDate, new Date(filters.fromDate)));
+  if (filters?.toDate) conditions.push(lte(dieselTankMovements.movementDate, new Date(filters.toDate)));
+  
+  return await db.select().from(dieselTankMovements)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(dieselTankMovements.createdAt));
+}
+
+export async function createDieselTankMovement(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(dieselTankMovements).values({
+    ...data,
+    movementDate: new Date(data.movementDate),
+  });
+  
+  // تحديث مستويات الخزانات
+  if (data.fromTankId) {
+    const fromTank = await getDieselTankById(data.fromTankId);
+    if (fromTank) {
+      const newLevel = parseFloat(fromTank.currentLevel || "0") - data.quantity;
+      await updateDieselTankLevel(data.fromTankId, Math.max(0, newLevel));
+    }
+  }
+  
+  if (data.toTankId) {
+    const toTank = await getDieselTankById(data.toTankId);
+    if (toTank) {
+      const newLevel = parseFloat(toTank.currentLevel || "0") + data.quantity;
+      await updateDieselTankLevel(data.toTankId, newLevel);
+    }
+  }
+  
+  return result.insertId;
+}
+
+// ============================================
+// استهلاك المولدات - Generator Consumption
+// ============================================
+
+export async function getGeneratorDieselConsumption(filters?: {
+  businessId?: number;
+  stationId?: number;
+  generatorId?: number;
+  fromDate?: string;
+  toDate?: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (filters?.businessId) conditions.push(eq(generatorDieselConsumption.businessId, filters.businessId));
+  if (filters?.stationId) conditions.push(eq(generatorDieselConsumption.stationId, filters.stationId));
+  if (filters?.generatorId) conditions.push(eq(generatorDieselConsumption.generatorId, filters.generatorId));
+  if (filters?.fromDate) conditions.push(gte(generatorDieselConsumption.consumptionDate, new Date(filters.fromDate)));
+  if (filters?.toDate) conditions.push(lte(generatorDieselConsumption.consumptionDate, new Date(filters.toDate)));
+  
+  return await db.select().from(generatorDieselConsumption)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(desc(generatorDieselConsumption.createdAt));
+}
+
+export async function createGeneratorDieselConsumption(data: any) {
+  const db = await getDb();
+  if (!db) return;
+  
+  const [result] = await db.insert(generatorDieselConsumption).values({
+    ...data,
+    consumptionDate: new Date(data.consumptionDate),
+  });
+  return result.insertId;
+}
+
+export async function getGeneratorConsumptionStatistics(filters: {
+  businessId?: number;
+  stationId?: number;
+  generatorId?: number;
+  fromDate: string;
+  toDate: string;
+}) {
+  const db = await getDb();
+  if (!db) return { totalConsumed: 0, totalHours: 0, avgRate: 0 };
+  
+  const conditions = [];
+  if (filters.businessId) conditions.push(eq(generatorDieselConsumption.businessId, filters.businessId));
+  if (filters.stationId) conditions.push(eq(generatorDieselConsumption.stationId, filters.stationId));
+  if (filters.generatorId) conditions.push(eq(generatorDieselConsumption.generatorId, filters.generatorId));
+  conditions.push(gte(generatorDieselConsumption.consumptionDate, new Date(filters.fromDate)));
+  conditions.push(lte(generatorDieselConsumption.consumptionDate, new Date(filters.toDate)));
+  
+  const [stats] = await db.select({
+    totalConsumed: sql<number>`COALESCE(SUM(quantity_consumed), 0)`,
+    totalHours: sql<number>`COALESCE(SUM(running_hours), 0)`,
+    avgRate: sql<number>`COALESCE(AVG(consumption_rate), 0)`,
+  }).from(generatorDieselConsumption)
+    .where(and(...conditions));
+  
+  return stats || { totalConsumed: 0, totalHours: 0, avgRate: 0 };
+}
+
+// ============================================
+// التقارير - Reports
+// ============================================
+
+export async function getDieselConsumptionSummary(filters: {
+  businessId?: number;
+  stationId?: number;
+  fromDate: string;
+  toDate: string;
+}) {
+  const db = await getDb();
+  if (!db) return { totalReceived: 0, totalConsumed: 0, currentStock: 0 };
+  
+  // إجمالي المستلم
+  const receivedConditions = [];
+  if (filters.businessId) receivedConditions.push(eq(dieselReceivingTasks.businessId, filters.businessId));
+  if (filters.stationId) receivedConditions.push(eq(dieselReceivingTasks.stationId, filters.stationId));
+  receivedConditions.push(eq(dieselReceivingTasks.status, "completed"));
+  receivedConditions.push(gte(dieselReceivingTasks.taskDate, new Date(filters.fromDate)));
+  receivedConditions.push(lte(dieselReceivingTasks.taskDate, new Date(filters.toDate)));
+  
+  const [received] = await db.select({
+    total: sql<number>`COALESCE(SUM(quantity_received_at_station), 0)`,
+  }).from(dieselReceivingTasks)
+    .where(and(...receivedConditions));
+  
+  // إجمالي المستهلك
+  const consumedConditions = [];
+  if (filters.businessId) consumedConditions.push(eq(generatorDieselConsumption.businessId, filters.businessId));
+  if (filters.stationId) consumedConditions.push(eq(generatorDieselConsumption.stationId, filters.stationId));
+  consumedConditions.push(gte(generatorDieselConsumption.consumptionDate, new Date(filters.fromDate)));
+  consumedConditions.push(lte(generatorDieselConsumption.consumptionDate, new Date(filters.toDate)));
+  
+  const [consumed] = await db.select({
+    total: sql<number>`COALESCE(SUM(quantity_consumed), 0)`,
+  }).from(generatorDieselConsumption)
+    .where(and(...consumedConditions));
+  
+  // المخزون الحالي
+  const tankConditions = [];
+  if (filters.businessId) tankConditions.push(eq(dieselTanks.businessId, filters.businessId));
+  if (filters.stationId) tankConditions.push(eq(dieselTanks.stationId, filters.stationId));
+  
+  const [stock] = await db.select({
+    total: sql<number>`COALESCE(SUM(current_level), 0)`,
+  }).from(dieselTanks)
+    .where(tankConditions.length > 0 ? and(...tankConditions) : undefined);
+  
+  return {
+    totalReceived: received?.total || 0,
+    totalConsumed: consumed?.total || 0,
+    currentStock: stock?.total || 0,
+  };
+}
+
+export async function getDieselReceivingTasksReport(filters: {
+  businessId?: number;
+  stationId?: number;
+  supplierId?: number;
+  fromDate: string;
+  toDate: string;
+}) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (filters.businessId) conditions.push(eq(dieselReceivingTasks.businessId, filters.businessId));
+  if (filters.stationId) conditions.push(eq(dieselReceivingTasks.stationId, filters.stationId));
+  if (filters.supplierId) conditions.push(eq(dieselReceivingTasks.supplierId, filters.supplierId));
+  conditions.push(gte(dieselReceivingTasks.taskDate, new Date(filters.fromDate)));
+  conditions.push(lte(dieselReceivingTasks.taskDate, new Date(filters.toDate)));
+  
+  return await db.select().from(dieselReceivingTasks)
+    .where(and(...conditions))
+    .orderBy(desc(dieselReceivingTasks.taskDate));
+}
+
+export async function getDieselTankLevelsReport(businessId?: number, stationId?: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (businessId) conditions.push(eq(dieselTanks.businessId, businessId));
+  if (stationId) conditions.push(eq(dieselTanks.stationId, stationId));
+  conditions.push(eq(dieselTanks.isActive, true));
+  
+  return await db.select().from(dieselTanks)
+    .where(and(...conditions))
+    .orderBy(dieselTanks.type, dieselTanks.nameAr);
 }
