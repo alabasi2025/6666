@@ -101,7 +101,6 @@ const FieldWorkers = lazy(() => import("./fieldops/FieldWorkers"));
 const FieldEquipment = lazy(() => import("./fieldops/FieldEquipment"));
 
 // Diesel System Pages - Lazy Loaded
-const DieselSuppliers = lazy(() => import("./diesel/DieselSuppliers"));
 const DieselTankers = lazy(() => import("./diesel/DieselTankers"));
 const DieselTanks = lazy(() => import("./diesel/DieselTanks"));
 const DieselReceivingTasks = lazy(() => import("./diesel/DieselReceivingTasks"));
@@ -314,7 +313,6 @@ const navigationItems = [
     icon: Truck,
     color: "text-yellow-500",
     children: [
-      { id: "diesel-suppliers", title: "الموردين", icon: Users, path: "/dashboard/diesel/suppliers" },
       { id: "diesel-tankers", title: "الوايتات", icon: Truck, path: "/dashboard/diesel/tankers" },
       { id: "diesel-tanks", title: "الخزانات", icon: Package, path: "/dashboard/diesel/tanks" },
       { id: "diesel-receiving", title: "مهام الاستلام", icon: ClipboardList, path: "/dashboard/diesel/receiving" },
@@ -526,7 +524,6 @@ export default function Dashboard() {
         {path === "/dashboard/fieldops/equipment" && <FieldEquipment />}
         
         {/* Diesel System */}
-        {path === "/dashboard/diesel/suppliers" && <DieselSuppliers />}
         {path === "/dashboard/diesel/tankers" && <DieselTankers />}
         {path === "/dashboard/diesel/tanks" && <DieselTanks />}
         {path === "/dashboard/diesel/receiving" && <DieselReceivingTasks />}
