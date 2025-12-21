@@ -157,14 +157,6 @@ const BillingMeterReadings = lazy(() => import("./billing/invoicing/MeterReading
 const BillingInvoicesManagement = lazy(() => import("./billing/invoicing/InvoicesManagement"));
 const BillingPaymentsManagement = lazy(() => import("./billing/payments/PaymentsManagement"));
 
-// Navigation Groups for visual separation
-type NavGroup = {
-  id: string;
-  label: string;
-  color: string;
-  items: typeof navigationItems;
-};
-
 // Navigation Structure
 const navigationItems = [
   {
@@ -172,13 +164,11 @@ const navigationItems = [
     title: "الرئيسية",
     icon: Home,
     path: "/dashboard",
-    color: "text-blue-500",
   },
   {
     id: "organization",
     title: "الهيكل التنظيمي",
     icon: Building2,
-    color: "text-purple-500",
     children: [
       { id: "businesses", title: "الشركات", icon: Building2, path: "/dashboard/organization/businesses" },
       { id: "branches", title: "الفروع", icon: GitBranch, path: "/dashboard/organization/branches" },
@@ -189,7 +179,6 @@ const navigationItems = [
     id: "operations",
     title: "المخطط التشغيلي",
     icon: Activity,
-    color: "text-green-500",
     children: [
       { id: "structure", title: "هيكل المحطات", icon: Building2, path: "/dashboard/operations/structure" },
       { id: "network", title: "شبكة التوزيع", icon: GitBranch, path: "/dashboard/operations/network" },
@@ -200,7 +189,6 @@ const navigationItems = [
     id: "users",
     title: "المستخدمين والصلاحيات",
     icon: Users,
-    color: "text-indigo-500",
     children: [
       { id: "users-list", title: "المستخدمين", icon: Users, path: "/dashboard/users" },
       { id: "roles", title: "الأدوار والصلاحيات", icon: Shield, path: "/dashboard/users/roles" },
@@ -210,7 +198,6 @@ const navigationItems = [
     id: "accounting",
     title: "النظام المحاسبي",
     icon: Calculator,
-    color: "text-emerald-500",
     children: [
       { id: "chart-of-accounts", title: "شجرة الحسابات", icon: Landmark, path: "/dashboard/accounting/chart-of-accounts" },
       { id: "journal-entries", title: "القيود اليومية", icon: FileText, path: "/dashboard/accounting/journal-entries" },
@@ -222,7 +209,6 @@ const navigationItems = [
     id: "assets",
     title: "إدارة الأصول",
     icon: Package,
-    color: "text-amber-500",
     children: [
       { id: "assets-list", title: "قائمة الأصول", icon: Package, path: "/dashboard/assets" },
       { id: "categories", title: "فئات الأصول", icon: FolderKanban, path: "/dashboard/assets/categories" },
@@ -234,7 +220,6 @@ const navigationItems = [
     id: "maintenance",
     title: "الصيانة",
     icon: Wrench,
-    color: "text-orange-500",
     children: [
       { id: "work-orders", title: "أوامر العمل", icon: ClipboardList, path: "/dashboard/maintenance/work-orders" },
       { id: "plans", title: "خطط الصيانة", icon: Calendar, path: "/dashboard/maintenance/plans" },
@@ -245,7 +230,6 @@ const navigationItems = [
     id: "inventory",
     title: "المخزون والمشتريات",
     icon: Warehouse,
-    color: "text-teal-500",
     children: [
       { id: "warehouses", title: "المستودعات", icon: Warehouse, path: "/dashboard/inventory/warehouses" },
       { id: "items", title: "الأصناف", icon: Package, path: "/dashboard/inventory/items" },
@@ -259,7 +243,6 @@ const navigationItems = [
     id: "customers",
     title: "العملاء والفوترة",
     icon: UserCircle,
-    color: "text-cyan-500",
     children: [
       { id: "dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/customers/dashboard" },
       { id: "customers-list", title: "العملاء", icon: Users, path: "/dashboard/customers" },
@@ -275,7 +258,6 @@ const navigationItems = [
     id: "scada",
     title: "المراقبة والتحكم",
     icon: Activity,
-    color: "text-red-500",
     children: [
       { id: "monitoring", title: "لوحة المراقبة", icon: Gauge, path: "/dashboard/scada/monitoring" },
       { id: "alerts", title: "التنبيهات", icon: AlertTriangle, path: "/dashboard/scada/alerts" },
@@ -287,7 +269,6 @@ const navigationItems = [
     id: "projects",
     title: "إدارة المشاريع",
     icon: FolderKanban,
-    color: "text-violet-500",
     children: [
       { id: "projects-list", title: "المشاريع", icon: FolderKanban, path: "/dashboard/projects" },
       { id: "gantt", title: "مخطط جانت", icon: BarChart3, path: "/dashboard/projects/gantt" },
@@ -297,7 +278,6 @@ const navigationItems = [
     id: "fieldops",
     title: "العمليات الميدانية",
     icon: Truck,
-    color: "text-lime-500",
     children: [
       { id: "fieldops-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/fieldops/dashboard" },
       { id: "operations", title: "العمليات", icon: Activity, path: "/dashboard/fieldops/operations" },
@@ -310,7 +290,6 @@ const navigationItems = [
     id: "hr",
     title: "الموارد البشرية",
     icon: Users,
-    color: "text-pink-500",
     children: [
       { id: "hr-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/hr/dashboard" },
       { id: "employees", title: "الموظفين", icon: Users, path: "/dashboard/hr/employees" },
@@ -324,7 +303,6 @@ const navigationItems = [
     id: "reports",
     title: "التقارير",
     icon: BarChart3,
-    color: "text-sky-500",
     children: [
       { id: "financial", title: "التقارير المالية", icon: DollarSign, path: "/dashboard/reports/financial" },
       { id: "operational", title: "التقارير التشغيلية", icon: Activity, path: "/dashboard/reports/operational" },
@@ -335,7 +313,6 @@ const navigationItems = [
     id: "billing",
     title: "نظام الفوترة",
     icon: Receipt,
-    color: "text-rose-500",
     children: [
       { id: "billing-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/billing" },
       { id: "areas", title: "المناطق", icon: Building2, path: "/dashboard/billing/areas" },
@@ -357,7 +334,6 @@ const navigationItems = [
     id: "custom",
     title: "النظام المخصص",
     icon: Settings,
-    color: "text-fuchsia-500",
     children: [
       { id: "custom-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/custom" },
       { id: "custom-accounts", title: "الحسابات", icon: Landmark, path: "/dashboard/custom/accounts" },
@@ -369,7 +345,6 @@ const navigationItems = [
     id: "developer",
     title: "نظام المطور",
     icon: Settings,
-    color: "text-slate-500",
     children: [
       { id: "dev-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/developer" },
       { id: "integrations", title: "التكاملات", icon: GitBranch, path: "/dashboard/developer/integrations" },
@@ -384,7 +359,6 @@ const navigationItems = [
     title: "الإعدادات",
     icon: Settings,
     path: "/dashboard/settings",
-    color: "text-gray-500",
   },
 ];
 
@@ -599,54 +573,41 @@ export default function Dashboard() {
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="flex-1 py-2">
-          <nav className="px-2 space-y-0.5">
-            {navigationItems.map((item, index) => (
+        <ScrollArea className="flex-1 py-4">
+          <nav className="px-2 space-y-1">
+            {navigationItems.map((item) => (
               <div key={item.id}>
-                {/* Add separator after specific sections */}
-                {(index === 1 || index === 4 || index === 8 || index === 11 || index === 14) && sidebarOpen && (
-                  <div className="my-3 mx-2 border-t border-border/50" />
-                )}
                 {item.children ? (
                   <>
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full justify-start gap-3 mb-0.5 h-10 transition-all duration-200",
-                        "hover:bg-accent/80 hover:translate-x-[-2px]",
-                        !sidebarOpen && "justify-center px-2",
-                        expandedItems.includes(item.id) && "bg-accent/50"
+                        "w-full justify-start gap-3 mb-1",
+                        !sidebarOpen && "justify-center px-2"
                       )}
                       onClick={() => toggleExpand(item.id)}
                     >
-                      <item.icon className={cn("h-5 w-5 shrink-0 transition-colors", (item as any).color)} />
+                      <item.icon className="h-4 w-4 shrink-0" />
                       {sidebarOpen && (
                         <>
-                          <span className="flex-1 text-right font-medium">{item.title}</span>
+                          <span className="flex-1 text-right">{item.title}</span>
                           <ChevronLeft className={cn(
-                            "h-4 w-4 transition-transform duration-200",
-                            expandedItems.includes(item.id) && "-rotate-90"
+                            "h-4 w-4 transition-transform",
+                            expandedItems.includes(item.id) && "rotate-90"
                           )} />
                         </>
                       )}
                     </Button>
                     {sidebarOpen && expandedItems.includes(item.id) && (
-                      <div className="mr-3 pr-3 space-y-0.5 border-r-2 border-border/30 animate-in slide-in-from-top-2 duration-200">
+                      <div className="mr-4 space-y-1">
                         {item.children.map((child) => (
                           <Button
                             key={child.id}
                             variant={isActivePath(child.path) ? "secondary" : "ghost"}
-                            className={cn(
-                              "w-full justify-start gap-3 text-sm h-9 transition-all duration-150",
-                              "hover:translate-x-[-2px]",
-                              isActivePath(child.path) && "bg-primary/10 text-primary border-r-2 border-primary"
-                            )}
+                            className="w-full justify-start gap-3 text-sm"
                             onClick={() => handleNavigation(child.path)}
                           >
-                            <child.icon className={cn(
-                              "h-4 w-4 shrink-0",
-                              isActivePath(child.path) ? "text-primary" : "text-muted-foreground"
-                            )} />
+                            <child.icon className="h-4 w-4 shrink-0" />
                             <span>{child.title}</span>
                           </Button>
                         ))}
@@ -657,15 +618,13 @@ export default function Dashboard() {
                   <Button
                     variant={isActivePath(item.path!) ? "secondary" : "ghost"}
                     className={cn(
-                      "w-full justify-start gap-3 h-10 transition-all duration-200",
-                      "hover:bg-accent/80 hover:translate-x-[-2px]",
-                      !sidebarOpen && "justify-center px-2",
-                      isActivePath(item.path!) && "bg-primary/10 text-primary border-r-2 border-primary"
+                      "w-full justify-start gap-3",
+                      !sidebarOpen && "justify-center px-2"
                     )}
                     onClick={() => handleNavigation(item.path!)}
                   >
-                    <item.icon className={cn("h-5 w-5 shrink-0", (item as any).color)} />
-                    {sidebarOpen && <span className="font-medium">{item.title}</span>}
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    {sidebarOpen && <span>{item.title}</span>}
                   </Button>
                 )}
               </div>
