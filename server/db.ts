@@ -503,11 +503,33 @@ export async function getAccountById(id: number) {
 // Asset Management
 // ============================================
 
-export async function createAsset(data: InsertAsset) {
+export async function createAsset(data: any) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(assets).values(data);
+  // تنظيف البيانات قبل الإدراج
+  const cleanData: any = {
+    businessId: data.businessId,
+    categoryId: data.categoryId,
+    code: data.code,
+    nameAr: data.nameAr,
+    status: data.status || 'active',
+  };
+  
+  // إضافة الحقول الاختيارية فقط إذا كانت موجودة
+  if (data.branchId) cleanData.branchId = data.branchId;
+  if (data.stationId) cleanData.stationId = data.stationId;
+  if (data.nameEn) cleanData.nameEn = data.nameEn;
+  if (data.description) cleanData.description = data.description;
+  if (data.serialNumber) cleanData.serialNumber = data.serialNumber;
+  if (data.model) cleanData.model = data.model;
+  if (data.manufacturer) cleanData.manufacturer = data.manufacturer;
+  if (data.purchaseDate) cleanData.purchaseDate = new Date(data.purchaseDate);
+  if (data.purchaseCost) cleanData.purchaseCost = data.purchaseCost.toString();
+  if (data.location) cleanData.location = data.location;
+  if (data.createdBy) cleanData.createdBy = data.createdBy;
+
+  const result = await db.insert(assets).values(cleanData);
   return result[0].insertId;
 }
 

@@ -308,36 +308,38 @@ export function DataTable<T extends Record<string, any>>({
                       ))}
                       {actions && (onView || onEdit || onDelete) && (
                         <TableCell className="text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="w-4 h-4" />
+                          <div className="flex items-center justify-center gap-1">
+                            {onView && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-blue-500 hover:text-blue-600 hover:bg-blue-500/10"
+                                onClick={() => onView(row)}
+                              >
+                                <Eye className="w-4 h-4" />
                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              {onView && (
-                                <DropdownMenuItem onClick={() => onView(row)}>
-                                  <Eye className="w-4 h-4 ml-2" />
-                                  عرض
-                                </DropdownMenuItem>
-                              )}
-                              {onEdit && (
-                                <DropdownMenuItem onClick={() => onEdit(row)}>
-                                  <Edit className="w-4 h-4 ml-2" />
-                                  تعديل
-                                </DropdownMenuItem>
-                              )}
-                              {onDelete && (
-                                <DropdownMenuItem
-                                  onClick={() => onDelete(row)}
-                                  className="text-destructive focus:text-destructive"
-                                >
-                                  <Trash2 className="w-4 h-4 ml-2" />
-                                  حذف
-                                </DropdownMenuItem>
-                              )}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                            )}
+                            {onEdit && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-yellow-500 hover:text-yellow-600 hover:bg-yellow-500/10"
+                                onClick={() => onEdit(row)}
+                              >
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            )}
+                            {onDelete && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                                onClick={() => onDelete(row)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            )}
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>

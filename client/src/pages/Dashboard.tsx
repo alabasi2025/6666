@@ -32,6 +32,7 @@ import { trpc } from "@/lib/trpc";
 // Asset Pages
 import AssetsList from "./assets/AssetsList";
 import AssetDetails from "./assets/AssetDetails";
+import AssetEdit from "./assets/AssetEdit";
 import AssetCategories from "./assets/AssetCategories";
 import AssetMovements from "./assets/AssetMovements";
 import Depreciation from "./assets/Depreciation";
@@ -901,6 +902,9 @@ export default function Dashboard() {
     }
     if (location.startsWith("/dashboard/assets/view/")) {
       return <AssetDetails />;
+    }
+    if (location.startsWith("/dashboard/assets/edit/")) {
+      return <AssetEdit />;
     }
     if (location === "/dashboard/assets/movements") {
       return <AssetMovements />;

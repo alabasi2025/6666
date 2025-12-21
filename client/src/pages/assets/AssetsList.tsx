@@ -57,6 +57,7 @@ export default function AssetsList() {
     nameAr: "",
     nameEn: "",
     categoryId: "",
+    stationId: "",
     description: "",
     serialNumber: "",
     model: "",
@@ -76,6 +77,11 @@ export default function AssetsList() {
 
   // Fetch categories
   const { data: categories = [] } = trpc.assets.categories.list.useQuery({
+    businessId: 1,
+  });
+
+  // Fetch stations
+  const { data: stations = [] } = trpc.station.list.useQuery({
     businessId: 1,
   });
 
@@ -127,6 +133,7 @@ export default function AssetsList() {
       nameAr: "",
       nameEn: "",
       categoryId: "",
+      stationId: "",
       description: "",
       serialNumber: "",
       model: "",
@@ -250,6 +257,7 @@ export default function AssetsList() {
       nameAr: asset.nameAr || "",
       nameEn: asset.nameEn || "",
       categoryId: asset.categoryId?.toString() || "",
+      stationId: asset.stationId?.toString() || "",
       description: asset.description || "",
       serialNumber: asset.serialNumber || "",
       model: asset.model || "",
@@ -284,6 +292,7 @@ export default function AssetsList() {
     const data = {
       ...formData,
       categoryId: parseInt(formData.categoryId),
+      stationId: formData.stationId ? parseInt(formData.stationId) : null,
       businessId: 1,
     };
 
@@ -477,6 +486,25 @@ export default function AssetsList() {
                     {categories.map((cat: any) => (
                       <SelectItem key={cat.id} value={cat.id.toString()}>
                         {cat.nameAr}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="stationId">المحطة</Label>
+                <Select
+                  value={formData.stationId}
+                  onValueChange={(value) => setFormData({ ...formData, stationId: value === "none" ? "" : value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="اختر المحطة (اختياري)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">بدون محطة</SelectItem>
+                    {stations.map((station: any) => (
+                      <SelectItem key={station.id} value={station.id.toString()}>
+                        {station.nameAr}
                       </SelectItem>
                     ))}
                   </SelectContent>

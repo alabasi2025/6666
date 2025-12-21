@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
   Card,
@@ -50,23 +50,29 @@ const statusLabels: Record<string, string> = {
   idle: "خامل",
 };
 
-export default function AssetDetails() {
-  const { id } = useParams();
-  const navigate = useNavigate();
+interface AssetDetailsProps {
+  assetId?: number;
+}
+
+export default function AssetDetails({ assetId }: AssetDetailsProps) {
+  const [location, setLocation] = useLocation();
+  
+  // Extract id from URL if not passed as prop
+  const id = assetId || parseInt(location.split('/').pop() || '0');
 
   // Fetch asset details
   const { data: asset, isLoading } = trpc.assets.getById.useQuery({
-    id: parseInt(id || "0"),
+    id: id,
   });
 
   // Fetch movements for this asset
   const { data: movements = [] } = trpc.assets.movements.list.useQuery({
-    assetId: parseInt(id || "0"),
+    assetId: id,
   });
 
   // Fetch depreciation history
   const { data: depreciationHistory = [] } = trpc.assets.depreciation.getHistory.useQuery({
-    assetId: parseInt(id || "0"),
+    assetId: id,
   });
 
   if (isLoading) {
@@ -81,7 +87,7 @@ export default function AssetDetails() {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-4">
         <p className="text-muted-foreground">الأصل غير موجود</p>
-        <Button onClick={() => navigate("/dashboard/assets")}>
+        <Button onClick={() => setLocation("/dashboard/assets")}>
           <ArrowRight className="w-4 h-4 ml-2" />
           العودة للقائمة
         </Button>
@@ -94,7 +100,7 @@ export default function AssetDetails() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => navigate("/dashboard/assets")}>
+          <Button variant="ghost" onClick={() => setLocation("/dashboard/assets")}>
             <ArrowRight className="w-4 h-4 ml-2" />
             العودة
           </Button>
@@ -110,7 +116,7 @@ export default function AssetDetails() {
           <Badge className={`${statusColors[asset.status || "active"]} text-white`}>
             {statusLabels[asset.status || "active"]}
           </Badge>
-          <Button variant="outline" onClick={() => navigate(`/dashboard/assets/edit/${asset.id}`)}>
+          <Button variant="outline" onClick={() => setLocation(`/dashboard/assets/edit/${asset.id}`)}>
             <Pencil className="w-4 h-4 ml-2" />
             تعديل
           </Button>
