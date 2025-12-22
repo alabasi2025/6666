@@ -394,7 +394,7 @@ export default function DieselReceiving() {
             <Select value={selectedStation} onValueChange={setSelectedStation}>
               <SelectTrigger className="w-64"><SelectValue placeholder="جميع المحطات" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">جميع المحطات</SelectItem>
+                <SelectItem value="all">جميع المحطات</SelectItem>
                 {stations?.map((station: any) => (
                   <SelectItem key={station.id} value={station.id.toString()}>{station.nameAr}</SelectItem>
                 ))}
