@@ -371,7 +371,7 @@ export default function ChartOfAccounts() {
                       <SelectValue placeholder="اختر الحساب الأب" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">بدون</SelectItem>
+                      <SelectItem value="none">بدون</SelectItem>
                       {accounts.filter((a: any) => a.id !== selectedAccount?.id).map((acc: any) => (
                         <SelectItem key={acc.id} value={acc.id.toString()}>
                           {acc.code} - {acc.nameAr}

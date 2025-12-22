@@ -344,7 +344,7 @@ export default function AssetMovements() {
                     <SelectValue placeholder="اختر المحطة المصدر" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">-</SelectItem>
+                    <SelectItem value="none">-</SelectItem>
                     {stations.map((station: any) => (
                       <SelectItem key={station.id} value={station.id.toString()}>
                         {station.nameAr}
@@ -360,7 +360,7 @@ export default function AssetMovements() {
                     <SelectValue placeholder="اختر المحطة الوجهة" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">-</SelectItem>
+                    <SelectItem value="none">-</SelectItem>
                     {stations.map((station: any) => (
                       <SelectItem key={station.id} value={station.id.toString()}>
                         {station.nameAr}

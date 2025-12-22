@@ -429,7 +429,7 @@ export default function PaymentsManagement() {
               <Select value={formData.invoiceId} onValueChange={(v) => setFormData({ ...formData, invoiceId: v })}>
                 <SelectTrigger><SelectValue placeholder="اختر الفاتورة" /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">بدون فاتورة محددة</SelectItem>
+                  <SelectItem value="none">بدون فاتورة محددة</SelectItem>
                   {invoicesQuery.data?.filter(i => i.customerId.toString() === formData.customerId && i.status !== 'paid').map(i => (
                     <SelectItem key={i.id} value={i.id.toString()}>{i.invoiceNo} - {parseFloat(i.balanceDue || '0').toLocaleString()} ر.س</SelectItem>
                   ))}
