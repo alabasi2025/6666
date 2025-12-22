@@ -24,7 +24,7 @@ export default function DieselConfiguration() {
   const [pathElements, setPathElements] = useState<any[]>([]);
 
   const utils = trpc.useUtils();
-  const { data: stations } = trpc.getStations.useQuery();
+  const { data: stations } = trpc.station.list.useQuery();
   const { data: tanks } = trpc.diesel.getDieselTanks.useQuery();
   const { data: pumps } = trpc.diesel.getDieselPumpMeters.useQuery();
   const { data: pipes } = trpc.diesel.getDieselPipes.useQuery();
