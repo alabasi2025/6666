@@ -126,9 +126,18 @@ export default function CustomSystem() {
   }
 
   if (!user) {
-    // توجيه مباشر لصفحة تسجيل الدخول بدون واجهة وسيطة
-    window.location.href = getLoginUrl();
-    return null;
+    // عرض شاشة تحميل أثناء التحقق من الجلسة
+    // لا نقوم بالتوجيه هنا لأن الجلسة قد تكون موجودة ويتم تحميلها
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-neutral-900 to-stone-900 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center animate-pulse shadow-lg shadow-amber-500/30">
+            <Sparkles className="h-8 w-8 text-white" />
+          </div>
+          <p className="text-amber-200/70 font-medium">جاري التحميل...</p>
+        </div>
+      </div>
+    );
   }
 
   // Get current page title
