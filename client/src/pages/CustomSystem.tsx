@@ -126,15 +126,23 @@ export default function CustomSystem() {
   }
 
   if (!user) {
-    // عرض شاشة تحميل أثناء التحقق من الجلسة
-    // لا نقوم بالتوجيه هنا لأن الجلسة قد تكون موجودة ويتم تحميلها
     return (
-      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-neutral-900 to-stone-900 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center animate-pulse shadow-lg shadow-amber-500/30">
-            <Sparkles className="h-8 w-8 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-neutral-900 to-stone-900 flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-8 max-w-md w-full">
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-2xl shadow-amber-500/30">
+            <Sparkles className="h-10 w-10 text-white" />
           </div>
-          <p className="text-amber-200/70 font-medium">جاري التحميل...</p>
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-white mb-3">النظام المخصص</h1>
+            <p className="text-amber-200/60">يرجى تسجيل الدخول للمتابعة</p>
+          </div>
+          <Button
+            onClick={() => window.location.href = getLoginUrl()}
+            size="lg"
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-6 rounded-xl shadow-lg shadow-amber-500/30 transition-all hover:shadow-xl hover:shadow-amber-500/40"
+          >
+            تسجيل الدخول
+          </Button>
         </div>
       </div>
     );
