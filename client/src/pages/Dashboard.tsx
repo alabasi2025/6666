@@ -724,22 +724,112 @@ export default function Dashboard() {
                     {sidebarOpen && expandedItems.includes(item.id) && (
                       <div className="mr-3 pr-3 space-y-0.5 border-r-2 border-border/30 animate-in slide-in-from-top-2 duration-200">
                         {item.children.map((child) => (
-                          <Button
-                            key={child.id}
-                            variant={isActivePath(child.path) ? "secondary" : "ghost"}
-                            className={cn(
-                              "w-full justify-start gap-3 text-sm h-9 transition-all duration-150",
-                              "hover:translate-x-[-2px]",
-                              isActivePath(child.path) && "bg-primary/10 text-primary border-r-2 border-primary"
-                            )}
-                            onClick={() => handleNavigation(child.path)}
-                          >
-                            <child.icon className={cn(
-                              "h-4 w-4 shrink-0",
-                              isActivePath(child.path) ? "text-primary" : "text-muted-foreground"
-                            )} />
-                            <span>{child.title}</span>
-                          </Button>
+                          child.children ? (
+                            // المستوى الثاني - عنصر له أبناء
+                            <div key={child.id}>
+                              <Button
+                                variant="ghost"
+                                className={cn(
+                                  "w-full justify-start gap-3 text-sm h-9 transition-all duration-150",
+                                  "hover:translate-x-[-2px]",
+                                  expandedItems.includes(child.id) && "bg-accent/30"
+                                )}
+                                onClick={() => toggleExpand(child.id)}
+                              >
+                                <child.icon className="h-4 w-4 shrink-0 text-muted-foreground" />
+                                <span className="flex-1 text-right">{child.title}</span>
+                                <ChevronLeft className={cn(
+                                  "h-3 w-3 transition-transform duration-200",
+                                  expandedItems.includes(child.id) && "-rotate-90"
+                                )} />
+                              </Button>
+                              {expandedItems.includes(child.id) && (
+                                <div className="mr-3 pr-3 space-y-0.5 border-r border-border/20">
+                                  {child.children.map((subChild: any) => (
+                                    subChild.children ? (
+                                      // المستوى الثالث - عنصر له أبناء
+                                      <div key={subChild.id}>
+                                        <Button
+                                          variant="ghost"
+                                          className={cn(
+                                            "w-full justify-start gap-3 text-xs h-8 transition-all duration-150",
+                                            "hover:translate-x-[-2px]",
+                                            expandedItems.includes(subChild.id) && "bg-accent/20"
+                                          )}
+                                          onClick={() => toggleExpand(subChild.id)}
+                                        >
+                                          <subChild.icon className="h-3 w-3 shrink-0 text-muted-foreground" />
+                                          <span className="flex-1 text-right">{subChild.title}</span>
+                                          <ChevronLeft className={cn(
+                                            "h-3 w-3 transition-transform duration-200",
+                                            expandedItems.includes(subChild.id) && "-rotate-90"
+                                          )} />
+                                        </Button>
+                                        {expandedItems.includes(subChild.id) && (
+                                          <div className="mr-3 pr-3 space-y-0.5 border-r border-border/10">
+                                            {subChild.children.map((deepChild: any) => (
+                                              <Button
+                                                key={deepChild.id}
+                                                variant={isActivePath(deepChild.path) ? "secondary" : "ghost"}
+                                                className={cn(
+                                                  "w-full justify-start gap-3 text-xs h-7 transition-all duration-150",
+                                                  "hover:translate-x-[-2px]",
+                                                  isActivePath(deepChild.path) && "bg-primary/10 text-primary border-r-2 border-primary"
+                                                )}
+                                                onClick={() => handleNavigation(deepChild.path)}
+                                              >
+                                                <deepChild.icon className={cn(
+                                                  "h-3 w-3 shrink-0",
+                                                  isActivePath(deepChild.path) ? "text-primary" : "text-muted-foreground"
+                                                )} />
+                                                <span>{deepChild.title}</span>
+                                              </Button>
+                                            ))}
+                                          </div>
+                                        )}
+                                      </div>
+                                    ) : (
+                                      // المستوى الثالث - عنصر نهائي
+                                      <Button
+                                        key={subChild.id}
+                                        variant={isActivePath(subChild.path) ? "secondary" : "ghost"}
+                                        className={cn(
+                                          "w-full justify-start gap-3 text-xs h-8 transition-all duration-150",
+                                          "hover:translate-x-[-2px]",
+                                          isActivePath(subChild.path) && "bg-primary/10 text-primary border-r-2 border-primary"
+                                        )}
+                                        onClick={() => handleNavigation(subChild.path)}
+                                      >
+                                        <subChild.icon className={cn(
+                                          "h-3 w-3 shrink-0",
+                                          isActivePath(subChild.path) ? "text-primary" : "text-muted-foreground"
+                                        )} />
+                                        <span>{subChild.title}</span>
+                                      </Button>
+                                    )
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            // المستوى الثاني - عنصر نهائي
+                            <Button
+                              key={child.id}
+                              variant={isActivePath(child.path) ? "secondary" : "ghost"}
+                              className={cn(
+                                "w-full justify-start gap-3 text-sm h-9 transition-all duration-150",
+                                "hover:translate-x-[-2px]",
+                                isActivePath(child.path) && "bg-primary/10 text-primary border-r-2 border-primary"
+                              )}
+                              onClick={() => handleNavigation(child.path)}
+                            >
+                              <child.icon className={cn(
+                                "h-4 w-4 shrink-0",
+                                isActivePath(child.path) ? "text-primary" : "text-muted-foreground"
+                              )} />
+                              <span>{child.title}</span>
+                            </Button>
+                          )
                         ))}
                       </div>
                     )}
