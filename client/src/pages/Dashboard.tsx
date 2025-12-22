@@ -675,7 +675,7 @@ export default function Dashboard() {
                   <ChevronLeft className="h-4 w-4 rotate-90" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuContent align="start" className="w-56 z-[100]">
                 <DropdownMenuLabel>تبديل النظام</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="gap-2 bg-accent/50">
@@ -696,7 +696,7 @@ export default function Dashboard() {
                   <Zap className="h-6 w-6 text-primary" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuContent align="start" className="w-56 z-[100]">
                 <DropdownMenuLabel>تبديل النظام</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="gap-2 bg-accent/50">
