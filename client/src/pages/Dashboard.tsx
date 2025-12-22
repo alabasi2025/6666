@@ -384,7 +384,17 @@ const navigationItems = [
       { id: "analytics", title: "التحليلات", icon: PieChart, path: "/dashboard/reports/analytics" },
     ],
   },
-
+  {
+    id: "diesel-management",
+    title: "إدارة الديزل",
+    icon: Truck,
+    color: "text-yellow-600",
+    children: [
+      { id: "diesel-config", title: "تهيئة مخطط الديزل", icon: Settings, path: "/dashboard/diesel/configuration" },
+      { id: "diesel-receiving", title: "عمليات الاستلام", icon: Truck, path: "/dashboard/diesel/receiving" },
+      { id: "diesel-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/diesel/dashboard" },
+    ],
+  },
   {
     id: "billing",
     title: "نظام الفوترة",
