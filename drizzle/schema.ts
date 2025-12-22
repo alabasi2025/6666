@@ -2797,19 +2797,146 @@ export const dieselTanks = mysqlTable("diesel_tanks", {
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
+  
+  // نوع الخزان حسب الوظيفة
   type: mysqlEnum("tank_type", [
     "receiving",      // خزان استلام
     "main",           // خزان رئيسي
-    "rocket",         // خزان صاروخ
+    "pre_output",     // خزان قبل طرمبة الخروج
     "generator"       // خزان مولد
   ]).notNull(),
-  capacity: decimal("capacity", { precision: 10, scale: 2 }).notNull(),
+  
+  // مادة الخزان
+  material: mysqlEnum("tank_material", [
+    "plastic",        // بلاستيك
+    "iron",           // حديد
+    "stainless_steel", // ستانلس ستيل
+    "fiberglass"      // فايبر جلاس
+  ]).default("plastic"),
+  
+  // بيانات الخزان الفنية
+  brand: varchar("brand", { length: 100 }),           // الماركة
+  color: varchar("color", { length: 50 }),            // اللون
+  capacity: decimal("capacity", { precision: 10, scale: 2 }).notNull(), // السعة الكلية
+  height: decimal("height", { precision: 8, scale: 2 }),    // الارتفاع بالسنتيمتر
+  diameter: decimal("diameter", { precision: 8, scale: 2 }), // القطر بالسنتيمتر
+  deadStock: decimal("dead_stock", { precision: 10, scale: 2 }).default("0"), // الكمية الميتة
+  effectiveCapacity: decimal("effective_capacity", { precision: 10, scale: 2 }), // السعة الفعلية = السعة - الكمية الميتة
+  
+  // المستويات
   currentLevel: decimal("current_level", { precision: 10, scale: 2 }).default("0"),
   minLevel: decimal("min_level", { precision: 10, scale: 2 }).default("0"),
-  linkedGeneratorId: int("linked_generator_id"), // للخزانات المرتبطة بمولد
+  
+  // عدد الفتحات
+  openingsCount: int("openings_count").default(1),
+  
+  // ربط بمولد (للخزانات المرتبطة بمولد)
+  linkedGeneratorId: int("linked_generator_id"),
+  
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+// فتحات الخزان - Tank Openings
+export const dieselTankOpenings = mysqlTable("diesel_tank_openings", {
+  id: int("id").autoincrement().primaryKey(),
+  tankId: int("tank_id").notNull(),
+  openingNumber: int("opening_number").notNull(),      // رقم الفتحة
+  position: mysqlEnum("position", [
+    "top",            // فوق
+    "bottom",         // تحت
+    "side"            // جانب
+  ]).notNull(),
+  usage: mysqlEnum("usage", [
+    "inlet",          // دخول
+    "outlet",         // خروج
+    "ventilation",    // تهوية
+    "measurement",    // قياس
+    "cleaning"        // تنظيف
+  ]).notNull(),
+  diameter: decimal("diameter", { precision: 6, scale: 2 }), // قطر الفتحة بالسنتيمتر
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// مواصير التسليك - Diesel Pipes
+export const dieselPipes = mysqlTable("diesel_pipes", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+  stationId: int("station_id").notNull(),
+  code: varchar("code", { length: 20 }).notNull(),
+  nameAr: varchar("name_ar", { length: 255 }).notNull(),
+  nameEn: varchar("name_en", { length: 255 }),
+  
+  // مادة المواصير
+  material: mysqlEnum("pipe_material", [
+    "iron",           // حديد
+    "plastic",        // بلاستيك
+    "copper",         // نحاس
+    "stainless_steel" // ستانلس ستيل
+  ]).default("iron"),
+  
+  diameter: decimal("diameter", { precision: 6, scale: 2 }),  // القطر بالسنتيمتر
+  length: decimal("length", { precision: 8, scale: 2 }),      // الطول بالمتر
+  
+  // حالة المواصير
+  condition: mysqlEnum("condition", [
+    "good",           // جيدة
+    "fair",           // متوسطة
+    "poor",           // سيئة
+    "needs_replacement" // تحتاج استبدال
+  ]).default("good"),
+  
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+// تهيئة مخطط الديزل للمحطة - Station Diesel Configuration
+export const stationDieselConfig = mysqlTable("station_diesel_config", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+  stationId: int("station_id").notNull().unique(), // محطة واحدة لها تهيئة واحدة
+  
+  // إعدادات الطرمبات
+  hasIntakePump: boolean("has_intake_pump").default(false),      // هل يوجد طرمبة دخول؟
+  hasOutputPump: boolean("has_output_pump").default(false),      // هل يوجد طرمبة خروج؟
+  intakePumpHasMeter: boolean("intake_pump_has_meter").default(false), // طرمبة الدخول بعداد؟
+  outputPumpHasMeter: boolean("output_pump_has_meter").default(false), // طرمبة الخروج بعداد؟
+  
+  notes: text("notes"),
+  configuredBy: int("configured_by"),
+  configuredAt: timestamp("configured_at").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+// مسار الديزل في المحطة - Station Diesel Path
+// يحدد ترتيب الأصول في مسار الديزل
+export const stationDieselPath = mysqlTable("station_diesel_path", {
+  id: int("id").autoincrement().primaryKey(),
+  configId: int("config_id").notNull(),             // مرتبط بتهيئة المحطة
+  sequenceOrder: int("sequence_order").notNull(),   // ترتيب في المسار
+  
+  // نوع العنصر في المسار
+  elementType: mysqlEnum("element_type", [
+    "receiving_tank",   // خزان استلام
+    "pipe",             // مواصير
+    "intake_pump",      // طرمبة دخول
+    "main_tank",        // خزان رئيسي
+    "pre_output_tank",  // خزان قبل طرمبة الخروج
+    "output_pump",      // طرمبة خروج
+    "generator_tank"    // خزان مولد
+  ]).notNull(),
+  
+  // معرف العنصر (خزان أو طرمبة أو مواصير)
+  tankId: int("tank_id"),
+  pumpId: int("pump_id"),
+  pipeId: int("pipe_id"),
+  
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // طرمبات العدادات - Pump Meters
@@ -2974,6 +3101,14 @@ export type DieselTanker = typeof dieselTankers.$inferSelect;
 export type InsertDieselTanker = typeof dieselTankers.$inferInsert;
 export type DieselTank = typeof dieselTanks.$inferSelect;
 export type InsertDieselTank = typeof dieselTanks.$inferInsert;
+export type DieselTankOpening = typeof dieselTankOpenings.$inferSelect;
+export type InsertDieselTankOpening = typeof dieselTankOpenings.$inferInsert;
+export type DieselPipe = typeof dieselPipes.$inferSelect;
+export type InsertDieselPipe = typeof dieselPipes.$inferInsert;
+export type StationDieselConfig = typeof stationDieselConfig.$inferSelect;
+export type InsertStationDieselConfig = typeof stationDieselConfig.$inferInsert;
+export type StationDieselPath = typeof stationDieselPath.$inferSelect;
+export type InsertStationDieselPath = typeof stationDieselPath.$inferInsert;
 export type DieselPumpMeter = typeof dieselPumpMeters.$inferSelect;
 export type InsertDieselPumpMeter = typeof dieselPumpMeters.$inferInsert;
 export type DieselReceivingTask = typeof dieselReceivingTasks.$inferSelect;

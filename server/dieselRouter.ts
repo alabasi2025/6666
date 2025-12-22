@@ -667,6 +667,144 @@ export const dieselRouter = router({
   }),
 
   // ============================================
+  // أصول الديزل - Diesel Assets
+  // ============================================
+  
+  assets: router({
+    // المواصير
+    pipes: router({
+      list: protectedProcedure
+        .input(z.object({
+          businessId: z.number().optional(),
+          stationId: z.number().optional(),
+          isActive: z.boolean().optional(),
+        }).optional())
+        .query(async ({ input }) => {
+          return db.getDieselPipes(input?.businessId, input?.stationId, input?.isActive);
+        }),
+
+      create: protectedProcedure
+        .input(z.object({
+          businessId: z.number(),
+          stationId: z.number().optional(),
+          code: z.string().min(1),
+          nameAr: z.string().min(1),
+          nameEn: z.string().optional(),
+          material: z.enum(["steel", "plastic", "copper", "other"]),
+          diameter: z.number(),
+          length: z.number(),
+          status: z.enum(["active", "maintenance", "inactive"]).default("active"),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const data = {
+            ...input,
+            diameter: input.diameter.toString(),
+            length: input.length.toString(),
+          };
+          return db.createDieselPipe(data as any);
+        }),
+
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          code: z.string().optional(),
+          nameAr: z.string().optional(),
+          nameEn: z.string().optional(),
+          material: z.enum(["steel", "plastic", "copper", "other"]).optional(),
+          diameter: z.number().optional(),
+          length: z.number().optional(),
+          status: z.enum(["active", "maintenance", "inactive"]).optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, diameter, length, ...rest } = input;
+          const data: any = { ...rest };
+          if (diameter !== undefined) data.diameter = diameter.toString();
+          if (length !== undefined) data.length = length.toString();
+          return db.updateDieselPipe(id, data);
+        }),
+
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          return db.deleteDieselPipe(input.id);
+        }),
+    }),
+
+    // فتحات الخزانات
+    tankOpenings: router({
+      list: protectedProcedure
+        .input(z.object({ tankId: z.number() }))
+        .query(async ({ input }) => {
+          return db.getDieselTankOpenings(input.tankId);
+        }),
+
+      create: protectedProcedure
+        .input(z.object({
+          tankId: z.number(),
+          openingNumber: z.number(),
+          position: z.enum(["top", "bottom", "side"]),
+          purpose: z.enum(["inlet", "outlet", "vent", "measurement", "drain", "other"]),
+          diameter: z.number().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const data = {
+            ...input,
+            diameter: input.diameter?.toString() ?? null,
+          };
+          return db.createDieselTankOpening(data as any);
+        }),
+
+      delete: protectedProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          return db.deleteDieselTankOpening(input.id);
+        }),
+    }),
+  }),
+
+  // ============================================
+  // تهيئة مخطط الديزل للمحطة - Station Diesel Configuration
+  // ============================================
+  
+  stationConfig: router({
+    get: protectedProcedure
+      .input(z.object({ stationId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getStationDieselConfig(input.stationId);
+      }),
+
+    save: protectedProcedure
+      .input(z.object({
+        stationId: z.number(),
+        businessId: z.number(),
+        config: z.object({
+          receivingTanks: z.array(z.number()).optional(),
+          mainTanks: z.array(z.number()).optional(),
+          generatorTanks: z.array(z.number()).optional(),
+          intakePipes: z.array(z.number()).optional(),
+          outputPipes: z.array(z.number()).optional(),
+          intakePumps: z.array(z.number()).optional(),
+          outputPumps: z.array(z.number()).optional(),
+          hasIntakePump: z.boolean().optional(),
+          hasOutputPump: z.boolean().optional(),
+          intakePumpHasMeter: z.boolean().optional(),
+          outputPumpHasMeter: z.boolean().optional(),
+        }),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.saveStationDieselConfig({
+          stationId: input.stationId,
+          businessId: input.businessId,
+          config: JSON.stringify(input.config),
+          updatedBy: ctx.user?.id,
+        });
+      }),
+  }),
+
+  // ============================================
   // رفع الصور - Image Upload
   // ============================================
   

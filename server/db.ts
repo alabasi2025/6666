@@ -100,6 +100,9 @@ import {
   dieselPumpReadings, InsertDieselPumpReading,
   dieselTankMovements, InsertDieselTankMovement,
   generatorDieselConsumption, InsertGeneratorDieselConsumption,
+  dieselPipes, InsertDieselPipe,
+  dieselTankOpenings, InsertDieselTankOpening,
+  stationDieselConfig, InsertStationDieselConfig,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -4690,4 +4693,130 @@ export async function getDieselTankLevelsReport(businessId?: number, stationId?:
   return await db.select().from(dieselTanks)
     .where(and(...conditions))
     .orderBy(dieselTanks.type, dieselTanks.nameAr);
+}
+
+
+// ============================================
+// أصول الديزل - Diesel Assets (Pipes, Tank Openings)
+// ============================================
+
+// المواصير
+export async function getDieselPipes(businessId?: number, stationId?: number, isActive?: boolean) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  const conditions = [];
+  if (businessId) conditions.push(eq(dieselPipes.businessId, businessId));
+  if (stationId) conditions.push(eq(dieselPipes.stationId, stationId));
+  if (isActive !== undefined) conditions.push(eq(dieselPipes.status, isActive ? "active" : "inactive"));
+  
+  return await db.select().from(dieselPipes)
+    .where(conditions.length > 0 ? and(...conditions) : undefined)
+    .orderBy(dieselPipes.nameAr);
+}
+
+export async function createDieselPipe(data: InsertDieselPipe) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(dieselPipes).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function updateDieselPipe(id: number, data: Partial<InsertDieselPipe>) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.update(dieselPipes).set(data).where(eq(dieselPipes.id, id));
+  return { id, ...data };
+}
+
+export async function deleteDieselPipe(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(dieselPipes).where(eq(dieselPipes.id, id));
+  return { success: true };
+}
+
+// فتحات الخزانات
+export async function getDieselTankOpenings(tankId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  
+  return await db.select().from(dieselTankOpenings)
+    .where(eq(dieselTankOpenings.tankId, tankId))
+    .orderBy(dieselTankOpenings.openingNumber);
+}
+
+export async function createDieselTankOpening(data: InsertDieselTankOpening) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  const result = await db.insert(dieselTankOpenings).values(data);
+  return { id: result[0].insertId, ...data };
+}
+
+export async function deleteDieselTankOpening(id: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  await db.delete(dieselTankOpenings).where(eq(dieselTankOpenings.id, id));
+  return { success: true };
+}
+
+// ============================================
+// تهيئة مخطط الديزل للمحطة - Station Diesel Configuration
+// ============================================
+
+export async function getStationDieselConfig(stationId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  
+  const result = await db.select().from(stationDieselConfig)
+    .where(eq(stationDieselConfig.stationId, stationId))
+    .limit(1);
+  
+  if (result.length === 0) return null;
+  
+  return {
+    ...result[0],
+    config: result[0].config ? JSON.parse(result[0].config as string) : {},
+  };
+}
+
+export async function saveStationDieselConfig(data: {
+  stationId: number;
+  businessId: number;
+  config: string;
+  updatedBy?: number;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  
+  // Check if config exists
+  const existing = await db.select().from(stationDieselConfig)
+    .where(eq(stationDieselConfig.stationId, data.stationId))
+    .limit(1);
+  
+  if (existing.length > 0) {
+    // Update existing
+    await db.update(stationDieselConfig)
+      .set({
+        config: data.config,
+        updatedBy: data.updatedBy,
+        updatedAt: new Date(),
+      })
+      .where(eq(stationDieselConfig.stationId, data.stationId));
+    return { id: existing[0].id, ...data };
+  } else {
+    // Create new
+    const result = await db.insert(stationDieselConfig).values({
+      stationId: data.stationId,
+      businessId: data.businessId,
+      config: data.config,
+      createdBy: data.updatedBy,
+    });
+    return { id: result[0].insertId, ...data };
+  }
 }

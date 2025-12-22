@@ -104,6 +104,13 @@ const FieldEquipment = lazy(() => import("./fieldops/FieldEquipment"));
 const DieselTankers = lazy(() => import("./diesel/DieselTankers"));
 const DieselTanks = lazy(() => import("./diesel/DieselTanks"));
 const DieselReceivingTasks = lazy(() => import("./diesel/DieselReceivingTasks"));
+const DieselConfiguration = lazy(() => import("./diesel/DieselConfiguration"));
+const DieselReceiving = lazy(() => import("./diesel/DieselReceiving"));
+
+// Diesel Assets Pages - Lazy Loaded
+const DieselTanksAssets = lazy(() => import("./assets/diesel/DieselTanksAssets"));
+const DieselPumpsAssets = lazy(() => import("./assets/diesel/DieselPumpsAssets"));
+const DieselPipesAssets = lazy(() => import("./assets/diesel/DieselPipesAssets"));
 
 // HR Pages - Lazy Loaded
 const HRDashboard = lazy(() => import("./hr/HRDashboard"));
@@ -229,6 +236,16 @@ const navigationItems = [
       { id: "categories", title: "فئات الأصول", icon: FolderKanban, path: "/dashboard/assets/categories" },
       { id: "movements", title: "حركات الأصول", icon: Activity, path: "/dashboard/assets/movements" },
       { id: "depreciation", title: "الإهلاك", icon: TrendingDown, path: "/dashboard/assets/depreciation" },
+      {
+        id: "diesel-assets",
+        title: "أصول إدارة الديزل",
+        icon: Truck,
+        children: [
+          { id: "diesel-tanks", title: "الخزانات", icon: Package, path: "/dashboard/assets/diesel/tanks" },
+          { id: "diesel-pumps", title: "الطرمبات", icon: Activity, path: "/dashboard/assets/diesel/pumps" },
+          { id: "diesel-pipes", title: "المواصير", icon: GitBranch, path: "/dashboard/assets/diesel/pipes" },
+        ]
+      },
     ],
   },
   {
@@ -254,6 +271,23 @@ const navigationItems = [
       { id: "stock-balance", title: "أرصدة المخزون", icon: BarChart3, path: "/dashboard/inventory/stock-balance" },
       { id: "suppliers", title: "الموردين", icon: Truck, path: "/dashboard/inventory/suppliers" },
       { id: "purchase-orders", title: "أوامر الشراء", icon: ShoppingCart, path: "/dashboard/inventory/purchase-orders" },
+      { 
+        id: "transport", 
+        title: "النقل", 
+        icon: Truck, 
+        children: [
+          { 
+            id: "diesel-transport", 
+            title: "نقل الديزل", 
+            icon: Truck,
+            children: [
+              { id: "tankers", title: "الوايتات", icon: Truck, path: "/dashboard/inventory/transport/diesel/tankers" },
+              { id: "barrels", title: "نقل بالبراميل", icon: Package, path: "/dashboard/inventory/transport/diesel/barrels" },
+              { id: "station-transfer", title: "نقل من محطة لمحطة", icon: Activity, path: "/dashboard/inventory/transport/diesel/station-transfer" },
+            ]
+          },
+        ]
+      },
     ],
   },
   {
@@ -305,17 +339,24 @@ const navigationItems = [
       { id: "teams", title: "الفرق", icon: Users2, path: "/dashboard/fieldops/teams" },
       { id: "workers", title: "العمال", icon: Users, path: "/dashboard/fieldops/workers" },
       { id: "equipment", title: "المعدات", icon: Wrench, path: "/dashboard/fieldops/equipment" },
-    ],
-  },
-  {
-    id: "diesel",
-    title: "إدارة الديزل",
-    icon: Truck,
-    color: "text-yellow-500",
-    children: [
-      { id: "diesel-tankers", title: "الوايتات", icon: Truck, path: "/dashboard/diesel/tankers" },
-      { id: "diesel-tanks", title: "الخزانات", icon: Package, path: "/dashboard/diesel/tanks" },
-      { id: "diesel-receiving", title: "مهام الاستلام", icon: ClipboardList, path: "/dashboard/diesel/receiving" },
+      {
+        id: "field-tasks",
+        title: "المهام الميدانية",
+        icon: ClipboardList,
+        children: [
+          {
+            id: "generator-tech-tasks",
+            title: "مهام فني المولدات",
+            icon: Wrench,
+            children: [
+              { id: "diesel-receiving", title: "مهام استلام الديزل", icon: Truck, path: "/dashboard/fieldops/tasks/generator-tech/diesel-receiving" },
+            ]
+          },
+          { id: "collector-tasks", title: "مهام المتحصلين", icon: Wallet, path: "/dashboard/fieldops/tasks/collectors" },
+          { id: "electrician-tasks", title: "مهام الكهربائيين", icon: Zap, path: "/dashboard/fieldops/tasks/electricians" },
+          { id: "station-manager-tasks", title: "مهام مدير المحطة", icon: Users, path: "/dashboard/fieldops/tasks/station-manager" },
+        ]
+      },
     ],
   },
   {
@@ -341,6 +382,17 @@ const navigationItems = [
       { id: "financial", title: "التقارير المالية", icon: DollarSign, path: "/dashboard/reports/financial" },
       { id: "operational", title: "التقارير التشغيلية", icon: Activity, path: "/dashboard/reports/operational" },
       { id: "analytics", title: "التحليلات", icon: PieChart, path: "/dashboard/reports/analytics" },
+    ],
+  },
+  {
+    id: "diesel-management",
+    title: "إدارة الديزل",
+    icon: Truck,
+    color: "text-yellow-600",
+    children: [
+      { id: "diesel-config", title: "تهيئة مخطط الديزل", icon: Settings, path: "/dashboard/diesel/configuration" },
+      { id: "diesel-receiving", title: "عمليات الاستلام", icon: Truck, path: "/dashboard/diesel/receiving" },
+      { id: "diesel-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/diesel/dashboard" },
     ],
   },
   {
@@ -523,10 +575,20 @@ export default function Dashboard() {
         {path === "/dashboard/fieldops/workers" && <FieldWorkers />}
         {path === "/dashboard/fieldops/equipment" && <FieldEquipment />}
         
-        {/* Diesel System */}
-        {path === "/dashboard/diesel/tankers" && <DieselTankers />}
-        {path === "/dashboard/diesel/tanks" && <DieselTanks />}
-        {path === "/dashboard/diesel/receiving" && <DieselReceivingTasks />}
+        {/* Diesel System - Restructured */}
+        {/* Diesel Assets */}
+        {path === "/dashboard/assets/diesel/tanks" && <DieselTanksAssets />}
+        {path === "/dashboard/assets/diesel/pumps" && <DieselPumpsAssets />}
+        {path === "/dashboard/assets/diesel/pipes" && <DieselPipesAssets />}
+        {/* Legacy route */}
+        {path === "/dashboard/assets/diesel-tanks" && <DieselTanks />}
+        {/* Tankers moved to Inventory/Transport */}
+        {path === "/dashboard/inventory/transport/diesel/tankers" && <DieselTankers />}
+        {/* Diesel Management */}
+        {path === "/dashboard/diesel/configuration" && <DieselConfiguration />}
+        {path === "/dashboard/diesel/receiving" && <DieselReceiving />}
+        {/* Diesel Receiving moved to Field Operations */}
+        {path === "/dashboard/fieldops/tasks/generator-tech/diesel-receiving" && <DieselReceivingTasks />}
         
         {/* HR */}
         {path === "/dashboard/hr/dashboard" && <HRDashboard />}
