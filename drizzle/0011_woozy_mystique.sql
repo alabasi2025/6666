@@ -1,0 +1,141 @@
+CREATE TABLE `custom_intermediary_accounts` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`business_id` int NOT NULL,
+	`from_sub_system_id` int NOT NULL,
+	`to_sub_system_id` int NOT NULL,
+	`code` varchar(50) NOT NULL,
+	`name_ar` varchar(255) NOT NULL,
+	`name_en` varchar(255),
+	`balance` decimal(18,2) DEFAULT '0',
+	`currency` varchar(10) DEFAULT 'SAR',
+	`is_active` boolean DEFAULT true,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `custom_intermediary_accounts_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `custom_payment_vouchers` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`business_id` int NOT NULL,
+	`sub_system_id` int NOT NULL,
+	`voucher_number` varchar(50) NOT NULL,
+	`voucher_date` date NOT NULL,
+	`amount` decimal(18,2) NOT NULL,
+	`currency` varchar(10) DEFAULT 'SAR',
+	`treasury_id` int NOT NULL,
+	`destination_type` enum('person','entity','intermediary','other') NOT NULL,
+	`destination_name` varchar(255),
+	`destination_intermediary_id` int,
+	`description` text,
+	`attachments` json,
+	`status` enum('draft','confirmed','cancelled') DEFAULT 'draft',
+	`is_reconciled` boolean DEFAULT false,
+	`reconciled_with` int,
+	`reconciled_at` timestamp,
+	`created_by` int,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `custom_payment_vouchers_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `custom_receipt_vouchers` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`business_id` int NOT NULL,
+	`sub_system_id` int NOT NULL,
+	`voucher_number` varchar(50) NOT NULL,
+	`voucher_date` date NOT NULL,
+	`amount` decimal(18,2) NOT NULL,
+	`currency` varchar(10) DEFAULT 'SAR',
+	`source_type` enum('person','entity','intermediary','other') NOT NULL,
+	`source_name` varchar(255),
+	`source_intermediary_id` int,
+	`treasury_id` int NOT NULL,
+	`description` text,
+	`attachments` json,
+	`status` enum('draft','confirmed','cancelled') DEFAULT 'draft',
+	`is_reconciled` boolean DEFAULT false,
+	`reconciled_with` int,
+	`reconciled_at` timestamp,
+	`created_by` int,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `custom_receipt_vouchers_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `custom_reconciliations` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`business_id` int NOT NULL,
+	`payment_voucher_id` int NOT NULL,
+	`receipt_voucher_id` int NOT NULL,
+	`amount` decimal(18,2) NOT NULL,
+	`currency` varchar(10) DEFAULT 'SAR',
+	`confidence_score` enum('high','medium','low') DEFAULT 'medium',
+	`status` enum('pending','confirmed','rejected') DEFAULT 'pending',
+	`notes` text,
+	`confirmed_by` int,
+	`confirmed_at` timestamp,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `custom_reconciliations_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `custom_sub_systems` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`business_id` int NOT NULL,
+	`code` varchar(20) NOT NULL,
+	`name_ar` varchar(255) NOT NULL,
+	`name_en` varchar(255),
+	`description` text,
+	`color` varchar(20),
+	`icon` varchar(50),
+	`is_active` boolean DEFAULT true,
+	`created_by` int,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `custom_sub_systems_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `custom_treasuries` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`business_id` int NOT NULL,
+	`sub_system_id` int NOT NULL,
+	`code` varchar(20) NOT NULL,
+	`name_ar` varchar(255) NOT NULL,
+	`name_en` varchar(255),
+	`treasury_type` enum('cash','bank','wallet','exchange') NOT NULL,
+	`bank_name` varchar(255),
+	`account_number` varchar(100),
+	`iban` varchar(50),
+	`swift_code` varchar(20),
+	`wallet_provider` varchar(100),
+	`wallet_number` varchar(100),
+	`currency` varchar(10) DEFAULT 'SAR',
+	`opening_balance` decimal(18,2) DEFAULT '0',
+	`current_balance` decimal(18,2) DEFAULT '0',
+	`description` text,
+	`is_active` boolean DEFAULT true,
+	`created_by` int,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `custom_treasuries_id` PRIMARY KEY(`id`)
+);
+--> statement-breakpoint
+CREATE TABLE `custom_treasury_transfers` (
+	`id` int AUTO_INCREMENT NOT NULL,
+	`business_id` int NOT NULL,
+	`sub_system_id` int NOT NULL,
+	`transfer_number` varchar(50) NOT NULL,
+	`transfer_date` date NOT NULL,
+	`from_treasury_id` int NOT NULL,
+	`to_treasury_id` int NOT NULL,
+	`amount` decimal(18,2) NOT NULL,
+	`currency` varchar(10) DEFAULT 'SAR',
+	`exchange_rate` decimal(10,6) DEFAULT '1',
+	`fees` decimal(18,2) DEFAULT '0',
+	`description` text,
+	`status` enum('draft','confirmed','cancelled') DEFAULT 'draft',
+	`created_by` int,
+	`created_at` timestamp NOT NULL DEFAULT (now()),
+	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
+	CONSTRAINT `custom_treasury_transfers_id` PRIMARY KEY(`id`)
+);

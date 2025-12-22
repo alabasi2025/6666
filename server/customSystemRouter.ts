@@ -395,4 +395,755 @@ export const customSystemRouter = router({
   notes: customNotesRouter,
   memos: customMemosRouter,
   categories: noteCategoriesRouter,
+  // New routers for personal finance system
+  subSystems: customSubSystemsRouter,
+  treasuries: customTreasuriesRouter,
+  intermediaryAccounts: customIntermediaryAccountsRouter,
+  receiptVouchers: customReceiptVouchersRouter,
+  paymentVouchers: customPaymentVouchersRouter,
+  reconciliations: customReconciliationsRouter,
+});
+
+
+// ============================================
+// Import new tables
+// ============================================
+import {
+  customSubSystems,
+  customTreasuries,
+  customIntermediaryAccounts,
+  customReceiptVouchers,
+  customPaymentVouchers,
+  customReconciliations,
+  customTreasuryTransfers,
+} from "../drizzle/schema";
+
+// ============================================
+// Custom Sub Systems Router
+// ============================================
+export const customSubSystemsRouter = router({
+  list: protectedProcedure
+    .input(z.object({ businessId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      return await db.select()
+        .from(customSubSystems)
+        .where(eq(customSubSystems.businessId, input.businessId))
+        .orderBy(asc(customSubSystems.code));
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      
+      const result = await db.select()
+        .from(customSubSystems)
+        .where(eq(customSubSystems.id, input.id))
+        .limit(1);
+      return result[0] || null;
+    }),
+
+  stats: protectedProcedure
+    .input(z.object({ businessId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      // Get all sub systems
+      const subSystems = await db.select()
+        .from(customSubSystems)
+        .where(eq(customSubSystems.businessId, input.businessId));
+      
+      const stats = await Promise.all(subSystems.map(async (sys) => {
+        const treasuries = await db.select()
+          .from(customTreasuries)
+          .where(eq(customTreasuries.subSystemId, sys.id));
+        
+        const receipts = await db.select()
+          .from(customReceiptVouchers)
+          .where(and(
+            eq(customReceiptVouchers.subSystemId, sys.id),
+            eq(customReceiptVouchers.status, "confirmed")
+          ));
+        
+        const payments = await db.select()
+          .from(customPaymentVouchers)
+          .where(and(
+            eq(customPaymentVouchers.subSystemId, sys.id),
+            eq(customPaymentVouchers.status, "confirmed")
+          ));
+        
+        const totalReceipts = receipts.reduce((sum, r) => sum + parseFloat(r.amount || "0"), 0);
+        const totalPayments = payments.reduce((sum, p) => sum + parseFloat(p.amount || "0"), 0);
+        
+        return {
+          subSystemId: sys.id,
+          treasuries: treasuries.length,
+          receipts: receipts.length,
+          payments: payments.length,
+          balance: totalReceipts - totalPayments,
+        };
+      }));
+      
+      return stats;
+    }),
+
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      code: z.string().min(1),
+      nameAr: z.string().min(1),
+      nameEn: z.string().optional(),
+      description: z.string().optional(),
+      color: z.string().optional(),
+      icon: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const result = await db.insert(customSubSystems).values({
+        ...input,
+        createdBy: ctx.user?.id,
+      });
+      return { id: result[0].insertId, success: true };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      code: z.string().optional(),
+      nameAr: z.string().optional(),
+      nameEn: z.string().optional(),
+      description: z.string().optional(),
+      color: z.string().optional(),
+      icon: z.string().optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const { id, ...data } = input;
+      await db.update(customSubSystems).set(data).where(eq(customSubSystems.id, id));
+      return { success: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.delete(customSubSystems).where(eq(customSubSystems.id, input.id));
+      return { success: true };
+    }),
+});
+
+// ============================================
+// Custom Treasuries Router
+// ============================================
+export const customTreasuriesRouter = router({
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      treasuryType: z.enum(["cash", "bank", "wallet", "exchange"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      let conditions = [eq(customTreasuries.businessId, input.businessId)];
+      if (input.subSystemId) {
+        conditions.push(eq(customTreasuries.subSystemId, input.subSystemId));
+      }
+      if (input.treasuryType) {
+        conditions.push(eq(customTreasuries.treasuryType, input.treasuryType));
+      }
+      
+      return await db.select()
+        .from(customTreasuries)
+        .where(and(...conditions))
+        .orderBy(asc(customTreasuries.code));
+    }),
+
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return null;
+      
+      const result = await db.select()
+        .from(customTreasuries)
+        .where(eq(customTreasuries.id, input.id))
+        .limit(1);
+      return result[0] || null;
+    }),
+
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      code: z.string().min(1),
+      nameAr: z.string().min(1),
+      nameEn: z.string().optional(),
+      treasuryType: z.enum(["cash", "bank", "wallet", "exchange"]),
+      bankName: z.string().optional(),
+      accountNumber: z.string().optional(),
+      iban: z.string().optional(),
+      swiftCode: z.string().optional(),
+      walletProvider: z.string().optional(),
+      walletNumber: z.string().optional(),
+      currency: z.string().default("SAR"),
+      openingBalance: z.string().default("0"),
+      currentBalance: z.string().default("0"),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const result = await db.insert(customTreasuries).values({
+        ...input,
+        createdBy: ctx.user?.id,
+      });
+      return { id: result[0].insertId, success: true };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      code: z.string().optional(),
+      nameAr: z.string().optional(),
+      nameEn: z.string().optional(),
+      treasuryType: z.enum(["cash", "bank", "wallet", "exchange"]).optional(),
+      bankName: z.string().optional(),
+      accountNumber: z.string().optional(),
+      iban: z.string().optional(),
+      swiftCode: z.string().optional(),
+      walletProvider: z.string().optional(),
+      walletNumber: z.string().optional(),
+      currency: z.string().optional(),
+      description: z.string().optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const { id, ...data } = input;
+      await db.update(customTreasuries).set(data).where(eq(customTreasuries.id, id));
+      return { success: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.delete(customTreasuries).where(eq(customTreasuries.id, input.id));
+      return { success: true };
+    }),
+
+  updateBalance: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      amount: z.string(),
+      operation: z.enum(["add", "subtract"]),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const treasury = await db.select()
+        .from(customTreasuries)
+        .where(eq(customTreasuries.id, input.id))
+        .limit(1);
+      
+      if (!treasury[0]) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Treasury not found' });
+      }
+      
+      const currentBalance = parseFloat(treasury[0].currentBalance || "0");
+      const amount = parseFloat(input.amount);
+      const newBalance = input.operation === "add" 
+        ? currentBalance + amount 
+        : currentBalance - amount;
+      
+      await db.update(customTreasuries)
+        .set({ currentBalance: newBalance.toString() })
+        .where(eq(customTreasuries.id, input.id));
+      
+      return { success: true, newBalance };
+    }),
+});
+
+// ============================================
+// Custom Intermediary Accounts Router
+// ============================================
+export const customIntermediaryAccountsRouter = router({
+  list: protectedProcedure
+    .input(z.object({ businessId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      return await db.select()
+        .from(customIntermediaryAccounts)
+        .where(eq(customIntermediaryAccounts.businessId, input.businessId))
+        .orderBy(asc(customIntermediaryAccounts.code));
+    }),
+
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      fromSubSystemId: z.number(),
+      toSubSystemId: z.number(),
+      code: z.string().min(1),
+      nameAr: z.string().min(1),
+      nameEn: z.string().optional(),
+      currency: z.string().default("SAR"),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const result = await db.insert(customIntermediaryAccounts).values(input);
+      return { id: result[0].insertId, success: true };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      code: z.string().optional(),
+      nameAr: z.string().optional(),
+      nameEn: z.string().optional(),
+      isActive: z.boolean().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const { id, ...data } = input;
+      await db.update(customIntermediaryAccounts).set(data).where(eq(customIntermediaryAccounts.id, id));
+      return { success: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.delete(customIntermediaryAccounts).where(eq(customIntermediaryAccounts.id, input.id));
+      return { success: true };
+    }),
+});
+
+// ============================================
+// Custom Receipt Vouchers Router
+// ============================================
+export const customReceiptVouchersRouter = router({
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      status: z.enum(["draft", "confirmed", "cancelled"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      let conditions = [eq(customReceiptVouchers.businessId, input.businessId)];
+      if (input.subSystemId) {
+        conditions.push(eq(customReceiptVouchers.subSystemId, input.subSystemId));
+      }
+      if (input.status) {
+        conditions.push(eq(customReceiptVouchers.status, input.status));
+      }
+      
+      return await db.select()
+        .from(customReceiptVouchers)
+        .where(and(...conditions))
+        .orderBy(desc(customReceiptVouchers.voucherDate));
+    }),
+
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      voucherDate: z.string(),
+      amount: z.string(),
+      currency: z.string().default("SAR"),
+      sourceType: z.enum(["person", "entity", "intermediary", "other"]),
+      sourceName: z.string().optional(),
+      sourceIntermediaryId: z.number().optional(),
+      treasuryId: z.number(),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      // Generate voucher number
+      const count = await db.select({ count: sql<number>`count(*)` })
+        .from(customReceiptVouchers)
+        .where(eq(customReceiptVouchers.businessId, input.businessId));
+      const voucherNumber = `RV-${String(count[0].count + 1).padStart(6, '0')}`;
+      
+      const result = await db.insert(customReceiptVouchers).values({
+        ...input,
+        voucherNumber,
+        createdBy: ctx.user?.id,
+      });
+      return { id: result[0].insertId, voucherNumber, success: true };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      voucherDate: z.string().optional(),
+      amount: z.string().optional(),
+      sourceType: z.enum(["person", "entity", "intermediary", "other"]).optional(),
+      sourceName: z.string().optional(),
+      sourceIntermediaryId: z.number().optional(),
+      treasuryId: z.number().optional(),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const { id, ...data } = input;
+      await db.update(customReceiptVouchers).set(data).where(eq(customReceiptVouchers.id, id));
+      return { success: true };
+    }),
+
+  confirm: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      // Get voucher
+      const voucher = await db.select()
+        .from(customReceiptVouchers)
+        .where(eq(customReceiptVouchers.id, input.id))
+        .limit(1);
+      
+      if (!voucher[0]) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Voucher not found' });
+      }
+      
+      // Update treasury balance
+      const treasury = await db.select()
+        .from(customTreasuries)
+        .where(eq(customTreasuries.id, voucher[0].treasuryId))
+        .limit(1);
+      
+      if (treasury[0]) {
+        const currentBalance = parseFloat(treasury[0].currentBalance || "0");
+        const amount = parseFloat(voucher[0].amount);
+        await db.update(customTreasuries)
+          .set({ currentBalance: (currentBalance + amount).toString() })
+          .where(eq(customTreasuries.id, voucher[0].treasuryId));
+      }
+      
+      // Update voucher status
+      await db.update(customReceiptVouchers)
+        .set({ status: "confirmed" })
+        .where(eq(customReceiptVouchers.id, input.id));
+      
+      return { success: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.delete(customReceiptVouchers).where(eq(customReceiptVouchers.id, input.id));
+      return { success: true };
+    }),
+});
+
+// ============================================
+// Custom Payment Vouchers Router
+// ============================================
+export const customPaymentVouchersRouter = router({
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      status: z.enum(["draft", "confirmed", "cancelled"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      let conditions = [eq(customPaymentVouchers.businessId, input.businessId)];
+      if (input.subSystemId) {
+        conditions.push(eq(customPaymentVouchers.subSystemId, input.subSystemId));
+      }
+      if (input.status) {
+        conditions.push(eq(customPaymentVouchers.status, input.status));
+      }
+      
+      return await db.select()
+        .from(customPaymentVouchers)
+        .where(and(...conditions))
+        .orderBy(desc(customPaymentVouchers.voucherDate));
+    }),
+
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      voucherDate: z.string(),
+      amount: z.string(),
+      currency: z.string().default("SAR"),
+      treasuryId: z.number(),
+      destinationType: z.enum(["person", "entity", "intermediary", "other"]),
+      destinationName: z.string().optional(),
+      destinationIntermediaryId: z.number().optional(),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      // Generate voucher number
+      const count = await db.select({ count: sql<number>`count(*)` })
+        .from(customPaymentVouchers)
+        .where(eq(customPaymentVouchers.businessId, input.businessId));
+      const voucherNumber = `PV-${String(count[0].count + 1).padStart(6, '0')}`;
+      
+      const result = await db.insert(customPaymentVouchers).values({
+        ...input,
+        voucherNumber,
+        createdBy: ctx.user?.id,
+      });
+      return { id: result[0].insertId, voucherNumber, success: true };
+    }),
+
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      voucherDate: z.string().optional(),
+      amount: z.string().optional(),
+      treasuryId: z.number().optional(),
+      destinationType: z.enum(["person", "entity", "intermediary", "other"]).optional(),
+      destinationName: z.string().optional(),
+      destinationIntermediaryId: z.number().optional(),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const { id, ...data } = input;
+      await db.update(customPaymentVouchers).set(data).where(eq(customPaymentVouchers.id, id));
+      return { success: true };
+    }),
+
+  confirm: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      // Get voucher
+      const voucher = await db.select()
+        .from(customPaymentVouchers)
+        .where(eq(customPaymentVouchers.id, input.id))
+        .limit(1);
+      
+      if (!voucher[0]) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Voucher not found' });
+      }
+      
+      // Update treasury balance
+      const treasury = await db.select()
+        .from(customTreasuries)
+        .where(eq(customTreasuries.id, voucher[0].treasuryId))
+        .limit(1);
+      
+      if (treasury[0]) {
+        const currentBalance = parseFloat(treasury[0].currentBalance || "0");
+        const amount = parseFloat(voucher[0].amount);
+        await db.update(customTreasuries)
+          .set({ currentBalance: (currentBalance - amount).toString() })
+          .where(eq(customTreasuries.id, voucher[0].treasuryId));
+      }
+      
+      // Update voucher status
+      await db.update(customPaymentVouchers)
+        .set({ status: "confirmed" })
+        .where(eq(customPaymentVouchers.id, input.id));
+      
+      return { success: true };
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.delete(customPaymentVouchers).where(eq(customPaymentVouchers.id, input.id));
+      return { success: true };
+    }),
+});
+
+// ============================================
+// Custom Reconciliations Router
+// ============================================
+export const customReconciliationsRouter = router({
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      status: z.enum(["pending", "confirmed", "rejected"]).optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      let conditions = [eq(customReconciliations.businessId, input.businessId)];
+      if (input.status) {
+        conditions.push(eq(customReconciliations.status, input.status));
+      }
+      
+      return await db.select()
+        .from(customReconciliations)
+        .where(and(...conditions))
+        .orderBy(desc(customReconciliations.createdAt));
+    }),
+
+  autoReconcile: protectedProcedure
+    .input(z.object({ businessId: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      // Get unreconciled payment vouchers with intermediary destination
+      const payments = await db.select()
+        .from(customPaymentVouchers)
+        .where(and(
+          eq(customPaymentVouchers.businessId, input.businessId),
+          eq(customPaymentVouchers.status, "confirmed"),
+          eq(customPaymentVouchers.isReconciled, false),
+          eq(customPaymentVouchers.destinationType, "intermediary")
+        ));
+      
+      // Get unreconciled receipt vouchers with intermediary source
+      const receipts = await db.select()
+        .from(customReceiptVouchers)
+        .where(and(
+          eq(customReceiptVouchers.businessId, input.businessId),
+          eq(customReceiptVouchers.status, "confirmed"),
+          eq(customReceiptVouchers.isReconciled, false),
+          eq(customReceiptVouchers.sourceType, "intermediary")
+        ));
+      
+      let matchCount = 0;
+      
+      // Try to match payments with receipts
+      for (const payment of payments) {
+        for (const receipt of receipts) {
+          // Check if amounts match
+          if (payment.amount === receipt.amount && 
+              payment.destinationIntermediaryId === receipt.sourceIntermediaryId) {
+            
+            // Calculate confidence score
+            const paymentDate = new Date(payment.voucherDate);
+            const receiptDate = new Date(receipt.voucherDate);
+            const daysDiff = Math.abs((paymentDate.getTime() - receiptDate.getTime()) / (1000 * 60 * 60 * 24));
+            
+            let confidenceScore: "high" | "medium" | "low" = "low";
+            if (daysDiff <= 1) confidenceScore = "high";
+            else if (daysDiff <= 7) confidenceScore = "medium";
+            
+            // Create reconciliation
+            await db.insert(customReconciliations).values({
+              businessId: input.businessId,
+              paymentVoucherId: payment.id,
+              receiptVoucherId: receipt.id,
+              amount: payment.amount,
+              currency: payment.currency,
+              confidenceScore,
+              status: "pending",
+            });
+            
+            matchCount++;
+            break;
+          }
+        }
+      }
+      
+      return { count: matchCount, success: true };
+    }),
+
+  confirm: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const reconciliation = await db.select()
+        .from(customReconciliations)
+        .where(eq(customReconciliations.id, input.id))
+        .limit(1);
+      
+      if (!reconciliation[0]) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'Reconciliation not found' });
+      }
+      
+      // Update reconciliation status
+      await db.update(customReconciliations)
+        .set({ 
+          status: "confirmed",
+          confirmedBy: ctx.user?.id,
+          confirmedAt: new Date(),
+        })
+        .where(eq(customReconciliations.id, input.id));
+      
+      // Mark vouchers as reconciled
+      await db.update(customPaymentVouchers)
+        .set({ 
+          isReconciled: true,
+          reconciledWith: reconciliation[0].receiptVoucherId,
+          reconciledAt: new Date(),
+        })
+        .where(eq(customPaymentVouchers.id, reconciliation[0].paymentVoucherId));
+      
+      await db.update(customReceiptVouchers)
+        .set({ 
+          isReconciled: true,
+          reconciledWith: reconciliation[0].paymentVoucherId,
+          reconciledAt: new Date(),
+        })
+        .where(eq(customReceiptVouchers.id, reconciliation[0].receiptVoucherId));
+      
+      return { success: true };
+    }),
+
+  reject: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.update(customReconciliations)
+        .set({ status: "rejected" })
+        .where(eq(customReconciliations.id, input.id));
+      
+      return { success: true };
+    }),
 });
