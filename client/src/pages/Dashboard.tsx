@@ -679,15 +679,53 @@ export default function Dashboard() {
         "fixed inset-y-0 right-0 z-50 flex flex-col bg-card border-l transition-all duration-300 h-screen",
         sidebarOpen ? "w-64" : "w-16"
       )}>
-        {/* Logo */}
+        {/* Logo with System Switcher */}
         <div className="flex items-center justify-between h-16 px-4 border-b">
-          {sidebarOpen && (
-            <div className="flex items-center gap-2">
-              <Zap className="h-6 w-6 text-primary" />
-              <span className="font-bold text-lg">نظام الطاقة</span>
-            </div>
+          {sidebarOpen ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="flex items-center gap-2 hover:bg-accent/50 px-2">
+                  <Zap className="h-6 w-6 text-primary" />
+                  <span className="font-bold text-lg">نظام الطاقة</span>
+                  <ChevronLeft className="h-4 w-4 rotate-90" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>تبديل النظام</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2 bg-accent/50">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span>نظام الطاقة</span>
+                  <span className="mr-auto text-xs text-muted-foreground">الحالي</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" onClick={() => window.location.href = '/custom'}>
+                  <Settings className="h-4 w-4 text-fuchsia-500" />
+                  <span>النظام المخصص</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="mx-auto">
+                  <Zap className="h-6 w-6 text-primary" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-56">
+                <DropdownMenuLabel>تبديل النظام</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2 bg-accent/50">
+                  <Zap className="h-4 w-4 text-primary" />
+                  <span>نظام الطاقة</span>
+                  <span className="mr-auto text-xs text-muted-foreground">الحالي</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2" onClick={() => window.location.href = '/custom'}>
+                  <Settings className="h-4 w-4 text-fuchsia-500" />
+                  <span>النظام المخصص</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           )}
-          {!sidebarOpen && <Zap className="h-6 w-6 text-primary mx-auto" />}
           <Button
             variant="ghost"
             size="icon"
