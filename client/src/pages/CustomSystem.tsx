@@ -15,7 +15,8 @@ import { trpc } from "@/lib/trpc";
 import {
   Calculator, FileText, Mail, Activity, LogOut, Menu, X, 
   ChevronLeft, Home, Settings, Bell, Search, HelpCircle,
-  LayoutDashboard, Wallet, ClipboardList, Loader2, Zap, ChevronDown
+  LayoutDashboard, Wallet, ClipboardList, Loader2, Zap, ChevronDown,
+  FolderKanban, Receipt, GitBranch, Landmark, Building2
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -27,6 +28,10 @@ import CustomDashboard from "./custom/CustomDashboard";
 import CustomAccounts from "./custom/CustomAccounts";
 import CustomNotes from "./custom/CustomNotes";
 import CustomMemos from "./custom/CustomMemos";
+import CustomSubSystems from "./custom/CustomSubSystems";
+import CustomTreasuries from "./custom/CustomTreasuries";
+import CustomVouchers from "./custom/CustomVouchers";
+import CustomReconciliation from "./custom/CustomReconciliation";
 
 // Navigation Items for Custom System Only
 const customNavigationItems = [
@@ -39,9 +44,41 @@ const customNavigationItems = [
     bgColor: "bg-blue-500/10",
   },
   {
+    id: "custom-sub-systems",
+    title: "الأنظمة الفرعية",
+    icon: FolderKanban,
+    path: "/custom/sub-systems",
+    color: "text-cyan-500",
+    bgColor: "bg-cyan-500/10",
+  },
+  {
+    id: "custom-treasuries",
+    title: "الخزائن",
+    icon: Building2,
+    path: "/custom/treasuries",
+    color: "text-emerald-500",
+    bgColor: "bg-emerald-500/10",
+  },
+  {
+    id: "custom-vouchers",
+    title: "سندات القبض والصرف",
+    icon: Receipt,
+    path: "/custom/vouchers",
+    color: "text-orange-500",
+    bgColor: "bg-orange-500/10",
+  },
+  {
+    id: "custom-reconciliation",
+    title: "الحسابات الوسيطة",
+    icon: GitBranch,
+    path: "/custom/reconciliation",
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-500/10",
+  },
+  {
     id: "custom-accounts",
-    title: "الحسابات",
-    icon: Wallet,
+    title: "الحسابات القديمة",
+    icon: Landmark,
     path: "/custom/accounts",
     color: "text-green-500",
     bgColor: "bg-green-500/10",
@@ -213,6 +250,10 @@ export default function CustomSystem() {
   
   // Route matching
   const [matchCustom] = useRoute("/custom");
+  const [matchSubSystems] = useRoute("/custom/sub-systems");
+  const [matchTreasuries] = useRoute("/custom/treasuries");
+  const [matchVouchers] = useRoute("/custom/vouchers");
+  const [matchReconciliation] = useRoute("/custom/reconciliation");
   const [matchAccounts] = useRoute("/custom/accounts");
   const [matchNotes] = useRoute("/custom/notes");
   const [matchMemos] = useRoute("/custom/memos");
@@ -270,6 +311,10 @@ export default function CustomSystem() {
   // Render content based on route
   const renderContent = () => {
     if (matchCustom) return <CustomDashboard />;
+    if (matchSubSystems) return <CustomSubSystems />;
+    if (matchTreasuries) return <CustomTreasuries />;
+    if (matchVouchers) return <CustomVouchers />;
+    if (matchReconciliation) return <CustomReconciliation />;
     if (matchAccounts) return <CustomAccounts />;
     if (matchNotes) return <CustomNotes />;
     if (matchMemos) return <CustomMemos />;

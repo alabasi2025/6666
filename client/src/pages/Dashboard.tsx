@@ -426,22 +426,7 @@ const navigationItems = [
       { id: "billing-payments", title: "التحصيل", icon: CreditCard, path: "/dashboard/billing/payments" },
     ],
   },
-  {
-    id: "custom",
-    title: "النظام المخصص",
-    icon: Settings,
-    color: "text-fuchsia-500",
-    children: [
-      { id: "custom-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/custom" },
-      { id: "custom-sub-systems", title: "الأنظمة الفرعية", icon: FolderKanban, path: "/dashboard/custom/sub-systems" },
-      { id: "custom-treasuries", title: "الخزائن", icon: Wallet, path: "/dashboard/custom/treasuries" },
-      { id: "custom-vouchers", title: "سندات القبض والصرف", icon: Receipt, path: "/dashboard/custom/vouchers" },
-      { id: "custom-reconciliation", title: "الحسابات الوسيطة", icon: GitBranch, path: "/dashboard/custom/reconciliation" },
-      { id: "custom-accounts", title: "الحسابات القديمة", icon: Landmark, path: "/dashboard/custom/accounts" },
-      { id: "custom-notes", title: "الملاحظات", icon: FileText, path: "/dashboard/custom/notes" },
-      { id: "custom-memos", title: "المذكرات", icon: FileText, path: "/dashboard/custom/memos" },
-    ],
-  },
+
   {
     id: "developer",
     title: "نظام المطور",
