@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +17,8 @@ import {
   Calculator, FileText, Mail, Activity, LogOut, Menu, X, 
   ChevronLeft, Home, Settings, Bell, Search, HelpCircle,
   LayoutDashboard, Wallet, ClipboardList, Loader2, Zap, ChevronDown,
-  FolderKanban, Receipt, GitBranch, Landmark, Building2
+  FolderKanban, Receipt, GitBranch, Landmark, Building2, Sparkles,
+  ArrowRight, MoreHorizontal, Plus, Filter, RefreshCw
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -33,220 +35,63 @@ import CustomTreasuries from "./custom/CustomTreasuries";
 import CustomVouchers from "./custom/CustomVouchers";
 import CustomReconciliation from "./custom/CustomReconciliation";
 
-// Navigation Items for Custom System Only
+// Navigation Items for Custom System - Horizontal Layout
 const customNavigationItems = [
   {
     id: "custom-dashboard",
-    title: "لوحة التحكم",
+    title: "الرئيسية",
     icon: LayoutDashboard,
     path: "/custom",
-    color: "text-blue-500",
-    bgColor: "bg-blue-500/10",
   },
   {
     id: "custom-sub-systems",
     title: "الأنظمة الفرعية",
     icon: FolderKanban,
     path: "/custom/sub-systems",
-    color: "text-cyan-500",
-    bgColor: "bg-cyan-500/10",
   },
   {
     id: "custom-treasuries",
     title: "الخزائن",
     icon: Building2,
     path: "/custom/treasuries",
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-500/10",
   },
   {
     id: "custom-vouchers",
-    title: "سندات القبض والصرف",
+    title: "السندات",
     icon: Receipt,
     path: "/custom/vouchers",
-    color: "text-orange-500",
-    bgColor: "bg-orange-500/10",
   },
   {
     id: "custom-reconciliation",
-    title: "الحسابات الوسيطة",
+    title: "التسويات",
     icon: GitBranch,
     path: "/custom/reconciliation",
-    color: "text-indigo-500",
-    bgColor: "bg-indigo-500/10",
   },
   {
     id: "custom-accounts",
-    title: "الحسابات القديمة",
+    title: "الحسابات",
     icon: Landmark,
     path: "/custom/accounts",
-    color: "text-green-500",
-    bgColor: "bg-green-500/10",
   },
   {
     id: "custom-notes",
     title: "الملاحظات",
     icon: FileText,
     path: "/custom/notes",
-    color: "text-yellow-500",
-    bgColor: "bg-yellow-500/10",
   },
   {
     id: "custom-memos",
     title: "المذكرات",
     icon: Mail,
     path: "/custom/memos",
-    color: "text-purple-500",
-    bgColor: "bg-purple-500/10",
-  },
-  {
-    id: "settings",
-    title: "الإعدادات",
-    icon: Settings,
-    path: "/custom/settings",
-    color: "text-gray-500",
-    bgColor: "bg-gray-500/10",
   },
 ];
 
-// Custom Sidebar Component
-function CustomSidebar({ 
-  isOpen, 
-  onClose,
-  currentPath 
-}: { 
-  isOpen: boolean; 
-  onClose: () => void;
-  currentPath: string;
-}) {
-  const [, setLocation] = useLocation();
-
-  const handleNavigation = (path: string) => {
-    setLocation(path);
-    onClose();
-  };
-
-  return (
-    <>
-      {/* Mobile Overlay */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={onClose}
-        />
-      )}
-      
-      {/* Sidebar */}
-      <aside className={cn(
-        "fixed top-0 right-0 h-full w-72 bg-gradient-to-b from-slate-900 to-slate-950 border-l border-slate-800 z-50 transition-transform duration-300 lg:translate-x-0",
-        isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
-      )}>
-        {/* Header with System Switcher */}
-        <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-3 hover:bg-slate-800/50 px-2">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-                  <Calculator className="h-5 w-5 text-white" />
-                </div>
-                <div className="text-right">
-                  <h1 className="font-bold text-white">النظام المخصص</h1>
-                  <p className="text-xs text-slate-400">Custom System</p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-slate-400" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-slate-800">
-              <DropdownMenuLabel className="text-slate-400">تبديل النظام</DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-slate-800" />
-              <DropdownMenuItem 
-                className="gap-2 cursor-pointer hover:bg-slate-800" 
-                onClick={() => window.location.href = '/dashboard'}
-              >
-                <Zap className="h-4 w-4 text-yellow-500" />
-                <span className="text-white">نظام الطاقة</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="gap-2 bg-slate-800/50 cursor-default">
-                <Calculator className="h-4 w-4 text-fuchsia-500" />
-                <span className="text-white">النظام المخصص</span>
-                <span className="mr-auto text-xs text-slate-500">الحالي</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="lg:hidden text-slate-400 hover:text-white"
-            onClick={onClose}
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <ScrollArea className="h-[calc(100vh-8rem)]">
-          <div className="p-4 space-y-2">
-            {customNavigationItems.map((item) => {
-              const isActive = currentPath === item.path || 
-                (item.path !== "/custom" && currentPath.startsWith(item.path));
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavigation(item.path)}
-                  className={cn(
-                    "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
-                    isActive 
-                      ? `${item.bgColor} ${item.color} font-medium shadow-lg` 
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                  )}
-                >
-                  <div className={cn(
-                    "w-9 h-9 rounded-lg flex items-center justify-center transition-colors",
-                    isActive ? item.bgColor : "bg-slate-800"
-                  )}>
-                    <item.icon className={cn("h-5 w-5", isActive ? item.color : "text-slate-400")} />
-                  </div>
-                  <span>{item.title}</span>
-                  {isActive && (
-                    <div className={cn("mr-auto w-1.5 h-1.5 rounded-full", item.color.replace("text-", "bg-"))} />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Back to Main System */}
-          <div className="p-4 border-t border-slate-800 mt-4">
-            <button
-              onClick={() => setLocation("/dashboard")}
-              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all"
-            >
-              <div className="w-9 h-9 rounded-lg bg-slate-800 flex items-center justify-center">
-                <ChevronLeft className="h-5 w-5" />
-              </div>
-              <span>العودة للنظام الرئيسي</span>
-            </button>
-          </div>
-        </ScrollArea>
-
-        {/* Footer */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-800 bg-slate-950">
-          <div className="flex items-center gap-3 text-xs text-slate-500">
-            <Calculator className="h-4 w-4" />
-            <span>النظام المخصص v1.0</span>
-          </div>
-        </div>
-      </aside>
-    </>
-  );
-}
-
-// Main Custom System Component
+// Main Custom System Component with New Design
 export default function CustomSystem() {
   const { user, logout, loading } = useAuth();
-  const [location] = useLocation();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [location, setLocation] = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Route matching
   const [matchCustom] = useRoute("/custom");
@@ -269,12 +114,12 @@ export default function CustomSystem() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-neutral-900 to-stone-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center animate-pulse">
-            <Calculator className="h-6 w-6 text-white" />
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center animate-pulse shadow-lg shadow-amber-500/30">
+            <Sparkles className="h-8 w-8 text-white" />
           </div>
-          <p className="text-slate-400">جاري التحميل...</p>
+          <p className="text-amber-200/70 font-medium">جاري التحميل...</p>
         </div>
       </div>
     );
@@ -282,19 +127,19 @@ export default function CustomSystem() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-neutral-900 to-stone-900 flex items-center justify-center p-4">
         <div className="flex flex-col items-center gap-8 max-w-md w-full">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <Calculator className="h-8 w-8 text-white" />
+          <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-2xl shadow-amber-500/30">
+            <Sparkles className="h-10 w-10 text-white" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-white mb-2">النظام المخصص</h1>
-            <p className="text-slate-400">يرجى تسجيل الدخول للمتابعة</p>
+            <h1 className="text-3xl font-bold text-white mb-3">النظام المخصص</h1>
+            <p className="text-amber-200/60">يرجى تسجيل الدخول للمتابعة</p>
           </div>
           <Button
             onClick={() => window.location.href = getLoginUrl()}
             size="lg"
-            className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+            className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-bold py-6 rounded-xl shadow-lg shadow-amber-500/30 transition-all hover:shadow-xl hover:shadow-amber-500/40"
           >
             تسجيل الدخول
           </Button>
@@ -321,80 +166,143 @@ export default function CustomSystem() {
     if (matchSettings) return (
       <div className="p-6">
         <h1 className="text-2xl font-bold text-white mb-4">الإعدادات</h1>
-        <p className="text-slate-400">صفحة الإعدادات قيد التطوير</p>
+        <p className="text-amber-200/60">صفحة الإعدادات قيد التطوير</p>
       </div>
     );
     return <CustomDashboard />;
   };
 
   return (
-    <div className="min-h-screen bg-slate-950" dir="rtl">
-      {/* Sidebar */}
-      <CustomSidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)}
-        currentPath={location}
-      />
-
-      {/* Main Content */}
-      <div className="lg:mr-72">
-        {/* Top Header */}
-        <header className="h-16 bg-slate-900/80 backdrop-blur-xl border-b border-slate-800 sticky top-0 z-30">
-          <div className="h-full flex items-center justify-between px-4">
-            {/* Left Section */}
+    <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-neutral-900 to-stone-900" dir="rtl">
+      {/* Top Navigation Bar */}
+      <header className="sticky top-0 z-50 bg-zinc-900/80 backdrop-blur-xl border-b border-amber-500/10">
+        <div className="max-w-[1800px] mx-auto">
+          {/* Main Header */}
+          <div className="h-16 flex items-center justify-between px-4 lg:px-6">
+            {/* Logo & System Switcher */}
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="lg:hidden text-slate-400 hover:text-white"
-                onClick={() => setSidebarOpen(true)}
-              >
-                <Menu className="h-5 w-5" />
-              </Button>
-              
-              {/* Search */}
-              <div className="hidden md:flex items-center gap-2 bg-slate-800/50 rounded-lg px-3 py-2 w-64">
-                <Search className="h-4 w-4 text-slate-400" />
-                <Input 
-                  placeholder="بحث..." 
-                  className="border-0 bg-transparent h-6 text-sm focus-visible:ring-0 placeholder:text-slate-500"
-                />
-              </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-3 hover:bg-amber-500/10 px-3 py-2 rounded-xl">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+                      <Sparkles className="h-5 w-5 text-white" />
+                    </div>
+                    <div className="hidden sm:block text-right">
+                      <h1 className="font-bold text-white text-lg">النظام المخصص</h1>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-amber-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="start" sideOffset={8} className="w-56 bg-zinc-900 border-amber-500/20">
+                  <DropdownMenuLabel className="text-amber-400">تبديل النظام</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-amber-500/20" />
+                  <DropdownMenuItem 
+                    className="gap-2 cursor-pointer hover:bg-amber-500/10 focus:bg-amber-500/10" 
+                    onClick={() => window.location.href = '/dashboard'}
+                  >
+                    <Zap className="h-4 w-4 text-blue-400" />
+                    <span className="text-white">نظام الطاقة</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="gap-2 bg-amber-500/10 cursor-default">
+                    <Sparkles className="h-4 w-4 text-amber-400" />
+                    <span className="text-amber-300">النظام المخصص</span>
+                    <span className="mr-auto text-xs text-amber-500/70">الحالي</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Desktop Navigation */}
+              <nav className="hidden lg:flex items-center gap-1 mr-4">
+                {customNavigationItems.map((item) => {
+                  const isActive = location === item.path || 
+                    (item.path !== "/custom" && location.startsWith(item.path));
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => setLocation(item.path)}
+                      className={cn(
+                        "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium",
+                        isActive 
+                          ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/30" 
+                          : "text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10"
+                      )}
+                    >
+                      <item.icon className={cn("h-4 w-4", isActive ? "text-amber-400" : "")} />
+                      <span>{item.title}</span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
 
             {/* Right Section */}
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Search */}
+              <div className="hidden md:flex items-center gap-2 bg-zinc-800/50 border border-amber-500/10 rounded-xl px-3 py-2 w-64 focus-within:border-amber-500/30 transition-colors">
+                <Search className="h-4 w-4 text-amber-400/50" />
+                <Input 
+                  placeholder="بحث..." 
+                  className="border-0 bg-transparent h-6 text-sm focus-visible:ring-0 placeholder:text-zinc-500 text-white"
+                />
+              </div>
+
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white relative">
+              <Button variant="ghost" size="icon" className="text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl relative">
                 <Bell className="h-5 w-5" />
                 {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full text-xs text-white flex items-center justify-center font-bold">
                     {unreadNotifications > 9 ? "9+" : unreadNotifications}
                   </span>
                 )}
               </Button>
 
-              {/* Help */}
-              <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hidden sm:flex">
-                <HelpCircle className="h-5 w-5" />
+              {/* Settings */}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl hidden sm:flex"
+                onClick={() => setLocation("/custom/settings")}
+              >
+                <Settings className="h-5 w-5" />
+              </Button>
+
+              {/* Back to Energy System */}
+              <Button 
+                variant="ghost" 
+                className="hidden sm:flex items-center gap-2 text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl"
+                onClick={() => setLocation("/dashboard")}
+              >
+                <ArrowRight className="h-4 w-4" />
+                <span className="text-sm">نظام الطاقة</span>
+              </Button>
+
+              {/* Mobile Menu Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="lg:hidden text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
               </Button>
 
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-3 px-3 hover:bg-slate-800">
-                    <Avatar className="h-8 w-8 border border-slate-700">
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white text-sm">
+                  <Button variant="ghost" className="flex items-center gap-3 px-3 hover:bg-amber-500/10 rounded-xl">
+                    <Avatar className="h-9 w-9 border-2 border-amber-500/30">
+                      <AvatarFallback className="bg-gradient-to-br from-amber-500 to-orange-600 text-white font-bold">
                         {user?.name?.charAt(0).toUpperCase() || "م"}
                       </AvatarFallback>
                     </Avatar>
                     <div className="hidden sm:block text-right">
                       <p className="text-sm font-medium text-white">{user?.name || "مستخدم"}</p>
-                      <p className="text-xs text-slate-400">{user?.role || "مستخدم"}</p>
+                      <p className="text-xs text-amber-400/60">{user?.role || "مستخدم"}</p>
                     </div>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48 bg-slate-900 border-slate-800">
+                <DropdownMenuContent align="end" className="w-48 bg-zinc-900 border-amber-500/20">
                   <DropdownMenuItem 
                     onClick={logout}
                     className="text-red-400 focus:text-red-400 focus:bg-red-500/10 cursor-pointer"
@@ -406,13 +314,65 @@ export default function CustomSystem() {
               </DropdownMenu>
             </div>
           </div>
-        </header>
 
-        {/* Page Content */}
-        <main className="min-h-[calc(100vh-4rem)]">
-          {renderContent()}
-        </main>
-      </div>
+          {/* Mobile Navigation */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden border-t border-amber-500/10 bg-zinc-900/95 backdrop-blur-xl">
+              <nav className="p-4 grid grid-cols-2 gap-2">
+                {customNavigationItems.map((item) => {
+                  const isActive = location === item.path || 
+                    (item.path !== "/custom" && location.startsWith(item.path));
+                  
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => {
+                        setLocation(item.path);
+                        setMobileMenuOpen(false);
+                      }}
+                      className={cn(
+                        "flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200",
+                        isActive 
+                          ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/30" 
+                          : "text-zinc-400 hover:text-amber-300 bg-zinc-800/50 hover:bg-amber-500/10"
+                      )}
+                    >
+                      <item.icon className={cn("h-5 w-5", isActive ? "text-amber-400" : "")} />
+                      <span className="text-sm font-medium">{item.title}</span>
+                    </button>
+                  );
+                })}
+                {/* Back to Energy System - Mobile */}
+                <button
+                  onClick={() => setLocation("/dashboard")}
+                  className="flex items-center gap-3 px-4 py-3 rounded-xl text-zinc-400 hover:text-amber-300 bg-zinc-800/50 hover:bg-amber-500/10 col-span-2"
+                >
+                  <ArrowRight className="h-5 w-5" />
+                  <span className="text-sm font-medium">العودة لنظام الطاقة</span>
+                </button>
+              </nav>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Page Content */}
+      <main className="max-w-[1800px] mx-auto">
+        {renderContent()}
+      </main>
+
+      {/* Footer */}
+      <footer className="border-t border-amber-500/10 bg-zinc-900/50 mt-8">
+        <div className="max-w-[1800px] mx-auto px-4 lg:px-6 py-4">
+          <div className="flex items-center justify-between text-sm text-zinc-500">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-amber-500" />
+              <span>النظام المخصص v2.0</span>
+            </div>
+            <span>جميع الحقوق محفوظة © 2024</span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

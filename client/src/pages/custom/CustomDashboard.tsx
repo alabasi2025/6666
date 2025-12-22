@@ -8,10 +8,26 @@ import {
   TrendingUp,
   TrendingDown,
   Clock,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  ArrowUpRight,
+  ArrowDownRight,
+  MoreHorizontal,
+  Wallet,
+  Receipt,
+  Building2,
+  FolderKanban,
+  GitBranch,
+  Landmark,
+  Activity,
+  BarChart3,
+  PieChart,
+  Target,
+  Zap
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { cn } from "@/lib/utils";
 
 export default function CustomDashboard() {
   const [, setLocation] = useLocation();
@@ -27,211 +43,327 @@ export default function CustomDashboard() {
   const pinnedNotes = notes.filter(n => n.isPinned);
   const urgentMemos = memos.filter(m => m.priority === "urgent" && m.status !== "archived");
 
+  // Quick stats data
+  const quickStats = [
+    {
+      title: "إجمالي الحسابات",
+      value: accounts.length,
+      subtitle: "حساب مسجل",
+      icon: Landmark,
+      trend: "+12%",
+      trendUp: true,
+      gradient: "from-amber-500 to-orange-500",
+      bgGradient: "from-amber-500/10 to-orange-500/10",
+    },
+    {
+      title: "إجمالي الرصيد",
+      value: `${totalBalance.toLocaleString()} ر.س`,
+      subtitle: "الرصيد الإجمالي",
+      icon: Wallet,
+      trend: totalBalance >= 0 ? "+8%" : "-5%",
+      trendUp: totalBalance >= 0,
+      gradient: totalBalance >= 0 ? "from-emerald-500 to-green-500" : "from-red-500 to-rose-500",
+      bgGradient: totalBalance >= 0 ? "from-emerald-500/10 to-green-500/10" : "from-red-500/10 to-rose-500/10",
+    },
+    {
+      title: "الملاحظات",
+      value: notes.length,
+      subtitle: `${pinnedNotes.length} مثبتة`,
+      icon: FileText,
+      trend: "+5",
+      trendUp: true,
+      gradient: "from-cyan-500 to-blue-500",
+      bgGradient: "from-cyan-500/10 to-blue-500/10",
+    },
+    {
+      title: "المذكرات",
+      value: memos.length,
+      subtitle: `${urgentMemos.length} عاجلة`,
+      icon: Mail,
+      trend: urgentMemos.length > 0 ? `${urgentMemos.length} عاجلة` : "0 عاجلة",
+      trendUp: urgentMemos.length === 0,
+      gradient: "from-violet-500 to-purple-500",
+      bgGradient: "from-violet-500/10 to-purple-500/10",
+    },
+  ];
+
+  // Quick actions
+  const quickActions = [
+    {
+      title: "الأنظمة الفرعية",
+      description: "إدارة الأنظمة الفرعية المرتبطة",
+      icon: FolderKanban,
+      path: "/custom/sub-systems",
+      color: "text-cyan-400",
+      bgColor: "bg-cyan-500/10",
+      borderColor: "border-cyan-500/20",
+    },
+    {
+      title: "الخزائن",
+      description: "إدارة الخزائن والصناديق",
+      icon: Building2,
+      path: "/custom/treasuries",
+      color: "text-emerald-400",
+      bgColor: "bg-emerald-500/10",
+      borderColor: "border-emerald-500/20",
+    },
+    {
+      title: "السندات",
+      description: "سندات القبض والصرف",
+      icon: Receipt,
+      path: "/custom/vouchers",
+      color: "text-orange-400",
+      bgColor: "bg-orange-500/10",
+      borderColor: "border-orange-500/20",
+    },
+    {
+      title: "التسويات",
+      description: "الحسابات الوسيطة والتسويات",
+      icon: GitBranch,
+      path: "/custom/reconciliation",
+      color: "text-indigo-400",
+      bgColor: "bg-indigo-500/10",
+      borderColor: "border-indigo-500/20",
+    },
+    {
+      title: "الحسابات",
+      description: "إدارة الحسابات القديمة",
+      icon: Landmark,
+      path: "/custom/accounts",
+      color: "text-amber-400",
+      bgColor: "bg-amber-500/10",
+      borderColor: "border-amber-500/20",
+    },
+    {
+      title: "الملاحظات",
+      description: "تدوين وإدارة الملاحظات",
+      icon: FileText,
+      path: "/custom/notes",
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/10",
+      borderColor: "border-blue-500/20",
+    },
+  ];
+
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calculator className="h-7 w-7 text-primary" />
-            النظام المخصص
-          </h1>
-          <p className="text-muted-foreground">إدارة الحسابات والملاحظات والمذكرات</p>
+    <div className="p-4 lg:p-6 space-y-6">
+      {/* Welcome Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-transparent border border-amber-500/20 p-6 lg:p-8">
+        <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-amber-500/10 via-transparent to-transparent" />
+        <div className="relative z-10">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/30">
+              <Sparkles className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl lg:text-3xl font-bold text-white">مرحباً بك في النظام المخصص</h1>
+              <p className="text-amber-200/60">إدارة شاملة للحسابات والعمليات المالية</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-4 mt-6">
+            <div className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-4 py-2 border border-amber-500/10">
+              <Activity className="h-4 w-4 text-amber-400" />
+              <span className="text-sm text-zinc-300">النظام يعمل بشكل طبيعي</span>
+            </div>
+            <div className="flex items-center gap-2 bg-zinc-800/50 rounded-lg px-4 py-2 border border-amber-500/10">
+              <Clock className="h-4 w-4 text-amber-400" />
+              <span className="text-sm text-zinc-300">آخر تحديث: الآن</span>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الحسابات</CardTitle>
-            <Calculator className="h-4 w-4 text-blue-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{accounts.length}</div>
-            <p className="text-xs text-muted-foreground">حساب مسجل</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">إجمالي الرصيد</CardTitle>
-            {totalBalance >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            ) : (
-              <TrendingDown className="h-4 w-4 text-red-500" />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {quickStats.map((stat, index) => (
+          <div
+            key={index}
+            className={cn(
+              "relative overflow-hidden rounded-2xl border border-amber-500/10 bg-zinc-900/50 p-5 transition-all hover:border-amber-500/30 hover:shadow-lg hover:shadow-amber-500/5",
             )}
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${totalBalance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-              {totalBalance.toLocaleString()} ر.س
+          >
+            <div className={cn("absolute inset-0 bg-gradient-to-br opacity-50", stat.bgGradient)} />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-4">
+                <div className={cn("w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center", stat.gradient)}>
+                  <stat.icon className="h-5 w-5 text-white" />
+                </div>
+                <div className={cn(
+                  "flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
+                  stat.trendUp ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-400"
+                )}>
+                  {stat.trendUp ? <ArrowUpRight className="h-3 w-3" /> : <ArrowDownRight className="h-3 w-3" />}
+                  {stat.trend}
+                </div>
+              </div>
+              <h3 className="text-sm text-zinc-400 mb-1">{stat.title}</h3>
+              <p className="text-2xl font-bold text-white">{stat.value}</p>
+              <p className="text-xs text-zinc-500 mt-1">{stat.subtitle}</p>
             </div>
-            <p className="text-xs text-muted-foreground">الرصيد الإجمالي</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border-yellow-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">الملاحظات</CardTitle>
-            <FileText className="h-4 w-4 text-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{notes.length}</div>
-            <p className="text-xs text-muted-foreground">{pinnedNotes.length} مثبتة</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">المذكرات</CardTitle>
-            <Mail className="h-4 w-4 text-purple-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{memos.length}</div>
-            <p className="text-xs text-muted-foreground">{urgentMemos.length} عاجلة</p>
-          </CardContent>
-        </Card>
+          </div>
+        ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card 
-          className="cursor-pointer hover:border-primary/50 transition-colors"
-          onClick={() => setLocation("/dashboard/custom/accounts")}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-blue-500" />
-              الحسابات
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              إدارة الحسابات المالية وتتبع الأرصدة والحركات
-            </p>
-            <Button variant="outline" size="sm" className="w-full">
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة حساب
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:border-primary/50 transition-colors"
-          onClick={() => setLocation("/dashboard/custom/notes")}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-yellow-500" />
-              الملاحظات
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              تدوين الملاحظات والأفكار مع إمكانية التصنيف والتثبيت
-            </p>
-            <Button variant="outline" size="sm" className="w-full">
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة ملاحظة
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className="cursor-pointer hover:border-primary/50 transition-colors"
-          onClick={() => setLocation("/dashboard/custom/memos")}
-        >
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5 text-purple-500" />
-              المذكرات
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              إنشاء وإدارة المذكرات الداخلية والخارجية والتعاميم
-            </p>
-            <Button variant="outline" size="sm" className="w-full">
-              <Plus className="h-4 w-4 ml-2" />
-              إضافة مذكرة
-            </Button>
-          </CardContent>
-        </Card>
+      {/* Quick Actions Grid */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+            <Zap className="h-5 w-5 text-amber-400" />
+            الوصول السريع
+          </h2>
+          <Button variant="ghost" size="sm" className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10">
+            عرض الكل
+          </Button>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {quickActions.map((action, index) => (
+            <button
+              key={index}
+              onClick={() => setLocation(action.path)}
+              className={cn(
+                "group relative overflow-hidden rounded-xl border p-4 transition-all hover:scale-105 hover:shadow-lg text-right",
+                action.bgColor,
+                action.borderColor,
+                "hover:border-amber-500/30"
+              )}
+            >
+              <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center mb-3", action.bgColor)}>
+                <action.icon className={cn("h-5 w-5", action.color)} />
+              </div>
+              <h3 className="font-medium text-white text-sm mb-1">{action.title}</h3>
+              <p className="text-xs text-zinc-500 line-clamp-2">{action.description}</p>
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Recent Activity */}
+      {/* Recent Activity Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Recent Notes */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5" />
+        <div className="rounded-2xl border border-amber-500/10 bg-zinc-900/50 overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b border-amber-500/10">
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <FileText className="h-5 w-5 text-cyan-400" />
               آخر الملاحظات
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+              onClick={() => setLocation("/custom/notes")}
+            >
+              عرض الكل
+            </Button>
+          </div>
+          <div className="p-4">
             {notes.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">لا توجد ملاحظات</p>
+              <div className="text-center py-8">
+                <FileText className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
+                <p className="text-zinc-500">لا توجد ملاحظات</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="mt-4 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
+                  onClick={() => setLocation("/custom/notes")}
+                >
+                  <Plus className="h-4 w-4 ml-2" />
+                  إضافة ملاحظة
+                </Button>
+              </div>
             ) : (
               <div className="space-y-3">
                 {notes.slice(0, 5).map((note) => (
                   <div 
                     key={note.id} 
-                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer"
-                    onClick={() => setLocation("/dashboard/custom/notes")}
+                    className="flex items-start gap-3 p-3 rounded-xl bg-zinc-800/50 hover:bg-zinc-800 cursor-pointer transition-colors border border-transparent hover:border-amber-500/20"
+                    onClick={() => setLocation("/custom/notes")}
                   >
                     <div 
-                      className="w-3 h-3 rounded-full mt-1.5" 
-                      style={{ backgroundColor: note.color || '#6366f1' }}
+                      className="w-3 h-3 rounded-full mt-1.5 ring-2 ring-offset-2 ring-offset-zinc-900" 
+                      style={{ backgroundColor: note.color || '#f59e0b', ringColor: note.color || '#f59e0b' }}
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{note.title}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-medium text-white truncate">{note.title}</p>
+                      <p className="text-xs text-zinc-500">
                         {new Date(note.createdAt).toLocaleDateString('ar-SA')}
                       </p>
                     </div>
                     {note.isPinned && (
-                      <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded">مثبتة</span>
+                      <span className="text-xs bg-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full font-medium">مثبتة</span>
                     )}
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         {/* Urgent Memos */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500" />
+        <div className="rounded-2xl border border-amber-500/10 bg-zinc-900/50 overflow-hidden">
+          <div className="flex items-center justify-between p-4 border-b border-amber-500/10">
+            <h3 className="font-semibold text-white flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-red-400" />
               المذكرات العاجلة
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
+            </h3>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+              onClick={() => setLocation("/custom/memos")}
+            >
+              عرض الكل
+            </Button>
+          </div>
+          <div className="p-4">
             {urgentMemos.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">لا توجد مذكرات عاجلة</p>
+              <div className="text-center py-8">
+                <Mail className="h-12 w-12 text-zinc-700 mx-auto mb-3" />
+                <p className="text-zinc-500">لا توجد مذكرات عاجلة</p>
+                <p className="text-xs text-emerald-500 mt-2">✓ جميع المذكرات تحت السيطرة</p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {urgentMemos.slice(0, 5).map((memo) => (
                   <div 
                     key={memo.id} 
-                    className="flex items-start gap-3 p-3 rounded-lg bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 cursor-pointer"
-                    onClick={() => setLocation("/dashboard/custom/memos")}
+                    className="flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 cursor-pointer transition-colors"
+                    onClick={() => setLocation("/custom/memos")}
                   >
-                    <Mail className="h-4 w-4 text-red-500 mt-0.5" />
+                    <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-red-400" />
+                    </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{memo.subject}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-medium text-white truncate">{memo.subject}</p>
+                      <p className="text-xs text-zinc-500">
                         {memo.memoNumber} - {new Date(memo.memoDate).toLocaleDateString('ar-SA')}
                       </p>
                     </div>
+                    <span className="text-xs bg-red-500/30 text-red-300 px-2 py-0.5 rounded-full font-medium">عاجل</span>
                   </div>
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer Stats */}
+      <div className="rounded-2xl border border-amber-500/10 bg-zinc-900/50 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-sm text-zinc-400">متصل</span>
+            </div>
+            <div className="text-sm text-zinc-500">
+              الإصدار 2.0 | النظام المخصص
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-zinc-500">
+            <Sparkles className="h-4 w-4 text-amber-500" />
+            تم التحديث منذ لحظات
+          </div>
+        </div>
       </div>
     </div>
   );
