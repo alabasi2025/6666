@@ -6,6 +6,8 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getLoginUrl } from "@/const";
@@ -13,7 +15,7 @@ import { trpc } from "@/lib/trpc";
 import {
   Calculator, FileText, Mail, Activity, LogOut, Menu, X, 
   ChevronLeft, Home, Settings, Bell, Search, HelpCircle,
-  LayoutDashboard, Wallet, ClipboardList, Loader2
+  LayoutDashboard, Wallet, ClipboardList, Loader2, Zap, ChevronDown
 } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -102,17 +104,38 @@ function CustomSidebar({
         "fixed top-0 right-0 h-full w-72 bg-gradient-to-b from-slate-900 to-slate-950 border-l border-slate-800 z-50 transition-transform duration-300 lg:translate-x-0",
         isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0"
       )}>
-        {/* Header */}
+        {/* Header with System Switcher */}
         <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-              <Calculator className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <h1 className="font-bold text-white">النظام المخصص</h1>
-              <p className="text-xs text-slate-400">Custom System</p>
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-3 hover:bg-slate-800/50 px-2">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                  <Calculator className="h-5 w-5 text-white" />
+                </div>
+                <div className="text-right">
+                  <h1 className="font-bold text-white">النظام المخصص</h1>
+                  <p className="text-xs text-slate-400">Custom System</p>
+                </div>
+                <ChevronDown className="h-4 w-4 text-slate-400" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56 bg-slate-900 border-slate-800">
+              <DropdownMenuLabel className="text-slate-400">تبديل النظام</DropdownMenuLabel>
+              <DropdownMenuSeparator className="bg-slate-800" />
+              <DropdownMenuItem 
+                className="gap-2 cursor-pointer hover:bg-slate-800" 
+                onClick={() => window.location.href = '/dashboard'}
+              >
+                <Zap className="h-4 w-4 text-yellow-500" />
+                <span className="text-white">نظام الطاقة</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="gap-2 bg-slate-800/50 cursor-default">
+                <Calculator className="h-4 w-4 text-fuchsia-500" />
+                <span className="text-white">النظام المخصص</span>
+                <span className="mr-auto text-xs text-slate-500">الحالي</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button 
             variant="ghost" 
             size="icon" 
