@@ -106,6 +106,11 @@ const DieselTanks = lazy(() => import("./diesel/DieselTanks"));
 const DieselReceivingTasks = lazy(() => import("./diesel/DieselReceivingTasks"));
 const DieselConfiguration = lazy(() => import("./diesel/DieselConfiguration"));
 const DieselReceiving = lazy(() => import("./diesel/DieselReceiving"));
+const DieselDashboard = lazy(() => import("./diesel/DieselDashboard"));
+
+// Diesel Transport Pages - Lazy Loaded
+const BarrelTransport = lazy(() => import("./inventory/transport/diesel/BarrelTransport"));
+const StationTransfer = lazy(() => import("./inventory/transport/diesel/StationTransfer"));
 
 // Diesel Assets Pages - Lazy Loaded
 const DieselTanksAssets = lazy(() => import("./assets/diesel/DieselTanksAssets"));
@@ -595,6 +600,10 @@ export default function Dashboard() {
         {/* Diesel Management */}
         {path === "/dashboard/diesel/configuration" && <DieselConfiguration />}
         {path === "/dashboard/diesel/receiving" && <DieselReceiving />}
+        {path === "/dashboard/diesel/dashboard" && <DieselDashboard />}
+        {/* Diesel Transport */}
+        {path === "/dashboard/inventory/transport/diesel/barrels" && <BarrelTransport />}
+        {path === "/dashboard/inventory/transport/diesel/station-transfer" && <StationTransfer />}
         {/* Diesel Receiving moved to Field Operations */}
         {path === "/dashboard/fieldops/tasks/generator-tech/diesel-receiving" && <DieselReceivingTasks />}
         
