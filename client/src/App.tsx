@@ -22,6 +22,8 @@ function Router() {
       <Route path="/dashboard/:module" component={Dashboard} />
       <Route path="/dashboard/:module/:submodule" component={Dashboard} />
       <Route path="/dashboard/:module/:action/:id" component={Dashboard} />
+      <Route path="/dashboard/:a/:b/:c/:d" component={Dashboard} />
+      <Route path="/dashboard/:a/:b/:c/:d/:e" component={Dashboard} />
       {/* Custom System - نظام مستقل */}
       <Route path="/custom" component={CustomSystem} />
       <Route path="/custom/:page" component={CustomSystem} />
