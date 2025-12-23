@@ -189,8 +189,8 @@ class SDKServer {
 
     return new SignJWT({
       openId: payload.openId,
-      appId: payload.appId,
-      name: payload.name,
+      appId: payload.appId || 'local', // استخدام 'local' إذا كان appId فارغ
+      name: payload.name || '',
     })
       .setProtectedHeader({ alg: "HS256", typ: "JWT" })
       .setExpirationTime(expirationSeconds)
@@ -212,19 +212,16 @@ class SDKServer {
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (
-        !isNonEmptyString(openId) ||
-        !isNonEmptyString(appId) ||
-        !isNonEmptyString(name)
-      ) {
-        console.warn("[Auth] Session payload missing required fields");
+      // openId مطلوب، appId و name اختياريان في الوضع المحلي
+      if (!isNonEmptyString(openId)) {
+        console.warn("[Auth] Session payload missing openId");
         return null;
       }
 
       return {
         openId,
-        appId,
-        name,
+        appId: isNonEmptyString(appId) ? appId : 'local',
+        name: isNonEmptyString(name) ? name : '',
       };
     } catch (error) {
       console.warn("[Auth] Session verification failed", String(error));
@@ -268,23 +265,57 @@ class SDKServer {
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
+    
+    // البحث عن المستخدم بـ openId
     let user = await db.getUserByOpenId(sessionUserId);
-
-    // If user not in DB, sync from OAuth server automatically
+    
+    // إذا لم يتم العثور على المستخدم، تحقق من نوع تسجيل الدخول
     if (!user) {
-      try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+      console.log("[Auth] User not found by openId:", sessionUserId);
+      
+      // إذا كان تسجيل دخول محلي (openId يبدأ بـ local_)
+      if (sessionUserId.startsWith('local_')) {
+        // استخراج رقم الهاتف من openId (local_PHONE_TIMESTAMP)
+        const parts = sessionUserId.split('_');
+        if (parts.length >= 2) {
+          const phone = parts[1];
+          // البحث عن المستخدم برقم الهاتف
+          user = await db.getUserByPhone(phone);
+          if (user) {
+            console.log("[Auth] Found user by phone:", phone);
+            // تحديث openId ليتطابق مع الجلسة
+            await db.upsertUser({
+              openId: user.openId,
+              lastSignedIn: signedInAt,
+            });
+            return user;
+          }
+        }
+        
+        // إذا لم يتم العثور عليه، أنشئ مستخدم جديد
         await db.upsertUser({
-          openId: userInfo.openId,
-          name: userInfo.name || null,
-          email: userInfo.email ?? null,
-          loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+          openId: sessionUserId,
+          name: session.name || null,
+          loginMethod: 'local',
           lastSignedIn: signedInAt,
         });
-        user = await db.getUserByOpenId(userInfo.openId);
-      } catch (error) {
-        console.error("[Auth] Failed to sync user from OAuth:", error);
-        throw ForbiddenError("Failed to sync user info");
+        user = await db.getUserByOpenId(sessionUserId);
+      } else {
+        // تسجيل دخول OAuth - حاول المزامنة من السيرفر
+        try {
+          const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+          await db.upsertUser({
+            openId: userInfo.openId,
+            name: userInfo.name || null,
+            email: userInfo.email ?? null,
+            loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(userInfo.openId);
+        } catch (error) {
+          console.error("[Auth] Failed to sync user from OAuth:", error);
+          throw ForbiddenError("Failed to sync user info");
+        }
       }
     }
 
