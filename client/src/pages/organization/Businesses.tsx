@@ -8,7 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Building2, Plus, Search, Edit, Trash2, MoreHorizontal, Phone, Mail, Globe, FileText, Eye } from "lucide-react";
+import { Building2, Plus, Search, Edit, Trash2, MoreHorizontal, Phone, Mail, Globe, FileText, Eye, Zap, Sparkles } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -42,7 +43,8 @@ export default function Businesses() {
     nameAr: "",
     nameEn: "",
     type: "subsidiary" as "holding" | "subsidiary" | "branch",
-    systemType: "both" as "energy" | "custom" | "both",
+    hasEnergySystem: true,
+    hasCustomSystem: true,
     address: "",
     phone: "",
     email: "",
@@ -51,6 +53,14 @@ export default function Businesses() {
     commercialRegister: "",
     currency: "SAR",
   });
+
+  // تحويل checkboxes إلى systemType
+  const getSystemType = (hasEnergy: boolean, hasCustom: boolean): "energy" | "custom" | "both" => {
+    if (hasEnergy && hasCustom) return "both";
+    if (hasEnergy) return "energy";
+    if (hasCustom) return "custom";
+    return "both"; // افتراضي
+  };
 
   const { data: businesses, isLoading, refetch } = trpc.business.list.useQuery();
   
@@ -94,7 +104,8 @@ export default function Businesses() {
       nameAr: "",
       nameEn: "",
       type: "subsidiary",
-      systemType: "both",
+      hasEnergySystem: true,
+      hasCustomSystem: true,
       address: "",
       phone: "",
       email: "",
@@ -113,12 +124,17 @@ export default function Businesses() {
       return;
     }
 
+    if (!formData.hasEnergySystem && !formData.hasCustomSystem) {
+      toast.error("يجب اختيار نظام واحد على الأقل");
+      return;
+    }
+
     await createMutation.mutateAsync({
       code: formData.code,
       nameAr: formData.nameAr,
       nameEn: formData.nameEn || undefined,
       type: formData.type,
-      systemType: formData.systemType,
+      systemType: getSystemType(formData.hasEnergySystem, formData.hasCustomSystem),
       address: formData.address || undefined,
       phone: formData.phone || undefined,
       email: formData.email || undefined,
@@ -275,47 +291,58 @@ export default function Businesses() {
                   </div>
                 </div>
 
-                {/* نوع النظام */}
-                <div className="space-y-2">
-                  <Label htmlFor="systemType">نوع النظام *</Label>
-                  <Select
-                    value={formData.systemType}
-                    onValueChange={(value: "energy" | "custom" | "both") => 
-                      setFormData({ ...formData, systemType: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر نوع النظام" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="energy">
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-yellow-500"></span>
-                          نظام كهرباء - إدارة الطاقة المتكامل
+                {/* نوع النظام - Checkboxes */}
+                <div className="space-y-3">
+                  <Label>الأنظمة المتاحة *</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* نظام الطاقة */}
+                    <div 
+                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.hasEnergySystem 
+                          ? 'border-yellow-500 bg-yellow-500/10' 
+                          : 'border-muted hover:border-yellow-500/50'
+                      }`}
+                      onClick={() => setFormData({ ...formData, hasEnergySystem: !formData.hasEnergySystem })}
+                    >
+                      <Checkbox 
+                        checked={formData.hasEnergySystem}
+                        onCheckedChange={(checked) => setFormData({ ...formData, hasEnergySystem: !!checked })}
+                        className="data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-yellow-500" />
+                        <div>
+                          <p className="font-medium">نظام الطاقة</p>
+                          <p className="text-xs text-muted-foreground">إدارة الكهرباء والطاقة</p>
                         </div>
-                      </SelectItem>
-                      <SelectItem value="custom">
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-purple-500"></span>
-                          نظام مخصص - حسابات وملاحظات ومذكرات
+                      </div>
+                    </div>
+
+                    {/* النظام المخصص */}
+                    <div 
+                      className={`flex items-center gap-3 p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        formData.hasCustomSystem 
+                          ? 'border-amber-500 bg-amber-500/10' 
+                          : 'border-muted hover:border-amber-500/50'
+                      }`}
+                      onClick={() => setFormData({ ...formData, hasCustomSystem: !formData.hasCustomSystem })}
+                    >
+                      <Checkbox 
+                        checked={formData.hasCustomSystem}
+                        onCheckedChange={(checked) => setFormData({ ...formData, hasCustomSystem: !!checked })}
+                        className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-amber-500" />
+                        <div>
+                          <p className="font-medium">النظام المخصص</p>
+                          <p className="text-xs text-muted-foreground">حسابات وملاحظات ومذكرات</p>
                         </div>
-                      </SelectItem>
-                      <SelectItem value="both">
-                        <div className="flex items-center gap-2">
-                          <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                          كلا النظامين - الوصول الكامل
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                      </div>
+                    </div>
+                  </div>
                   <p className="text-xs text-muted-foreground">
-                    {
-                      formData.systemType === "energy" 
-                        ? "نظام إدارة الطاقة المتكامل يشمل: العملاء، الفوترة، الصيانة، SCADA والمزيد"
-                        : formData.systemType === "custom"
-                        ? "نظام مخصص يشمل: الحسابات المالية، الملاحظات، المذكرات والتعاميم"
-                        : "الوصول الكامل لكلا النظامين: نظام الطاقة والنظام المخصص"
-                    }
+                    يمكنك اختيار نظام واحد أو كلاهما حسب احتياجات الشركة
                   </p>
                 </div>
 
@@ -694,23 +721,67 @@ export default function Businesses() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="edit-systemType">نوع النظام</Label>
-                  <Select
-                    value={editingBusiness.systemType}
-                    onValueChange={(value: "energy" | "custom" | "both") => 
-                      setEditingBusiness({ ...editingBusiness, systemType: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="energy">نظام كهرباء</SelectItem>
-                      <SelectItem value="custom">نظام مخصص</SelectItem>
-                      <SelectItem value="both">كلا النظامين</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <div className="space-y-3">
+                  <Label>الأنظمة المتاحة</Label>
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* نظام الطاقة */}
+                    <div 
+                      className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        editingBusiness.systemType === 'energy' || editingBusiness.systemType === 'both'
+                          ? 'border-yellow-500 bg-yellow-500/10' 
+                          : 'border-muted hover:border-yellow-500/50'
+                      }`}
+                      onClick={() => {
+                        const hasEnergy = editingBusiness.systemType === 'energy' || editingBusiness.systemType === 'both';
+                        const hasCustom = editingBusiness.systemType === 'custom' || editingBusiness.systemType === 'both';
+                        const newHasEnergy = !hasEnergy;
+                        let newType: 'energy' | 'custom' | 'both' = 'both';
+                        if (newHasEnergy && hasCustom) newType = 'both';
+                        else if (newHasEnergy) newType = 'energy';
+                        else if (hasCustom) newType = 'custom';
+                        else newType = 'both';
+                        setEditingBusiness({ ...editingBusiness, systemType: newType });
+                      }}
+                    >
+                      <Checkbox 
+                        checked={editingBusiness.systemType === 'energy' || editingBusiness.systemType === 'both'}
+                        className="data-[state=checked]:bg-yellow-500 data-[state=checked]:border-yellow-500"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-yellow-500" />
+                        <span className="font-medium">نظام الطاقة</span>
+                      </div>
+                    </div>
+
+                    {/* النظام المخصص */}
+                    <div 
+                      className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                        editingBusiness.systemType === 'custom' || editingBusiness.systemType === 'both'
+                          ? 'border-amber-500 bg-amber-500/10' 
+                          : 'border-muted hover:border-amber-500/50'
+                      }`}
+                      onClick={() => {
+                        const hasEnergy = editingBusiness.systemType === 'energy' || editingBusiness.systemType === 'both';
+                        const hasCustom = editingBusiness.systemType === 'custom' || editingBusiness.systemType === 'both';
+                        const newHasCustom = !hasCustom;
+                        let newType: 'energy' | 'custom' | 'both' = 'both';
+                        if (hasEnergy && newHasCustom) newType = 'both';
+                        else if (hasEnergy) newType = 'energy';
+                        else if (newHasCustom) newType = 'custom';
+                        else newType = 'both';
+                        setEditingBusiness({ ...editingBusiness, systemType: newType });
+                      }}
+                    >
+                      <Checkbox 
+                        checked={editingBusiness.systemType === 'custom' || editingBusiness.systemType === 'both'}
+                        className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                      />
+                      <div className="flex items-center gap-2">
+                        <Sparkles className="h-5 w-5 text-amber-500" />
+                        <span className="font-medium">النظام المخصص</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
