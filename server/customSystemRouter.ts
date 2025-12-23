@@ -987,6 +987,224 @@ export const customPaymentVouchersRouter = router({
 });
 
 // ============================================
+// Inter-System Transfers Router
+// ============================================
+export const customTransfersRouter = router({
+  // إنشاء تحويل بين نظامين فرعيين
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      fromSubSystemId: z.number(),
+      toSubSystemId: z.number(),
+      fromTreasuryId: z.number(),
+      toTreasuryId: z.number(),
+      amount: z.string(),
+      currency: z.string().default("SAR"),
+      description: z.string().optional(),
+      transferDate: z.string(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      // 1. البحث عن أو إنشاء الحساب الوسيط
+      let intermediaryAccount = await db.select()
+        .from(customIntermediaryAccounts)
+        .where(and(
+          eq(customIntermediaryAccounts.businessId, input.businessId),
+          eq(customIntermediaryAccounts.fromSubSystemId, input.fromSubSystemId),
+          eq(customIntermediaryAccounts.toSubSystemId, input.toSubSystemId)
+        ))
+        .limit(1);
+      
+      let intermediaryId: number;
+      
+      if (!intermediaryAccount[0]) {
+        // إنشاء حساب وسيط جديد
+        const fromSystem = await db.select().from(customSubSystems).where(eq(customSubSystems.id, input.fromSubSystemId)).limit(1);
+        const toSystem = await db.select().from(customSubSystems).where(eq(customSubSystems.id, input.toSubSystemId)).limit(1);
+        
+        const code = `INT-${input.fromSubSystemId}-${input.toSubSystemId}`;
+        const nameAr = `حساب وسيط: ${fromSystem[0]?.nameAr || 'نظام'} → ${toSystem[0]?.nameAr || 'نظام'}`;
+        
+        const newAccount = await db.insert(customIntermediaryAccounts).values({
+          businessId: input.businessId,
+          fromSubSystemId: input.fromSubSystemId,
+          toSubSystemId: input.toSubSystemId,
+          code,
+          nameAr,
+          currency: input.currency,
+        });
+        intermediaryId = newAccount[0].insertId;
+      } else {
+        intermediaryId = intermediaryAccount[0].id;
+      }
+      
+      // 2. إنشاء سند صرف في النظام المصدر
+      const paymentCount = await db.select({ count: sql<number>`count(*)` })
+        .from(customPaymentVouchers)
+        .where(eq(customPaymentVouchers.businessId, input.businessId));
+      const paymentNumber = `PV-${String(paymentCount[0].count + 1).padStart(6, '0')}`;
+      
+      const paymentResult = await db.insert(customPaymentVouchers).values({
+        businessId: input.businessId,
+        subSystemId: input.fromSubSystemId,
+        voucherNumber: paymentNumber,
+        voucherDate: input.transferDate,
+        amount: input.amount,
+        currency: input.currency,
+        destinationType: "intermediary",
+        destinationIntermediaryId: intermediaryId,
+        destinationName: `تحويل إلى نظام فرعي`,
+        treasuryId: input.fromTreasuryId,
+        description: input.description || `تحويل بين الأنظمة الفرعية`,
+        status: "confirmed",
+        isReconciled: false,
+        createdBy: ctx.user?.id,
+      });
+      
+      // 3. إنشاء سند قبض في النظام المستقبل
+      const receiptCount = await db.select({ count: sql<number>`count(*)` })
+        .from(customReceiptVouchers)
+        .where(eq(customReceiptVouchers.businessId, input.businessId));
+      const receiptNumber = `RV-${String(receiptCount[0].count + 1).padStart(6, '0')}`;
+      
+      const receiptResult = await db.insert(customReceiptVouchers).values({
+        businessId: input.businessId,
+        subSystemId: input.toSubSystemId,
+        voucherNumber: receiptNumber,
+        voucherDate: input.transferDate,
+        amount: input.amount,
+        currency: input.currency,
+        sourceType: "intermediary",
+        sourceIntermediaryId: intermediaryId,
+        sourceName: `تحويل من نظام فرعي`,
+        treasuryId: input.toTreasuryId,
+        description: input.description || `تحويل بين الأنظمة الفرعية`,
+        status: "confirmed",
+        isReconciled: false,
+        createdBy: ctx.user?.id,
+      });
+      
+      // 4. تحديث أرصدة الخزائن
+      const fromTreasury = await db.select().from(customTreasuries).where(eq(customTreasuries.id, input.fromTreasuryId)).limit(1);
+      const toTreasury = await db.select().from(customTreasuries).where(eq(customTreasuries.id, input.toTreasuryId)).limit(1);
+      
+      if (fromTreasury[0]) {
+        const newBalance = parseFloat(fromTreasury[0].currentBalance || "0") - parseFloat(input.amount);
+        await db.update(customTreasuries)
+          .set({ currentBalance: newBalance.toString() })
+          .where(eq(customTreasuries.id, input.fromTreasuryId));
+      }
+      
+      if (toTreasury[0]) {
+        const newBalance = parseFloat(toTreasury[0].currentBalance || "0") + parseFloat(input.amount);
+        await db.update(customTreasuries)
+          .set({ currentBalance: newBalance.toString() })
+          .where(eq(customTreasuries.id, input.toTreasuryId));
+      }
+      
+      return {
+        success: true,
+        paymentVoucherId: paymentResult[0].insertId,
+        paymentVoucherNumber: paymentNumber,
+        receiptVoucherId: receiptResult[0].insertId,
+        receiptVoucherNumber: receiptNumber,
+        intermediaryAccountId: intermediaryId,
+      };
+    }),
+
+  // قائمة التحويلات بين الأنظمة
+  list: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      
+      // جلب سندات الصرف التي تمت إلى حسابات وسيطة
+      let conditions = [
+        eq(customPaymentVouchers.businessId, input.businessId),
+        eq(customPaymentVouchers.destinationType, "intermediary")
+      ];
+      
+      if (input.subSystemId) {
+        conditions.push(eq(customPaymentVouchers.subSystemId, input.subSystemId));
+      }
+      
+      const outgoingTransfers = await db.select()
+        .from(customPaymentVouchers)
+        .where(and(...conditions))
+        .orderBy(desc(customPaymentVouchers.voucherDate));
+      
+      // جلب سندات القبض من حسابات وسيطة
+      let receiptConditions = [
+        eq(customReceiptVouchers.businessId, input.businessId),
+        eq(customReceiptVouchers.sourceType, "intermediary")
+      ];
+      
+      if (input.subSystemId) {
+        receiptConditions.push(eq(customReceiptVouchers.subSystemId, input.subSystemId));
+      }
+      
+      const incomingTransfers = await db.select()
+        .from(customReceiptVouchers)
+        .where(and(...receiptConditions))
+        .orderBy(desc(customReceiptVouchers.voucherDate));
+      
+      return {
+        outgoing: outgoingTransfers,
+        incoming: incomingTransfers,
+      };
+    }),
+
+  // جلب التحويلات غير المطابقة
+  getUnreconciled: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) return { outgoing: [], incoming: [] };
+      
+      let paymentConditions = [
+        eq(customPaymentVouchers.businessId, input.businessId),
+        eq(customPaymentVouchers.destinationType, "intermediary"),
+        eq(customPaymentVouchers.status, "confirmed"),
+        eq(customPaymentVouchers.isReconciled, false)
+      ];
+      
+      if (input.subSystemId) {
+        paymentConditions.push(eq(customPaymentVouchers.subSystemId, input.subSystemId));
+      }
+      
+      const outgoing = await db.select()
+        .from(customPaymentVouchers)
+        .where(and(...paymentConditions));
+      
+      let receiptConditions = [
+        eq(customReceiptVouchers.businessId, input.businessId),
+        eq(customReceiptVouchers.sourceType, "intermediary"),
+        eq(customReceiptVouchers.status, "confirmed"),
+        eq(customReceiptVouchers.isReconciled, false)
+      ];
+      
+      if (input.subSystemId) {
+        receiptConditions.push(eq(customReceiptVouchers.subSystemId, input.subSystemId));
+      }
+      
+      const incoming = await db.select()
+        .from(customReceiptVouchers)
+        .where(and(...receiptConditions));
+      
+      return { outgoing, incoming };
+    }),
+});
+
+// ============================================
 // Custom Reconciliations Router
 // ============================================
 export const customReconciliationsRouter = router({
@@ -1148,4 +1366,5 @@ export const customSystemRouter = router({
   receiptVouchers: customReceiptVouchersRouter,
   paymentVouchers: customPaymentVouchersRouter,
   reconciliations: customReconciliationsRouter,
+  transfers: customTransfersRouter,
 });

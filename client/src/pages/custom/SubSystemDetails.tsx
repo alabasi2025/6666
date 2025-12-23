@@ -233,6 +233,7 @@ export default function SubSystemDetails() {
   const [isAddTreasuryOpen, setIsAddTreasuryOpen] = useState(false);
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
   const [voucherType, setVoucherType] = useState<"receipt" | "payment">("receipt");
+  const [isAddTransferOpen, setIsAddTransferOpen] = useState(false);
 
   // New Treasury Form State
   const [newTreasury, setNewTreasury] = useState({
@@ -247,6 +248,15 @@ export default function SubSystemDetails() {
     walletNumber: "",
     currency: "SAR",
     openingBalance: "0",
+    description: "",
+  });
+
+  // New Transfer Form State
+  const [newTransfer, setNewTransfer] = useState({
+    toSubSystemId: 0,
+    fromTreasuryId: 0,
+    toTreasuryId: 0,
+    amount: "",
     description: "",
   });
 
@@ -294,6 +304,16 @@ export default function SubSystemDetails() {
     { enabled: !!id }
   );
 
+  const { data: transfers, refetch: refetchTransfers } = trpc.customSystem.transfers.list.useQuery(
+    { businessId: 1, subSystemId: parseInt(id || "0") },
+    { enabled: !!id }
+  );
+
+  const { data: targetTreasuries } = trpc.customSystem.treasuries.list.useQuery(
+    { businessId: 1, subSystemId: newTransfer.toSubSystemId },
+    { enabled: newTransfer.toSubSystemId > 0 }
+  );
+
   // Mutations
   const createTreasuryMutation = trpc.customSystem.treasuries.create.useMutation({
     onSuccess: () => {
@@ -331,6 +351,21 @@ export default function SubSystemDetails() {
     },
   });
 
+  const createTransferMutation = trpc.customSystem.transfers.create.useMutation({
+    onSuccess: (data) => {
+      toast.success(`تم إنشاء التحويل بنجاح - سند صرف: ${data.paymentVoucherNumber} | سند قبض: ${data.receiptVoucherNumber}`);
+      setIsAddTransferOpen(false);
+      resetTransferForm();
+      refetchTransfers();
+      refetchTreasuries();
+      refetchReceipts();
+      refetchPayments();
+    },
+    onError: (error) => {
+      toast.error("حدث خطأ: " + error.message);
+    },
+  });
+
   const deleteTreasuryMutation = trpc.customSystem.treasuries.delete.useMutation({
     onSuccess: () => {
       toast.success("تم حذف الخزينة بنجاح");
@@ -356,6 +391,33 @@ export default function SubSystemDetails() {
       currency: "SAR",
       openingBalance: "0",
       description: "",
+    });
+  };
+
+  const resetTransferForm = () => {
+    setNewTransfer({
+      toSubSystemId: 0,
+      fromTreasuryId: 0,
+      toTreasuryId: 0,
+      amount: "",
+      description: "",
+    });
+  };
+
+  const handleCreateTransfer = () => {
+    if (!newTransfer.toSubSystemId || !newTransfer.fromTreasuryId || !newTransfer.toTreasuryId || !newTransfer.amount) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+    createTransferMutation.mutate({
+      businessId: 1,
+      fromSubSystemId: parseInt(id || "0"),
+      toSubSystemId: newTransfer.toSubSystemId,
+      fromTreasuryId: newTransfer.fromTreasuryId,
+      toTreasuryId: newTransfer.toTreasuryId,
+      amount: newTransfer.amount,
+      description: newTransfer.description,
+      transferDate: new Date().toISOString().split("T")[0],
     });
   };
 
@@ -1071,19 +1133,225 @@ export default function SubSystemDetails() {
 
         {/* Transfers Tab */}
         <TabsContent value="transfers" className="space-y-4">
+          {/* Transfer Actions */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold text-white">التحويلات بين الأنظمة</h3>
+              <p className="text-sm text-slate-400">إدارة التحويلات المالية بين هذا النظام والأنظمة الفرعية الأخرى</p>
+            </div>
+            <Dialog open={isAddTransferOpen} onOpenChange={setIsAddTransferOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700">
+                  <Send className="h-4 w-4 ml-2" />
+                  تحويل جديد
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="bg-slate-900 border-slate-800 max-w-md">
+                <DialogHeader>
+                  <DialogTitle className="text-white">تحويل مالي جديد</DialogTitle>
+                  <DialogDescription>تحويل مبلغ من هذا النظام إلى نظام فرعي آخر</DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  {/* Target Sub System */}
+                  <div className="space-y-2">
+                    <Label>النظام المستهدف *</Label>
+                    <Select
+                      value={newTransfer.toSubSystemId.toString()}
+                      onValueChange={(v) => setNewTransfer({ ...newTransfer, toSubSystemId: parseInt(v), toTreasuryId: 0 })}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-700">
+                        <SelectValue placeholder="اختر النظام المستهدف" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {allSubSystems?.filter(s => s.id !== parseInt(id || "0")).map((sys) => (
+                          <SelectItem key={sys.id} value={sys.id.toString()}>
+                            {sys.nameAr} ({sys.code})
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Source Treasury */}
+                  <div className="space-y-2">
+                    <Label>الخزينة المصدر (من هذا النظام) *</Label>
+                    <Select
+                      value={newTransfer.fromTreasuryId.toString()}
+                      onValueChange={(v) => setNewTransfer({ ...newTransfer, fromTreasuryId: parseInt(v) })}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-700">
+                        <SelectValue placeholder="اختر الخزينة المصدر" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {treasuries?.map((t) => (
+                          <SelectItem key={t.id} value={t.id.toString()}>
+                            {t.nameAr} - رصيد: {parseFloat(t.currentBalance || "0").toLocaleString("ar-SA")} {t.currency}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Target Treasury */}
+                  <div className="space-y-2">
+                    <Label>الخزينة المستهدفة *</Label>
+                    <Select
+                      value={newTransfer.toTreasuryId.toString()}
+                      onValueChange={(v) => setNewTransfer({ ...newTransfer, toTreasuryId: parseInt(v) })}
+                      disabled={!newTransfer.toSubSystemId}
+                    >
+                      <SelectTrigger className="bg-slate-800 border-slate-700">
+                        <SelectValue placeholder={newTransfer.toSubSystemId ? "اختر الخزينة المستهدفة" : "اختر النظام أولاً"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {targetTreasuries?.map((t) => (
+                          <SelectItem key={t.id} value={t.id.toString()}>
+                            {t.nameAr} - رصيد: {parseFloat(t.currentBalance || "0").toLocaleString("ar-SA")} {t.currency}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Amount */}
+                  <div className="space-y-2">
+                    <Label>المبلغ *</Label>
+                    <Input
+                      type="number"
+                      value={newTransfer.amount}
+                      onChange={(e) => setNewTransfer({ ...newTransfer, amount: e.target.value })}
+                      placeholder="0.00"
+                      className="bg-slate-800 border-slate-700"
+                    />
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <Label>الوصف</Label>
+                    <Textarea
+                      value={newTransfer.description}
+                      onChange={(e) => setNewTransfer({ ...newTransfer, description: e.target.value })}
+                      placeholder="وصف التحويل..."
+                      className="bg-slate-800 border-slate-700"
+                    />
+                  </div>
+
+                  {/* Info Box */}
+                  <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                    <p className="text-blue-400 text-sm">
+                      <strong>ملاحظة:</strong> سيتم إنشاء سند صرف في هذا النظام وسند قبض في النظام المستهدف عبر حساب وسيط.
+                    </p>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddTransferOpen(false)}>
+                    إلغاء
+                  </Button>
+                  <Button
+                    onClick={handleCreateTransfer}
+                    disabled={createTransferMutation.isPending}
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600"
+                  >
+                    {createTransferMutation.isPending ? (
+                      <><Loader2 className="h-4 w-4 ml-2 animate-spin" /> جاري التحويل...</>
+                    ) : (
+                      <><Send className="h-4 w-4 ml-2" /> تنفيذ التحويل</>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          {/* Outgoing Transfers */}
           <Card className="bg-slate-900/50 border-slate-800">
             <CardHeader>
-              <CardTitle className="text-white">التحويلات بين الأنظمة</CardTitle>
-              <CardDescription>إدارة التحويلات المالية بين هذا النظام والأنظمة الفرعية الأخرى</CardDescription>
+              <CardTitle className="text-white flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-red-500" />
+                التحويلات الصادرة
+              </CardTitle>
+              <CardDescription>المبالغ المحولة من هذا النظام إلى أنظمة أخرى</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-8">
-                <ArrowLeftRight className="h-12 w-12 text-slate-600 mx-auto mb-4" />
-                <p className="text-slate-400">شاشة التحويلات قيد التطوير</p>
-                <p className="text-slate-500 text-sm mt-2">
-                  ستتمكن من إجراء تحويلات مالية بين الأنظمة الفرعية عبر الحسابات الوسيطة
-                </p>
-              </div>
+              {transfers?.outgoing && transfers.outgoing.length > 0 ? (
+                <div className="space-y-3">
+                  {transfers.outgoing.map((transfer: any) => (
+                    <div key={transfer.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                          <TrendingDown className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{transfer.voucherNumber}</p>
+                          <p className="text-sm text-slate-400">{transfer.description || 'تحويل بين الأنظمة'}</p>
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-red-400 font-bold">-{parseFloat(transfer.amount).toLocaleString("ar-SA")} {transfer.currency}</p>
+                        <p className="text-xs text-slate-500">{new Date(transfer.voucherDate).toLocaleDateString("ar-SA")}</p>
+                      </div>
+                      <Badge variant="outline" className={cn(
+                        transfer.isReconciled 
+                          ? "bg-green-500/20 text-green-500 border-green-500/30" 
+                          : "bg-yellow-500/20 text-yellow-500 border-yellow-500/30"
+                      )}>
+                        {transfer.isReconciled ? "مطابق" : "بانتظار المطابقة"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <TrendingDown className="h-10 w-10 text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-400">لا توجد تحويلات صادرة</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Incoming Transfers */}
+          <Card className="bg-slate-900/50 border-slate-800">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-500" />
+                التحويلات الواردة
+              </CardTitle>
+              <CardDescription>المبالغ المحولة إلى هذا النظام من أنظمة أخرى</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {transfers?.incoming && transfers.incoming.length > 0 ? (
+                <div className="space-y-3">
+                  {transfers.incoming.map((transfer: any) => (
+                    <div key={transfer.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                          <TrendingUp className="h-5 w-5 text-green-500" />
+                        </div>
+                        <div>
+                          <p className="text-white font-medium">{transfer.voucherNumber}</p>
+                          <p className="text-sm text-slate-400">{transfer.description || 'تحويل بين الأنظمة'}</p>
+                        </div>
+                      </div>
+                      <div className="text-left">
+                        <p className="text-green-400 font-bold">+{parseFloat(transfer.amount).toLocaleString("ar-SA")} {transfer.currency}</p>
+                        <p className="text-xs text-slate-500">{new Date(transfer.voucherDate).toLocaleDateString("ar-SA")}</p>
+                      </div>
+                      <Badge variant="outline" className={cn(
+                        transfer.isReconciled 
+                          ? "bg-green-500/20 text-green-500 border-green-500/30" 
+                          : "bg-yellow-500/20 text-yellow-500 border-yellow-500/30"
+                      )}>
+                        {transfer.isReconciled ? "مطابق" : "بانتظار المطابقة"}
+                      </Badge>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6">
+                  <TrendingUp className="h-10 w-10 text-slate-600 mx-auto mb-2" />
+                  <p className="text-slate-400">لا توجد تحويلات واردة</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
