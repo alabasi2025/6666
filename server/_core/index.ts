@@ -1,5 +1,8 @@
 import "dotenv/config";
 import express from "express";
+import compression from "compression";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -30,6 +33,58 @@ async function findAvailablePort(startPort: number = 3000): Promise<number> {
 async function startServer() {
   const app = express();
   const server = createServer(app);
+  
+  // تفعيل ضغط Gzip لتسريع التحميل
+  app.use(compression({
+    level: 6,
+    threshold: 1024,
+    filter: (req, res) => {
+      if (req.headers['x-no-compression']) {
+        return false;
+      }
+      return compression.filter(req, res);
+    }
+  }));
+  
+  // إضافة رؤوس الأمان باستخدام helmet
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "blob:", "https:"],
+        connectSrc: ["'self'", "https:", "wss:"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  }));
+  
+  // Rate limiting للحماية من هجمات القوة الغاشمة
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 دقيقة
+    max: 10, // 10 محاولات كحد أقصى
+    message: { error: "تم تجاوز عدد المحاولات المسموح بها، يرجى المحاولة لاحقاً" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  
+  // Rate limiting عام للـ API
+  const apiLimiter = rateLimit({
+    windowMs: 1 * 60 * 1000, // دقيقة واحدة
+    max: 100, // 100 طلب كحد أقصى
+    message: { error: "تم تجاوز عدد الطلبات المسموح بها" },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+  
+  // تطبيق rate limiting على نقاط النهاية الحساسة
+  app.use("/api/trpc/auth.login", authLimiter);
+  app.use("/api/trpc/auth.register", authLimiter);
+  app.use("/api/trpc", apiLimiter);
+  
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
@@ -60,6 +115,7 @@ async function startServer() {
   const host = process.env.HOST || "0.0.0.0";
   server.listen(port, host, () => {
     console.log(`Server running on http://${host}:${port}/`);
+    console.log(`Security: helmet enabled, rate limiting active`);
   });
 }
 

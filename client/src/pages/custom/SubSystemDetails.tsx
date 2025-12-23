@@ -280,56 +280,60 @@ export default function SubSystemDetails() {
     description: "",
   });
 
-  // API Queries
+  // API Queries - تحسين الأداء بتحميل البيانات حسب الحاجة
   const { data: subSystem, isLoading: subSystemLoading, refetch: refetchSubSystem } = trpc.customSystem.subSystems.getById.useQuery(
     { id: parseInt(id || "0") },
-    { enabled: !!id }
+    { enabled: !!id, staleTime: 30000 }
   );
 
   const { data: treasuries, isLoading: treasuriesLoading, refetch: refetchTreasuries } = trpc.customSystem.treasuries.list.useQuery(
     { businessId: 1, subSystemId: parseInt(id || "0") },
-    { enabled: !!id }
+    { enabled: !!id, staleTime: 30000 }
   );
 
+  // تحميل السندات فقط عند الحاجة (تبويب نظرة عامة أو السندات)
   const { data: receiptVouchers, refetch: refetchReceipts } = trpc.customSystem.receiptVouchers.list.useQuery(
     { businessId: 1, subSystemId: parseInt(id || "0") },
-    { enabled: !!id }
+    { enabled: !!id && (activeTab === "overview" || activeTab === "vouchers"), staleTime: 30000 }
   );
 
   const { data: paymentVouchers, refetch: refetchPayments } = trpc.customSystem.paymentVouchers.list.useQuery(
     { businessId: 1, subSystemId: parseInt(id || "0") },
-    { enabled: !!id }
+    { enabled: !!id && (activeTab === "overview" || activeTab === "vouchers"), staleTime: 30000 }
   );
 
+  // تحميل الحسابات الوسيطة فقط في تبويب نظرة عامة
   const { data: intermediaryAccounts } = trpc.customSystem.intermediaryAccounts.list.useQuery(
     { businessId: 1 },
-    { enabled: !!id }
+    { enabled: !!id && activeTab === "overview", staleTime: 60000 }
   );
 
+  // تحميل كل الأنظمة الفرعية فقط عند فتح نموذج التحويل
   const { data: allSubSystems } = trpc.customSystem.subSystems.list.useQuery(
     { businessId: 1 },
-    { enabled: !!id }
+    { enabled: !!id && (activeTab === "transfers" || isAddTransferOpen), staleTime: 60000 }
   );
 
+  // تحميل التحويلات فقط في تبويب التحويلات
   const { data: transfers, refetch: refetchTransfers } = trpc.customSystem.transfers.list.useQuery(
     { businessId: 1, subSystemId: parseInt(id || "0") },
-    { enabled: !!id }
+    { enabled: !!id && activeTab === "transfers", staleTime: 30000 }
   );
 
   const { data: targetTreasuries } = trpc.customSystem.treasuries.list.useQuery(
     { businessId: 1, subSystemId: newTransfer.toSubSystemId },
-    { enabled: newTransfer.toSubSystemId > 0 }
+    { enabled: newTransfer.toSubSystemId > 0, staleTime: 30000 }
   );
 
-  // Reconciliation Queries
+  // Reconciliation Queries - تحميل فقط في تبويب المطابقة
   const { data: reconciliations, refetch: refetchReconciliations } = trpc.customSystem.reconciliations.list.useQuery(
     { businessId: 1 },
-    { enabled: !!id }
+    { enabled: !!id && activeTab === "reconciliation", staleTime: 30000 }
   );
 
   const { data: unreconciledTransfers, refetch: refetchUnreconciled } = trpc.customSystem.transfers.getUnreconciled.useQuery(
     { businessId: 1, subSystemId: parseInt(id || "0") },
-    { enabled: !!id }
+    { enabled: !!id && activeTab === "reconciliation", staleTime: 30000 }
   );
 
   // Mutations

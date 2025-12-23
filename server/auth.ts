@@ -219,6 +219,7 @@ export async function resetPassword(
 
 /**
  * إنشاء مستخدم مدير افتراضي إذا لم يكن موجوداً
+ * يستخدم متغيرات البيئة للأمان
  */
 export async function ensureDefaultAdmin(): Promise<void> {
   const db = await getDb();
@@ -234,19 +235,24 @@ export async function ensureDefaultAdmin(): Promise<void> {
     ).limit(1);
 
     if (adminUsers.length === 0) {
+      // استخدام متغيرات البيئة بدلاً من القيم الثابتة
+      const adminPhone = process.env.DEFAULT_ADMIN_PHONE || "0500000000";
+      const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
+      const adminName = process.env.DEFAULT_ADMIN_NAME || "مدير النظام";
+      
       console.log("[Auth] No admin users found, creating default admin...");
       
       const result = await registerUser({
-        phone: "0500000000",
-        password: "admin123",
-        name: "مدير النظام",
+        phone: adminPhone,
+        password: adminPassword,
+        name: adminName,
         role: "super_admin",
       });
 
       if (result.success) {
         console.log("✅ [Auth] Default admin created successfully");
-        console.log("📱 Phone: 0500000000");
-        console.log("🔑 Password: admin123");
+        // لا نطبع البيانات الحساسة في السجلات
+        console.log("[Auth] Admin credentials loaded from environment variables");
       } else {
         console.error("[Auth] Failed to create default admin:", result.error);
       }

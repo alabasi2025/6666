@@ -105,3 +105,14 @@ temp/
 *.db
 *.sqlite
 *.sqlite3
+
+# ملفات حساسة
+*.sql.backup
+*_backup_*.sql
+seed_data.sql
+energy_management_backup*.sql
+
+# متغيرات البيئة
+.env
+.env.local
+.env.production

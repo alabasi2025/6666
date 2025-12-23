@@ -107,14 +107,17 @@ importers:
         specifier: ^5.90.2
         version: 5.90.2(react@19.2.1)
       '@trpc/client':
-        specifier: ^11.6.0
-        version: 11.6.0(@trpc/server@11.6.0(typescript@5.9.3))(typescript@5.9.3)
+        specifier: ^11.8.1
+        version: 11.8.1(@trpc/server@11.8.1(typescript@5.9.3))(typescript@5.9.3)
       '@trpc/react-query':
-        specifier: ^11.6.0
-        version: 11.6.0(@tanstack/react-query@5.90.2(react@19.2.1))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.6.0(typescript@5.9.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.9.3)
+        specifier: ^11.8.1
+        version: 11.8.1(@tanstack/react-query@5.90.2(react@19.2.1))(@trpc/client@11.8.1(@trpc/server@11.8.1(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.8.1(typescript@5.9.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.9.3)
       '@trpc/server':
-        specifier: ^11.6.0
-        version: 11.6.0(typescript@5.9.3)
+        specifier: ^11.8.1
+        version: 11.8.1(typescript@5.9.3)
+      '@types/helmet':
+        specifier: ^4.0.0
+        version: 4.0.0
       axios:
         specifier: ^1.12.0
         version: 1.12.2
@@ -151,9 +154,15 @@ importers:
       express:
         specifier: ^4.21.2
         version: 4.21.2
+      express-rate-limit:
+        specifier: ^8.2.1
+        version: 8.2.1(express@4.21.2)
       framer-motion:
         specifier: ^12.23.22
         version: 12.23.22(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
+      helmet:
+        specifier: ^8.1.0
+        version: 8.1.0
       input-otp:
         specifier: ^1.4.2
         version: 1.4.2(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -230,6 +239,9 @@ importers:
       '@types/bcrypt':
         specifier: ^6.0.0
         version: 6.0.0
+      '@types/compression':
+        specifier: ^1.8.1
+        version: 1.8.1
       '@types/express':
         specifier: 4.17.21
         version: 4.17.21
@@ -254,6 +266,9 @@ importers:
       autoprefixer:
         specifier: ^10.4.20
         version: 10.4.21(postcss@8.5.6)
+      compression:
+        specifier: ^1.8.1
+        version: 1.8.1
       cross-env:
         specifier: ^10.1.0
         version: 10.1.0
@@ -2141,24 +2156,24 @@ packages:
     peerDependencies:
       react: ^18 || ^19
 
-  '@trpc/client@11.6.0':
-    resolution: {integrity: sha512-DyWbYk2hd50BaVrXWVkaUnaSwgAF5g/lfBkXtkF1Aqlk6BtSzGUo3owPkgqQO2I5LwWy1+ra9TsSfBBvIZpTwg==}
+  '@trpc/client@11.8.1':
+    resolution: {integrity: sha512-L/SJFGanr9xGABmuDoeXR4xAdHJmsXsiF9OuH+apecJ+8sUITzVT1EPeqp0ebqA6lBhEl5pPfg3rngVhi/h60Q==}
     peerDependencies:
-      '@trpc/server': 11.6.0
+      '@trpc/server': 11.8.1
       typescript: '>=5.7.2'
 
-  '@trpc/react-query@11.6.0':
-    resolution: {integrity: sha512-xljUCzROa23cC89SEd5fwbKiWrGus2NDwtg8zszPlsFvaByWW50Jx6y5sLPXhp/g1FBsEtCInNNhEEL0UCHwGw==}
+  '@trpc/react-query@11.8.1':
+    resolution: {integrity: sha512-0Vu55ld/oINb4U6nIPPi7eZMhxUop6K+4QUK90RVsfSD5r+957sM80M4c8bjh/JBZUxMFv9JOhxxlWcrgHxHow==}
     peerDependencies:
       '@tanstack/react-query': ^5.80.3
-      '@trpc/client': 11.6.0
-      '@trpc/server': 11.6.0
+      '@trpc/client': 11.8.1
+      '@trpc/server': 11.8.1
       react: '>=18.2.0'
       react-dom: '>=18.2.0'
       typescript: '>=5.7.2'
 
-  '@trpc/server@11.6.0':
-    resolution: {integrity: sha512-skTso0AWbOZck40jwNeYv++AMZXNWLUWdyk+pB5iVaYmEKTuEeMoPrEudR12VafbEU6tZa8HK3QhBfTYYHDCdg==}
+  '@trpc/server@11.8.1':
+    resolution: {integrity: sha512-P4rzZRpEL7zDFgjxK65IdyH0e41FMFfTkQkuq0BA5tKcr7E6v9/v38DEklCpoDN6sPiB1Sigy/PUEzHENhswDA==}
     peerDependencies:
       typescript: '>=5.7.2'
 
@@ -2179,6 +2194,9 @@ packages:
 
   '@types/body-parser@1.19.6':
     resolution: {integrity: sha512-HLFeCYgz89uk22N5Qg3dvGvsv46B8GLvKKo1zKG4NybA8U2DiEO3w9lqGg29t/tfLRJpJ6iQxnVw4OnB7MoM9g==}
+
+  '@types/compression@1.8.1':
+    resolution: {integrity: sha512-kCFuWS0ebDbmxs0AXYn6e2r2nrGAb5KwQhknjSPSPgJcGd8+HVSILlUyFhGqML2gk39HcG7D1ydW9/qpYkN00Q==}
 
   '@types/connect@3.4.38':
     resolution: {integrity: sha512-K6uROf1LD88uDQqJCktA4yzL1YYAK6NgfsI0v/mTgyPKWsX1CnJ0XPSDhViejru1GcRkLWb8RlzFYJRqGUbaug==}
@@ -2299,6 +2317,10 @@ packages:
 
   '@types/hast@3.0.4':
     resolution: {integrity: sha512-WPs+bbQw5aCj+x6laNGWLH3wviHtoCv/P3+otBhbOhJgG8qtpdAMlTCxLtsTWA7LH1Oh/bFCHsBn0TPS5m30EQ==}
+
+  '@types/helmet@4.0.0':
+    resolution: {integrity: sha512-ONIn/nSNQA57yRge3oaMQESef/6QhoeX7llWeDli0UZIfz8TQMkfNPTXA8VnnyeA1WUjG2pGqdjEIueYonMdfQ==}
+    deprecated: This is a stub types definition. helmet provides its own type definitions, so you do not need this installed.
 
   '@types/http-errors@2.0.5':
     resolution: {integrity: sha512-r8Tayk8HJnX0FztbZN7oVqGccWgw98T/0neJphO91KkmOzug1KkofZURD4UaD5uH8AqcFLfdPErnBod0u71/qg==}
@@ -2535,6 +2557,14 @@ packages:
   commander@8.3.0:
     resolution: {integrity: sha512-OkTL9umf+He2DZkUq8f8J9of7yL6RJKI24dVITBmNfZBmri9zYZQrKkuXiKhyfPSu8tUhnVBB1iKXevvnlR4Ww==}
     engines: {node: '>= 12'}
+
+  compressible@2.0.18:
+    resolution: {integrity: sha512-AF3r7P5dWxL8MxyITRMlORQNaOA2IkAFaTr4k7BUumjPtRpGDTZpl0Pb1XCO6JeDCBdp126Cgs9sMxqSjgYyRg==}
+    engines: {node: '>= 0.6'}
+
+  compression@1.8.1:
+    resolution: {integrity: sha512-9mAqGPHLakhCLeNyxPkK4xVo746zQ/czLH1Ky+vkitMnWfWZps8r0qXuwhwizagCRttsL4lfG4pIOvaWLpAP0w==}
+    engines: {node: '>= 0.8.0'}
 
   confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
@@ -3039,6 +3069,12 @@ packages:
     resolution: {integrity: sha512-JhFGDVJ7tmDJItKhYgJCGLOWjuK9vPxiXoUFLwLDc99NlmklilbiQJwoctZtt13+xMw91MCk/REan6MWHqDjyA==}
     engines: {node: '>=12.0.0'}
 
+  express-rate-limit@8.2.1:
+    resolution: {integrity: sha512-PCZEIEIxqwhzw4KF0n7QF4QqruVTcF73O5kFKUnGOyjbCCgizBBiFaYpd/fnBLUMPw/BWw9OsiN7GgrNYr7j6g==}
+    engines: {node: '>= 16'}
+    peerDependencies:
+      express: '>= 4.11'
+
   express@4.21.2:
     resolution: {integrity: sha512-28HqgMZAmih1Czt9ny7qr6ek2qddF4FclbMzwhCREB6OFfH+rXAnuNCwo1/wFvrtbgsQDb4kSbX9de9lFbrXnA==}
     engines: {node: '>= 0.10.0'}
@@ -3203,6 +3239,10 @@ packages:
   hastscript@9.0.1:
     resolution: {integrity: sha512-g7df9rMFX/SPi34tyGCyUBREQoKkapwdY/T04Qn9TDWfHhAYt4/I0gMVirzK5wEzeUqIjEB+LXC/ypb7Aqno5w==}
 
+  helmet@8.1.0:
+    resolution: {integrity: sha512-jOiHyAZsmnr8LqoPGmCjYAaiuWwjAPLgY8ZX2XrmHawt99/u1y6RgrZMTeoPfpUbV96HOalYgz1qzkRbw54Pmg==}
+    engines: {node: '>=18.0.0'}
+
   html-url-attributes@3.0.1:
     resolution: {integrity: sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==}
 
@@ -3243,6 +3283,10 @@ packages:
   internmap@2.0.3:
     resolution: {integrity: sha512-5Hh7Y1wQbvY5ooGgPbDaL5iYLAPzMTUrjMulskHLH6wnv/A+1q5rgEaiuqEjB+oxGXIVZs1FF+R/KPN3ZSQYYg==}
     engines: {node: '>=12'}
+
+  ip-address@10.0.1:
+    resolution: {integrity: sha512-NWv9YLW4PoW2B7xtzaS3NCot75m6nK7Icdv0o3lfMceJVRfSoQwqD4wEH5rLwoKJwUiZ/rfpiVBhnaF0FK4HoA==}
+    engines: {node: '>= 12'}
 
   ipaddr.js@1.9.1:
     resolution: {integrity: sha512-0KI/607xoxSToH7GjN1FfSbLoU0+btTicjsQSWQlh/hZykN8KpmMf7uYwPW3R+akZ6R/w18ZlXSHBYXiYUPO3g==}
@@ -3650,6 +3694,10 @@ packages:
     resolution: {integrity: sha512-+EUsqGPLsM+j/zdChZjsnX51g4XrHFOIXwfnCVPGlQk/k5giakcKsuxCObBRu6DSm9opw/O6slWbJdghQM4bBg==}
     engines: {node: '>= 0.6'}
 
+  negotiator@0.6.4:
+    resolution: {integrity: sha512-myRT3DiWPHqho5PrJaIRyaMv2kgYf0mUVgBNOYMuCH5Ki1yEiQaf/ZJuQ62nvpc44wL5WDbTX7yGJi1Neevw8w==}
+    engines: {node: '>= 0.6'}
+
   next-themes@0.4.6:
     resolution: {integrity: sha512-pZvgD5L0IEvX5/9GWyHMf3m8BKiVQwsCMHfoFosXtXBMnaS0ZnIJ9ST4b4NqLVKDEm8QBxoNNGNaBv2JNF6XNA==}
     peerDependencies:
@@ -3681,6 +3729,10 @@ packages:
 
   on-finished@2.4.1:
     resolution: {integrity: sha512-oVlzkg3ENAhCk2zdv7IJwd/QUD4z2RxRwpkcGY8psCVcCYZNq4wYnVWALHM+brtuJjePWiYF/ClmuDr8Ch5+kg==}
+    engines: {node: '>= 0.8'}
+
+  on-headers@1.1.0:
+    resolution: {integrity: sha512-737ZY3yNnXy37FHkQxPzt4UZ2UWPWiCZWLvFZ4fu5cueciegX0zGPnrlY6bwRg4FdQOe9YU8MkmJwGhoMybl8A==}
     engines: {node: '>= 0.8'}
 
   oniguruma-parser@0.12.1:
@@ -6521,21 +6573,21 @@ snapshots:
       '@tanstack/query-core': 5.90.2
       react: 19.2.1
 
-  '@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.9.3))(typescript@5.9.3)':
+  '@trpc/client@11.8.1(@trpc/server@11.8.1(typescript@5.9.3))(typescript@5.9.3)':
     dependencies:
-      '@trpc/server': 11.6.0(typescript@5.9.3)
+      '@trpc/server': 11.8.1(typescript@5.9.3)
       typescript: 5.9.3
 
-  '@trpc/react-query@11.6.0(@tanstack/react-query@5.90.2(react@19.2.1))(@trpc/client@11.6.0(@trpc/server@11.6.0(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.6.0(typescript@5.9.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.9.3)':
+  '@trpc/react-query@11.8.1(@tanstack/react-query@5.90.2(react@19.2.1))(@trpc/client@11.8.1(@trpc/server@11.8.1(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.8.1(typescript@5.9.3))(react-dom@19.2.1(react@19.2.1))(react@19.2.1)(typescript@5.9.3)':
     dependencies:
       '@tanstack/react-query': 5.90.2(react@19.2.1)
-      '@trpc/client': 11.6.0(@trpc/server@11.6.0(typescript@5.9.3))(typescript@5.9.3)
-      '@trpc/server': 11.6.0(typescript@5.9.3)
+      '@trpc/client': 11.8.1(@trpc/server@11.8.1(typescript@5.9.3))(typescript@5.9.3)
+      '@trpc/server': 11.8.1(typescript@5.9.3)
       react: 19.2.1
       react-dom: 19.2.1(react@19.2.1)
       typescript: 5.9.3
 
-  '@trpc/server@11.6.0(typescript@5.9.3)':
+  '@trpc/server@11.8.1(typescript@5.9.3)':
     dependencies:
       typescript: 5.9.3
 
@@ -6567,6 +6619,11 @@ snapshots:
   '@types/body-parser@1.19.6':
     dependencies:
       '@types/connect': 3.4.38
+      '@types/node': 24.7.0
+
+  '@types/compression@1.8.1':
+    dependencies:
+      '@types/express': 4.17.21
       '@types/node': 24.7.0
 
   '@types/connect@3.4.38':
@@ -6721,6 +6778,10 @@ snapshots:
   '@types/hast@3.0.4':
     dependencies:
       '@types/unist': 3.0.3
+
+  '@types/helmet@4.0.0':
+    dependencies:
+      helmet: 8.1.0
 
   '@types/http-errors@2.0.5': {}
 
@@ -6982,6 +7043,22 @@ snapshots:
   commander@7.2.0: {}
 
   commander@8.3.0: {}
+
+  compressible@2.0.18:
+    dependencies:
+      mime-db: 1.52.0
+
+  compression@1.8.1:
+    dependencies:
+      bytes: 3.1.2
+      compressible: 2.0.18
+      debug: 2.6.9
+      negotiator: 0.6.4
+      on-headers: 1.1.0
+      safe-buffer: 5.2.1
+      vary: 1.1.2
+    transitivePeerDependencies:
+      - supports-color
 
   confbox@0.1.8: {}
 
@@ -7444,6 +7521,11 @@ snapshots:
 
   expect-type@1.2.2: {}
 
+  express-rate-limit@8.2.1(express@4.21.2):
+    dependencies:
+      express: 4.21.2
+      ip-address: 10.0.1
+
   express@4.21.2:
     dependencies:
       accepts: 1.3.8
@@ -7704,6 +7786,8 @@ snapshots:
       property-information: 7.1.0
       space-separated-tokens: 2.0.2
 
+  helmet@8.1.0: {}
+
   html-url-attributes@3.0.1: {}
 
   html-void-elements@3.0.0: {}
@@ -7740,6 +7824,8 @@ snapshots:
   internmap@1.0.1: {}
 
   internmap@2.0.3: {}
+
+  ip-address@10.0.1: {}
 
   ipaddr.js@1.9.1: {}
 
@@ -8337,6 +8423,8 @@ snapshots:
 
   negotiator@0.6.3: {}
 
+  negotiator@0.6.4: {}
+
   next-themes@0.4.6(react-dom@19.2.1(react@19.2.1))(react@19.2.1):
     dependencies:
       react: 19.2.1
@@ -8357,6 +8445,8 @@ snapshots:
   on-finished@2.4.1:
     dependencies:
       ee-first: 1.1.1
+
+  on-headers@1.1.0: {}
 
   oniguruma-parser@0.12.1: {}
 
