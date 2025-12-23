@@ -386,23 +386,7 @@ export const noteCategoriesRouter = router({
     }),
 });
 
-// ============================================
-// Combined Custom System Router
-// ============================================
-export const customSystemRouter = router({
-  accounts: customAccountsRouter,
-  transactions: customTransactionsRouter,
-  notes: customNotesRouter,
-  memos: customMemosRouter,
-  categories: noteCategoriesRouter,
-  // New routers for personal finance system
-  subSystems: customSubSystemsRouter,
-  treasuries: customTreasuriesRouter,
-  intermediaryAccounts: customIntermediaryAccountsRouter,
-  receiptVouchers: customReceiptVouchersRouter,
-  paymentVouchers: customPaymentVouchersRouter,
-  reconciliations: customReconciliationsRouter,
-});
+
 
 
 // ============================================
@@ -1146,4 +1130,22 @@ export const customReconciliationsRouter = router({
       
       return { success: true };
     }),
+});
+
+// ============================================
+// Combined Custom System Router
+// ============================================
+export const customSystemRouter = router({
+  accounts: customAccountsRouter,
+  transactions: customTransactionsRouter,
+  notes: customNotesRouter,
+  memos: customMemosRouter,
+  categories: noteCategoriesRouter,
+  // New routers for personal finance system
+  subSystems: customSubSystemsRouter,
+  treasuries: customTreasuriesRouter,
+  intermediaryAccounts: customIntermediaryAccountsRouter,
+  receiptVouchers: customReceiptVouchersRouter,
+  paymentVouchers: customPaymentVouchersRouter,
+  reconciliations: customReconciliationsRouter,
 });
