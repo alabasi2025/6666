@@ -44,6 +44,8 @@ import {
   MoreVertical,
   Palette,
   Settings,
+  ExternalLink,
+  ArrowLeft,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -52,6 +54,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { useLocation } from "wouter";
 import { toast } from "sonner";
 
 // Color Options
@@ -88,7 +91,7 @@ const subSystemFormSchema = z.object({
 type SubSystemFormValues = z.infer<typeof subSystemFormSchema>;
 
 // Sub System Card Component
-function SubSystemCard({ subSystem, stats, onEdit, onDelete }: any) {
+function SubSystemCard({ subSystem, stats, onEdit, onDelete, onOpen }: any) {
   const colorClass = colorOptions.find(c => c.value === subSystem.color)?.class || "bg-blue-500";
   const IconComponent = iconOptions.find(i => i.value === subSystem.icon)?.icon || Layers;
 
@@ -175,6 +178,15 @@ function SubSystemCard({ subSystem, stats, onEdit, onDelete }: any) {
             {new Date(subSystem.createdAt).toLocaleDateString("ar-SA")}
           </span>
         </div>
+
+        {/* Enter Button */}
+        <Button 
+          className="w-full mt-4 bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700"
+          onClick={() => onOpen(subSystem.id)}
+        >
+          <ExternalLink className="ml-2 h-4 w-4" />
+          الدخول للنظام
+        </Button>
       </CardContent>
     </Card>
   );
@@ -182,6 +194,7 @@ function SubSystemCard({ subSystem, stats, onEdit, onDelete }: any) {
 
 // Main Component
 export default function CustomSubSystems() {
+  const [, setLocation] = useLocation();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSubSystem, setEditingSubSystem] = useState<any>(null);
 
@@ -517,6 +530,7 @@ export default function CustomSubSystems() {
               stats={getSubSystemStats(subSystem.id)}
               onEdit={handleEdit}
               onDelete={handleDelete}
+              onOpen={(id: number) => setLocation(`/custom/sub-systems/${id}`)}
             />
           ))}
         </div>

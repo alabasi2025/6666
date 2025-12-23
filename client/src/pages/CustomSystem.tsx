@@ -34,56 +34,89 @@ import CustomSubSystems from "./custom/CustomSubSystems";
 import CustomTreasuries from "./custom/CustomTreasuries";
 import CustomVouchers from "./custom/CustomVouchers";
 import CustomReconciliation from "./custom/CustomReconciliation";
+import SubSystemDetails from "./custom/SubSystemDetails";
 
-// Navigation Items for Custom System - Horizontal Layout
+// Navigation Items for Custom System - Horizontal Layout with Colors
 const customNavigationItems = [
   {
     id: "custom-dashboard",
     title: "الرئيسية",
     icon: LayoutDashboard,
     path: "/custom",
+    color: "from-amber-500 to-orange-500",
+    bgColor: "bg-amber-500/10",
+    textColor: "text-amber-400",
+    description: "لوحة التحكم الرئيسية",
   },
   {
     id: "custom-sub-systems",
     title: "الأنظمة الفرعية",
     icon: FolderKanban,
     path: "/custom/sub-systems",
+    color: "from-violet-500 to-purple-500",
+    bgColor: "bg-violet-500/10",
+    textColor: "text-violet-400",
+    description: "إدارة الأنظمة الفرعية",
   },
   {
     id: "custom-treasuries",
     title: "الخزائن",
     icon: Building2,
     path: "/custom/treasuries",
+    color: "from-emerald-500 to-green-500",
+    bgColor: "bg-emerald-500/10",
+    textColor: "text-emerald-400",
+    description: "الصناديق والبنوك",
   },
   {
     id: "custom-vouchers",
     title: "السندات",
     icon: Receipt,
     path: "/custom/vouchers",
+    color: "from-blue-500 to-cyan-500",
+    bgColor: "bg-blue-500/10",
+    textColor: "text-blue-400",
+    description: "سندات القبض والصرف",
   },
   {
     id: "custom-reconciliation",
     title: "التسويات",
     icon: GitBranch,
     path: "/custom/reconciliation",
+    color: "from-pink-500 to-rose-500",
+    bgColor: "bg-pink-500/10",
+    textColor: "text-pink-400",
+    description: "التسويات المالية",
   },
   {
     id: "custom-accounts",
     title: "الحسابات",
     icon: Landmark,
     path: "/custom/accounts",
+    color: "from-teal-500 to-cyan-500",
+    bgColor: "bg-teal-500/10",
+    textColor: "text-teal-400",
+    description: "إدارة الحسابات",
   },
   {
     id: "custom-notes",
     title: "الملاحظات",
     icon: FileText,
     path: "/custom/notes",
+    color: "from-yellow-500 to-amber-500",
+    bgColor: "bg-yellow-500/10",
+    textColor: "text-yellow-400",
+    description: "تدوين الملاحظات",
   },
   {
     id: "custom-memos",
     title: "المذكرات",
     icon: Mail,
     path: "/custom/memos",
+    color: "from-red-500 to-orange-500",
+    bgColor: "bg-red-500/10",
+    textColor: "text-red-400",
+    description: "المذكرات والتنبيهات",
   },
 ];
 
@@ -107,6 +140,7 @@ export default function CustomSystem() {
   const [matchNotes] = useRoute("/custom/notes");
   const [matchMemos] = useRoute("/custom/memos");
   const [matchSettings] = useRoute("/custom/settings");
+  const [matchSubSystemDetails] = useRoute("/custom/sub-systems/:id");
 
   // Fetch notifications count from API
   const { data: notesData } = trpc.customSystem.notes.list.useQuery(
@@ -142,6 +176,7 @@ export default function CustomSystem() {
   // Render content based on route
   const renderContent = () => {
     if (matchCustom) return <CustomDashboard />;
+    if (matchSubSystemDetails) return <SubSystemDetails />;
     if (matchSubSystems) return <CustomSubSystems />;
     if (matchTreasuries) return <CustomTreasuries />;
     if (matchVouchers) return <CustomVouchers />;
@@ -197,25 +232,108 @@ export default function CustomSystem() {
                 </DropdownMenuContent>
               </DropdownMenu>
 
-              {/* Desktop Navigation */}
-              <nav className="hidden lg:flex items-center gap-1 mr-4">
+              {/* Desktop Navigation - Professional Design with Colors */}
+              <nav className="hidden lg:flex items-center gap-0.5 mr-4">
                 {customNavigationItems.map((item) => {
                   const isActive = location === item.path || 
                     (item.path !== "/custom" && location.startsWith(item.path));
+                  
+                  // Define color classes based on item id
+                  const getColorClasses = () => {
+                    switch(item.id) {
+                      case 'custom-dashboard':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-amber-500 to-orange-500', 
+                          iconBg: 'bg-amber-500/20',
+                          text: 'text-amber-400',
+                          hoverBg: 'hover:bg-amber-500/10'
+                        };
+                      case 'custom-sub-systems':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-violet-500 to-purple-500', 
+                          iconBg: 'bg-violet-500/20',
+                          text: 'text-violet-400',
+                          hoverBg: 'hover:bg-violet-500/10'
+                        };
+                      case 'custom-treasuries':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-emerald-500 to-green-500', 
+                          iconBg: 'bg-emerald-500/20',
+                          text: 'text-emerald-400',
+                          hoverBg: 'hover:bg-emerald-500/10'
+                        };
+                      case 'custom-vouchers':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-blue-500 to-cyan-500', 
+                          iconBg: 'bg-blue-500/20',
+                          text: 'text-blue-400',
+                          hoverBg: 'hover:bg-blue-500/10'
+                        };
+                      case 'custom-reconciliation':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-pink-500 to-rose-500', 
+                          iconBg: 'bg-pink-500/20',
+                          text: 'text-pink-400',
+                          hoverBg: 'hover:bg-pink-500/10'
+                        };
+                      case 'custom-accounts':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-teal-500 to-cyan-500', 
+                          iconBg: 'bg-teal-500/20',
+                          text: 'text-teal-400',
+                          hoverBg: 'hover:bg-teal-500/10'
+                        };
+                      case 'custom-notes':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-yellow-500 to-amber-500', 
+                          iconBg: 'bg-yellow-500/20',
+                          text: 'text-yellow-400',
+                          hoverBg: 'hover:bg-yellow-500/10'
+                        };
+                      case 'custom-memos':
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-red-500 to-orange-500', 
+                          iconBg: 'bg-red-500/20',
+                          text: 'text-red-400',
+                          hoverBg: 'hover:bg-red-500/10'
+                        };
+                      default:
+                        return { 
+                          activeBg: 'bg-gradient-to-r from-zinc-500 to-zinc-600', 
+                          iconBg: 'bg-zinc-500/20',
+                          text: 'text-zinc-400',
+                          hoverBg: 'hover:bg-zinc-500/10'
+                        };
+                    }
+                  };
+                  
+                  const colors = getColorClasses();
                   
                   return (
                     <button
                       key={item.id}
                       onClick={() => setLocation(item.path)}
+                      title={item.description}
                       className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium",
+                        "group relative flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-300 text-xs font-semibold border",
                         isActive 
-                          ? "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/30" 
-                          : "text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10"
+                          ? `${colors.activeBg} text-white shadow-lg border-transparent` 
+                          : `text-zinc-400 ${colors.hoverBg} border-transparent hover:border-zinc-700/50`
                       )}
                     >
-                      <item.icon className={cn("h-4 w-4", isActive ? "text-amber-400" : "")} />
-                      <span>{item.title}</span>
+                      <div className={cn(
+                        "flex items-center justify-center w-6 h-6 rounded-lg transition-all",
+                        isActive ? "bg-white/20" : colors.iconBg
+                      )}>
+                        <item.icon className={cn(
+                          "h-3.5 w-3.5 transition-all duration-300",
+                          isActive ? "text-white" : colors.text
+                        )} />
+                      </div>
+                      <span className={cn(
+                        "whitespace-nowrap transition-colors",
+                        isActive ? "text-white" : `${colors.text} group-hover:text-white`
+                      )}>{item.title}</span>
                     </button>
                   );
                 })}
