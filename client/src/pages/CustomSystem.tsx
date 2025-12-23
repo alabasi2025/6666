@@ -116,6 +116,7 @@ export default function CustomSystem() {
   
   const unreadNotifications = notesData?.filter((n: any) => !n.isRead)?.length || 0;
 
+  // عرض شاشة التحميل أثناء التحقق من الجلسة
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-zinc-900 via-neutral-900 to-stone-900 flex items-center justify-center">
@@ -129,11 +130,9 @@ export default function CustomSystem() {
     );
   }
 
-  if (!user) {
-    // التوجيه لصفحة تسجيل الدخول باستخدام setLocation للحفاظ على الجلسة
-    setLocation('/login');
-    return null;
-  }
+  // النظام المخصص جزء من النظام الرئيسي - لا يحتاج تسجيل دخول منفصل
+  // إذا لم يكن المستخدم مسجل دخوله، سيتم التعامل معه كزائر عادي
+  // وسيرى النظام بدون بيانات شخصية
 
   // Get current page title
   const currentItem = customNavigationItems.find(item => 
