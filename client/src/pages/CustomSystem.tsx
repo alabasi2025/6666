@@ -198,7 +198,7 @@ export default function CustomSystem() {
                   <DropdownMenuSeparator className="bg-amber-500/20" />
                   <DropdownMenuItem 
                     className="gap-2 cursor-pointer hover:bg-amber-500/10 focus:bg-amber-500/10" 
-                    onClick={() => window.location.href = '/dashboard'}
+                    onClick={() => setLocation('/dashboard')}
                   >
                     <Zap className="h-4 w-4 text-blue-400" />
                     <span className="text-white">نظام الطاقة</span>
@@ -272,7 +272,7 @@ export default function CustomSystem() {
                 variant="ghost" 
                 size="icon"
                 className="relative group text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl"
-                onClick={() => window.location.href = '/dashboard'}
+                onClick={() => setLocation('/dashboard')}
                 title="الانتقال لنظام الطاقة"
               >
                 <Zap className="h-5 w-5 text-blue-400 group-hover:scale-110 transition-transform duration-300" />

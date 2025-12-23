@@ -683,7 +683,7 @@ export default function Dashboard() {
                   <span>نظام الطاقة</span>
                   <span className="mr-auto text-xs text-muted-foreground">الحالي</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" onClick={() => window.location.href = '/custom'}>
+                <DropdownMenuItem className="gap-2" onClick={() => setLocation('/custom')}>
                   <Settings className="h-4 w-4 text-fuchsia-500" />
                   <span>النظام المخصص</span>
                 </DropdownMenuItem>
@@ -704,7 +704,7 @@ export default function Dashboard() {
                   <span>نظام الطاقة</span>
                   <span className="mr-auto text-xs text-muted-foreground">الحالي</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2" onClick={() => window.location.href = '/custom'}>
+                <DropdownMenuItem className="gap-2" onClick={() => setLocation('/custom')}>
                   <Settings className="h-4 w-4 text-fuchsia-500" />
                   <span>النظام المخصص</span>
                 </DropdownMenuItem>
@@ -954,7 +954,7 @@ export default function Dashboard() {
             <Button 
               variant="ghost" 
               size="icon"
-              onClick={() => window.location.href = '/custom'}
+              onClick={() => setLocation('/custom')}
               className="relative group"
               title="الانتقال للنظام المخصص"
             >
