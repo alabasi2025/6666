@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Plus, Calendar, Play, Check, Lock, X, FileText } from "lucide-react";

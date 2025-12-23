@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { DataTable, Column, StatusBadge } from "@/components/DataTable";

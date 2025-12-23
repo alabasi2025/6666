@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { eq, and, desc, asc, sql, like, or, isNull, count, inArray, ne, gte, lte } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import {

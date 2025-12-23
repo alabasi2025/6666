@@ -2,17 +2,33 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
+import { useLocation } from "wouter";
 import { 
   Wrench, Users, Truck, ClipboardCheck, Clock, 
   CheckCircle, AlertTriangle, MapPin, Plus
 } from "lucide-react";
 
 interface FieldOpsDashboardProps {
-  businessId: number;
-  onNavigate: (screen: string) => void;
+  businessId?: number;
+  onNavigate?: (screen: string) => void;
 }
 
-export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDashboardProps) {
+export default function FieldOpsDashboard({ businessId: propBusinessId, onNavigate }: FieldOpsDashboardProps) {
+  const [, setLocation] = useLocation();
+  const { data: user } = trpc.auth.me.useQuery();
+  
+  // استخدام businessId من props أو من المستخدم أو القيمة الافتراضية
+  const businessId = propBusinessId ?? user?.businessId ?? 1;
+  
+  // دالة التنقل الافتراضية
+  const handleNavigate = (screen: string) => {
+    if (onNavigate) {
+      onNavigate(screen);
+    } else {
+      setLocation(`/dashboard/fieldops/${screen}`);
+    }
+  };
+
   const { data: stats, isLoading } = trpc.fieldOps.dashboardStats.useQuery({ businessId });
   const { data: operations } = trpc.fieldOps.operations.list.useQuery({ 
     businessId, 
@@ -72,7 +88,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
       total: stats?.totalTeams || 0,
       active: stats?.activeTeams || 0,
       icon: Users,
-      screen: "field-teams",
+      screen: "teams",
     },
     {
       title: "العاملين",
@@ -80,7 +96,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
       active: stats?.availableWorkers || 0,
       activeLabel: "متاح",
       icon: Users,
-      screen: "field-workers",
+      screen: "workers",
     },
     {
       title: "المعدات",
@@ -88,7 +104,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
       active: stats?.availableEquipment || 0,
       activeLabel: "متاحة",
       icon: Truck,
-      screen: "field-equipment",
+      screen: "equipment",
     },
   ];
 
@@ -126,7 +142,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
           <h1 className="text-2xl font-bold">العمليات الميدانية</h1>
           <p className="text-muted-foreground">إدارة ومتابعة العمليات الميدانية</p>
         </div>
-        <Button onClick={() => onNavigate("field-operations")}>
+        <Button onClick={() => handleNavigate("operations")}>
           <Plus className="h-4 w-4 ml-2" />
           عملية جديدة
         </Button>
@@ -136,7 +152,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat) => (
           <Card key={stat.title} className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => onNavigate("field-operations")}>
+                onClick={() => handleNavigate("operations")}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -156,7 +172,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {resourceCards.map((resource) => (
           <Card key={resource.title} className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => onNavigate(resource.screen)}>
+                onClick={() => handleNavigate(resource.screen)}>
             <CardHeader className="pb-2">
               <CardTitle className="text-lg flex items-center gap-2">
                 <resource.icon className="h-5 w-5" />
@@ -187,7 +203,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
               <ClipboardCheck className="h-5 w-5" />
               العمليات الجارية
             </CardTitle>
-            <Button variant="outline" size="sm" onClick={() => onNavigate("field-operations")}>
+            <Button variant="outline" size="sm" onClick={() => handleNavigate("operations")}>
               عرض الكل
             </Button>
           </div>
@@ -211,7 +227,7 @@ export default function FieldOpsDashboard({ businessId, onNavigate }: FieldOpsDa
                       </p>
                     )}
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => onNavigate("field-operations")}>
+                  <Button variant="ghost" size="sm" onClick={() => handleNavigate("operations")}>
                     التفاصيل
                   </Button>
                 </div>

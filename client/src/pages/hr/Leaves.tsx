@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
 interface LeavesProps {
-  businessId: number;
+  businessId?: number;
 }
 
 export default function Leaves({ businessId }: LeavesProps) {

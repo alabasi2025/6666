@@ -1,9 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useLocation } from "wouter";
 import { Users, Building2, Calendar, Clock, TrendingUp, UserCheck, UserX, FileText } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
 interface HRDashboardProps {
-  businessId: number;
+  businessId?: number;
 }
 
 export default function HRDashboard({ businessId }: HRDashboardProps) {

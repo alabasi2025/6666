@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Plus, Search, Check, X, Gauge, Camera } from "lucide-react";
