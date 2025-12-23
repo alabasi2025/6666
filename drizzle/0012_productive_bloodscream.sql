@@ -1,0 +1,1 @@
+ALTER TABLE `businesses` MODIFY COLUMN `system_type` enum('energy','custom','both') NOT NULL DEFAULT 'both';
