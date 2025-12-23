@@ -18,7 +18,7 @@ interface Business {
   nameAr: string;
   nameEn?: string | null;
   type: "holding" | "subsidiary" | "branch";
-  systemType: "energy" | "custom";
+  systemType: "energy" | "custom" | "both";
   address?: string | null;
   phone?: string | null;
   email?: string | null;
@@ -42,7 +42,7 @@ export default function Businesses() {
     nameAr: "",
     nameEn: "",
     type: "subsidiary" as "holding" | "subsidiary" | "branch",
-    systemType: "energy" as "energy" | "custom",
+    systemType: "both" as "energy" | "custom" | "both",
     address: "",
     phone: "",
     email: "",
@@ -94,7 +94,7 @@ export default function Businesses() {
       nameAr: "",
       nameEn: "",
       type: "subsidiary",
-      systemType: "energy",
+      systemType: "both",
       address: "",
       phone: "",
       email: "",
@@ -185,6 +185,7 @@ export default function Businesses() {
     switch (systemType) {
       case "energy": return "نظام كهرباء";
       case "custom": return "نظام مخصص";
+      case "both": return "كلا النظامين";
       default: return systemType;
     }
   };
@@ -193,6 +194,7 @@ export default function Businesses() {
     switch (systemType) {
       case "energy": return "bg-yellow-500/20 text-yellow-500 border-yellow-500/30";
       case "custom": return "bg-purple-500/20 text-purple-500 border-purple-500/30";
+      case "both": return "bg-green-500/20 text-green-500 border-green-500/30";
       default: return "";
     }
   };
@@ -278,7 +280,7 @@ export default function Businesses() {
                   <Label htmlFor="systemType">نوع النظام *</Label>
                   <Select
                     value={formData.systemType}
-                    onValueChange={(value: "energy" | "custom") => 
+                    onValueChange={(value: "energy" | "custom" | "both") => 
                       setFormData({ ...formData, systemType: value })
                     }
                   >
@@ -298,13 +300,21 @@ export default function Businesses() {
                           نظام مخصص - حسابات وملاحظات ومذكرات
                         </div>
                       </SelectItem>
+                      <SelectItem value="both">
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                          كلا النظامين - الوصول الكامل
+                        </div>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
                     {
                       formData.systemType === "energy" 
                         ? "نظام إدارة الطاقة المتكامل يشمل: العملاء، الفوترة، الصيانة، SCADA والمزيد"
-                        : "نظام مخصص يشمل: الحسابات المالية، الملاحظات، المذكرات والتعاميم"
+                        : formData.systemType === "custom"
+                        ? "نظام مخصص يشمل: الحسابات المالية، الملاحظات، المذكرات والتعاميم"
+                        : "الوصول الكامل لكلا النظامين: نظام الطاقة والنظام المخصص"
                     }
                   </p>
                 </div>
@@ -688,7 +698,7 @@ export default function Businesses() {
                   <Label htmlFor="edit-systemType">نوع النظام</Label>
                   <Select
                     value={editingBusiness.systemType}
-                    onValueChange={(value: "energy" | "custom") => 
+                    onValueChange={(value: "energy" | "custom" | "both") => 
                       setEditingBusiness({ ...editingBusiness, systemType: value })
                     }
                   >
@@ -698,6 +708,7 @@ export default function Businesses() {
                     <SelectContent>
                       <SelectItem value="energy">نظام كهرباء</SelectItem>
                       <SelectItem value="custom">نظام مخصص</SelectItem>
+                      <SelectItem value="both">كلا النظامين</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -799,7 +810,7 @@ export default function Businesses() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground">نوع النظام</Label>
-                    <p className="font-medium">{viewingBusiness.systemType === "energy" ? "نظام كهرباء" : "نظام مخصص"}</p>
+                    <p className="font-medium">{getSystemTypeLabel(viewingBusiness.systemType || "both")}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">العملة</Label>

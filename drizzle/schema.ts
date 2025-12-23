@@ -24,7 +24,7 @@ export const businesses = mysqlTable("businesses", {
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   type: mysqlEnum("type", ["holding", "subsidiary", "branch"]).default("subsidiary").notNull(),
-  systemType: mysqlEnum("system_type", ["energy", "custom"]).default("energy").notNull(),
+  systemType: mysqlEnum("system_type", ["energy", "custom", "both"]).default("both").notNull(),
   parentId: int("parent_id"),
   logo: text("logo"),
   address: text("address"),
