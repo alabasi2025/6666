@@ -267,14 +267,16 @@ export default function CustomSystem() {
                 <Settings className="h-5 w-5" />
               </Button>
 
-              {/* Back to Energy System */}
+              {/* Back to Energy System - Icon Button */}
               <Button 
                 variant="ghost" 
-                className="hidden sm:flex items-center gap-2 text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl"
-                onClick={() => setLocation("/dashboard")}
+                size="icon"
+                className="relative group text-zinc-400 hover:text-blue-400 hover:bg-blue-500/10 rounded-xl"
+                onClick={() => window.location.href = '/dashboard'}
+                title="الانتقال لنظام الطاقة"
               >
-                <ArrowRight className="h-4 w-4" />
-                <span className="text-sm">نظام الطاقة</span>
+                <Zap className="h-5 w-5 text-blue-400 group-hover:scale-110 transition-transform duration-300" />
+                <span className="absolute -top-1 -right-1 w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
               </Button>
 
               {/* Mobile Menu Button */}

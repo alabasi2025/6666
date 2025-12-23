@@ -950,6 +950,17 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            {/* System Switcher Icon */}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => window.location.href = '/custom'}
+              className="relative group"
+              title="الانتقال للنظام المخصص"
+            >
+              <Settings className="h-5 w-5 text-fuchsia-500 group-hover:rotate-90 transition-transform duration-300" />
+              <span className="absolute -top-1 -right-1 w-2 h-2 bg-fuchsia-500 rounded-full animate-pulse" />
+            </Button>
             <Button variant="ghost" size="icon">
               <Bell className="h-5 w-5" />
             </Button>
