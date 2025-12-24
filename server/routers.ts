@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { sdk } from "./_core/sdk";
 import { getSessionCookieOptions } from "./_core/cookies";
