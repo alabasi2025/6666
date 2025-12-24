@@ -10,6 +10,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { getHealthStatus, getLivenessStatus, getReadinessStatus, getMetrics } from "../utils/health";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -88,6 +89,26 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Health Check Endpoints
+  app.get("/health", async (_req, res) => {
+    const health = await getHealthStatus();
+    const statusCode = health.status === "healthy" ? 200 : health.status === "degraded" ? 200 : 503;
+    res.status(statusCode).json(health);
+  });
+  
+  app.get("/health/live", (_req, res) => {
+    res.json(getLivenessStatus());
+  });
+  
+  app.get("/health/ready", async (_req, res) => {
+    const ready = await getReadinessStatus();
+    res.status(ready.ready ? 200 : 503).json(ready);
+  });
+  
+  app.get("/metrics", (_req, res) => {
+    res.json(getMetrics());
+  });
+  
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   // tRPC API
