@@ -10,6 +10,8 @@ import {
   json,
   date,
   datetime,
+  index,
+  uniqueIndex,
 } from "drizzle-orm/mysql-core";
 import { relations } from "drizzle-orm";
 
@@ -3139,7 +3141,10 @@ export const customSubSystems = mysqlTable("custom_sub_systems", {
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  businessIdx: index("css_business_idx").on(table.businessId),
+  codeIdx: uniqueIndex("css_code_idx").on(table.businessId, table.code),
+}));
 
 // الخزائن - Treasuries (صناديق، بنوك، محافظ إلكترونية، صرافين)
 export const customTreasuries = mysqlTable("custom_treasuries", {
@@ -3165,7 +3170,12 @@ export const customTreasuries = mysqlTable("custom_treasuries", {
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  businessIdx: index("ct_business_idx").on(table.businessId),
+  subSystemIdx: index("ct_subsystem_idx").on(table.subSystemId),
+  typeIdx: index("ct_type_idx").on(table.treasuryType),
+  codeIdx: uniqueIndex("ct_code_idx").on(table.businessId, table.code),
+}));
 
 // الحسابات الوسيطة - Intermediary Accounts
 export const customIntermediaryAccounts = mysqlTable("custom_intermediary_accounts", {
@@ -3217,7 +3227,15 @@ export const customReceiptVouchers = mysqlTable("custom_receipt_vouchers", {
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  businessIdx: index("crv_business_idx").on(table.businessId),
+  subSystemIdx: index("crv_subsystem_idx").on(table.subSystemId),
+  treasuryIdx: index("crv_treasury_idx").on(table.treasuryId),
+  partyIdx: index("crv_party_idx").on(table.partyId),
+  categoryIdx: index("crv_category_idx").on(table.categoryId),
+  dateIdx: index("crv_date_idx").on(table.voucherDate),
+  numberIdx: uniqueIndex("crv_number_idx").on(table.businessId, table.subSystemId, table.voucherNumber),
+}));
 
 // سندات الصرف - Payment Vouchers
 export const customPaymentVouchers = mysqlTable("custom_payment_vouchers", {
@@ -3253,7 +3271,15 @@ export const customPaymentVouchers = mysqlTable("custom_payment_vouchers", {
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  businessIdx: index("cpv_business_idx").on(table.businessId),
+  subSystemIdx: index("cpv_subsystem_idx").on(table.subSystemId),
+  treasuryIdx: index("cpv_treasury_idx").on(table.treasuryId),
+  partyIdx: index("cpv_party_idx").on(table.partyId),
+  categoryIdx: index("cpv_category_idx").on(table.categoryId),
+  dateIdx: index("cpv_date_idx").on(table.voucherDate),
+  numberIdx: uniqueIndex("cpv_number_idx").on(table.businessId, table.subSystemId, table.voucherNumber),
+}));
 
 // المطابقات - Reconciliations
 export const customReconciliations = mysqlTable("custom_reconciliations", {
@@ -3344,7 +3370,13 @@ export const customParties = mysqlTable("custom_parties", {
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  businessIdx: index("cp_business_idx").on(table.businessId),
+  subSystemIdx: index("cp_subsystem_idx").on(table.subSystemId),
+  codeIdx: uniqueIndex("cp_code_idx").on(table.businessId, table.code),
+  partyTypeIdx: index("cp_party_type_idx").on(table.businessId, table.partyType),
+  nameIdx: index("cp_name_idx").on(table.nameAr),
+}));
 
 // التصنيفات/البنود - Categories (بنود الإيرادات والمصروفات)
 export const customCategories = mysqlTable("custom_categories", {
@@ -3366,7 +3398,12 @@ export const customCategories = mysqlTable("custom_categories", {
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
+}, (table) => ({
+  businessIdx: index("cc_business_idx").on(table.businessId),
+  parentIdx: index("cc_parent_idx").on(table.parentId),
+  codeIdx: uniqueIndex("cc_code_idx").on(table.businessId, table.code),
+  typeIdx: index("cc_type_idx").on(table.businessId, table.categoryType),
+}));
 
 // حركات الخزينة - Treasury Movements (سجل كل حركة على الخزينة)
 export const customTreasuryMovements = mysqlTable("custom_treasury_movements", {
@@ -3393,7 +3430,13 @@ export const customTreasuryMovements = mysqlTable("custom_treasury_movements", {
   description: text("description"),
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  treasuryIdx: index("ctm_treasury_idx").on(table.treasuryId),
+  dateIdx: index("ctm_date_idx").on(table.movementDate),
+  typeIdx: index("ctm_type_idx").on(table.movementType),
+  refIdx: index("ctm_ref_idx").on(table.referenceType, table.referenceId),
+  treasuryDateIdx: index("ctm_treasury_date_idx").on(table.treasuryId, table.movementDate),
+}));
 
 // حركات الأطراف - Party Transactions (سجل كل حركة مع طرف)
 export const customPartyTransactions = mysqlTable("custom_party_transactions", {
@@ -3420,7 +3463,13 @@ export const customPartyTransactions = mysqlTable("custom_party_transactions", {
   description: text("description"),
   createdBy: int("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  partyIdx: index("cpt_party_idx").on(table.partyId),
+  dateIdx: index("cpt_date_idx").on(table.transactionDate),
+  typeIdx: index("cpt_type_idx").on(table.transactionType),
+  refIdx: index("cpt_ref_idx").on(table.referenceType, table.referenceId),
+  partyDateIdx: index("cpt_party_date_idx").on(table.partyId, table.transactionDate),
+}));
 
 // إعدادات النظام المخصص - Custom System Settings
 export const customSettings = mysqlTable("custom_settings", {
