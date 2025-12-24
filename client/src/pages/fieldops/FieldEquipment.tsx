@@ -80,7 +80,7 @@ export default function FieldEquipment({ businessId }: FieldEquipmentProps) {
     return <Badge variant="outline">{map[type] || type}</Badge>;
   };
 
-  const filtered = equipment?.filter((eq) => eq.nameAr.includes(searchTerm) || eq.equipmentCode.includes(searchTerm));
+  const filtered = equipment?.filter((eq) => eq.nameAr.includes(searchTerm) || eq.code?.includes(searchTerm));
 
   return (
     <div className="p-6 space-y-6">
@@ -125,9 +125,9 @@ export default function FieldEquipment({ businessId }: FieldEquipmentProps) {
                 <Button variant="ghost" size="sm" onClick={() => setEditingEquipment(eq)}><Edit className="h-4 w-4" /></Button>
               </div></CardHeader>
               <CardContent><div className="space-y-2">
-                <p className="text-sm text-muted-foreground font-mono">{eq.equipmentCode}</p>
+                <p className="text-sm text-muted-foreground font-mono">{eq.code}</p>
                 <div className="flex gap-2">{getStatusBadge(eq.status || "available")}{getTypeBadge(eq.equipmentType)}</div>
-                {eq.serialNumber && <p className="text-sm text-muted-foreground">الرقم التسلسلي: {eq.serialNumber}</p>}
+                {(eq as any).serialNumber && <p className="text-sm text-muted-foreground">الرقم التسلسلي: {(eq as any).serialNumber}</p>}
               </div></CardContent>
             </Card>
           ))}

@@ -266,7 +266,7 @@ class SDKServer {
     const signedInAt = new Date();
     
     // البحث عن المستخدم بـ openId
-    let user = await db.getUserByOpenId(sessionUserId);
+    let user = await db.getUserByOpenId(sessionUserId) as any;
     
     // إذا لم يتم العثور على المستخدم، تحقق من نوع تسجيل الدخول
     if (!user) {
@@ -279,7 +279,7 @@ class SDKServer {
         if (parts.length >= 2) {
           const phone = parts[1];
           // البحث عن المستخدم برقم الهاتف
-          user = await db.getUserByPhone(phone);
+          user = await db.getUserByPhone(phone) as any;
           if (user) {
             logger.debug("[Auth] Found user by phone", { phone });
             // تحديث openId ليتطابق مع الجلسة
@@ -287,7 +287,7 @@ class SDKServer {
               openId: user.openId,
               lastSignedIn: signedInAt,
             });
-            return user;
+            return user as any;
           }
         }
         
@@ -298,7 +298,7 @@ class SDKServer {
           loginMethod: 'local',
           lastSignedIn: signedInAt,
         });
-        user = await db.getUserByOpenId(sessionUserId);
+        user = await db.getUserByOpenId(sessionUserId) as any;
       } else {
         // تسجيل دخول OAuth - حاول المزامنة من السيرفر
         try {
@@ -310,7 +310,7 @@ class SDKServer {
             loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
             lastSignedIn: signedInAt,
           });
-          user = await db.getUserByOpenId(userInfo.openId);
+          user = await db.getUserByOpenId(userInfo.openId) as any;
         } catch (error) {
           logger.error("[Auth] Failed to sync user from OAuth", { error: error instanceof Error ? error.message : error });
           throw ForbiddenError("Failed to sync user info");
@@ -327,7 +327,7 @@ class SDKServer {
       lastSignedIn: signedInAt,
     });
 
-    return user;
+    return user as any;
   }
 }
 

@@ -382,7 +382,7 @@ export const hrRouter = router({
           if (!salary) continue;
 
           const basicSalary = parseFloat(salary.basicSalary || "0");
-          const allowances = parseFloat(salary.totalSalary || "0") - basicSalary;
+          const allowances = parseFloat(salary.housingAllowance || "0") + parseFloat(salary.transportAllowance || "0") + parseFloat(salary.otherAllowances || "0");
           const deductions = 0;
           const netSalary = basicSalary + allowances - deductions;
 
@@ -497,12 +497,12 @@ export const hrRouter = router({
           throw new Error("لم يتم تسجيل الحضور لهذا اليوم");
         }
 
-        if (record.checkOutTime) {
+        if (record.checkOut) {
           throw new Error("تم تسجيل الانصراف مسبقاً");
         }
 
         const checkOutTime = new Date();
-        const checkInTime = new Date(record.checkInTime!);
+        const checkInTime = new Date(record.checkIn!);
         const totalHours = (checkOutTime.getTime() - checkInTime.getTime()) / (1000 * 60 * 60);
 
         await db.updateAttendance(record.id, {
@@ -599,8 +599,8 @@ export const hrRouter = router({
           const balance = await db.getLeaveBalance(request.employeeId, request.leaveTypeId, year);
           if (balance) {
             await db.updateLeaveBalance(balance.id, {
-              usedBalance: (balance.usedBalance || 0) + request.totalDays,
-              remainingBalance: (balance.remainingBalance || 0) - request.totalDays,
+              usedBalance: parseFloat(balance.used || "0") + request.totalDays,
+              remainingBalance: parseFloat(balance.remaining || "0") - request.totalDays,
             });
           }
         }

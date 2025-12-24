@@ -219,11 +219,11 @@ export default function FieldOpsDashboard({ businessId: propBusinessId, onNaviga
                       {getStatusBadge(op.status || "scheduled")}
                       {getPriorityBadge(op.priority || "medium")}
                     </div>
-                    <p className="text-sm text-muted-foreground">{op.title}</p>
-                    {op.address && (
+                    <p className="text-sm text-muted-foreground">{(op as any).title || op.operationType}</p>
+                    {(op as any).address && (
                       <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
                         <MapPin className="h-3 w-3" />
-                        {op.address}
+                        {(op as any).address}
                       </p>
                     )}
                   </div>

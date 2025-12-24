@@ -456,7 +456,7 @@ export default function Branches() {
                     <TableCell>
                       <Badge className={getTypeColor(branch.type)}>{getTypeLabel(branch.type)}</Badge>
                     </TableCell>
-                    <TableCell>{branch.phone || "-"}</TableCell>
+                    <TableCell>{(branch as any).phone || "-"}</TableCell>
                     <TableCell>
                       <Badge variant={branch.isActive ? "default" : "secondary"}>
                         {branch.isActive ? "نشط" : "معطل"}
