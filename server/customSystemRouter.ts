@@ -24,8 +24,19 @@ export const customAccountsRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return [];
       
-      return await db.select()
-        .from(customAccounts)
+      return await db.select({
+        id: customAccounts.id,
+        businessId: customAccounts.businessId,
+        accountNumber: customAccounts.accountNumber,
+        accountName: customAccounts.accountName,
+        accountType: customAccounts.accountType,
+        parentId: customAccounts.parentId,
+        currency: customAccounts.currency,
+        balance: customAccounts.balance,
+        description: customAccounts.description,
+        isActive: customAccounts.isActive,
+        createdAt: customAccounts.createdAt,
+      }).from(customAccounts)
         .where(eq(customAccounts.businessId, input.businessId))
         .orderBy(asc(customAccounts.accountNumber));
     }),
@@ -38,8 +49,19 @@ export const customAccountsRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return null;
       
-      const result = await db.select()
-        .from(customAccounts)
+      const result = await db.select({
+        id: customAccounts.id,
+        businessId: customAccounts.businessId,
+        accountNumber: customAccounts.accountNumber,
+        accountName: customAccounts.accountName,
+        accountType: customAccounts.accountType,
+        parentId: customAccounts.parentId,
+        currency: customAccounts.currency,
+        balance: customAccounts.balance,
+        description: customAccounts.description,
+        isActive: customAccounts.isActive,
+        createdAt: customAccounts.createdAt,
+      }).from(customAccounts)
         .where(eq(customAccounts.id, input.id))
         .limit(1);
       return result[0] || null;
@@ -117,14 +139,25 @@ export const customTransactionsRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return [];
       
-      let query = db.select()
+      const selectFields = {
+        id: customTransactions.id,
+        businessId: customTransactions.businessId,
+        transactionNumber: customTransactions.transactionNumber,
+        transactionDate: customTransactions.transactionDate,
+        accountId: customTransactions.accountId,
+        transactionType: customTransactions.transactionType,
+        amount: customTransactions.amount,
+        description: customTransactions.description,
+        createdAt: customTransactions.createdAt,
+      };
+      let query = db.select(selectFields)
         .from(customTransactions)
         .where(eq(customTransactions.businessId, input.businessId))
         .orderBy(desc(customTransactions.transactionDate))
         .limit(input.limit);
       
       if (input.accountId) {
-        query = db.select()
+        query = db.select(selectFields)
           .from(customTransactions)
           .where(and(
             eq(customTransactions.businessId, input.businessId),
@@ -159,7 +192,10 @@ export const customTransactionsRouter = router({
       });
       
       // تحديث رصيد الحساب
-      const account = await db.select().from(customAccounts).where(eq(customAccounts.id, input.accountId)).limit(1);
+      const account = await db.select({
+        id: customAccounts.id,
+        balance: customAccounts.balance,
+      }).from(customAccounts).where(eq(customAccounts.id, input.accountId)).limit(1);
       if (account[0]) {
         const currentBalance = parseFloat(account[0].balance || "0");
         const amount = parseFloat(input.amount);
@@ -192,8 +228,19 @@ export const customNotesRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return [];
       
-      return await db.select()
-        .from(customNotes)
+      return await db.select({
+        id: customNotes.id,
+        businessId: customNotes.businessId,
+        title: customNotes.title,
+        content: customNotes.content,
+        category: customNotes.category,
+        priority: customNotes.priority,
+        color: customNotes.color,
+        tags: customNotes.tags,
+        isPinned: customNotes.isPinned,
+        isArchived: customNotes.isArchived,
+        createdAt: customNotes.createdAt,
+      }).from(customNotes)
         .where(and(
           eq(customNotes.businessId, input.businessId),
           eq(customNotes.isArchived, input.isArchived)
@@ -209,8 +256,19 @@ export const customNotesRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return null;
       
-      const result = await db.select()
-        .from(customNotes)
+      const result = await db.select({
+        id: customNotes.id,
+        businessId: customNotes.businessId,
+        title: customNotes.title,
+        content: customNotes.content,
+        category: customNotes.category,
+        priority: customNotes.priority,
+        color: customNotes.color,
+        tags: customNotes.tags,
+        isPinned: customNotes.isPinned,
+        isArchived: customNotes.isArchived,
+        createdAt: customNotes.createdAt,
+      }).from(customNotes)
         .where(eq(customNotes.id, input.id))
         .limit(1);
       return result[0] || null;
@@ -295,8 +353,20 @@ export const customMemosRouter = router({
         conditions.push(eq(customMemos.status, input.status));
       }
       
-      return await db.select()
-        .from(customMemos)
+      return await db.select({
+        id: customMemos.id,
+        businessId: customMemos.businessId,
+        memoNumber: customMemos.memoNumber,
+        memoDate: customMemos.memoDate,
+        subject: customMemos.subject,
+        content: customMemos.content,
+        memoType: customMemos.memoType,
+        fromDepartment: customMemos.fromDepartment,
+        toDepartment: customMemos.toDepartment,
+        priority: customMemos.priority,
+        status: customMemos.status,
+        createdAt: customMemos.createdAt,
+      }).from(customMemos)
         .where(and(...conditions))
         .orderBy(desc(customMemos.memoDate));
     }),
@@ -309,8 +379,22 @@ export const customMemosRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return null;
       
-      const result = await db.select()
-        .from(customMemos)
+      const result = await db.select({
+        id: customMemos.id,
+        businessId: customMemos.businessId,
+        memoNumber: customMemos.memoNumber,
+        memoDate: customMemos.memoDate,
+        subject: customMemos.subject,
+        content: customMemos.content,
+        memoType: customMemos.memoType,
+        fromDepartment: customMemos.fromDepartment,
+        toDepartment: customMemos.toDepartment,
+        priority: customMemos.priority,
+        status: customMemos.status,
+        responseRequired: customMemos.responseRequired,
+        responseDeadline: customMemos.responseDeadline,
+        createdAt: customMemos.createdAt,
+      }).from(customMemos)
         .where(eq(customMemos.id, input.id))
         .limit(1);
       return result[0] || null;
@@ -386,8 +470,14 @@ export const noteCategoriesRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return [];
       
-      return await db.select()
-        .from(noteCategories)
+      return await db.select({
+        id: noteCategories.id,
+        businessId: noteCategories.businessId,
+        name: noteCategories.name,
+        color: noteCategories.color,
+        icon: noteCategories.icon,
+        createdAt: noteCategories.createdAt,
+      }).from(noteCategories)
         .where(eq(noteCategories.businessId, input.businessId))
         .orderBy(asc(noteCategories.name));
     }),
@@ -436,8 +526,18 @@ export const customSubSystemsRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return [];
       
-      return await db.select()
-        .from(customSubSystems)
+      return await db.select({
+        id: customSubSystems.id,
+        businessId: customSubSystems.businessId,
+        code: customSubSystems.code,
+        nameAr: customSubSystems.nameAr,
+        nameEn: customSubSystems.nameEn,
+        description: customSubSystems.description,
+        color: customSubSystems.color,
+        icon: customSubSystems.icon,
+        isActive: customSubSystems.isActive,
+        createdAt: customSubSystems.createdAt,
+      }).from(customSubSystems)
         .where(eq(customSubSystems.businessId, input.businessId))
         .orderBy(asc(customSubSystems.code));
     }),
@@ -449,8 +549,18 @@ export const customSubSystemsRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return null;
       
-      const result = await db.select()
-        .from(customSubSystems)
+      const result = await db.select({
+        id: customSubSystems.id,
+        businessId: customSubSystems.businessId,
+        code: customSubSystems.code,
+        nameAr: customSubSystems.nameAr,
+        nameEn: customSubSystems.nameEn,
+        description: customSubSystems.description,
+        color: customSubSystems.color,
+        icon: customSubSystems.icon,
+        isActive: customSubSystems.isActive,
+        createdAt: customSubSystems.createdAt,
+      }).from(customSubSystems)
         .where(eq(customSubSystems.id, input.id))
         .limit(1);
       return result[0] || null;
@@ -464,24 +574,31 @@ export const customSubSystemsRouter = router({
       if (!db) return [];
       
       // Get all sub systems
-      const subSystems = await db.select()
-        .from(customSubSystems)
+      const subSystems = await db.select({
+        id: customSubSystems.id,
+        nameAr: customSubSystems.nameAr,
+      }).from(customSubSystems)
         .where(eq(customSubSystems.businessId, input.businessId));
       
       const stats = await Promise.all(subSystems.map(async (sys) => {
-        const treasuries = await db.select()
-          .from(customTreasuries)
+        const treasuries = await db.select({
+          id: customTreasuries.id,
+        }).from(customTreasuries)
           .where(eq(customTreasuries.subSystemId, sys.id));
         
-        const receipts = await db.select()
-          .from(customReceiptVouchers)
+        const receipts = await db.select({
+          id: customReceiptVouchers.id,
+          amount: customReceiptVouchers.amount,
+        }).from(customReceiptVouchers)
           .where(and(
             eq(customReceiptVouchers.subSystemId, sys.id),
             eq(customReceiptVouchers.status, "confirmed")
           ));
         
-        const payments = await db.select()
-          .from(customPaymentVouchers)
+        const payments = await db.select({
+          id: customPaymentVouchers.id,
+          amount: customPaymentVouchers.amount,
+        }).from(customPaymentVouchers)
           .where(and(
             eq(customPaymentVouchers.subSystemId, sys.id),
             eq(customPaymentVouchers.status, "confirmed")
@@ -580,8 +697,22 @@ export const customTreasuriesRouter = router({
         conditions.push(eq(customTreasuries.treasuryType, input.treasuryType));
       }
       
-      return await db.select()
-        .from(customTreasuries)
+      return await db.select({
+        id: customTreasuries.id,
+        businessId: customTreasuries.businessId,
+        subSystemId: customTreasuries.subSystemId,
+        code: customTreasuries.code,
+        nameAr: customTreasuries.nameAr,
+        nameEn: customTreasuries.nameEn,
+        treasuryType: customTreasuries.treasuryType,
+        bankName: customTreasuries.bankName,
+        accountNumber: customTreasuries.accountNumber,
+        currency: customTreasuries.currency,
+        openingBalance: customTreasuries.openingBalance,
+        currentBalance: customTreasuries.currentBalance,
+        isActive: customTreasuries.isActive,
+        createdAt: customTreasuries.createdAt,
+      }).from(customTreasuries)
         .where(and(...conditions))
         .orderBy(asc(customTreasuries.code));
     }),
@@ -593,8 +724,27 @@ export const customTreasuriesRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return null;
       
-      const result = await db.select()
-        .from(customTreasuries)
+      const result = await db.select({
+        id: customTreasuries.id,
+        businessId: customTreasuries.businessId,
+        subSystemId: customTreasuries.subSystemId,
+        code: customTreasuries.code,
+        nameAr: customTreasuries.nameAr,
+        nameEn: customTreasuries.nameEn,
+        treasuryType: customTreasuries.treasuryType,
+        bankName: customTreasuries.bankName,
+        accountNumber: customTreasuries.accountNumber,
+        iban: customTreasuries.iban,
+        swiftCode: customTreasuries.swiftCode,
+        walletProvider: customTreasuries.walletProvider,
+        walletNumber: customTreasuries.walletNumber,
+        currency: customTreasuries.currency,
+        openingBalance: customTreasuries.openingBalance,
+        currentBalance: customTreasuries.currentBalance,
+        description: customTreasuries.description,
+        isActive: customTreasuries.isActive,
+        createdAt: customTreasuries.createdAt,
+      }).from(customTreasuries)
         .where(eq(customTreasuries.id, input.id))
         .limit(1);
       return result[0] || null;
@@ -680,8 +830,10 @@ export const customTreasuriesRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
-      const treasury = await db.select()
-        .from(customTreasuries)
+      const treasury = await db.select({
+        id: customTreasuries.id,
+        currentBalance: customTreasuries.currentBalance,
+      }).from(customTreasuries)
         .where(eq(customTreasuries.id, input.id))
         .limit(1);
       
@@ -714,8 +866,19 @@ export const customIntermediaryAccountsRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) return [];
       
-      return await db.select()
-        .from(customIntermediaryAccounts)
+      return await db.select({
+        id: customIntermediaryAccounts.id,
+        businessId: customIntermediaryAccounts.businessId,
+        fromSubSystemId: customIntermediaryAccounts.fromSubSystemId,
+        toSubSystemId: customIntermediaryAccounts.toSubSystemId,
+        code: customIntermediaryAccounts.code,
+        nameAr: customIntermediaryAccounts.nameAr,
+        nameEn: customIntermediaryAccounts.nameEn,
+        currency: customIntermediaryAccounts.currency,
+        currentBalance: customIntermediaryAccounts.currentBalance,
+        isActive: customIntermediaryAccounts.isActive,
+        createdAt: customIntermediaryAccounts.createdAt,
+      }).from(customIntermediaryAccounts)
         .where(eq(customIntermediaryAccounts.businessId, input.businessId))
         .orderBy(asc(customIntermediaryAccounts.code));
     }),
@@ -792,8 +955,22 @@ export const customReceiptVouchersRouter = router({
         conditions.push(eq(customReceiptVouchers.status, input.status));
       }
       
-      return await db.select()
-        .from(customReceiptVouchers)
+      return await db.select({
+        id: customReceiptVouchers.id,
+        businessId: customReceiptVouchers.businessId,
+        subSystemId: customReceiptVouchers.subSystemId,
+        voucherNumber: customReceiptVouchers.voucherNumber,
+        voucherDate: customReceiptVouchers.voucherDate,
+        amount: customReceiptVouchers.amount,
+        currency: customReceiptVouchers.currency,
+        sourceType: customReceiptVouchers.sourceType,
+        sourceName: customReceiptVouchers.sourceName,
+        treasuryId: customReceiptVouchers.treasuryId,
+        description: customReceiptVouchers.description,
+        status: customReceiptVouchers.status,
+        isReconciled: customReceiptVouchers.isReconciled,
+        createdAt: customReceiptVouchers.createdAt,
+      }).from(customReceiptVouchers)
         .where(and(...conditions))
         .orderBy(desc(customReceiptVouchers.voucherDate));
     }),
@@ -859,8 +1036,11 @@ export const customReceiptVouchersRouter = router({
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Get voucher
-      const voucher = await db.select()
-        .from(customReceiptVouchers)
+      const voucher = await db.select({
+        id: customReceiptVouchers.id,
+        treasuryId: customReceiptVouchers.treasuryId,
+        amount: customReceiptVouchers.amount,
+      }).from(customReceiptVouchers)
         .where(eq(customReceiptVouchers.id, input.id))
         .limit(1);
       
@@ -869,8 +1049,10 @@ export const customReceiptVouchersRouter = router({
       }
       
       // Update treasury balance
-      const treasury = await db.select()
-        .from(customTreasuries)
+      const treasury = await db.select({
+        id: customTreasuries.id,
+        currentBalance: customTreasuries.currentBalance,
+      }).from(customTreasuries)
         .where(eq(customTreasuries.id, voucher[0].treasuryId))
         .limit(1);
       
@@ -925,8 +1107,22 @@ export const customPaymentVouchersRouter = router({
         conditions.push(eq(customPaymentVouchers.status, input.status));
       }
       
-      return await db.select()
-        .from(customPaymentVouchers)
+      return await db.select({
+        id: customPaymentVouchers.id,
+        businessId: customPaymentVouchers.businessId,
+        subSystemId: customPaymentVouchers.subSystemId,
+        voucherNumber: customPaymentVouchers.voucherNumber,
+        voucherDate: customPaymentVouchers.voucherDate,
+        amount: customPaymentVouchers.amount,
+        currency: customPaymentVouchers.currency,
+        treasuryId: customPaymentVouchers.treasuryId,
+        destinationType: customPaymentVouchers.destinationType,
+        destinationName: customPaymentVouchers.destinationName,
+        description: customPaymentVouchers.description,
+        status: customPaymentVouchers.status,
+        isReconciled: customPaymentVouchers.isReconciled,
+        createdAt: customPaymentVouchers.createdAt,
+      }).from(customPaymentVouchers)
         .where(and(...conditions))
         .orderBy(desc(customPaymentVouchers.voucherDate));
     }),
@@ -992,8 +1188,11 @@ export const customPaymentVouchersRouter = router({
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Get voucher
-      const voucher = await db.select()
-        .from(customPaymentVouchers)
+      const voucher = await db.select({
+        id: customPaymentVouchers.id,
+        treasuryId: customPaymentVouchers.treasuryId,
+        amount: customPaymentVouchers.amount,
+      }).from(customPaymentVouchers)
         .where(eq(customPaymentVouchers.id, input.id))
         .limit(1);
       
@@ -1002,8 +1201,10 @@ export const customPaymentVouchersRouter = router({
       }
       
       // Update treasury balance
-      const treasury = await db.select()
-        .from(customTreasuries)
+      const treasury = await db.select({
+        id: customTreasuries.id,
+        currentBalance: customTreasuries.currentBalance,
+      }).from(customTreasuries)
         .where(eq(customTreasuries.id, voucher[0].treasuryId))
         .limit(1);
       
@@ -1058,8 +1259,9 @@ export const customTransfersRouter = router({
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // 1. البحث عن أو إنشاء الحساب الوسيط
-      let intermediaryAccount = await db.select()
-        .from(customIntermediaryAccounts)
+      let intermediaryAccount = await db.select({
+        id: customIntermediaryAccounts.id,
+      }).from(customIntermediaryAccounts)
         .where(and(
           eq(customIntermediaryAccounts.businessId, input.businessId),
           eq(customIntermediaryAccounts.fromSubSystemId, input.fromSubSystemId),
@@ -1071,8 +1273,8 @@ export const customTransfersRouter = router({
       
       if (!intermediaryAccount[0]) {
         // إنشاء حساب وسيط جديد
-        const fromSystem = await db.select().from(customSubSystems).where(eq(customSubSystems.id, input.fromSubSystemId)).limit(1);
-        const toSystem = await db.select().from(customSubSystems).where(eq(customSubSystems.id, input.toSubSystemId)).limit(1);
+        const fromSystem = await db.select({ id: customSubSystems.id, nameAr: customSubSystems.nameAr }).from(customSubSystems).where(eq(customSubSystems.id, input.fromSubSystemId)).limit(1);
+        const toSystem = await db.select({ id: customSubSystems.id, nameAr: customSubSystems.nameAr }).from(customSubSystems).where(eq(customSubSystems.id, input.toSubSystemId)).limit(1);
         
         const code = `INT-${input.fromSubSystemId}-${input.toSubSystemId}`;
         const nameAr = `حساب وسيط: ${fromSystem[0]?.nameAr || 'نظام'} → ${toSystem[0]?.nameAr || 'نظام'}`;
@@ -1137,8 +1339,8 @@ export const customTransfersRouter = router({
       });
       
       // 4. تحديث أرصدة الخزائن
-      const fromTreasury = await db.select().from(customTreasuries).where(eq(customTreasuries.id, input.fromTreasuryId)).limit(1);
-      const toTreasury = await db.select().from(customTreasuries).where(eq(customTreasuries.id, input.toTreasuryId)).limit(1);
+      const fromTreasury = await db.select({ id: customTreasuries.id, currentBalance: customTreasuries.currentBalance }).from(customTreasuries).where(eq(customTreasuries.id, input.fromTreasuryId)).limit(1);
+      const toTreasury = await db.select({ id: customTreasuries.id, currentBalance: customTreasuries.currentBalance }).from(customTreasuries).where(eq(customTreasuries.id, input.toTreasuryId)).limit(1);
       
       if (fromTreasury[0]) {
         const newBalance = parseFloat(fromTreasury[0].currentBalance || "0") - parseFloat(input.amount);
@@ -1185,8 +1387,15 @@ export const customTransfersRouter = router({
         conditions.push(eq(customPaymentVouchers.subSystemId, input.subSystemId));
       }
       
-      const outgoingTransfers = await db.select()
-        .from(customPaymentVouchers)
+      const outgoingTransfers = await db.select({
+        id: customPaymentVouchers.id,
+        voucherNumber: customPaymentVouchers.voucherNumber,
+        voucherDate: customPaymentVouchers.voucherDate,
+        amount: customPaymentVouchers.amount,
+        currency: customPaymentVouchers.currency,
+        destinationIntermediaryId: customPaymentVouchers.destinationIntermediaryId,
+        status: customPaymentVouchers.status,
+      }).from(customPaymentVouchers)
         .where(and(...conditions))
         .orderBy(desc(customPaymentVouchers.voucherDate));
       
@@ -1200,8 +1409,15 @@ export const customTransfersRouter = router({
         receiptConditions.push(eq(customReceiptVouchers.subSystemId, input.subSystemId));
       }
       
-      const incomingTransfers = await db.select()
-        .from(customReceiptVouchers)
+      const incomingTransfers = await db.select({
+        id: customReceiptVouchers.id,
+        voucherNumber: customReceiptVouchers.voucherNumber,
+        voucherDate: customReceiptVouchers.voucherDate,
+        amount: customReceiptVouchers.amount,
+        currency: customReceiptVouchers.currency,
+        sourceIntermediaryId: customReceiptVouchers.sourceIntermediaryId,
+        status: customReceiptVouchers.status,
+      }).from(customReceiptVouchers)
         .where(and(...receiptConditions))
         .orderBy(desc(customReceiptVouchers.voucherDate));
       
@@ -1233,8 +1449,13 @@ export const customTransfersRouter = router({
         paymentConditions.push(eq(customPaymentVouchers.subSystemId, input.subSystemId));
       }
       
-      const outgoing = await db.select()
-        .from(customPaymentVouchers)
+      const outgoing = await db.select({
+        id: customPaymentVouchers.id,
+        voucherNumber: customPaymentVouchers.voucherNumber,
+        voucherDate: customPaymentVouchers.voucherDate,
+        amount: customPaymentVouchers.amount,
+        destinationIntermediaryId: customPaymentVouchers.destinationIntermediaryId,
+      }).from(customPaymentVouchers)
         .where(and(...paymentConditions));
       
       let receiptConditions = [
@@ -1248,8 +1469,13 @@ export const customTransfersRouter = router({
         receiptConditions.push(eq(customReceiptVouchers.subSystemId, input.subSystemId));
       }
       
-      const incoming = await db.select()
-        .from(customReceiptVouchers)
+      const incoming = await db.select({
+        id: customReceiptVouchers.id,
+        voucherNumber: customReceiptVouchers.voucherNumber,
+        voucherDate: customReceiptVouchers.voucherDate,
+        amount: customReceiptVouchers.amount,
+        sourceIntermediaryId: customReceiptVouchers.sourceIntermediaryId,
+      }).from(customReceiptVouchers)
         .where(and(...receiptConditions));
       
       return { outgoing, incoming };
@@ -1275,8 +1501,17 @@ export const customReconciliationsRouter = router({
         conditions.push(eq(customReconciliations.status, input.status));
       }
       
-      return await db.select()
-        .from(customReconciliations)
+      return await db.select({
+        id: customReconciliations.id,
+        businessId: customReconciliations.businessId,
+        paymentVoucherId: customReconciliations.paymentVoucherId,
+        receiptVoucherId: customReconciliations.receiptVoucherId,
+        amount: customReconciliations.amount,
+        currency: customReconciliations.currency,
+        confidenceScore: customReconciliations.confidenceScore,
+        status: customReconciliations.status,
+        createdAt: customReconciliations.createdAt,
+      }).from(customReconciliations)
         .where(and(...conditions))
         .orderBy(desc(customReconciliations.createdAt));
     }),
@@ -1289,8 +1524,13 @@ export const customReconciliationsRouter = router({
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Get unreconciled payment vouchers with intermediary destination
-      const payments = await db.select()
-        .from(customPaymentVouchers)
+      const payments = await db.select({
+        id: customPaymentVouchers.id,
+        voucherDate: customPaymentVouchers.voucherDate,
+        amount: customPaymentVouchers.amount,
+        currency: customPaymentVouchers.currency,
+        destinationIntermediaryId: customPaymentVouchers.destinationIntermediaryId,
+      }).from(customPaymentVouchers)
         .where(and(
           eq(customPaymentVouchers.businessId, input.businessId),
           eq(customPaymentVouchers.status, "confirmed"),
@@ -1299,8 +1539,13 @@ export const customReconciliationsRouter = router({
         ));
       
       // Get unreconciled receipt vouchers with intermediary source
-      const receipts = await db.select()
-        .from(customReceiptVouchers)
+      const receipts = await db.select({
+        id: customReceiptVouchers.id,
+        voucherDate: customReceiptVouchers.voucherDate,
+        amount: customReceiptVouchers.amount,
+        currency: customReceiptVouchers.currency,
+        sourceIntermediaryId: customReceiptVouchers.sourceIntermediaryId,
+      }).from(customReceiptVouchers)
         .where(and(
           eq(customReceiptVouchers.businessId, input.businessId),
           eq(customReceiptVouchers.status, "confirmed"),
@@ -1353,8 +1598,11 @@ export const customReconciliationsRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
-      const reconciliation = await db.select()
-        .from(customReconciliations)
+      const reconciliation = await db.select({
+        id: customReconciliations.id,
+        paymentVoucherId: customReconciliations.paymentVoucherId,
+        receiptVoucherId: customReconciliations.receiptVoucherId,
+      }).from(customReconciliations)
         .where(eq(customReconciliations.id, input.id))
         .limit(1);
       
@@ -1423,7 +1671,26 @@ export const customPartiesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      let query = db.select().from(customParties).where(eq(customParties.businessId, input.businessId));
+      let query = db.select({
+        id: customParties.id,
+        businessId: customParties.businessId,
+        subSystemId: customParties.subSystemId,
+        code: customParties.code,
+        nameAr: customParties.nameAr,
+        nameEn: customParties.nameEn,
+        partyType: customParties.partyType,
+        phone: customParties.phone,
+        mobile: customParties.mobile,
+        email: customParties.email,
+        address: customParties.address,
+        city: customParties.city,
+        country: customParties.country,
+        creditLimit: customParties.creditLimit,
+        currentBalance: customParties.currentBalance,
+        currency: customParties.currency,
+        isActive: customParties.isActive,
+        createdAt: customParties.createdAt,
+      }).from(customParties).where(eq(customParties.businessId, input.businessId));
       
       const results = await query.orderBy(asc(customParties.nameAr));
       
@@ -1452,7 +1719,30 @@ export const customPartiesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const result = await db.select().from(customParties).where(eq(customParties.id, input.id)).limit(1);
+      const result = await db.select({
+        id: customParties.id,
+        businessId: customParties.businessId,
+        subSystemId: customParties.subSystemId,
+        code: customParties.code,
+        nameAr: customParties.nameAr,
+        nameEn: customParties.nameEn,
+        partyType: customParties.partyType,
+        phone: customParties.phone,
+        mobile: customParties.mobile,
+        email: customParties.email,
+        address: customParties.address,
+        city: customParties.city,
+        country: customParties.country,
+        taxNumber: customParties.taxNumber,
+        commercialRegister: customParties.commercialRegister,
+        creditLimit: customParties.creditLimit,
+        currentBalance: customParties.currentBalance,
+        currency: customParties.currency,
+        contactPerson: customParties.contactPerson,
+        notes: customParties.notes,
+        isActive: customParties.isActive,
+        createdAt: customParties.createdAt,
+      }).from(customParties).where(eq(customParties.id, input.id)).limit(1);
       return result[0] || null;
     }),
 
@@ -1538,7 +1828,13 @@ export const customPartiesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const party = await db.select().from(customParties).where(eq(customParties.id, input.id)).limit(1);
+      const party = await db.select({
+        id: customParties.id,
+        nameAr: customParties.nameAr,
+        currentBalance: customParties.currentBalance,
+        creditLimit: customParties.creditLimit,
+        currency: customParties.currency,
+      }).from(customParties).where(eq(customParties.id, input.id)).limit(1);
       if (!party[0]) return null;
       
       return {
@@ -1561,8 +1857,17 @@ export const customPartiesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const transactions = await db.select()
-        .from(customPartyTransactions)
+      const transactions = await db.select({
+        id: customPartyTransactions.id,
+        partyId: customPartyTransactions.partyId,
+        transactionType: customPartyTransactions.transactionType,
+        transactionDate: customPartyTransactions.transactionDate,
+        amount: customPartyTransactions.amount,
+        balanceBefore: customPartyTransactions.balanceBefore,
+        balanceAfter: customPartyTransactions.balanceAfter,
+        referenceNumber: customPartyTransactions.referenceNumber,
+        description: customPartyTransactions.description,
+      }).from(customPartyTransactions)
         .where(eq(customPartyTransactions.partyId, input.partyId))
         .orderBy(asc(customPartyTransactions.transactionDate));
       
@@ -1600,8 +1905,21 @@ export const customCategoriesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const results = await db.select()
-        .from(customCategories)
+      const results = await db.select({
+        id: customCategories.id,
+        businessId: customCategories.businessId,
+        subSystemId: customCategories.subSystemId,
+        code: customCategories.code,
+        nameAr: customCategories.nameAr,
+        nameEn: customCategories.nameEn,
+        categoryType: customCategories.categoryType,
+        parentId: customCategories.parentId,
+        level: customCategories.level,
+        color: customCategories.color,
+        icon: customCategories.icon,
+        isActive: customCategories.isActive,
+        createdAt: customCategories.createdAt,
+      }).from(customCategories)
         .where(eq(customCategories.businessId, input.businessId))
         .orderBy(asc(customCategories.code));
       
@@ -1621,7 +1939,23 @@ export const customCategoriesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const result = await db.select().from(customCategories).where(eq(customCategories.id, input.id)).limit(1);
+      const result = await db.select({
+        id: customCategories.id,
+        businessId: customCategories.businessId,
+        subSystemId: customCategories.subSystemId,
+        code: customCategories.code,
+        nameAr: customCategories.nameAr,
+        nameEn: customCategories.nameEn,
+        categoryType: customCategories.categoryType,
+        parentId: customCategories.parentId,
+        level: customCategories.level,
+        color: customCategories.color,
+        icon: customCategories.icon,
+        description: customCategories.description,
+        linkedAccountId: customCategories.linkedAccountId,
+        isActive: customCategories.isActive,
+        createdAt: customCategories.createdAt,
+      }).from(customCategories).where(eq(customCategories.id, input.id)).limit(1);
       return result[0] || null;
     }),
 
@@ -1693,8 +2027,18 @@ export const customCategoriesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const all = await db.select()
-        .from(customCategories)
+      const all = await db.select({
+        id: customCategories.id,
+        code: customCategories.code,
+        nameAr: customCategories.nameAr,
+        nameEn: customCategories.nameEn,
+        categoryType: customCategories.categoryType,
+        parentId: customCategories.parentId,
+        level: customCategories.level,
+        color: customCategories.color,
+        icon: customCategories.icon,
+        isActive: customCategories.isActive,
+      }).from(customCategories)
         .where(eq(customCategories.businessId, input.businessId))
         .orderBy(asc(customCategories.code));
       
@@ -1732,8 +2076,19 @@ export const customTreasuryMovementsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const results = await db.select()
-        .from(customTreasuryMovements)
+      const results = await db.select({
+        id: customTreasuryMovements.id,
+        businessId: customTreasuryMovements.businessId,
+        treasuryId: customTreasuryMovements.treasuryId,
+        movementType: customTreasuryMovements.movementType,
+        movementDate: customTreasuryMovements.movementDate,
+        amount: customTreasuryMovements.amount,
+        balanceBefore: customTreasuryMovements.balanceBefore,
+        balanceAfter: customTreasuryMovements.balanceAfter,
+        referenceNumber: customTreasuryMovements.referenceNumber,
+        description: customTreasuryMovements.description,
+        createdAt: customTreasuryMovements.createdAt,
+      }).from(customTreasuryMovements)
         .where(eq(customTreasuryMovements.businessId, input.businessId))
         .orderBy(desc(customTreasuryMovements.movementDate));
       
@@ -1755,8 +2110,17 @@ export const customTreasuryMovementsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const movements = await db.select()
-        .from(customTreasuryMovements)
+      const movements = await db.select({
+        id: customTreasuryMovements.id,
+        treasuryId: customTreasuryMovements.treasuryId,
+        movementType: customTreasuryMovements.movementType,
+        movementDate: customTreasuryMovements.movementDate,
+        amount: customTreasuryMovements.amount,
+        balanceBefore: customTreasuryMovements.balanceBefore,
+        balanceAfter: customTreasuryMovements.balanceAfter,
+        referenceNumber: customTreasuryMovements.referenceNumber,
+        description: customTreasuryMovements.description,
+      }).from(customTreasuryMovements)
         .where(eq(customTreasuryMovements.treasuryId, input.treasuryId))
         .orderBy(asc(customTreasuryMovements.movementDate), asc(customTreasuryMovements.id));
       
@@ -1795,8 +2159,12 @@ export const customTreasuryMovementsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const movements = await db.select()
-        .from(customTreasuryMovements)
+      const movements = await db.select({
+        id: customTreasuryMovements.id,
+        movementType: customTreasuryMovements.movementType,
+        amount: customTreasuryMovements.amount,
+        balanceAfter: customTreasuryMovements.balanceAfter,
+      }).from(customTreasuryMovements)
         .where(eq(customTreasuryMovements.treasuryId, input.treasuryId));
       
       const totalReceipts = movements.filter(m => m.movementType === "receipt" || m.movementType === "transfer_in")
@@ -1830,8 +2198,19 @@ export const customPartyTransactionsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const results = await db.select()
-        .from(customPartyTransactions)
+      const results = await db.select({
+        id: customPartyTransactions.id,
+        businessId: customPartyTransactions.businessId,
+        partyId: customPartyTransactions.partyId,
+        transactionType: customPartyTransactions.transactionType,
+        transactionDate: customPartyTransactions.transactionDate,
+        amount: customPartyTransactions.amount,
+        balanceBefore: customPartyTransactions.balanceBefore,
+        balanceAfter: customPartyTransactions.balanceAfter,
+        referenceNumber: customPartyTransactions.referenceNumber,
+        description: customPartyTransactions.description,
+        createdAt: customPartyTransactions.createdAt,
+      }).from(customPartyTransactions)
         .where(eq(customPartyTransactions.businessId, input.businessId))
         .orderBy(desc(customPartyTransactions.transactionDate));
       
@@ -1879,8 +2258,14 @@ export const customSettingsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const results = await db.select()
-        .from(customSettings)
+      const results = await db.select({
+        id: customSettings.id,
+        businessId: customSettings.businessId,
+        subSystemId: customSettings.subSystemId,
+        settingKey: customSettings.settingKey,
+        settingValue: customSettings.settingValue,
+        settingType: customSettings.settingType,
+      }).from(customSettings)
         .where(and(
           eq(customSettings.businessId, input.businessId),
           eq(customSettings.settingKey, input.key)
@@ -1909,8 +2294,10 @@ export const customSettingsRouter = router({
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // البحث عن إعداد موجود
-      const existing = await db.select()
-        .from(customSettings)
+      const existing = await db.select({
+        id: customSettings.id,
+        subSystemId: customSettings.subSystemId,
+      }).from(customSettings)
         .where(and(
           eq(customSettings.businessId, input.businessId),
           eq(customSettings.settingKey, input.settingKey)
@@ -1938,8 +2325,15 @@ export const customSettingsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       
-      const results = await db.select()
-        .from(customSettings)
+      const results = await db.select({
+        id: customSettings.id,
+        businessId: customSettings.businessId,
+        subSystemId: customSettings.subSystemId,
+        settingKey: customSettings.settingKey,
+        settingValue: customSettings.settingValue,
+        settingType: customSettings.settingType,
+        description: customSettings.description,
+      }).from(customSettings)
         .where(eq(customSettings.businessId, input.businessId));
       
       if (input.subSystemId) {

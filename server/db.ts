@@ -220,7 +220,27 @@ export async function getUserByOpenId(openId: string) {
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
+  const result = await db.select({
+    id: users.id,
+    openId: users.openId,
+    employeeId: users.employeeId,
+    name: users.name,
+    nameAr: users.nameAr,
+    email: users.email,
+    phone: users.phone,
+    avatar: users.avatar,
+    loginMethod: users.loginMethod,
+    role: users.role,
+    businessId: users.businessId,
+    branchId: users.branchId,
+    stationId: users.stationId,
+    departmentId: users.departmentId,
+    jobTitle: users.jobTitle,
+    isActive: users.isActive,
+    lastSignedIn: users.lastSignedIn,
+    createdAt: users.createdAt,
+    updatedAt: users.updatedAt,
+  }).from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -229,9 +249,29 @@ export async function getAllUsers(businessId?: number) {
   if (!db) return [];
 
   if (businessId) {
-    return await db.select().from(users).where(eq(users.businessId, businessId)).orderBy(desc(users.createdAt));
+    return await db.select({
+      id: users.id,
+      name: users.name,
+      nameAr: users.nameAr,
+      email: users.email,
+      phone: users.phone,
+      role: users.role,
+      businessId: users.businessId,
+      isActive: users.isActive,
+      createdAt: users.createdAt,
+    }).from(users).where(eq(users.businessId, businessId)).orderBy(desc(users.createdAt));
   }
-  return await db.select().from(users).orderBy(desc(users.createdAt));
+  return await db.select({
+    id: users.id,
+    name: users.name,
+    nameAr: users.nameAr,
+    email: users.email,
+    phone: users.phone,
+    role: users.role,
+    businessId: users.businessId,
+    isActive: users.isActive,
+    createdAt: users.createdAt,
+  }).from(users).orderBy(desc(users.createdAt));
 }
 
 export async function getUserByPhone(phone: string) {
@@ -241,7 +281,22 @@ export async function getUserByPhone(phone: string) {
     return undefined;
   }
 
-  const result = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
+  const result = await db.select({
+    id: users.id,
+    openId: users.openId,
+    name: users.name,
+    nameAr: users.nameAr,
+    email: users.email,
+    phone: users.phone,
+    password: users.password,
+    avatar: users.avatar,
+    loginMethod: users.loginMethod,
+    role: users.role,
+    businessId: users.businessId,
+    isActive: users.isActive,
+    lastSignedIn: users.lastSignedIn,
+    createdAt: users.createdAt,
+  }).from(users).where(eq(users.phone, phone)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -273,7 +328,27 @@ export async function getUserById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
 
-  const result = await db.select().from(users).where(eq(users.id, id)).limit(1);
+  const result = await db.select({
+    id: users.id,
+    openId: users.openId,
+    employeeId: users.employeeId,
+    name: users.name,
+    nameAr: users.nameAr,
+    email: users.email,
+    phone: users.phone,
+    avatar: users.avatar,
+    loginMethod: users.loginMethod,
+    role: users.role,
+    businessId: users.businessId,
+    branchId: users.branchId,
+    stationId: users.stationId,
+    departmentId: users.departmentId,
+    jobTitle: users.jobTitle,
+    isActive: users.isActive,
+    lastSignedIn: users.lastSignedIn,
+    createdAt: users.createdAt,
+    updatedAt: users.updatedAt,
+  }).from(users).where(eq(users.id, id)).limit(1);
   return result.length > 0 ? result[0] : undefined;
 }
 
@@ -333,20 +408,50 @@ export async function getBusinesses() {
 
   try {
     // Get all active businesses - try with boolean true first
-    let result = await db.select().from(businesses).where(eq(businesses.isActive, true)).orderBy(asc(businesses.nameAr));
+    let result = await db.select({
+      id: businesses.id,
+      code: businesses.code,
+      nameAr: businesses.nameAr,
+      nameEn: businesses.nameEn,
+      type: businesses.type,
+      systemType: businesses.systemType,
+      logo: businesses.logo,
+      isActive: businesses.isActive,
+      createdAt: businesses.createdAt,
+    }).from(businesses).where(eq(businesses.isActive, true)).orderBy(asc(businesses.nameAr));
     console.log("[DB] getBusinesses (isActive=true) returned", result.length, "businesses");
     
     // If no results, try with number 1 (MySQL stores boolean as tinyint)
     if (result.length === 0) {
       console.log("[DB] Trying with isActive=1 (number)");
-      result = await db.select().from(businesses).where(eq(businesses.isActive, 1)).orderBy(asc(businesses.nameAr));
+      result = await db.select({
+        id: businesses.id,
+        code: businesses.code,
+        nameAr: businesses.nameAr,
+        nameEn: businesses.nameEn,
+        type: businesses.type,
+        systemType: businesses.systemType,
+        logo: businesses.logo,
+        isActive: businesses.isActive,
+        createdAt: businesses.createdAt,
+      }).from(businesses).where(eq(businesses.isActive, 1)).orderBy(asc(businesses.nameAr));
       console.log("[DB] getBusinesses (isActive=1) returned", result.length, "businesses");
     }
     
     // If still no results, get all businesses
     if (result.length === 0) {
       console.log("[DB] Trying without filter - getting all businesses");
-      result = await db.select().from(businesses).orderBy(asc(businesses.nameAr));
+      result = await db.select({
+        id: businesses.id,
+        code: businesses.code,
+        nameAr: businesses.nameAr,
+        nameEn: businesses.nameEn,
+        type: businesses.type,
+        systemType: businesses.systemType,
+        logo: businesses.logo,
+        isActive: businesses.isActive,
+        createdAt: businesses.createdAt,
+      }).from(businesses).orderBy(asc(businesses.nameAr));
       console.log("[DB] getBusinesses (all) returned", result.length, "businesses");
     }
     
@@ -358,7 +463,17 @@ export async function getBusinesses() {
     console.error("[DB] Error in getBusinesses:", error);
     // Try without filter as fallback
     try {
-      const allResult = await db.select().from(businesses).orderBy(asc(businesses.nameAr));
+      const allResult = await db.select({
+        id: businesses.id,
+        code: businesses.code,
+        nameAr: businesses.nameAr,
+        nameEn: businesses.nameEn,
+        type: businesses.type,
+        systemType: businesses.systemType,
+        logo: businesses.logo,
+        isActive: businesses.isActive,
+        createdAt: businesses.createdAt,
+      }).from(businesses).orderBy(asc(businesses.nameAr));
       console.log("[DB] getBusinesses (fallback) returned", allResult.length, "businesses");
       return allResult;
     } catch (fallbackError) {
@@ -372,7 +487,29 @@ export async function getBusinessById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(businesses).where(eq(businesses.id, id)).limit(1);
+  const result = await db.select({
+    id: businesses.id,
+    code: businesses.code,
+    nameAr: businesses.nameAr,
+    nameEn: businesses.nameEn,
+    type: businesses.type,
+    systemType: businesses.systemType,
+    parentId: businesses.parentId,
+    logo: businesses.logo,
+    address: businesses.address,
+    phone: businesses.phone,
+    email: businesses.email,
+    website: businesses.website,
+    taxNumber: businesses.taxNumber,
+    commercialRegister: businesses.commercialRegister,
+    currency: businesses.currency,
+    fiscalYearStart: businesses.fiscalYearStart,
+    timezone: businesses.timezone,
+    isActive: businesses.isActive,
+    settings: businesses.settings,
+    createdAt: businesses.createdAt,
+    updatedAt: businesses.updatedAt,
+  }).from(businesses).where(eq(businesses.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -415,11 +552,31 @@ export async function getBranches(businessId?: number) {
   const db = await getDb();
   if (!db) return [];
   if (businessId) {
-    return await db.select().from(branches)
+    return await db.select({
+      id: branches.id,
+      businessId: branches.businessId,
+      code: branches.code,
+      nameAr: branches.nameAr,
+      nameEn: branches.nameEn,
+      type: branches.type,
+      city: branches.city,
+      isActive: branches.isActive,
+      createdAt: branches.createdAt,
+    }).from(branches)
       .where(and(eq(branches.businessId, businessId), eq(branches.isActive, true)))
       .orderBy(asc(branches.nameAr));
   }
-  return await db.select().from(branches).orderBy(asc(branches.nameAr));
+  return await db.select({
+    id: branches.id,
+    businessId: branches.businessId,
+    code: branches.code,
+    nameAr: branches.nameAr,
+    nameEn: branches.nameEn,
+    type: branches.type,
+    city: branches.city,
+    isActive: branches.isActive,
+    createdAt: branches.createdAt,
+  }).from(branches).orderBy(asc(branches.nameAr));
 }
 
 export async function updateBranch(id: number, data: Partial<InsertBranch>) {
@@ -456,14 +613,46 @@ export async function getStations(businessId?: number, branchId?: number) {
   if (businessId) conditions.push(eq(stations.businessId, businessId));
   if (branchId) conditions.push(eq(stations.branchId, branchId));
 
-  return await db.select().from(stations).where(and(...conditions)).orderBy(asc(stations.nameAr));
+  return await db.select({
+    id: stations.id,
+    businessId: stations.businessId,
+    branchId: stations.branchId,
+    code: stations.code,
+    nameAr: stations.nameAr,
+    nameEn: stations.nameEn,
+    type: stations.type,
+    status: stations.status,
+    capacity: stations.capacity,
+    isActive: stations.isActive,
+  }).from(stations).where(and(...conditions)).orderBy(asc(stations.nameAr));
 }
 
 export async function getStationById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(stations).where(eq(stations.id, id)).limit(1);
+  const result = await db.select({
+    id: stations.id,
+    businessId: stations.businessId,
+    branchId: stations.branchId,
+    code: stations.code,
+    nameAr: stations.nameAr,
+    nameEn: stations.nameEn,
+    type: stations.type,
+    status: stations.status,
+    capacity: stations.capacity,
+    capacityUnit: stations.capacityUnit,
+    voltageLevel: stations.voltageLevel,
+    address: stations.address,
+    latitude: stations.latitude,
+    longitude: stations.longitude,
+    commissionDate: stations.commissionDate,
+    managerId: stations.managerId,
+    isActive: stations.isActive,
+    metadata: stations.metadata,
+    createdAt: stations.createdAt,
+    updatedAt: stations.updatedAt,
+  }).from(stations).where(eq(stations.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -499,7 +688,21 @@ export async function getAccounts(businessId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(accounts)
+  return await db.select({
+    id: accounts.id,
+    businessId: accounts.businessId,
+    code: accounts.code,
+    nameAr: accounts.nameAr,
+    nameEn: accounts.nameEn,
+    parentId: accounts.parentId,
+    level: accounts.level,
+    systemModule: accounts.systemModule,
+    accountType: accounts.accountType,
+    nature: accounts.nature,
+    isParent: accounts.isParent,
+    isActive: accounts.isActive,
+    currentBalance: accounts.currentBalance,
+  }).from(accounts)
     .where(and(eq(accounts.businessId, businessId), eq(accounts.isActive, true)))
     .orderBy(asc(accounts.code));
 }
@@ -508,7 +711,30 @@ export async function getAccountById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(accounts).where(eq(accounts.id, id)).limit(1);
+  const result = await db.select({
+    id: accounts.id,
+    businessId: accounts.businessId,
+    code: accounts.code,
+    nameAr: accounts.nameAr,
+    nameEn: accounts.nameEn,
+    parentId: accounts.parentId,
+    level: accounts.level,
+    systemModule: accounts.systemModule,
+    accountType: accounts.accountType,
+    nature: accounts.nature,
+    isParent: accounts.isParent,
+    isActive: accounts.isActive,
+    isCashAccount: accounts.isCashAccount,
+    isBankAccount: accounts.isBankAccount,
+    currency: accounts.currency,
+    openingBalance: accounts.openingBalance,
+    currentBalance: accounts.currentBalance,
+    description: accounts.description,
+    linkedEntityType: accounts.linkedEntityType,
+    linkedEntityId: accounts.linkedEntityId,
+    createdAt: accounts.createdAt,
+    updatedAt: accounts.updatedAt,
+  }).from(accounts).where(eq(accounts.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -555,14 +781,60 @@ export async function getAssets(businessId: number, filters?: { stationId?: numb
   if (filters?.categoryId) conditions.push(eq(assets.categoryId, filters.categoryId));
   if (filters?.status) conditions.push(eq(assets.status, filters.status as any));
 
-  return await db.select().from(assets).where(and(...conditions)).orderBy(desc(assets.createdAt));
+  return await db.select({
+    id: assets.id,
+    businessId: assets.businessId,
+    branchId: assets.branchId,
+    stationId: assets.stationId,
+    categoryId: assets.categoryId,
+    code: assets.code,
+    nameAr: assets.nameAr,
+    status: assets.status,
+    purchaseCost: assets.purchaseCost,
+    currentValue: assets.currentValue,
+    createdAt: assets.createdAt,
+  }).from(assets).where(and(...conditions)).orderBy(desc(assets.createdAt));
 }
 
 export async function getAssetById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(assets).where(eq(assets.id, id)).limit(1);
+  const result = await db.select({
+    id: assets.id,
+    businessId: assets.businessId,
+    branchId: assets.branchId,
+    stationId: assets.stationId,
+    categoryId: assets.categoryId,
+    code: assets.code,
+    nameAr: assets.nameAr,
+    nameEn: assets.nameEn,
+    description: assets.description,
+    serialNumber: assets.serialNumber,
+    model: assets.model,
+    manufacturer: assets.manufacturer,
+    purchaseDate: assets.purchaseDate,
+    commissionDate: assets.commissionDate,
+    purchaseCost: assets.purchaseCost,
+    currentValue: assets.currentValue,
+    accumulatedDepreciation: assets.accumulatedDepreciation,
+    salvageValue: assets.salvageValue,
+    usefulLife: assets.usefulLife,
+    depreciationMethod: assets.depreciationMethod,
+    status: assets.status,
+    location: assets.location,
+    latitude: assets.latitude,
+    longitude: assets.longitude,
+    warrantyExpiry: assets.warrantyExpiry,
+    supplierId: assets.supplierId,
+    qrCode: assets.qrCode,
+    barcode: assets.barcode,
+    image: assets.image,
+    specifications: assets.specifications,
+    createdBy: assets.createdBy,
+    createdAt: assets.createdAt,
+    updatedAt: assets.updatedAt,
+  }).from(assets).where(eq(assets.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -587,14 +859,66 @@ export async function getWorkOrders(businessId: number, filters?: { status?: str
   if (filters?.type) conditions.push(eq(workOrders.type, filters.type as any));
   if (filters?.stationId) conditions.push(eq(workOrders.stationId, filters.stationId));
 
-  return await db.select().from(workOrders).where(and(...conditions)).orderBy(desc(workOrders.createdAt));
+  return await db.select({
+    id: workOrders.id,
+    businessId: workOrders.businessId,
+    branchId: workOrders.branchId,
+    stationId: workOrders.stationId,
+    orderNumber: workOrders.orderNumber,
+    type: workOrders.type,
+    priority: workOrders.priority,
+    status: workOrders.status,
+    assetId: workOrders.assetId,
+    title: workOrders.title,
+    scheduledStart: workOrders.scheduledStart,
+    scheduledEnd: workOrders.scheduledEnd,
+    assignedTo: workOrders.assignedTo,
+    createdAt: workOrders.createdAt,
+  }).from(workOrders).where(and(...conditions)).orderBy(desc(workOrders.createdAt));
 }
 
 export async function getWorkOrderById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(workOrders).where(eq(workOrders.id, id)).limit(1);
+  const result = await db.select({
+    id: workOrders.id,
+    businessId: workOrders.businessId,
+    branchId: workOrders.branchId,
+    stationId: workOrders.stationId,
+    orderNumber: workOrders.orderNumber,
+    type: workOrders.type,
+    priority: workOrders.priority,
+    status: workOrders.status,
+    assetId: workOrders.assetId,
+    equipmentId: workOrders.equipmentId,
+    title: workOrders.title,
+    description: workOrders.description,
+    requestedBy: workOrders.requestedBy,
+    requestedDate: workOrders.requestedDate,
+    scheduledStart: workOrders.scheduledStart,
+    scheduledEnd: workOrders.scheduledEnd,
+    actualStart: workOrders.actualStart,
+    actualEnd: workOrders.actualEnd,
+    assignedTo: workOrders.assignedTo,
+    teamId: workOrders.teamId,
+    estimatedHours: workOrders.estimatedHours,
+    actualHours: workOrders.actualHours,
+    estimatedCost: workOrders.estimatedCost,
+    actualCost: workOrders.actualCost,
+    laborCost: workOrders.laborCost,
+    partsCost: workOrders.partsCost,
+    completionNotes: workOrders.completionNotes,
+    failureCode: workOrders.failureCode,
+    rootCause: workOrders.rootCause,
+    approvedBy: workOrders.approvedBy,
+    approvedAt: workOrders.approvedAt,
+    closedBy: workOrders.closedBy,
+    closedAt: workOrders.closedAt,
+    createdBy: workOrders.createdBy,
+    createdAt: workOrders.createdAt,
+    updatedAt: workOrders.updatedAt,
+  }).from(workOrders).where(eq(workOrders.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -644,14 +968,59 @@ export async function getCustomers(businessId: number, filters?: { status?: stri
     );
   }
 
-  return await db.select().from(customers).where(and(...conditions)).orderBy(desc(customers.createdAt));
+  return await db.select({
+    id: customers.id,
+    businessId: customers.businessId,
+    accountNumber: customers.accountNumber,
+    nameAr: customers.nameAr,
+    nameEn: customers.nameEn,
+    type: customers.type,
+    phone: customers.phone,
+    mobile: customers.mobile,
+    status: customers.status,
+    currentBalance: customers.currentBalance,
+    isActive: customers.isActive,
+    createdAt: customers.createdAt,
+  }).from(customers).where(and(...conditions)).orderBy(desc(customers.createdAt));
 }
 
 export async function getCustomerById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
+  const result = await db.select({
+    id: customers.id,
+    businessId: customers.businessId,
+    branchId: customers.branchId,
+    stationId: customers.stationId,
+    accountNumber: customers.accountNumber,
+    nameAr: customers.nameAr,
+    nameEn: customers.nameEn,
+    type: customers.type,
+    category: customers.category,
+    idType: customers.idType,
+    idNumber: customers.idNumber,
+    phone: customers.phone,
+    mobile: customers.mobile,
+    email: customers.email,
+    address: customers.address,
+    city: customers.city,
+    district: customers.district,
+    postalCode: customers.postalCode,
+    latitude: customers.latitude,
+    longitude: customers.longitude,
+    tariffId: customers.tariffId,
+    connectionDate: customers.connectionDate,
+    status: customers.status,
+    currentBalance: customers.currentBalance,
+    depositAmount: customers.depositAmount,
+    creditLimit: customers.creditLimit,
+    accountId: customers.accountId,
+    isActive: customers.isActive,
+    notes: customers.notes,
+    createdAt: customers.createdAt,
+    updatedAt: customers.updatedAt,
+  }).from(customers).where(eq(customers.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -675,7 +1044,19 @@ export async function getInvoices(businessId: number, filters?: { status?: strin
   if (filters?.status) conditions.push(eq(invoices.status, filters.status as any));
   if (filters?.customerId) conditions.push(eq(invoices.customerId, filters.customerId));
 
-  return await db.select().from(invoices).where(and(...conditions)).orderBy(desc(invoices.invoiceDate));
+  return await db.select({
+    id: invoices.id,
+    businessId: invoices.businessId,
+    customerId: invoices.customerId,
+    invoiceNumber: invoices.invoiceNumber,
+    invoiceDate: invoices.invoiceDate,
+    dueDate: invoices.dueDate,
+    totalAmount: invoices.totalAmount,
+    paidAmount: invoices.paidAmount,
+    balanceDue: invoices.balanceDue,
+    status: invoices.status,
+    createdAt: invoices.createdAt,
+  }).from(invoices).where(and(...conditions)).orderBy(desc(invoices.invoiceDate));
 }
 
 // ============================================
@@ -697,7 +1078,18 @@ export async function getEquipment(businessId: number, stationId?: number) {
   let conditions = [eq(equipment.businessId, businessId)];
   if (stationId) conditions.push(eq(equipment.stationId, stationId));
 
-  return await db.select().from(equipment).where(and(...conditions)).orderBy(asc(equipment.nameAr));
+  return await db.select({
+    id: equipment.id,
+    businessId: equipment.businessId,
+    stationId: equipment.stationId,
+    code: equipment.code,
+    nameAr: equipment.nameAr,
+    nameEn: equipment.nameEn,
+    type: equipment.type,
+    status: equipment.status,
+    manufacturer: equipment.manufacturer,
+    model: equipment.model,
+  }).from(equipment).where(and(...conditions)).orderBy(asc(equipment.nameAr));
 }
 
 // ============================================
@@ -716,7 +1108,17 @@ export async function getActiveAlerts(businessId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(alerts)
+  return await db.select({
+    id: alerts.id,
+    businessId: alerts.businessId,
+    stationId: alerts.stationId,
+    equipmentId: alerts.equipmentId,
+    alertType: alerts.alertType,
+    category: alerts.category,
+    title: alerts.title,
+    status: alerts.status,
+    triggeredAt: alerts.triggeredAt,
+  }).from(alerts)
     .where(and(
       eq(alerts.businessId, businessId),
       eq(alerts.status, 'active')
@@ -754,14 +1156,54 @@ export async function getProjects(businessId: number, filters?: { status?: strin
   let conditions = [eq(projects.businessId, businessId)];
   if (filters?.status) conditions.push(eq(projects.status, filters.status as any));
 
-  return await db.select().from(projects).where(and(...conditions)).orderBy(desc(projects.createdAt));
+  return await db.select({
+    id: projects.id,
+    businessId: projects.businessId,
+    branchId: projects.branchId,
+    stationId: projects.stationId,
+    code: projects.code,
+    nameAr: projects.nameAr,
+    nameEn: projects.nameEn,
+    type: projects.type,
+    status: projects.status,
+    startDate: projects.startDate,
+    endDate: projects.endDate,
+    budget: projects.budget,
+    progress: projects.progress,
+    createdAt: projects.createdAt,
+  }).from(projects).where(and(...conditions)).orderBy(desc(projects.createdAt));
 }
 
 export async function getProjectById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(projects).where(eq(projects.id, id)).limit(1);
+  const result = await db.select({
+    id: projects.id,
+    businessId: projects.businessId,
+    branchId: projects.branchId,
+    stationId: projects.stationId,
+    code: projects.code,
+    nameAr: projects.nameAr,
+    nameEn: projects.nameEn,
+    description: projects.description,
+    type: projects.type,
+    status: projects.status,
+    priority: projects.priority,
+    startDate: projects.startDate,
+    endDate: projects.endDate,
+    actualStartDate: projects.actualStartDate,
+    actualEndDate: projects.actualEndDate,
+    budget: projects.budget,
+    actualCost: projects.actualCost,
+    progress: projects.progress,
+    managerId: projects.managerId,
+    costCenterId: projects.costCenterId,
+    notes: projects.notes,
+    createdBy: projects.createdBy,
+    createdAt: projects.createdAt,
+    updatedAt: projects.updatedAt,
+  }).from(projects).where(eq(projects.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -849,7 +1291,15 @@ export async function getNextSequence(businessId: number, code: string): Promise
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const seq = await db.select().from(sequences)
+  const seq = await db.select({
+    id: sequences.id,
+    businessId: sequences.businessId,
+    code: sequences.code,
+    prefix: sequences.prefix,
+    suffix: sequences.suffix,
+    currentValue: sequences.currentValue,
+    minDigits: sequences.minDigits,
+  }).from(sequences)
     .where(and(eq(sequences.businessId, businessId), eq(sequences.code, code)))
     .limit(1);
 
@@ -905,7 +1355,17 @@ export async function getItems(businessId: number, filters?: { categoryId?: numb
     );
   }
 
-  return await db.select().from(items).where(and(...conditions)).orderBy(asc(items.nameAr));
+  return await db.select({
+    id: items.id,
+    businessId: items.businessId,
+    categoryId: items.categoryId,
+    code: items.code,
+    nameAr: items.nameAr,
+    nameEn: items.nameEn,
+    unit: items.unit,
+    unitCost: items.unitCost,
+    isActive: items.isActive,
+  }).from(items).where(and(...conditions)).orderBy(asc(items.nameAr));
 }
 
 // ============================================
@@ -924,7 +1384,17 @@ export async function getSuppliers(businessId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(suppliers)
+  return await db.select({
+    id: suppliers.id,
+    businessId: suppliers.businessId,
+    code: suppliers.code,
+    nameAr: suppliers.nameAr,
+    nameEn: suppliers.nameEn,
+    phone: suppliers.phone,
+    email: suppliers.email,
+    status: suppliers.status,
+    isActive: suppliers.isActive,
+  }).from(suppliers)
     .where(and(eq(suppliers.businessId, businessId), eq(suppliers.isActive, true)))
     .orderBy(asc(suppliers.nameAr));
 }
@@ -950,14 +1420,36 @@ export async function getIntegrations(businessId: number, filters?: { type?: str
   if (filters?.type) conditions.push(eq(integrations.integrationType, filters.type as any));
   if (filters?.isActive !== undefined) conditions.push(eq(integrations.isActive, filters.isActive));
 
-  return await db.select().from(integrations).where(and(...conditions)).orderBy(desc(integrations.createdAt));
+  return await db.select({
+    id: integrations.id,
+    businessId: integrations.businessId,
+    name: integrations.name,
+    integrationType: integrations.integrationType,
+    status: integrations.status,
+    isActive: integrations.isActive,
+    createdAt: integrations.createdAt,
+  }).from(integrations).where(and(...conditions)).orderBy(desc(integrations.createdAt));
 }
 
 export async function getIntegrationById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(integrations).where(eq(integrations.id, id)).limit(1);
+  const result = await db.select({
+    id: integrations.id,
+    businessId: integrations.businessId,
+    name: integrations.name,
+    description: integrations.description,
+    integrationType: integrations.integrationType,
+    status: integrations.status,
+    isActive: integrations.isActive,
+    endpoint: integrations.endpoint,
+    authType: integrations.authType,
+    lastSyncAt: integrations.lastSyncAt,
+    syncFrequency: integrations.syncFrequency,
+    createdAt: integrations.createdAt,
+    updatedAt: integrations.updatedAt,
+  }).from(integrations).where(eq(integrations.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -980,7 +1472,14 @@ export async function getIntegrationConfigs(integrationId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(integrationConfigs)
+  return await db.select({
+    id: integrationConfigs.id,
+    integrationId: integrationConfigs.integrationId,
+    configKey: integrationConfigs.configKey,
+    configValue: integrationConfigs.configValue,
+    valueType: integrationConfigs.valueType,
+    isEncrypted: integrationConfigs.isEncrypted,
+  }).from(integrationConfigs)
     .where(eq(integrationConfigs.integrationId, integrationId))
     .orderBy(asc(integrationConfigs.configKey));
 }
@@ -989,7 +1488,9 @@ export async function setIntegrationConfig(integrationId: number, key: string, v
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const existing = await db.select().from(integrationConfigs)
+  const existing = await db.select({
+    id: integrationConfigs.id,
+  }).from(integrationConfigs)
     .where(and(eq(integrationConfigs.integrationId, integrationId), eq(integrationConfigs.configKey, key)))
     .limit(1);
 
@@ -1024,7 +1525,14 @@ export async function getIntegrationLogs(integrationId: number, limit: number = 
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(integrationLogs)
+  return await db.select({
+    id: integrationLogs.id,
+    integrationId: integrationLogs.integrationId,
+    action: integrationLogs.action,
+    status: integrationLogs.status,
+    responseCode: integrationLogs.responseCode,
+    createdAt: integrationLogs.createdAt,
+  }).from(integrationLogs)
     .where(eq(integrationLogs.integrationId, integrationId))
     .orderBy(desc(integrationLogs.createdAt))
     .limit(limit);
@@ -1050,7 +1558,13 @@ export async function getSystemEvents(businessId: number, filters?: { eventType?
   if (filters?.eventType) conditions.push(eq(systemEvents.eventType, filters.eventType));
   if (filters?.status) conditions.push(eq(systemEvents.status, filters.status as any));
 
-  return await db.select().from(systemEvents)
+  return await db.select({
+    id: systemEvents.id,
+    businessId: systemEvents.businessId,
+    eventType: systemEvents.eventType,
+    status: systemEvents.status,
+    createdAt: systemEvents.createdAt,
+  }).from(systemEvents)
     .where(and(...conditions))
     .orderBy(desc(systemEvents.createdAt))
     .limit(filters?.limit || 100);
@@ -1083,7 +1597,14 @@ export async function getEventSubscriptions(businessId: number, eventType?: stri
   let conditions = [eq(eventSubscriptions.businessId, businessId), eq(eventSubscriptions.isActive, true)];
   if (eventType) conditions.push(eq(eventSubscriptions.eventType, eventType));
 
-  return await db.select().from(eventSubscriptions)
+  return await db.select({
+    id: eventSubscriptions.id,
+    businessId: eventSubscriptions.businessId,
+    eventType: eventSubscriptions.eventType,
+    subscriberType: eventSubscriptions.subscriberType,
+    isActive: eventSubscriptions.isActive,
+    priority: eventSubscriptions.priority,
+  }).from(eventSubscriptions)
     .where(and(...conditions))
     .orderBy(asc(eventSubscriptions.priority));
 }
@@ -1140,7 +1661,16 @@ export async function getApiKeyByHash(keyHash: string) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(apiKeys)
+  const result = await db.select({
+    id: apiKeys.id,
+    businessId: apiKeys.businessId,
+    keyHash: apiKeys.keyHash,
+    permissions: apiKeys.permissions,
+    rateLimitPerMinute: apiKeys.rateLimitPerMinute,
+    rateLimitPerDay: apiKeys.rateLimitPerDay,
+    expiresAt: apiKeys.expiresAt,
+    isActive: apiKeys.isActive,
+  }).from(apiKeys)
     .where(and(eq(apiKeys.keyHash, keyHash), eq(apiKeys.isActive, true)))
     .limit(1);
   return result[0] || null;
@@ -1178,7 +1708,14 @@ export async function getApiLogs(businessId: number, filters?: { apiKeyId?: numb
   let conditions = [eq(apiLogs.businessId, businessId)];
   if (filters?.apiKeyId) conditions.push(eq(apiLogs.apiKeyId, filters.apiKeyId));
 
-  return await db.select().from(apiLogs)
+  return await db.select({
+    id: apiLogs.id,
+    apiKeyId: apiLogs.apiKeyId,
+    method: apiLogs.method,
+    endpoint: apiLogs.endpoint,
+    statusCode: apiLogs.statusCode,
+    createdAt: apiLogs.createdAt,
+  }).from(apiLogs)
     .where(and(...conditions))
     .orderBy(desc(apiLogs.createdAt))
     .limit(filters?.limit || 100);
@@ -1203,7 +1740,15 @@ export async function getAiModels(businessId: number, modelType?: string) {
   let conditions = [eq(aiModels.businessId, businessId)];
   if (modelType) conditions.push(eq(aiModels.modelType, modelType as any));
 
-  return await db.select().from(aiModels)
+  return await db.select({
+    id: aiModels.id,
+    businessId: aiModels.businessId,
+    nameAr: aiModels.nameAr,
+    modelType: aiModels.modelType,
+    status: aiModels.status,
+    isActive: aiModels.isActive,
+    createdAt: aiModels.createdAt,
+  }).from(aiModels)
     .where(and(...conditions))
     .orderBy(asc(aiModels.nameAr));
 }
@@ -1212,7 +1757,20 @@ export async function getAiModelById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(aiModels).where(eq(aiModels.id, id)).limit(1);
+  const result = await db.select({
+    id: aiModels.id,
+    businessId: aiModels.businessId,
+    nameAr: aiModels.nameAr,
+    description: aiModels.description,
+    modelType: aiModels.modelType,
+    status: aiModels.status,
+    isActive: aiModels.isActive,
+    configuration: aiModels.configuration,
+    lastTrainedAt: aiModels.lastTrainedAt,
+    accuracy: aiModels.accuracy,
+    createdAt: aiModels.createdAt,
+    updatedAt: aiModels.updatedAt,
+  }).from(aiModels).where(eq(aiModels.id, id)).limit(1);
   return result[0] || null;
 }
 
@@ -1240,7 +1798,14 @@ export async function getAiPredictions(businessId: number, filters?: { modelId?:
   if (filters?.modelId) conditions.push(eq(aiPredictions.modelId, filters.modelId));
   if (filters?.predictionType) conditions.push(eq(aiPredictions.predictionType, filters.predictionType));
 
-  return await db.select().from(aiPredictions)
+  return await db.select({
+    id: aiPredictions.id,
+    modelId: aiPredictions.modelId,
+    predictionType: aiPredictions.predictionType,
+    confidence: aiPredictions.confidence,
+    status: aiPredictions.status,
+    createdAt: aiPredictions.createdAt,
+  }).from(aiPredictions)
     .where(and(...conditions))
     .orderBy(desc(aiPredictions.createdAt))
     .limit(filters?.limit || 100);
@@ -1250,7 +1815,11 @@ export async function verifyPrediction(id: number, actualValue: any, verifiedBy:
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const prediction = await db.select().from(aiPredictions).where(eq(aiPredictions.id, id)).limit(1);
+  const prediction = await db.select({
+    id: aiPredictions.id,
+    predictionType: aiPredictions.predictionType,
+    prediction: aiPredictions.prediction,
+  }).from(aiPredictions).where(eq(aiPredictions.id, id)).limit(1);
   if (!prediction[0]) throw new Error("Prediction not found");
 
   // Calculate accuracy based on prediction type
@@ -1285,7 +1854,14 @@ export async function getTechnicalAlertRules(businessId: number, category?: stri
   let conditions = [eq(technicalAlertRules.businessId, businessId)];
   if (category) conditions.push(eq(technicalAlertRules.category, category as any));
 
-  return await db.select().from(technicalAlertRules)
+  return await db.select({
+    id: technicalAlertRules.id,
+    businessId: technicalAlertRules.businessId,
+    nameAr: technicalAlertRules.nameAr,
+    ruleType: technicalAlertRules.ruleType,
+    severity: technicalAlertRules.severity,
+    isActive: technicalAlertRules.isActive,
+  }).from(technicalAlertRules)
     .where(and(...conditions))
     .orderBy(asc(technicalAlertRules.nameAr));
 }
@@ -1313,7 +1889,14 @@ export async function getTechnicalAlerts(businessId: number, filters?: { status?
   if (filters?.status) conditions.push(eq(technicalAlerts.status, filters.status as any));
   if (filters?.severity) conditions.push(eq(technicalAlerts.severity, filters.severity as any));
 
-  return await db.select().from(technicalAlerts)
+  return await db.select({
+    id: technicalAlerts.id,
+    ruleId: technicalAlerts.ruleId,
+    businessId: technicalAlerts.businessId,
+    severity: technicalAlerts.severity,
+    status: technicalAlerts.status,
+    triggeredAt: technicalAlerts.triggeredAt,
+  }).from(technicalAlerts)
     .where(and(...conditions))
     .orderBy(desc(technicalAlerts.createdAt))
     .limit(filters?.limit || 100);
@@ -1359,7 +1942,14 @@ export async function getPerformanceMetrics(businessId: number, metricType: stri
 
   const since = new Date(Date.now() - hours * 60 * 60 * 1000);
 
-  return await db.select().from(performanceMetrics)
+  return await db.select({
+    id: performanceMetrics.id,
+    businessId: performanceMetrics.businessId,
+    metricType: performanceMetrics.metricType,
+    value: performanceMetrics.value,
+    unit: performanceMetrics.unit,
+    recordedAt: performanceMetrics.recordedAt,
+  }).from(performanceMetrics)
     .where(and(
       eq(performanceMetrics.businessId, businessId),
       eq(performanceMetrics.metricType, metricType as any),
@@ -1384,7 +1974,13 @@ export async function getIncomingWebhooks(integrationId: number, limit: number =
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(incomingWebhooks)
+  return await db.select({
+    id: incomingWebhooks.id,
+    businessId: incomingWebhooks.businessId,
+    name: incomingWebhooks.name,
+    isActive: incomingWebhooks.isActive,
+    lastCalledAt: incomingWebhooks.lastCalledAt,
+  }).from(incomingWebhooks)
     .where(eq(incomingWebhooks.integrationId, integrationId))
     .orderBy(desc(incomingWebhooks.createdAt))
     .limit(limit);
@@ -1494,7 +2090,16 @@ export async function getFieldOperations(businessId: number, filters?: {
   if (filters?.fromDate) conditions.push(sql`${fieldOperations.scheduledDate} >= ${filters.fromDate}`);
   if (filters?.toDate) conditions.push(sql`${fieldOperations.scheduledDate} <= ${filters.toDate}`);
 
-  return await db.select().from(fieldOperations)
+  return await db.select({
+    id: fieldOperations.id,
+    businessId: fieldOperations.businessId,
+    operationNumber: fieldOperations.operationNumber,
+    operationType: fieldOperations.operationType,
+    status: fieldOperations.status,
+    priority: fieldOperations.priority,
+    scheduledDate: fieldOperations.scheduledDate,
+    assignedTeamId: fieldOperations.assignedTeamId,
+  }).from(fieldOperations)
     .where(and(...conditions))
     .orderBy(desc(fieldOperations.createdAt));
 }
@@ -1503,7 +2108,33 @@ export async function getFieldOperationById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(fieldOperations).where(eq(fieldOperations.id, id));
+  const result = await db.select({
+    id: fieldOperations.id,
+    businessId: fieldOperations.businessId,
+    branchId: fieldOperations.branchId,
+    stationId: fieldOperations.stationId,
+    operationNumber: fieldOperations.operationNumber,
+    operationType: fieldOperations.operationType,
+    status: fieldOperations.status,
+    priority: fieldOperations.priority,
+    description: fieldOperations.description,
+    customerId: fieldOperations.customerId,
+    meterId: fieldOperations.meterId,
+    scheduledDate: fieldOperations.scheduledDate,
+    scheduledTime: fieldOperations.scheduledTime,
+    actualDate: fieldOperations.actualDate,
+    actualTime: fieldOperations.actualTime,
+    assignedTeamId: fieldOperations.assignedTeamId,
+    assignedWorkerId: fieldOperations.assignedWorkerId,
+    notes: fieldOperations.notes,
+    completionNotes: fieldOperations.completionNotes,
+    startedAt: fieldOperations.startedAt,
+    completedAt: fieldOperations.completedAt,
+    actualDuration: fieldOperations.actualDuration,
+    createdBy: fieldOperations.createdBy,
+    createdAt: fieldOperations.createdAt,
+    updatedAt: fieldOperations.updatedAt,
+  }).from(fieldOperations).where(eq(fieldOperations.id, id));
   return result[0] || null;
 }
 
@@ -1558,7 +2189,15 @@ export async function getFieldTeams(businessId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(fieldTeams)
+  return await db.select({
+    id: fieldTeams.id,
+    businessId: fieldTeams.businessId,
+    code: fieldTeams.code,
+    nameAr: fieldTeams.nameAr,
+    nameEn: fieldTeams.nameEn,
+    status: fieldTeams.status,
+    isActive: fieldTeams.isActive,
+  }).from(fieldTeams)
     .where(eq(fieldTeams.businessId, businessId))
     .orderBy(asc(fieldTeams.nameAr));
 }
@@ -1567,7 +2206,19 @@ export async function getFieldTeamById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(fieldTeams).where(eq(fieldTeams.id, id));
+  const result = await db.select({
+    id: fieldTeams.id,
+    businessId: fieldTeams.businessId,
+    branchId: fieldTeams.branchId,
+    code: fieldTeams.code,
+    nameAr: fieldTeams.nameAr,
+    nameEn: fieldTeams.nameEn,
+    leaderId: fieldTeams.leaderId,
+    status: fieldTeams.status,
+    isActive: fieldTeams.isActive,
+    createdAt: fieldTeams.createdAt,
+    updatedAt: fieldTeams.updatedAt,
+  }).from(fieldTeams).where(eq(fieldTeams.id, id));
   return result[0] || null;
 }
 
@@ -1601,7 +2252,16 @@ export async function getFieldWorkers(businessId: number, filters?: {
   if (filters?.status) conditions.push(eq(fieldWorkers.status, filters.status as any));
   if (filters?.workerType) conditions.push(eq(fieldWorkers.workerType, filters.workerType as any));
 
-  return await db.select().from(fieldWorkers)
+  return await db.select({
+    id: fieldWorkers.id,
+    businessId: fieldWorkers.businessId,
+    teamId: fieldWorkers.teamId,
+    employeeId: fieldWorkers.employeeId,
+    nameAr: fieldWorkers.nameAr,
+    phone: fieldWorkers.phone,
+    status: fieldWorkers.status,
+    isActive: fieldWorkers.isActive,
+  }).from(fieldWorkers)
     .where(and(...conditions))
     .orderBy(asc(fieldWorkers.nameAr));
 }
@@ -1610,7 +2270,22 @@ export async function getFieldWorkerById(id: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(fieldWorkers).where(eq(fieldWorkers.id, id));
+  const result = await db.select({
+    id: fieldWorkers.id,
+    businessId: fieldWorkers.businessId,
+    teamId: fieldWorkers.teamId,
+    employeeId: fieldWorkers.employeeId,
+    nameAr: fieldWorkers.nameAr,
+    nameEn: fieldWorkers.nameEn,
+    phone: fieldWorkers.phone,
+    email: fieldWorkers.email,
+    status: fieldWorkers.status,
+    isActive: fieldWorkers.isActive,
+    skills: fieldWorkers.skills,
+    certifications: fieldWorkers.certifications,
+    createdAt: fieldWorkers.createdAt,
+    updatedAt: fieldWorkers.updatedAt,
+  }).from(fieldWorkers).where(eq(fieldWorkers.id, id));
   return result[0] || null;
 }
 
@@ -1664,7 +2339,15 @@ export async function getFieldEquipmentList(businessId: number, filters?: {
   if (filters?.equipmentType) conditions.push(eq(fieldEquipment.equipmentType, filters.equipmentType as any));
   if (filters?.teamId) conditions.push(eq(fieldEquipment.assignedTeamId, filters.teamId));
 
-  return await db.select().from(fieldEquipment)
+  return await db.select({
+    id: fieldEquipment.id,
+    businessId: fieldEquipment.businessId,
+    code: fieldEquipment.code,
+    nameAr: fieldEquipment.nameAr,
+    equipmentType: fieldEquipment.equipmentType,
+    status: fieldEquipment.status,
+    currentHolderId: fieldEquipment.currentHolderId,
+  }).from(fieldEquipment)
     .where(and(...conditions))
     .orderBy(asc(fieldEquipment.nameAr));
 }
@@ -1725,7 +2408,15 @@ export async function getInspections(businessId: number, filters?: {
   if (filters?.status) conditions.push(eq(inspections.status, filters.status as any));
   if (filters?.inspectorId) conditions.push(eq(inspections.inspectorId, filters.inspectorId));
 
-  return await db.select().from(inspections)
+  return await db.select({
+    id: inspections.id,
+    businessId: inspections.businessId,
+    inspectionNumber: inspections.inspectionNumber,
+    inspectionType: inspections.inspectionType,
+    status: inspections.status,
+    scheduledDate: inspections.scheduledDate,
+    inspectorId: inspections.inspectorId,
+  }).from(inspections)
     .where(and(...conditions))
     .orderBy(desc(inspections.inspectionDate));
 }
@@ -1767,7 +2458,14 @@ export async function getMaterialRequests(businessId: number, filters?: {
   if (filters?.workerId) conditions.push(eq(materialRequests.workerId, filters.workerId));
   if (filters?.teamId) conditions.push(eq(materialRequests.teamId, filters.teamId));
 
-  return await db.select().from(materialRequests)
+  return await db.select({
+    id: materialRequests.id,
+    businessId: materialRequests.businessId,
+    requestNumber: materialRequests.requestNumber,
+    status: materialRequests.status,
+    requestedBy: materialRequests.requestedBy,
+    requestDate: materialRequests.requestDate,
+  }).from(materialRequests)
     .where(and(...conditions))
     .orderBy(desc(materialRequests.createdAt));
 }
@@ -1807,7 +2505,15 @@ export async function getOperationPayments(businessId: number, filters?: {
   if (filters?.workerId) conditions.push(eq(operationPayments.workerId, filters.workerId));
   if (filters?.status) conditions.push(eq(operationPayments.status, filters.status as any));
 
-  return await db.select().from(operationPayments)
+  return await db.select({
+    id: operationPayments.id,
+    businessId: operationPayments.businessId,
+    operationId: operationPayments.operationId,
+    amount: operationPayments.amount,
+    paymentMethod: operationPayments.paymentMethod,
+    status: operationPayments.status,
+    paymentDate: operationPayments.paymentDate,
+  }).from(operationPayments)
     .where(and(...conditions))
     .orderBy(desc(operationPayments.calculatedAt));
 }
@@ -1825,7 +2531,15 @@ export async function getPeriodSettlements(businessId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(periodSettlements)
+  return await db.select({
+    id: periodSettlements.id,
+    businessId: periodSettlements.businessId,
+    settlementNumber: periodSettlements.settlementNumber,
+    periodStart: periodSettlements.periodStart,
+    periodEnd: periodSettlements.periodEnd,
+    status: periodSettlements.status,
+    totalAmount: periodSettlements.totalAmount,
+  }).from(periodSettlements)
     .where(eq(periodSettlements.businessId, businessId))
     .orderBy(desc(periodSettlements.createdAt));
 }
@@ -1857,7 +2571,13 @@ export async function getInstallationDetailsByOperation(operationId: number) {
   const db = await getDb();
   if (!db) return null;
 
-  const result = await db.select().from(installationDetails).where(eq(installationDetails.operationId, operationId));
+  const result = await db.select({
+    id: installationDetails.id,
+    operationId: installationDetails.operationId,
+    meterType: installationDetails.meterType,
+    meterNumber: installationDetails.meterNumber,
+    installationDate: installationDetails.installationDate,
+  }).from(installationDetails).where(eq(installationDetails.operationId, operationId));
   return result[0] || null;
 }
 
@@ -1873,7 +2593,13 @@ export async function getInstallationPhotos(operationId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(installationPhotos)
+  return await db.select({
+    id: installationPhotos.id,
+    operationId: installationPhotos.operationId,
+    photoType: installationPhotos.photoType,
+    photoUrl: installationPhotos.photoUrl,
+    createdAt: installationPhotos.createdAt,
+  }).from(installationPhotos)
     .where(eq(installationPhotos.operationId, operationId))
     .orderBy(asc(installationPhotos.createdAt));
 }
@@ -1891,7 +2617,16 @@ export async function getWorkerPerformanceHistory(workerId: number) {
   const db = await getDb();
   if (!db) return [];
 
-  return await db.select().from(workerPerformance)
+  return await db.select({
+    id: workerPerformance.id,
+    workerId: workerPerformance.workerId,
+    periodStart: workerPerformance.periodStart,
+    periodEnd: workerPerformance.periodEnd,
+    totalOperations: workerPerformance.totalOperations,
+    completedOperations: workerPerformance.completedOperations,
+    avgRating: workerPerformance.avgRating,
+    performanceScore: workerPerformance.performanceScore,
+  }).from(workerPerformance)
     .where(eq(workerPerformance.workerId, workerId))
     .orderBy(desc(workerPerformance.periodEnd));
 }
@@ -1917,7 +2652,15 @@ export async function getWorkerIncentives(businessId: number, filters?: {
   if (filters?.workerId) conditions.push(eq(workerIncentives.workerId, filters.workerId));
   if (filters?.status) conditions.push(eq(workerIncentives.status, filters.status as any));
 
-  return await db.select().from(workerIncentives)
+  return await db.select({
+    id: workerIncentives.id,
+    businessId: workerIncentives.businessId,
+    workerId: workerIncentives.workerId,
+    incentiveType: workerIncentives.incentiveType,
+    amount: workerIncentives.amount,
+    status: workerIncentives.status,
+    createdAt: workerIncentives.createdAt,
+  }).from(workerIncentives)
     .where(and(...conditions))
     .orderBy(desc(workerIncentives.createdAt));
 }
@@ -1945,7 +2688,14 @@ export async function getInspectionChecklists(businessId: number, operationType?
   const conditions = [eq(inspectionChecklists.businessId, businessId)];
   if (operationType) conditions.push(eq(inspectionChecklists.operationType, operationType));
 
-  return await db.select().from(inspectionChecklists)
+  return await db.select({
+    id: inspectionChecklists.id,
+    businessId: inspectionChecklists.businessId,
+    nameAr: inspectionChecklists.nameAr,
+    nameEn: inspectionChecklists.nameEn,
+    operationType: inspectionChecklists.operationType,
+    isActive: inspectionChecklists.isActive,
+  }).from(inspectionChecklists)
     .where(and(...conditions))
     .orderBy(asc(inspectionChecklists.nameAr));
 }
@@ -2010,7 +2760,7 @@ export async function seedDemoTenants() {
   if (!db) throw new Error("Database not available");
 
   // Check if demo data already exists
-  const existingBusinesses = await db.select().from(businesses).limit(1);
+  const existingBusinesses = await db.select({ id: businesses.id }).from(businesses).limit(1);
   if (existingBusinesses.length > 0) {
     return { message: "Demo data already exists" };
   }
@@ -2130,14 +2880,27 @@ export async function seedDemoTenants() {
 export async function getDepartments(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(departments).where(eq(departments.businessId, businessId)).orderBy(asc(departments.nameAr));
+  return await db.select({
+    id: departments.id,
+    businessId: departments.businessId,
+    code: departments.code,
+    nameAr: departments.nameAr,
+    nameEn: departments.nameEn,
+    parentId: departments.parentId,
+    managerId: departments.managerId,
+    isActive: departments.isActive,
+  }).from(departments).where(eq(departments.businessId, businessId)).orderBy(asc(departments.nameAr));
 }
 
 export async function createDepartment(data: InsertDepartment) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(departments).values(data);
-  const [created] = await db.select().from(departments).where(eq(departments.code, data.code)).limit(1);
+  const [created] = await db.select({
+    id: departments.id,
+    code: departments.code,
+    nameAr: departments.nameAr,
+  }).from(departments).where(eq(departments.code, data.code)).limit(1);
   return created;
 }
 
@@ -2157,14 +2920,27 @@ export async function deleteDepartment(id: number) {
 export async function getJobTitles(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(jobTitles).where(eq(jobTitles.businessId, businessId)).orderBy(asc(jobTitles.titleAr));
+  return await db.select({
+    id: jobTitles.id,
+    businessId: jobTitles.businessId,
+    code: jobTitles.code,
+    titleAr: jobTitles.titleAr,
+    titleEn: jobTitles.titleEn,
+    departmentId: jobTitles.departmentId,
+    gradeId: jobTitles.gradeId,
+    isActive: jobTitles.isActive,
+  }).from(jobTitles).where(eq(jobTitles.businessId, businessId)).orderBy(asc(jobTitles.titleAr));
 }
 
 export async function createJobTitle(data: InsertJobTitle) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(jobTitles).values(data);
-  const [created] = await db.select().from(jobTitles).where(eq(jobTitles.code, data.code)).limit(1);
+  const [created] = await db.select({
+    id: jobTitles.id,
+    code: jobTitles.code,
+    titleAr: jobTitles.titleAr,
+  }).from(jobTitles).where(eq(jobTitles.code, data.code)).limit(1);
   return created;
 }
 
@@ -2184,7 +2960,16 @@ export async function deleteJobTitle(id: number) {
 export async function getSalaryGrades(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(salaryGrades).where(eq(salaryGrades.businessId, businessId)).orderBy(asc(salaryGrades.code));
+  return await db.select({
+    id: salaryGrades.id,
+    businessId: salaryGrades.businessId,
+    code: salaryGrades.code,
+    nameAr: salaryGrades.nameAr,
+    nameEn: salaryGrades.nameEn,
+    minSalary: salaryGrades.minSalary,
+    maxSalary: salaryGrades.maxSalary,
+    isActive: salaryGrades.isActive,
+  }).from(salaryGrades).where(eq(salaryGrades.businessId, businessId)).orderBy(asc(salaryGrades.code));
 }
 
 export async function createSalaryGrade(data: InsertSalaryGrade) {
@@ -2207,13 +2992,45 @@ export async function getEmployees(businessId: number, filters?: {
   if (filters?.departmentId) conditions.push(eq(employees.departmentId, filters.departmentId));
   if (filters?.status) conditions.push(eq(employees.status, filters.status as any));
 
-  return await db.select().from(employees).where(and(...conditions)).orderBy(desc(employees.createdAt));
+  return await db.select({
+    id: employees.id,
+    businessId: employees.businessId,
+    employeeNumber: employees.employeeNumber,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+    departmentId: employees.departmentId,
+    jobTitleId: employees.jobTitleId,
+    status: employees.status,
+  }).from(employees).where(and(...conditions)).orderBy(desc(employees.createdAt));
 }
 
 export async function getEmployeeById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(employees).where(eq(employees.id, id));
+  const result = await db.select({
+    id: employees.id,
+    businessId: employees.businessId,
+    branchId: employees.branchId,
+    employeeNumber: employees.employeeNumber,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+    nationalId: employees.nationalId,
+    dateOfBirth: employees.dateOfBirth,
+    gender: employees.gender,
+    nationality: employees.nationality,
+    phone: employees.phone,
+    email: employees.email,
+    address: employees.address,
+    departmentId: employees.departmentId,
+    jobTitleId: employees.jobTitleId,
+    managerId: employees.managerId,
+    hireDate: employees.hireDate,
+    status: employees.status,
+    userId: employees.userId,
+    fieldWorkerId: employees.fieldWorkerId,
+    createdAt: employees.createdAt,
+    updatedAt: employees.updatedAt,
+  }).from(employees).where(eq(employees.id, id));
   return result[0] || null;
 }
 
@@ -2221,7 +3038,12 @@ export async function createEmployee(data: InsertEmployee) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(employees).values(data);
-  const [created] = await db.select().from(employees).where(eq(employees.employeeNumber, data.employeeNumber)).limit(1);
+  const [created] = await db.select({
+    id: employees.id,
+    employeeNumber: employees.employeeNumber,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+  }).from(employees).where(eq(employees.employeeNumber, data.employeeNumber)).limit(1);
   return created;
 }
 
@@ -2229,7 +3051,12 @@ export async function updateEmployee(id: number, data: Partial<InsertEmployee>) 
   const db = await getDb();
   if (!db) return;
   await db.update(employees).set(data).where(eq(employees.id, id));
-  const [updated] = await db.select().from(employees).where(eq(employees.id, id)).limit(1);
+  const [updated] = await db.select({
+    id: employees.id,
+    employeeNumber: employees.employeeNumber,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+  }).from(employees).where(eq(employees.id, id)).limit(1);
   return updated;
 }
 
@@ -2242,7 +3069,14 @@ export async function deleteEmployee(id: number) {
 export async function getUnlinkedEmployees(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(employees)
+  return await db.select({
+    id: employees.id,
+    employeeNumber: employees.employeeNumber,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+    departmentId: employees.departmentId,
+    jobTitleId: employees.jobTitleId,
+  }).from(employees)
     .where(and(eq(employees.businessId, businessId), isNull(employees.fieldWorkerId)))
     .orderBy(asc(employees.firstName));
 }
@@ -2269,7 +3103,16 @@ export async function unlinkEmployeeFromFieldWorker(employeeId: number) {
 export async function getSalaryDetailsByEmployee(employeeId: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(salaryDetails)
+  const result = await db.select({
+    id: salaryDetails.id,
+    employeeId: salaryDetails.employeeId,
+    basicSalary: salaryDetails.basicSalary,
+    housingAllowance: salaryDetails.housingAllowance,
+    transportAllowance: salaryDetails.transportAllowance,
+    otherAllowances: salaryDetails.otherAllowances,
+    effectiveDate: salaryDetails.effectiveDate,
+    isActive: salaryDetails.isActive,
+  }).from(salaryDetails)
     .where(and(eq(salaryDetails.employeeId, employeeId), eq(salaryDetails.isActive, true)));
   return result[0] || null;
 }
@@ -2295,7 +3138,18 @@ export async function getPayrollRuns(businessId: number, year?: number) {
   const conditions = [eq(payrollRuns.businessId, businessId)];
   if (year) conditions.push(eq(payrollRuns.periodYear, year));
 
-  return await db.select().from(payrollRuns)
+  return await db.select({
+    id: payrollRuns.id,
+    businessId: payrollRuns.businessId,
+    code: payrollRuns.code,
+    periodYear: payrollRuns.periodYear,
+    periodMonth: payrollRuns.periodMonth,
+    status: payrollRuns.status,
+    totalGross: payrollRuns.totalGross,
+    totalDeductions: payrollRuns.totalDeductions,
+    totalNet: payrollRuns.totalNet,
+    createdAt: payrollRuns.createdAt,
+  }).from(payrollRuns)
     .where(and(...conditions))
     .orderBy(desc(payrollRuns.periodYear), desc(payrollRuns.periodMonth));
 }
@@ -2304,14 +3158,29 @@ export async function createPayrollRun(data: InsertPayrollRun) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(payrollRuns).values(data);
-  const [created] = await db.select().from(payrollRuns).where(eq(payrollRuns.code, data.code)).limit(1);
+  const [created] = await db.select({
+    id: payrollRuns.id,
+    code: payrollRuns.code,
+    periodYear: payrollRuns.periodYear,
+    periodMonth: payrollRuns.periodMonth,
+    status: payrollRuns.status,
+  }).from(payrollRuns).where(eq(payrollRuns.code, data.code)).limit(1);
   return created;
 }
 
 export async function getPayrollItems(payrollRunId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(payrollItems).where(eq(payrollItems.payrollRunId, payrollRunId));
+  return await db.select({
+    id: payrollItems.id,
+    payrollRunId: payrollItems.payrollRunId,
+    employeeId: payrollItems.employeeId,
+    basicSalary: payrollItems.basicSalary,
+    totalAllowances: payrollItems.totalAllowances,
+    totalDeductions: payrollItems.totalDeductions,
+    netSalary: payrollItems.netSalary,
+    status: payrollItems.status,
+  }).from(payrollItems).where(eq(payrollItems.payrollRunId, payrollRunId));
 }
 
 export async function createPayrollItem(data: InsertPayrollItem) {
@@ -2339,7 +3208,16 @@ export async function getAttendance(businessId: number, filters?: {
   const conditions = [eq(attendance.businessId, businessId)];
   if (filters?.employeeId) conditions.push(eq(attendance.employeeId, filters.employeeId));
 
-  return await db.select().from(attendance)
+  return await db.select({
+    id: attendance.id,
+    businessId: attendance.businessId,
+    employeeId: attendance.employeeId,
+    attendanceDate: attendance.attendanceDate,
+    checkIn: attendance.checkIn,
+    checkOut: attendance.checkOut,
+    status: attendance.status,
+    workHours: attendance.workHours,
+  }).from(attendance)
     .where(and(...conditions))
     .orderBy(desc(attendance.attendanceDate));
 }
@@ -2348,7 +3226,13 @@ export async function createAttendance(data: InsertAttendance) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(attendance).values(data);
-  const [created] = await db.select().from(attendance)
+  const [created] = await db.select({
+    id: attendance.id,
+    employeeId: attendance.employeeId,
+    attendanceDate: attendance.attendanceDate,
+    checkIn: attendance.checkIn,
+    status: attendance.status,
+  }).from(attendance)
     .where(and(eq(attendance.employeeId, data.employeeId), eq(attendance.attendanceDate, data.attendanceDate)))
     .limit(1);
   return created;
@@ -2363,7 +3247,14 @@ export async function updateAttendance(id: number, data: Partial<InsertAttendanc
 export async function getTodayAttendance(employeeId: number, date: Date) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(attendance)
+  const result = await db.select({
+    id: attendance.id,
+    employeeId: attendance.employeeId,
+    attendanceDate: attendance.attendanceDate,
+    checkIn: attendance.checkIn,
+    checkOut: attendance.checkOut,
+    status: attendance.status,
+  }).from(attendance)
     .where(and(eq(attendance.employeeId, employeeId), eq(attendance.attendanceDate, date)));
   return result[0] || null;
 }
@@ -2372,14 +3263,27 @@ export async function getTodayAttendance(employeeId: number, date: Date) {
 export async function getLeaveTypes(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(leaveTypes).where(eq(leaveTypes.businessId, businessId)).orderBy(asc(leaveTypes.nameAr));
+  return await db.select({
+    id: leaveTypes.id,
+    businessId: leaveTypes.businessId,
+    code: leaveTypes.code,
+    nameAr: leaveTypes.nameAr,
+    nameEn: leaveTypes.nameEn,
+    defaultDays: leaveTypes.defaultDays,
+    isPaid: leaveTypes.isPaid,
+    isActive: leaveTypes.isActive,
+  }).from(leaveTypes).where(eq(leaveTypes.businessId, businessId)).orderBy(asc(leaveTypes.nameAr));
 }
 
 export async function createLeaveType(data: InsertLeaveType) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(leaveTypes).values(data);
-  const [created] = await db.select().from(leaveTypes).where(eq(leaveTypes.code, data.code)).limit(1);
+  const [created] = await db.select({
+    id: leaveTypes.id,
+    code: leaveTypes.code,
+    nameAr: leaveTypes.nameAr,
+  }).from(leaveTypes).where(eq(leaveTypes.code, data.code)).limit(1);
   return created;
 }
 
@@ -2395,7 +3299,17 @@ export async function getLeaveRequests(businessId: number, filters?: {
   if (filters?.employeeId) conditions.push(eq(leaveRequests.employeeId, filters.employeeId));
   if (filters?.status) conditions.push(eq(leaveRequests.status, filters.status as any));
 
-  return await db.select().from(leaveRequests)
+  return await db.select({
+    id: leaveRequests.id,
+    businessId: leaveRequests.businessId,
+    employeeId: leaveRequests.employeeId,
+    leaveTypeId: leaveRequests.leaveTypeId,
+    startDate: leaveRequests.startDate,
+    endDate: leaveRequests.endDate,
+    totalDays: leaveRequests.totalDays,
+    status: leaveRequests.status,
+    createdAt: leaveRequests.createdAt,
+  }).from(leaveRequests)
     .where(and(...conditions))
     .orderBy(desc(leaveRequests.createdAt));
 }
@@ -2404,7 +3318,12 @@ export async function createLeaveRequest(data: InsertLeaveRequest) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(leaveRequests).values(data);
-  const [created] = await db.select().from(leaveRequests)
+  const [created] = await db.select({
+    id: leaveRequests.id,
+    employeeId: leaveRequests.employeeId,
+    startDate: leaveRequests.startDate,
+    status: leaveRequests.status,
+  }).from(leaveRequests)
     .where(and(eq(leaveRequests.employeeId, data.employeeId), eq(leaveRequests.startDate, data.startDate)))
     .orderBy(desc(leaveRequests.id))
     .limit(1);
@@ -2420,7 +3339,20 @@ export async function updateLeaveRequest(id: number, data: Partial<InsertLeaveRe
 export async function getLeaveRequestById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(leaveRequests).where(eq(leaveRequests.id, id));
+  const result = await db.select({
+    id: leaveRequests.id,
+    businessId: leaveRequests.businessId,
+    employeeId: leaveRequests.employeeId,
+    leaveTypeId: leaveRequests.leaveTypeId,
+    startDate: leaveRequests.startDate,
+    endDate: leaveRequests.endDate,
+    totalDays: leaveRequests.totalDays,
+    reason: leaveRequests.reason,
+    status: leaveRequests.status,
+    approvedBy: leaveRequests.approvedBy,
+    approvedAt: leaveRequests.approvedAt,
+    createdAt: leaveRequests.createdAt,
+  }).from(leaveRequests).where(eq(leaveRequests.id, id));
   return result[0] || null;
 }
 
@@ -2428,7 +3360,15 @@ export async function getLeaveRequestById(id: number) {
 export async function getLeaveBalance(employeeId: number, leaveTypeId: number, year: number) {
   const db = await getDb();
   if (!db) return null;
-  const result = await db.select().from(leaveBalances)
+  const result = await db.select({
+    id: leaveBalances.id,
+    employeeId: leaveBalances.employeeId,
+    leaveTypeId: leaveBalances.leaveTypeId,
+    year: leaveBalances.year,
+    entitlement: leaveBalances.entitlement,
+    used: leaveBalances.used,
+    remaining: leaveBalances.remaining,
+  }).from(leaveBalances)
     .where(and(
       eq(leaveBalances.employeeId, employeeId),
       eq(leaveBalances.leaveTypeId, leaveTypeId),
@@ -2451,7 +3391,16 @@ export async function getPerformanceEvaluations(businessId: number, employeeId?:
   const conditions = [eq(performanceEvaluations.businessId, businessId)];
   if (employeeId) conditions.push(eq(performanceEvaluations.employeeId, employeeId));
 
-  return await db.select().from(performanceEvaluations)
+  return await db.select({
+    id: performanceEvaluations.id,
+    businessId: performanceEvaluations.businessId,
+    employeeId: performanceEvaluations.employeeId,
+    evaluatorId: performanceEvaluations.evaluatorId,
+    evaluationPeriod: performanceEvaluations.evaluationPeriod,
+    overallScore: performanceEvaluations.overallScore,
+    status: performanceEvaluations.status,
+    createdAt: performanceEvaluations.createdAt,
+  }).from(performanceEvaluations)
     .where(and(...conditions))
     .orderBy(desc(performanceEvaluations.createdAt));
 }
@@ -2489,7 +3438,17 @@ export async function getHRDashboardStats(businessId: number) {
 export async function getAssetCategories(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(assetCategories)
+  return await db.select({
+    id: assetCategories.id,
+    businessId: assetCategories.businessId,
+    code: assetCategories.code,
+    nameAr: assetCategories.nameAr,
+    nameEn: assetCategories.nameEn,
+    parentId: assetCategories.parentId,
+    depreciationMethod: assetCategories.depreciationMethod,
+    usefulLife: assetCategories.usefulLife,
+    isActive: assetCategories.isActive,
+  }).from(assetCategories)
     .where(and(eq(assetCategories.businessId, businessId), eq(assetCategories.isActive, true)))
     .orderBy(asc(assetCategories.code));
 }
@@ -2535,7 +3494,15 @@ export async function getAssetMovements(filters: { assetId?: number; businessId?
   
   if (conditions.length === 0) return [];
   
-  return await db.select().from(assetMovements)
+  return await db.select({
+    id: assetMovements.id,
+    assetId: assetMovements.assetId,
+    movementType: assetMovements.movementType,
+    movementDate: assetMovements.movementDate,
+    amount: assetMovements.amount,
+    description: assetMovements.description,
+    createdAt: assetMovements.createdAt,
+  }).from(assetMovements)
     .where(and(...conditions))
     .orderBy(desc(assetMovements.movementDate));
 }
@@ -2557,7 +3524,15 @@ export async function calculateDepreciation(params: { businessId: number; period
     conditions.push(inArray(assets.id, params.assetIds));
   }
   
-  const assetsList = await db.select().from(assets).where(and(...conditions));
+  const assetsList = await db.select({
+    id: assets.id,
+    nameAr: assets.nameAr,
+    purchaseCost: assets.purchaseCost,
+    salvageValue: assets.salvageValue,
+    usefulLife: assets.usefulLife,
+    accumulatedDepreciation: assets.accumulatedDepreciation,
+    currentValue: assets.currentValue,
+  }).from(assets).where(and(...conditions));
   
   let totalDepreciation = 0;
   const results: any[] = [];
@@ -2610,7 +3585,15 @@ export async function getDepreciationHistory(filters: { assetId?: number; busine
   let conditions = [eq(assetMovements.movementType, "depreciation")];
   if (filters.assetId) conditions.push(eq(assetMovements.assetId, filters.assetId));
   
-  return await db.select().from(assetMovements)
+  return await db.select({
+    id: assetMovements.id,
+    assetId: assetMovements.assetId,
+    movementType: assetMovements.movementType,
+    movementDate: assetMovements.movementDate,
+    amount: assetMovements.amount,
+    description: assetMovements.description,
+    createdAt: assetMovements.createdAt,
+  }).from(assetMovements)
     .where(and(...conditions))
     .orderBy(desc(assetMovements.movementDate));
 }
@@ -2654,7 +3637,18 @@ export async function getAccountsTree(businessId: number) {
   const db = await getDb();
   if (!db) return [];
   
-  const allAccounts = await db.select().from(accounts)
+  const allAccounts = await db.select({
+    id: accounts.id,
+    code: accounts.code,
+    nameAr: accounts.nameAr,
+    nameEn: accounts.nameEn,
+    parentId: accounts.parentId,
+    level: accounts.level,
+    accountType: accounts.accountType,
+    nature: accounts.nature,
+    isParent: accounts.isParent,
+    currentBalance: accounts.currentBalance,
+  }).from(accounts)
     .where(and(eq(accounts.businessId, businessId), eq(accounts.isActive, true)))
     .orderBy(asc(accounts.code));
   
@@ -2680,7 +3674,18 @@ export async function getJournalEntries(businessId: number, filters: any) {
   if (filters.type) conditions.push(eq(journalEntries.type, filters.type as any));
   if (filters.status) conditions.push(eq(journalEntries.status, filters.status as any));
   
-  return await db.select().from(journalEntries)
+  return await db.select({
+    id: journalEntries.id,
+    businessId: journalEntries.businessId,
+    entryNumber: journalEntries.entryNumber,
+    entryDate: journalEntries.entryDate,
+    type: journalEntries.type,
+    description: journalEntries.description,
+    totalDebit: journalEntries.totalDebit,
+    totalCredit: journalEntries.totalCredit,
+    status: journalEntries.status,
+    createdAt: journalEntries.createdAt,
+  }).from(journalEntries)
     .where(and(...conditions))
     .orderBy(desc(journalEntries.entryDate))
     .limit(filters.limit || 100);
@@ -2690,10 +3695,30 @@ export async function getJournalEntryById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [entry] = await db.select().from(journalEntries).where(eq(journalEntries.id, id));
+  const [entry] = await db.select({
+    id: journalEntries.id,
+    businessId: journalEntries.businessId,
+    entryNumber: journalEntries.entryNumber,
+    entryDate: journalEntries.entryDate,
+    type: journalEntries.type,
+    description: journalEntries.description,
+    reference: journalEntries.reference,
+    totalDebit: journalEntries.totalDebit,
+    totalCredit: journalEntries.totalCredit,
+    status: journalEntries.status,
+    createdBy: journalEntries.createdBy,
+    createdAt: journalEntries.createdAt,
+  }).from(journalEntries).where(eq(journalEntries.id, id));
   if (!entry) return null;
   
-  const lines = await db.select().from(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
+  const lines = await db.select({
+    id: journalEntryLines.id,
+    journalEntryId: journalEntryLines.journalEntryId,
+    accountId: journalEntryLines.accountId,
+    debit: journalEntryLines.debit,
+    credit: journalEntryLines.credit,
+    description: journalEntryLines.description,
+  }).from(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
   
   return { ...entry, lines };
 }
@@ -2785,7 +3810,10 @@ export async function deleteJournalEntry(id: number) {
   if (!db) return;
   
   // Only delete draft entries
-  const [entry] = await db.select().from(journalEntries).where(eq(journalEntries.id, id));
+  const [entry] = await db.select({
+    id: journalEntries.id,
+    status: journalEntries.status,
+  }).from(journalEntries).where(eq(journalEntries.id, id));
   if (entry?.status !== "draft") {
     throw new Error("لا يمكن حذف قيد مرحّل");
   }
@@ -2798,7 +3826,12 @@ export async function postJournalEntry(id: number, userId: number) {
   const db = await getDb();
   if (!db) return;
   
-  const [entry] = await db.select().from(journalEntries).where(eq(journalEntries.id, id));
+  const [entry] = await db.select({
+    id: journalEntries.id,
+    status: journalEntries.status,
+    totalDebit: journalEntries.totalDebit,
+    totalCredit: journalEntries.totalCredit,
+  }).from(journalEntries).where(eq(journalEntries.id, id));
   if (!entry) throw new Error("القيد غير موجود");
   if (entry.status !== "draft") throw new Error("القيد مرحّل بالفعل");
   
@@ -2808,10 +3841,19 @@ export async function postJournalEntry(id: number, userId: number) {
   }
   
   // Update account balances
-  const lines = await db.select().from(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
+  const lines = await db.select({
+    id: journalEntryLines.id,
+    accountId: journalEntryLines.accountId,
+    debit: journalEntryLines.debit,
+    credit: journalEntryLines.credit,
+  }).from(journalEntryLines).where(eq(journalEntryLines.journalEntryId, id));
   
   for (const line of lines) {
-    const [account] = await db.select().from(accounts).where(eq(accounts.id, line.accountId));
+    const [account] = await db.select({
+      id: accounts.id,
+      currentBalance: accounts.currentBalance,
+      nature: accounts.nature,
+    }).from(accounts).where(eq(accounts.id, line.accountId));
     if (!account) continue;
     
     const currentBalance = parseFloat(account.currentBalance || "0");
@@ -2880,7 +3922,15 @@ export async function getFiscalPeriods(businessId: number, filters: any) {
   if (filters.year) conditions.push(eq(fiscalPeriods.year, filters.year));
   if (filters.status) conditions.push(eq(fiscalPeriods.status, filters.status as any));
   
-  return await db.select().from(fiscalPeriods)
+  return await db.select({
+    id: fiscalPeriods.id,
+    businessId: fiscalPeriods.businessId,
+    year: fiscalPeriods.year,
+    period: fiscalPeriods.period,
+    startDate: fiscalPeriods.startDate,
+    endDate: fiscalPeriods.endDate,
+    status: fiscalPeriods.status,
+  }).from(fiscalPeriods)
     .where(and(...conditions))
     .orderBy(desc(fiscalPeriods.year), desc(fiscalPeriods.period));
 }
@@ -2915,7 +3965,15 @@ export async function reopenFiscalPeriod(id: number) {
 export async function getCostCenters(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(costCenters)
+  return await db.select({
+    id: costCenters.id,
+    businessId: costCenters.businessId,
+    code: costCenters.code,
+    nameAr: costCenters.nameAr,
+    nameEn: costCenters.nameEn,
+    parentId: costCenters.parentId,
+    isActive: costCenters.isActive,
+  }).from(costCenters)
     .where(and(eq(costCenters.businessId, businessId), eq(costCenters.isActive, true)))
     .orderBy(asc(costCenters.code));
 }
@@ -2989,10 +4047,20 @@ export async function getIncomeStatement(businessId: number, filters: any) {
   if (!db) return { revenues: [], expenses: [], totalRevenue: 0, totalExpense: 0, netIncome: 0 };
   
   // Get revenue and expense accounts
-  const revenueAccounts = await db.select().from(accounts)
+  const revenueAccounts = await db.select({
+    id: accounts.id,
+    code: accounts.code,
+    nameAr: accounts.nameAr,
+    currentBalance: accounts.currentBalance,
+  }).from(accounts)
     .where(and(eq(accounts.businessId, businessId), eq(accounts.nature, "credit"), eq(accounts.isActive, true)));
   
-  const expenseAccounts = await db.select().from(accounts)
+  const expenseAccounts = await db.select({
+    id: accounts.id,
+    code: accounts.code,
+    nameAr: accounts.nameAr,
+    currentBalance: accounts.currentBalance,
+  }).from(accounts)
     .where(and(eq(accounts.businessId, businessId), eq(accounts.nature, "debit"), eq(accounts.isActive, true)));
   
   const totalRevenue = revenueAccounts.reduce((sum, acc) => sum + parseFloat(acc.currentBalance || "0"), 0);
@@ -3011,7 +4079,13 @@ export async function getBalanceSheet(businessId: number, filters: any) {
   const db = await getDb();
   if (!db) return { assets: [], liabilities: [], equity: [], totalAssets: 0, totalLiabilities: 0, totalEquity: 0 };
   
-  const allAccounts = await db.select().from(accounts)
+  const allAccounts = await db.select({
+    id: accounts.id,
+    code: accounts.code,
+    nameAr: accounts.nameAr,
+    nature: accounts.nature,
+    currentBalance: accounts.currentBalance,
+  }).from(accounts)
     .where(and(eq(accounts.businessId, businessId), eq(accounts.isActive, true)));
   
   // Simple categorization based on account nature
@@ -3038,7 +4112,12 @@ export async function getAccountingDashboardStats(businessId: number) {
   const [totalAccounts] = await db.select({ count: count() }).from(accounts).where(eq(accounts.businessId, businessId));
   const [totalEntries] = await db.select({ count: count() }).from(journalEntries).where(eq(journalEntries.businessId, businessId));
   const [pendingEntries] = await db.select({ count: count() }).from(journalEntries).where(and(eq(journalEntries.businessId, businessId), eq(journalEntries.status, "draft")));
-  const [currentPeriod] = await db.select().from(fiscalPeriods).where(and(eq(fiscalPeriods.businessId, businessId), eq(fiscalPeriods.status, "open"))).limit(1);
+  const [currentPeriod] = await db.select({
+    id: fiscalPeriods.id,
+    year: fiscalPeriods.year,
+    period: fiscalPeriods.period,
+    status: fiscalPeriods.status,
+  }).from(fiscalPeriods).where(and(eq(fiscalPeriods.businessId, businessId), eq(fiscalPeriods.status, "open"))).limit(1);
   
   return {
     totalAccounts: totalAccounts?.count || 0,
@@ -3060,7 +4139,16 @@ export async function getWarehouses(businessId: number, filters?: any) {
   if (filters?.branchId) conditions.push(eq(warehouses.branchId, filters.branchId));
   if (filters?.type) conditions.push(eq(warehouses.type, filters.type as any));
   
-  return await db.select().from(warehouses)
+  return await db.select({
+    id: warehouses.id,
+    businessId: warehouses.businessId,
+    branchId: warehouses.branchId,
+    code: warehouses.code,
+    nameAr: warehouses.nameAr,
+    nameEn: warehouses.nameEn,
+    type: warehouses.type,
+    isActive: warehouses.isActive,
+  }).from(warehouses)
     .where(and(...conditions))
     .orderBy(asc(warehouses.nameAr));
 }
@@ -3068,7 +4156,19 @@ export async function getWarehouses(businessId: number, filters?: any) {
 export async function getWarehouseById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const [result] = await db.select().from(warehouses).where(eq(warehouses.id, id));
+  const [result] = await db.select({
+    id: warehouses.id,
+    businessId: warehouses.businessId,
+    branchId: warehouses.branchId,
+    code: warehouses.code,
+    nameAr: warehouses.nameAr,
+    nameEn: warehouses.nameEn,
+    type: warehouses.type,
+    address: warehouses.address,
+    managerId: warehouses.managerId,
+    isActive: warehouses.isActive,
+    createdAt: warehouses.createdAt,
+  }).from(warehouses).where(eq(warehouses.id, id));
   return result || null;
 }
 
@@ -3094,7 +4194,15 @@ export async function deleteWarehouse(id: number) {
 export async function getItemCategories(businessId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(itemCategories)
+  return await db.select({
+    id: itemCategories.id,
+    businessId: itemCategories.businessId,
+    code: itemCategories.code,
+    nameAr: itemCategories.nameAr,
+    nameEn: itemCategories.nameEn,
+    parentId: itemCategories.parentId,
+    isActive: itemCategories.isActive,
+  }).from(itemCategories)
     .where(and(eq(itemCategories.businessId, businessId), eq(itemCategories.isActive, true)))
     .orderBy(asc(itemCategories.code));
 }
@@ -3121,7 +4229,23 @@ export async function deleteItemCategory(id: number) {
 export async function getItemById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const [result] = await db.select().from(items).where(eq(items.id, id));
+  const [result] = await db.select({
+    id: items.id,
+    businessId: items.businessId,
+    code: items.code,
+    nameAr: items.nameAr,
+    nameEn: items.nameEn,
+    categoryId: items.categoryId,
+    itemType: items.itemType,
+    unit: items.unit,
+    purchasePrice: items.purchasePrice,
+    sellingPrice: items.sellingPrice,
+    minStock: items.minStock,
+    maxStock: items.maxStock,
+    reorderPoint: items.reorderPoint,
+    isActive: items.isActive,
+    createdAt: items.createdAt,
+  }).from(items).where(eq(items.id, id));
   return result || null;
 }
 
@@ -3172,13 +4296,31 @@ export async function getStockBalances(filters: any) {
 export async function getStockBalancesByItem(itemId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(stockBalances).where(eq(stockBalances.itemId, itemId));
+  return await db.select({
+    id: stockBalances.id,
+    itemId: stockBalances.itemId,
+    warehouseId: stockBalances.warehouseId,
+    quantity: stockBalances.quantity,
+    reservedQty: stockBalances.reservedQty,
+    availableQty: stockBalances.availableQty,
+    averageCost: stockBalances.averageCost,
+    totalValue: stockBalances.totalValue,
+  }).from(stockBalances).where(eq(stockBalances.itemId, itemId));
 }
 
 export async function getStockBalancesByWarehouse(warehouseId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(stockBalances).where(eq(stockBalances.warehouseId, warehouseId));
+  return await db.select({
+    id: stockBalances.id,
+    itemId: stockBalances.itemId,
+    warehouseId: stockBalances.warehouseId,
+    quantity: stockBalances.quantity,
+    reservedQty: stockBalances.reservedQty,
+    availableQty: stockBalances.availableQty,
+    averageCost: stockBalances.averageCost,
+    totalValue: stockBalances.totalValue,
+  }).from(stockBalances).where(eq(stockBalances.warehouseId, warehouseId));
 }
 
 export async function getStockMovements(businessId: number, filters: any) {
@@ -3190,7 +4332,18 @@ export async function getStockMovements(businessId: number, filters: any) {
   if (filters.itemId) conditions.push(eq(stockMovements.itemId, filters.itemId));
   if (filters.movementType) conditions.push(eq(stockMovements.movementType, filters.movementType as any));
   
-  return await db.select().from(stockMovements)
+  return await db.select({
+    id: stockMovements.id,
+    businessId: stockMovements.businessId,
+    itemId: stockMovements.itemId,
+    warehouseId: stockMovements.warehouseId,
+    movementType: stockMovements.movementType,
+    quantity: stockMovements.quantity,
+    balanceBefore: stockMovements.balanceBefore,
+    balanceAfter: stockMovements.balanceAfter,
+    movementDate: stockMovements.movementDate,
+    createdAt: stockMovements.createdAt,
+  }).from(stockMovements)
     .where(and(...conditions))
     .orderBy(desc(stockMovements.movementDate))
     .limit(filters.limit || 100);
@@ -3201,7 +4354,11 @@ export async function createStockMovement(data: any) {
   if (!db) throw new Error("Database not available");
   
   // Get current balance
-  const [currentBalance] = await db.select().from(stockBalances)
+  const [currentBalance] = await db.select({
+    id: stockBalances.id,
+    quantity: stockBalances.quantity,
+    averageCost: stockBalances.averageCost,
+  }).from(stockBalances)
     .where(and(eq(stockBalances.itemId, data.itemId), eq(stockBalances.warehouseId, data.warehouseId)));
   
   const balanceBefore = currentBalance ? parseFloat(currentBalance.quantity || "0") : 0;
@@ -3295,7 +4452,19 @@ export async function adjustStock(data: { businessId: number; itemId: number; wa
 export async function getSupplierById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const [result] = await db.select().from(suppliers).where(eq(suppliers.id, id));
+  const [result] = await db.select({
+    id: suppliers.id,
+    businessId: suppliers.businessId,
+    code: suppliers.code,
+    nameAr: suppliers.nameAr,
+    nameEn: suppliers.nameEn,
+    phone: suppliers.phone,
+    email: suppliers.email,
+    address: suppliers.address,
+    taxNumber: suppliers.taxNumber,
+    isActive: suppliers.isActive,
+    createdAt: suppliers.createdAt,
+  }).from(suppliers).where(eq(suppliers.id, id));
   return result || null;
 }
 
@@ -3319,7 +4488,16 @@ export async function getPurchaseOrders(businessId: number, filters: any) {
   if (filters.supplierId) conditions.push(eq(purchaseOrders.supplierId, filters.supplierId));
   if (filters.status) conditions.push(eq(purchaseOrders.status, filters.status as any));
   
-  return await db.select().from(purchaseOrders)
+  return await db.select({
+    id: purchaseOrders.id,
+    businessId: purchaseOrders.businessId,
+    orderNumber: purchaseOrders.orderNumber,
+    supplierId: purchaseOrders.supplierId,
+    orderDate: purchaseOrders.orderDate,
+    status: purchaseOrders.status,
+    totalAmount: purchaseOrders.totalAmount,
+    createdAt: purchaseOrders.createdAt,
+  }).from(purchaseOrders)
     .where(and(...conditions))
     .orderBy(desc(purchaseOrders.orderDate))
     .limit(filters.limit || 100);
@@ -3328,7 +4506,23 @@ export async function getPurchaseOrders(businessId: number, filters: any) {
 export async function getPurchaseOrderById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const [result] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, id));
+  const [result] = await db.select({
+    id: purchaseOrders.id,
+    businessId: purchaseOrders.businessId,
+    orderNumber: purchaseOrders.orderNumber,
+    supplierId: purchaseOrders.supplierId,
+    warehouseId: purchaseOrders.warehouseId,
+    orderDate: purchaseOrders.orderDate,
+    expectedDate: purchaseOrders.expectedDate,
+    status: purchaseOrders.status,
+    subtotal: purchaseOrders.subtotal,
+    taxAmount: purchaseOrders.taxAmount,
+    discountAmount: purchaseOrders.discountAmount,
+    totalAmount: purchaseOrders.totalAmount,
+    notes: purchaseOrders.notes,
+    createdBy: purchaseOrders.createdBy,
+    createdAt: purchaseOrders.createdAt,
+  }).from(purchaseOrders).where(eq(purchaseOrders.id, id));
   return result || null;
 }
 
@@ -3384,7 +4578,11 @@ export async function receivePurchaseOrder(data: { id: number; items: any[]; war
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   
-  const [order] = await db.select().from(purchaseOrders).where(eq(purchaseOrders.id, data.id));
+  const [order] = await db.select({
+    id: purchaseOrders.id,
+    businessId: purchaseOrders.businessId,
+    orderNumber: purchaseOrders.orderNumber,
+  }).from(purchaseOrders).where(eq(purchaseOrders.id, data.id));
   if (!order) throw new Error("أمر الشراء غير موجود");
   
   // Create stock movements for received items
@@ -3456,7 +4654,10 @@ export async function deleteWorkOrder(id: number) {
   if (!db) return;
   
   // Only delete draft work orders
-  const [order] = await db.select().from(workOrders).where(eq(workOrders.id, id));
+  const [order] = await db.select({
+    id: workOrders.id,
+    status: workOrders.status,
+  }).from(workOrders).where(eq(workOrders.id, id));
   if (order?.status !== "draft") {
     throw new Error("لا يمكن حذف أمر عمل غير مسودة");
   }
@@ -3468,7 +4669,16 @@ export async function deleteWorkOrder(id: number) {
 export async function getWorkOrderTasks(workOrderId: number) {
   const db = await getDb();
   if (!db) return [];
-  return await db.select().from(workOrderTasks)
+  return await db.select({
+    id: workOrderTasks.id,
+    workOrderId: workOrderTasks.workOrderId,
+    taskNumber: workOrderTasks.taskNumber,
+    description: workOrderTasks.description,
+    estimatedHours: workOrderTasks.estimatedHours,
+    actualHours: workOrderTasks.actualHours,
+    status: workOrderTasks.status,
+    assignedTo: workOrderTasks.assignedTo,
+  }).from(workOrderTasks)
     .where(eq(workOrderTasks.workOrderId, workOrderId))
     .orderBy(asc(workOrderTasks.taskNumber));
 }
@@ -3525,7 +4735,18 @@ export async function getMaintenancePlans(businessId: number, filters?: any) {
   if (filters?.frequency) conditions.push(eq(maintenancePlans.frequency, filters.frequency as any));
   if (filters?.isActive !== undefined) conditions.push(eq(maintenancePlans.isActive, filters.isActive));
   
-  return await db.select().from(maintenancePlans)
+  return await db.select({
+    id: maintenancePlans.id,
+    businessId: maintenancePlans.businessId,
+    code: maintenancePlans.code,
+    nameAr: maintenancePlans.nameAr,
+    nameEn: maintenancePlans.nameEn,
+    frequency: maintenancePlans.frequency,
+    assetCategoryId: maintenancePlans.assetCategoryId,
+    estimatedHours: maintenancePlans.estimatedHours,
+    estimatedCost: maintenancePlans.estimatedCost,
+    isActive: maintenancePlans.isActive,
+  }).from(maintenancePlans)
     .where(and(...conditions))
     .orderBy(asc(maintenancePlans.nameAr));
 }
@@ -3533,7 +4754,21 @@ export async function getMaintenancePlans(businessId: number, filters?: any) {
 export async function getMaintenancePlanById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const [result] = await db.select().from(maintenancePlans).where(eq(maintenancePlans.id, id));
+  const [result] = await db.select({
+    id: maintenancePlans.id,
+    businessId: maintenancePlans.businessId,
+    code: maintenancePlans.code,
+    nameAr: maintenancePlans.nameAr,
+    nameEn: maintenancePlans.nameEn,
+    description: maintenancePlans.description,
+    frequency: maintenancePlans.frequency,
+    assetCategoryId: maintenancePlans.assetCategoryId,
+    estimatedHours: maintenancePlans.estimatedHours,
+    estimatedCost: maintenancePlans.estimatedCost,
+    tasks: maintenancePlans.tasks,
+    isActive: maintenancePlans.isActive,
+    createdAt: maintenancePlans.createdAt,
+  }).from(maintenancePlans).where(eq(maintenancePlans.id, id));
   return result || null;
 }
 
@@ -3568,7 +4803,14 @@ export async function generateWorkOrdersFromPlan(data: { planId: number; assetId
   if (plan.assetCategoryId) assetConditions.push(eq(assets.categoryId, plan.assetCategoryId));
   if (data.assetIds && data.assetIds.length > 0) assetConditions.push(inArray(assets.id, data.assetIds));
   
-  const assetsList = await db.select().from(assets).where(and(...assetConditions));
+  const assetsList = await db.select({
+    id: assets.id,
+    businessId: assets.businessId,
+    branchId: assets.branchId,
+    stationId: assets.stationId,
+    nameAr: assets.nameAr,
+    categoryId: assets.categoryId,
+  }).from(assets).where(and(...assetConditions));
   
   const createdOrders: number[] = [];
   
@@ -3618,7 +4860,16 @@ export async function getTechnicians(businessId: number, filters?: any) {
   if (!db) return [];
   
   // Return employees who can be technicians
-  return await db.select().from(employees)
+  return await db.select({
+    id: employees.id,
+    businessId: employees.businessId,
+    employeeNumber: employees.employeeNumber,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+    phone: employees.phone,
+    email: employees.email,
+    status: employees.status,
+  }).from(employees)
     .where(and(eq(employees.businessId, businessId), eq(employees.status, "active")))
     .orderBy(asc(employees.firstName));
 }
@@ -3626,7 +4877,16 @@ export async function getTechnicians(businessId: number, filters?: any) {
 export async function getTechnicianById(id: number) {
   const db = await getDb();
   if (!db) return null;
-  const [result] = await db.select().from(employees).where(eq(employees.id, id));
+  const [result] = await db.select({
+    id: employees.id,
+    businessId: employees.businessId,
+    employeeNumber: employees.employeeNumber,
+    firstName: employees.firstName,
+    lastName: employees.lastName,
+    phone: employees.phone,
+    email: employees.email,
+    status: employees.status,
+  }).from(employees).where(eq(employees.id, id));
   return result || null;
 }
 
@@ -3779,7 +5039,18 @@ export async function getProjectPhases(projectId: number) {
   const db = await getDb();
   if (!db) return [];
   
-  return await db.select().from(projectPhases)
+  return await db.select({
+    id: projectPhases.id,
+    projectId: projectPhases.projectId,
+    nameAr: projectPhases.nameAr,
+    nameEn: projectPhases.nameEn,
+    description: projectPhases.description,
+    startDate: projectPhases.startDate,
+    endDate: projectPhases.endDate,
+    status: projectPhases.status,
+    progress: projectPhases.progress,
+    sortOrder: projectPhases.sortOrder,
+  }).from(projectPhases)
     .where(eq(projectPhases.projectId, projectId))
     .orderBy(asc(projectPhases.sortOrder));
 }
@@ -3828,7 +5099,19 @@ export async function getProjectTasks(projectId: number, phaseId?: number, statu
   const conditions = [eq(projectTasks.projectId, projectId)];
   if (phaseId) conditions.push(eq(projectTasks.phaseId, phaseId));
   
-  return await db.select().from(projectTasks)
+  return await db.select({
+    id: projectTasks.id,
+    projectId: projectTasks.projectId,
+    phaseId: projectTasks.phaseId,
+    nameAr: projectTasks.nameAr,
+    nameEn: projectTasks.nameEn,
+    assigneeId: projectTasks.assigneeId,
+    startDate: projectTasks.startDate,
+    dueDate: projectTasks.dueDate,
+    priority: projectTasks.priority,
+    status: projectTasks.status,
+    progress: projectTasks.progress,
+  }).from(projectTasks)
     .where(and(...conditions))
     .orderBy(asc(projectTasks.dueDate));
 }
@@ -3878,7 +5161,11 @@ export async function getProjectsStats(businessId: number) {
   const db = await getDb();
   if (!db) return { total: 0, active: 0, completed: 0, onHold: 0, totalBudget: 0 };
   
-  const allProjects = await db.select().from(projects).where(eq(projects.businessId, businessId));
+  const allProjects = await db.select({
+    id: projects.id,
+    status: projects.status,
+    budget: projects.budget,
+  }).from(projects).where(eq(projects.businessId, businessId));
   
   return {
     total: allProjects.length,
@@ -3911,7 +5198,19 @@ export async function getScadaEquipment(businessId: number, status?: string) {
   const conditions = [eq(equipment.businessId, businessId)];
   if (status) conditions.push(eq(equipment.status, status as any));
   
-  return await db.select().from(equipment)
+  return await db.select({
+    id: equipment.id,
+    businessId: equipment.businessId,
+    code: equipment.code,
+    nameAr: equipment.nameAr,
+    nameEn: equipment.nameEn,
+    type: equipment.type,
+    manufacturer: equipment.manufacturer,
+    model: equipment.model,
+    location: equipment.location,
+    status: equipment.status,
+    createdAt: equipment.createdAt,
+  }).from(equipment)
     .where(and(...conditions))
     .orderBy(desc(equipment.createdAt));
 }
@@ -3920,7 +5219,22 @@ export async function getScadaEquipmentById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(equipment).where(eq(equipment.id, id));
+  const [result] = await db.select({
+    id: equipment.id,
+    businessId: equipment.businessId,
+    code: equipment.code,
+    nameAr: equipment.nameAr,
+    nameEn: equipment.nameEn,
+    type: equipment.type,
+    manufacturer: equipment.manufacturer,
+    model: equipment.model,
+    serialNumber: equipment.serialNumber,
+    location: equipment.location,
+    installationDate: equipment.installationDate,
+    status: equipment.status,
+    description: equipment.description,
+    createdAt: equipment.createdAt,
+  }).from(equipment).where(eq(equipment.id, id));
   return result || null;
 }
 
@@ -3970,7 +5284,19 @@ export async function getScadaSensors(businessId: number, status?: string) {
   const conditions = [eq(sensors.businessId, businessId)];
   if (status) conditions.push(eq(sensors.status, status as any));
   
-  return await db.select().from(sensors)
+  return await db.select({
+    id: sensors.id,
+    businessId: sensors.businessId,
+    equipmentId: sensors.equipmentId,
+    code: sensors.code,
+    nameAr: sensors.nameAr,
+    nameEn: sensors.nameEn,
+    type: sensors.type,
+    unit: sensors.unit,
+    currentValue: sensors.currentValue,
+    status: sensors.status,
+    createdAt: sensors.createdAt,
+  }).from(sensors)
     .where(and(...conditions))
     .orderBy(desc(sensors.createdAt));
 }
@@ -3979,7 +5305,24 @@ export async function getScadaSensorById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(sensors).where(eq(sensors.id, id));
+  const [result] = await db.select({
+    id: sensors.id,
+    businessId: sensors.businessId,
+    equipmentId: sensors.equipmentId,
+    code: sensors.code,
+    nameAr: sensors.nameAr,
+    nameEn: sensors.nameEn,
+    type: sensors.type,
+    unit: sensors.unit,
+    minValue: sensors.minValue,
+    maxValue: sensors.maxValue,
+    warningThreshold: sensors.warningThreshold,
+    criticalThreshold: sensors.criticalThreshold,
+    currentValue: sensors.currentValue,
+    location: sensors.location,
+    status: sensors.status,
+    createdAt: sensors.createdAt,
+  }).from(sensors).where(eq(sensors.id, id));
   return result || null;
 }
 
@@ -4028,7 +5371,18 @@ export async function getScadaAlerts(businessId: number, type?: string, status?:
   if (type) conditions.push(eq(alerts.alertType, type as any));
   if (status) conditions.push(eq(alerts.status, status as any));
   
-  return await db.select().from(alerts)
+  return await db.select({
+    id: alerts.id,
+    businessId: alerts.businessId,
+    equipmentId: alerts.equipmentId,
+    sensorId: alerts.sensorId,
+    alertType: alerts.alertType,
+    title: alerts.title,
+    message: alerts.message,
+    priority: alerts.priority,
+    status: alerts.status,
+    createdAt: alerts.createdAt,
+  }).from(alerts)
     .where(and(...conditions))
     .orderBy(desc(alerts.createdAt));
 }
@@ -4037,7 +5391,20 @@ export async function getScadaAlertById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(alerts).where(eq(alerts.id, id));
+  const [result] = await db.select({
+    id: alerts.id,
+    businessId: alerts.businessId,
+    equipmentId: alerts.equipmentId,
+    sensorId: alerts.sensorId,
+    alertType: alerts.alertType,
+    title: alerts.title,
+    message: alerts.message,
+    priority: alerts.priority,
+    status: alerts.status,
+    resolvedBy: alerts.resolvedBy,
+    resolvedAt: alerts.resolvedAt,
+    createdAt: alerts.createdAt,
+  }).from(alerts).where(eq(alerts.id, id));
   return result || null;
 }
 
@@ -4086,9 +5453,28 @@ export async function getScadaDashboard(businessId: number) {
   if (!db) return { equipment: [], sensors: [], alerts: [] };
   
   const [equipmentList, sensorsList, alertsList] = await Promise.all([
-    db.select().from(equipment).where(eq(equipment.businessId, businessId)).limit(10),
-    db.select().from(sensors).where(eq(sensors.businessId, businessId)).limit(10),
-    db.select().from(alerts).where(and(
+    db.select({
+      id: equipment.id,
+      code: equipment.code,
+      nameAr: equipment.nameAr,
+      type: equipment.type,
+      status: equipment.status,
+    }).from(equipment).where(eq(equipment.businessId, businessId)).limit(10),
+    db.select({
+      id: sensors.id,
+      code: sensors.code,
+      nameAr: sensors.nameAr,
+      type: sensors.type,
+      currentValue: sensors.currentValue,
+      status: sensors.status,
+    }).from(sensors).where(eq(sensors.businessId, businessId)).limit(10),
+    db.select({
+      id: alerts.id,
+      alertType: alerts.alertType,
+      title: alerts.title,
+      priority: alerts.priority,
+      status: alerts.status,
+    }).from(alerts).where(and(
       eq(alerts.businessId, businessId),
       eq(alerts.status, "active")
     )).limit(10),
@@ -4114,9 +5500,19 @@ export async function getScadaStats(businessId: number) {
   };
   
   const [equipmentList, sensorsList, alertsList] = await Promise.all([
-    db.select().from(equipment).where(eq(equipment.businessId, businessId)),
-    db.select().from(sensors).where(eq(sensors.businessId, businessId)),
-    db.select().from(alerts).where(and(
+    db.select({
+      id: equipment.id,
+      status: equipment.status,
+    }).from(equipment).where(eq(equipment.businessId, businessId)),
+    db.select({
+      id: sensors.id,
+      status: sensors.status,
+    }).from(sensors).where(eq(sensors.businessId, businessId)),
+    db.select({
+      id: alerts.id,
+      alertType: alerts.alertType,
+      status: alerts.status,
+    }).from(alerts).where(and(
       eq(alerts.businessId, businessId),
       eq(alerts.status, "active")
     )),
@@ -4137,7 +5533,10 @@ export async function getScadaAlertsStats(businessId: number) {
   const db = await getDb();
   if (!db) return { total: 0, active: 0, acknowledged: 0, resolved: 0 };
   
-  const alertsList = await db.select().from(alerts).where(eq(alerts.businessId, businessId));
+  const alertsList = await db.select({
+    id: alerts.id,
+    status: alerts.status,
+  }).from(alerts).where(eq(alerts.businessId, businessId));
   
   return {
     total: alertsList.length,
@@ -4166,7 +5565,17 @@ export async function getDieselSuppliers(businessId?: number, isActive?: boolean
   if (businessId) conditions.push(eq(dieselSuppliers.businessId, businessId));
   if (isActive !== undefined) conditions.push(eq(dieselSuppliers.isActive, isActive));
   
-  return await db.select().from(dieselSuppliers)
+  return await db.select({
+    id: dieselSuppliers.id,
+    businessId: dieselSuppliers.businessId,
+    code: dieselSuppliers.code,
+    nameAr: dieselSuppliers.nameAr,
+    nameEn: dieselSuppliers.nameEn,
+    phone: dieselSuppliers.phone,
+    email: dieselSuppliers.email,
+    isActive: dieselSuppliers.isActive,
+    createdAt: dieselSuppliers.createdAt,
+  }).from(dieselSuppliers)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(dieselSuppliers.createdAt));
 }
@@ -4175,7 +5584,19 @@ export async function getDieselSupplierById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(dieselSuppliers).where(eq(dieselSuppliers.id, id));
+  const [result] = await db.select({
+    id: dieselSuppliers.id,
+    businessId: dieselSuppliers.businessId,
+    code: dieselSuppliers.code,
+    nameAr: dieselSuppliers.nameAr,
+    nameEn: dieselSuppliers.nameEn,
+    phone: dieselSuppliers.phone,
+    email: dieselSuppliers.email,
+    address: dieselSuppliers.address,
+    taxNumber: dieselSuppliers.taxNumber,
+    isActive: dieselSuppliers.isActive,
+    createdAt: dieselSuppliers.createdAt,
+  }).from(dieselSuppliers).where(eq(dieselSuppliers.id, id));
   return result || null;
 }
 
@@ -4213,7 +5634,18 @@ export async function getDieselTankers(businessId?: number, isActive?: boolean) 
   if (businessId) conditions.push(eq(dieselTankers.businessId, businessId));
   if (isActive !== undefined) conditions.push(eq(dieselTankers.isActive, isActive));
   
-  return await db.select().from(dieselTankers)
+  return await db.select({
+    id: dieselTankers.id,
+    businessId: dieselTankers.businessId,
+    supplierId: dieselTankers.supplierId,
+    code: dieselTankers.code,
+    plateNumber: dieselTankers.plateNumber,
+    capacity: dieselTankers.capacity,
+    driverName: dieselTankers.driverName,
+    driverPhone: dieselTankers.driverPhone,
+    isActive: dieselTankers.isActive,
+    createdAt: dieselTankers.createdAt,
+  }).from(dieselTankers)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(dieselTankers.createdAt));
 }
@@ -4222,7 +5654,18 @@ export async function getDieselTankerById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(dieselTankers).where(eq(dieselTankers.id, id));
+  const [result] = await db.select({
+    id: dieselTankers.id,
+    businessId: dieselTankers.businessId,
+    supplierId: dieselTankers.supplierId,
+    code: dieselTankers.code,
+    plateNumber: dieselTankers.plateNumber,
+    capacity: dieselTankers.capacity,
+    driverName: dieselTankers.driverName,
+    driverPhone: dieselTankers.driverPhone,
+    isActive: dieselTankers.isActive,
+    createdAt: dieselTankers.createdAt,
+  }).from(dieselTankers).where(eq(dieselTankers.id, id));
   return result || null;
 }
 
@@ -4262,7 +5705,18 @@ export async function getDieselTanks(businessId?: number, stationId?: number, ty
   if (type) conditions.push(eq(dieselTanks.type, type as any));
   if (isActive !== undefined) conditions.push(eq(dieselTanks.isActive, isActive));
   
-  return await db.select().from(dieselTanks)
+  return await db.select({
+    id: dieselTanks.id,
+    businessId: dieselTanks.businessId,
+    stationId: dieselTanks.stationId,
+    code: dieselTanks.code,
+    nameAr: dieselTanks.nameAr,
+    type: dieselTanks.type,
+    capacity: dieselTanks.capacity,
+    currentLevel: dieselTanks.currentLevel,
+    isActive: dieselTanks.isActive,
+    createdAt: dieselTanks.createdAt,
+  }).from(dieselTanks)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(dieselTanks.createdAt));
 }
@@ -4271,7 +5725,21 @@ export async function getDieselTankById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(dieselTanks).where(eq(dieselTanks.id, id));
+  const [result] = await db.select({
+    id: dieselTanks.id,
+    businessId: dieselTanks.businessId,
+    stationId: dieselTanks.stationId,
+    code: dieselTanks.code,
+    nameAr: dieselTanks.nameAr,
+    nameEn: dieselTanks.nameEn,
+    type: dieselTanks.type,
+    capacity: dieselTanks.capacity,
+    currentLevel: dieselTanks.currentLevel,
+    minLevel: dieselTanks.minLevel,
+    maxLevel: dieselTanks.maxLevel,
+    isActive: dieselTanks.isActive,
+    createdAt: dieselTanks.createdAt,
+  }).from(dieselTanks).where(eq(dieselTanks.id, id));
   return result || null;
 }
 
@@ -4319,7 +5787,18 @@ export async function getDieselPumpMeters(businessId?: number, stationId?: numbe
   if (type) conditions.push(eq(dieselPumpMeters.type, type as any));
   if (isActive !== undefined) conditions.push(eq(dieselPumpMeters.isActive, isActive));
   
-  return await db.select().from(dieselPumpMeters)
+  return await db.select({
+    id: dieselPumpMeters.id,
+    businessId: dieselPumpMeters.businessId,
+    stationId: dieselPumpMeters.stationId,
+    supplierId: dieselPumpMeters.supplierId,
+    code: dieselPumpMeters.code,
+    nameAr: dieselPumpMeters.nameAr,
+    type: dieselPumpMeters.type,
+    currentReading: dieselPumpMeters.currentReading,
+    isActive: dieselPumpMeters.isActive,
+    createdAt: dieselPumpMeters.createdAt,
+  }).from(dieselPumpMeters)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(dieselPumpMeters.createdAt));
 }
@@ -4328,7 +5807,20 @@ export async function getDieselPumpMeterById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(dieselPumpMeters).where(eq(dieselPumpMeters.id, id));
+  const [result] = await db.select({
+    id: dieselPumpMeters.id,
+    businessId: dieselPumpMeters.businessId,
+    stationId: dieselPumpMeters.stationId,
+    supplierId: dieselPumpMeters.supplierId,
+    code: dieselPumpMeters.code,
+    nameAr: dieselPumpMeters.nameAr,
+    nameEn: dieselPumpMeters.nameEn,
+    type: dieselPumpMeters.type,
+    currentReading: dieselPumpMeters.currentReading,
+    lastReadingDate: dieselPumpMeters.lastReadingDate,
+    isActive: dieselPumpMeters.isActive,
+    createdAt: dieselPumpMeters.createdAt,
+  }).from(dieselPumpMeters).where(eq(dieselPumpMeters.id, id));
   return result || null;
 }
 
@@ -4377,7 +5869,16 @@ export async function getDieselReceivingTasks(filters?: {
   if (filters?.fromDate) conditions.push(gte(dieselReceivingTasks.taskDate, new Date(filters.fromDate)));
   if (filters?.toDate) conditions.push(lte(dieselReceivingTasks.taskDate, new Date(filters.toDate)));
   
-  return await db.select().from(dieselReceivingTasks)
+  return await db.select({
+    id: dieselReceivingTasks.id,
+    businessId: dieselReceivingTasks.businessId,
+    stationId: dieselReceivingTasks.stationId,
+    taskNumber: dieselReceivingTasks.taskNumber,
+    taskDate: dieselReceivingTasks.taskDate,
+    employeeId: dieselReceivingTasks.employeeId,
+    status: dieselReceivingTasks.status,
+    createdAt: dieselReceivingTasks.createdAt,
+  }).from(dieselReceivingTasks)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(dieselReceivingTasks.createdAt));
 }
@@ -4386,7 +5887,20 @@ export async function getDieselReceivingTaskById(id: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const [result] = await db.select().from(dieselReceivingTasks).where(eq(dieselReceivingTasks.id, id));
+  const [result] = await db.select({
+    id: dieselReceivingTasks.id,
+    businessId: dieselReceivingTasks.businessId,
+    stationId: dieselReceivingTasks.stationId,
+    taskNumber: dieselReceivingTasks.taskNumber,
+    taskDate: dieselReceivingTasks.taskDate,
+    employeeId: dieselReceivingTasks.employeeId,
+    tankerId: dieselReceivingTasks.tankerId,
+    expectedQuantity: dieselReceivingTasks.expectedQuantity,
+    actualQuantity: dieselReceivingTasks.actualQuantity,
+    status: dieselReceivingTasks.status,
+    notes: dieselReceivingTasks.notes,
+    createdAt: dieselReceivingTasks.createdAt,
+  }).from(dieselReceivingTasks).where(eq(dieselReceivingTasks.id, id));
   return result || null;
 }
 
@@ -4453,7 +5967,16 @@ export async function getDieselPumpReadings(filters?: {
   if (filters?.fromDate) conditions.push(gte(dieselPumpReadings.readingDate, new Date(filters.fromDate)));
   if (filters?.toDate) conditions.push(lte(dieselPumpReadings.readingDate, new Date(filters.toDate)));
   
-  return await db.select().from(dieselPumpReadings)
+  return await db.select({
+    id: dieselPumpReadings.id,
+    businessId: dieselPumpReadings.businessId,
+    pumpMeterId: dieselPumpReadings.pumpMeterId,
+    taskId: dieselPumpReadings.taskId,
+    readingDate: dieselPumpReadings.readingDate,
+    readingType: dieselPumpReadings.readingType,
+    readingValue: dieselPumpReadings.readingValue,
+    createdAt: dieselPumpReadings.createdAt,
+  }).from(dieselPumpReadings)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(dieselPumpReadings.createdAt));
 }
@@ -4507,7 +6030,17 @@ export async function getDieselTankMovements(filters?: {
   if (filters?.fromDate) conditions.push(gte(dieselTankMovements.movementDate, new Date(filters.fromDate)));
   if (filters?.toDate) conditions.push(lte(dieselTankMovements.movementDate, new Date(filters.toDate)));
   
-  return await db.select().from(dieselTankMovements)
+  return await db.select({
+    id: dieselTankMovements.id,
+    businessId: dieselTankMovements.businessId,
+    stationId: dieselTankMovements.stationId,
+    fromTankId: dieselTankMovements.fromTankId,
+    toTankId: dieselTankMovements.toTankId,
+    movementType: dieselTankMovements.movementType,
+    quantity: dieselTankMovements.quantity,
+    movementDate: dieselTankMovements.movementDate,
+    createdAt: dieselTankMovements.createdAt,
+  }).from(dieselTankMovements)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(dieselTankMovements.createdAt));
 }
@@ -4562,7 +6095,17 @@ export async function getGeneratorDieselConsumption(filters?: {
   if (filters?.fromDate) conditions.push(gte(generatorDieselConsumption.consumptionDate, new Date(filters.fromDate)));
   if (filters?.toDate) conditions.push(lte(generatorDieselConsumption.consumptionDate, new Date(filters.toDate)));
   
-  return await db.select().from(generatorDieselConsumption)
+  return await db.select({
+    id: generatorDieselConsumption.id,
+    businessId: generatorDieselConsumption.businessId,
+    stationId: generatorDieselConsumption.stationId,
+    generatorId: generatorDieselConsumption.generatorId,
+    consumptionDate: generatorDieselConsumption.consumptionDate,
+    quantityConsumed: generatorDieselConsumption.quantityConsumed,
+    runningHours: generatorDieselConsumption.runningHours,
+    consumptionRate: generatorDieselConsumption.consumptionRate,
+    createdAt: generatorDieselConsumption.createdAt,
+  }).from(generatorDieselConsumption)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(desc(generatorDieselConsumption.createdAt));
 }
@@ -4677,7 +6220,19 @@ export async function getDieselReceivingTasksReport(filters: {
   conditions.push(gte(dieselReceivingTasks.taskDate, new Date(filters.fromDate)));
   conditions.push(lte(dieselReceivingTasks.taskDate, new Date(filters.toDate)));
   
-  return await db.select().from(dieselReceivingTasks)
+  return await db.select({
+    id: dieselReceivingTasks.id,
+    businessId: dieselReceivingTasks.businessId,
+    stationId: dieselReceivingTasks.stationId,
+    taskNumber: dieselReceivingTasks.taskNumber,
+    taskDate: dieselReceivingTasks.taskDate,
+    supplierId: dieselReceivingTasks.supplierId,
+    tankerId: dieselReceivingTasks.tankerId,
+    expectedQuantity: dieselReceivingTasks.expectedQuantity,
+    actualQuantity: dieselReceivingTasks.actualQuantity,
+    quantityReceivedAtStation: dieselReceivingTasks.quantityReceivedAtStation,
+    status: dieselReceivingTasks.status,
+  }).from(dieselReceivingTasks)
     .where(and(...conditions))
     .orderBy(desc(dieselReceivingTasks.taskDate));
 }
@@ -4691,7 +6246,18 @@ export async function getDieselTankLevelsReport(businessId?: number, stationId?:
   if (stationId) conditions.push(eq(dieselTanks.stationId, stationId));
   conditions.push(eq(dieselTanks.isActive, true));
   
-  return await db.select().from(dieselTanks)
+  return await db.select({
+    id: dieselTanks.id,
+    businessId: dieselTanks.businessId,
+    stationId: dieselTanks.stationId,
+    code: dieselTanks.code,
+    nameAr: dieselTanks.nameAr,
+    type: dieselTanks.type,
+    capacity: dieselTanks.capacity,
+    currentLevel: dieselTanks.currentLevel,
+    minLevel: dieselTanks.minLevel,
+    maxLevel: dieselTanks.maxLevel,
+  }).from(dieselTanks)
     .where(and(...conditions))
     .orderBy(dieselTanks.type, dieselTanks.nameAr);
 }
@@ -4711,7 +6277,17 @@ export async function getDieselPipes(businessId?: number, stationId?: number, is
   if (stationId) conditions.push(eq(dieselPipes.stationId, stationId));
   if (isActive !== undefined) conditions.push(eq(dieselPipes.status, isActive ? "active" : "inactive"));
   
-  return await db.select().from(dieselPipes)
+  return await db.select({
+    id: dieselPipes.id,
+    businessId: dieselPipes.businessId,
+    stationId: dieselPipes.stationId,
+    code: dieselPipes.code,
+    nameAr: dieselPipes.nameAr,
+    nameEn: dieselPipes.nameEn,
+    fromTankId: dieselPipes.fromTankId,
+    toTankId: dieselPipes.toTankId,
+    status: dieselPipes.status,
+  }).from(dieselPipes)
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(dieselPipes.nameAr);
 }
@@ -4745,7 +6321,14 @@ export async function getDieselTankOpenings(tankId: number) {
   const db = await getDb();
   if (!db) return [];
   
-  return await db.select().from(dieselTankOpenings)
+  return await db.select({
+    id: dieselTankOpenings.id,
+    tankId: dieselTankOpenings.tankId,
+    openingNumber: dieselTankOpenings.openingNumber,
+    openingType: dieselTankOpenings.openingType,
+    diameter: dieselTankOpenings.diameter,
+    status: dieselTankOpenings.status,
+  }).from(dieselTankOpenings)
     .where(eq(dieselTankOpenings.tankId, tankId))
     .orderBy(dieselTankOpenings.openingNumber);
 }
@@ -4774,7 +6357,14 @@ export async function getStationDieselConfig(stationId: number) {
   const db = await getDb();
   if (!db) return null;
   
-  const result = await db.select().from(stationDieselConfig)
+  const result = await db.select({
+    id: stationDieselConfig.id,
+    stationId: stationDieselConfig.stationId,
+    businessId: stationDieselConfig.businessId,
+    config: stationDieselConfig.config,
+    createdAt: stationDieselConfig.createdAt,
+    updatedAt: stationDieselConfig.updatedAt,
+  }).from(stationDieselConfig)
     .where(eq(stationDieselConfig.stationId, stationId))
     .limit(1);
   
@@ -4796,7 +6386,9 @@ export async function saveStationDieselConfig(data: {
   if (!db) throw new Error("Database not available");
   
   // Check if config exists
-  const existing = await db.select().from(stationDieselConfig)
+  const existing = await db.select({
+    id: stationDieselConfig.id,
+  }).from(stationDieselConfig)
     .where(eq(stationDieselConfig.stationId, data.stationId))
     .limit(1);
   
@@ -4828,9 +6420,21 @@ export async function saveStationDieselConfig(data: {
 
 export async function getSensors(businessId: number, stationId?: number) {
   const db = await getDb();
-  let query = db.select().from(sensors).where(eq(sensors.businessId, businessId));
+  const selectFields = {
+    id: sensors.id,
+    businessId: sensors.businessId,
+    stationId: sensors.stationId,
+    code: sensors.code,
+    nameAr: sensors.nameAr,
+    nameEn: sensors.nameEn,
+    type: sensors.type,
+    unit: sensors.unit,
+    currentValue: sensors.currentValue,
+    status: sensors.status,
+  };
+  let query = db.select(selectFields).from(sensors).where(eq(sensors.businessId, businessId));
   if (stationId) {
-    query = db.select().from(sensors).where(
+    query = db.select(selectFields).from(sensors).where(
       and(eq(sensors.businessId, businessId), eq(sensors.stationId, stationId))
     );
   }
@@ -4839,7 +6443,25 @@ export async function getSensors(businessId: number, stationId?: number) {
 
 export async function getSensorById(id: number) {
   const db = await getDb();
-  const [sensor] = await db.select().from(sensors).where(eq(sensors.id, id));
+  const [sensor] = await db.select({
+    id: sensors.id,
+    businessId: sensors.businessId,
+    stationId: sensors.stationId,
+    equipmentId: sensors.equipmentId,
+    code: sensors.code,
+    nameAr: sensors.nameAr,
+    nameEn: sensors.nameEn,
+    type: sensors.type,
+    unit: sensors.unit,
+    minValue: sensors.minValue,
+    maxValue: sensors.maxValue,
+    warningThreshold: sensors.warningThreshold,
+    criticalThreshold: sensors.criticalThreshold,
+    currentValue: sensors.currentValue,
+    location: sensors.location,
+    status: sensors.status,
+    createdAt: sensors.createdAt,
+  }).from(sensors).where(eq(sensors.id, id));
   return sensor || null;
 }
 
@@ -4883,12 +6505,36 @@ export async function getLatestSensorReading(sensorId: number) {
 
 export async function getAlerts(businessId: number, options?: { status?: string; type?: string }) {
   const db = await getDb();
-  return await db.select().from(alerts).where(eq(alerts.businessId, businessId));
+  return await db.select({
+    id: alerts.id,
+    businessId: alerts.businessId,
+    equipmentId: alerts.equipmentId,
+    sensorId: alerts.sensorId,
+    alertType: alerts.alertType,
+    title: alerts.title,
+    message: alerts.message,
+    priority: alerts.priority,
+    status: alerts.status,
+    createdAt: alerts.createdAt,
+  }).from(alerts).where(eq(alerts.businessId, businessId));
 }
 
 export async function getAlertById(id: number) {
   const db = await getDb();
-  const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
+  const [alert] = await db.select({
+    id: alerts.id,
+    businessId: alerts.businessId,
+    equipmentId: alerts.equipmentId,
+    sensorId: alerts.sensorId,
+    alertType: alerts.alertType,
+    title: alerts.title,
+    message: alerts.message,
+    priority: alerts.priority,
+    status: alerts.status,
+    resolvedBy: alerts.resolvedBy,
+    resolvedAt: alerts.resolvedAt,
+    createdAt: alerts.createdAt,
+  }).from(alerts).where(eq(alerts.id, id));
   return alert || null;
 }
 
@@ -4910,7 +6556,10 @@ export async function deleteAlert(id: number) {
 
 export async function getAlertsStats(businessId: number) {
   const db = await getDb();
-  const allAlerts = await db.select().from(alerts).where(eq(alerts.businessId, businessId));
+  const allAlerts = await db.select({
+    id: alerts.id,
+    status: alerts.status,
+  }).from(alerts).where(eq(alerts.businessId, businessId));
   return {
     total: allAlerts.length,
     active: allAlerts.filter((a: any) => a.status === 'active').length,
