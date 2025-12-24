@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -147,10 +146,10 @@ export default function Alerts() {
 
     createMutation.mutate({
       businessId: 1,
-      alertType: formData.alertType,
+      alertType: formData.alertType as any,
       title: formData.title,
       message: formData.message || undefined,
-      priority: formData.priority,
+      priority: formData.priority as any,
     });
   };
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -46,7 +45,7 @@ export default function SquaresManagement() {
 
   useEffect(() => {
     if (squaresQuery.data) {
-      setSquares(squaresQuery.data);
+      setSquares(squaresQuery.data as any);
     }
   }, [squaresQuery.data]);
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { 
@@ -281,7 +280,7 @@ export default function CustomDashboard() {
                   >
                     <div 
                       className="w-3 h-3 rounded-full mt-1.5 ring-2 ring-offset-2 ring-offset-zinc-900" 
-                      style={{ backgroundColor: note.color || '#f59e0b', ringColor: note.color || '#f59e0b' }}
+                      style={{ backgroundColor: note.color || '#f59e0b' }}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-white truncate">{note.title}</p>
