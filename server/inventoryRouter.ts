@@ -3,6 +3,22 @@ import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 
+/**
+ * @fileoverview Router لنظام إدارة المخزون
+ * @module inventoryRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بنظام المخزون
+ * بما في ذلك إدارة المستودعات، الأصناف، الوحدات، الفئات، حركات المخزون،
+ * طلبات الشراء، أوامر الشراء، والجرد.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires @trpc/server - لإنشاء الـ API endpoints
+ * @requires ./db - للتعامل مع قاعدة البيانات
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 export const inventoryRouter = router({
   // ============================================
   // Warehouses - المستودعات
