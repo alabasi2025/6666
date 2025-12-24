@@ -106,6 +106,7 @@ import {
   stationDieselConfig, InsertStationDieselConfig,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import { logger } from './utils/logger';
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _connectionTested = false;
@@ -117,11 +118,11 @@ export async function getDb() {
       // Test connection
       if (!_connectionTested) {
         await _db.execute(sql`SELECT 1`);
-        console.log("✅ [Database] Connected successfully");
+        logger.info("[Database] Connected successfully");
         _connectionTested = true;
       }
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      logger.warn("[Database] Failed to connect", { error: error instanceof Error ? error.message : error });
       _db = null;
       _connectionTested = false;
     }
@@ -131,21 +132,21 @@ export async function getDb() {
 
 export async function testDatabaseConnection(): Promise<boolean> {
   if (!process.env.DATABASE_URL) {
-    console.log("⚠️ [Database] DATABASE_URL not set, running in DEMO_MODE");
+    logger.warn("[Database] DATABASE_URL not set, running in DEMO_MODE");
     return false;
   }
   
   try {
     const db = await getDb();
     if (!db) {
-      console.log("❌ [Database] Connection failed");
+      logger.error("[Database] Connection failed");
       return false;
     }
     await db.execute(sql`SELECT 1`);
-    console.log("✅ [Database] Connection test successful");
+    logger.info("[Database] Connection test successful");
     return true;
   } catch (error) {
-    console.error("❌ [Database] Connection test failed:", error);
+    logger.error("[Database] Connection test failed", { error: error instanceof Error ? error.message : error });
     return false;
   }
 }
@@ -161,7 +162,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot upsert user: database not available");
+    logger.warn("[Database] Cannot upsert user: database not available");
     return;
   }
 
@@ -208,7 +209,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       set: updateSet,
     });
   } catch (error) {
-    console.error("[Database] Failed to upsert user:", error);
+    logger.error("[Database] Failed to upsert user", { error: error instanceof Error ? error.message : error });
     throw error;
   }
 }
@@ -216,7 +217,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
 export async function getUserByOpenId(openId: string) {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot get user: database not available");
+    logger.warn("[Database] Cannot get user: database not available");
     return undefined;
   }
 
@@ -237,7 +238,7 @@ export async function getAllUsers(businessId?: number) {
 export async function getUserByPhone(phone: string) {
   const db = await getDb();
   if (!db) {
-    console.warn("[Database] Cannot get user by phone: database not available");
+    logger.warn("[Database] Cannot get user by phone: database not available");
     return undefined;
   }
 
@@ -327,42 +328,42 @@ export async function createBusiness(data: InsertBusiness) {
 export async function getBusinesses() {
   const db = await getDb();
   if (!db) {
-    console.warn("[DB] Database not available in getBusinesses");
+    logger.warn("[DB] Database not available in getBusinesses");
     return [];
   }
 
   try {
     // Get all active businesses - try with boolean true first
     let result = await db.select().from(businesses).where(eq(businesses.isActive, true)).orderBy(asc(businesses.nameAr));
-    console.log("[DB] getBusinesses (isActive=true) returned", result.length, "businesses");
+    logger.debug("[DB] getBusinesses (isActive=true) returned", { count: result.length });
     
     // If no results, try with number 1 (MySQL stores boolean as tinyint)
     if (result.length === 0) {
-      console.log("[DB] Trying with isActive=1 (number)");
+      logger.debug("[DB] Trying with isActive=1 (number)");
       result = await db.select().from(businesses).where(eq(businesses.isActive, 1)).orderBy(asc(businesses.nameAr));
-      console.log("[DB] getBusinesses (isActive=1) returned", result.length, "businesses");
+      logger.debug("[DB] getBusinesses (isActive=1) returned", { count: result.length });
     }
     
     // If still no results, get all businesses
     if (result.length === 0) {
-      console.log("[DB] Trying without filter - getting all businesses");
+      logger.debug("[DB] Trying without filter - getting all businesses");
       result = await db.select().from(businesses).orderBy(asc(businesses.nameAr));
-      console.log("[DB] getBusinesses (all) returned", result.length, "businesses");
+      logger.debug("[DB] getBusinesses (all) returned", { count: result.length });
     }
     
     if (result.length > 0) {
-      console.log("[DB] First business:", { id: result[0].id, code: result[0].code, nameAr: result[0].nameAr, nameEn: result[0].nameEn, isActive: result[0].isActive });
+      logger.debug("[DB] First business", { id: result[0].id, code: result[0].code, nameAr: result[0].nameAr, nameEn: result[0].nameEn, isActive: result[0].isActive });
     }
     return result;
   } catch (error) {
-    console.error("[DB] Error in getBusinesses:", error);
+    logger.error("[DB] Error in getBusinesses", { error: error instanceof Error ? error.message : error });
     // Try without filter as fallback
     try {
       const allResult = await db.select().from(businesses).orderBy(asc(businesses.nameAr));
-      console.log("[DB] getBusinesses (fallback) returned", allResult.length, "businesses");
+      logger.debug("[DB] getBusinesses (fallback) returned", { count: allResult.length });
       return allResult;
     } catch (fallbackError) {
-      console.error("[DB] Fallback query also failed:", fallbackError);
+      logger.error("[DB] Fallback query also failed", { error: fallbackError instanceof Error ? fallbackError.message : fallbackError });
       return [];
     }
   }

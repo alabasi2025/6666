@@ -2,6 +2,7 @@ import bcrypt from 'bcrypt';
 import { drizzle } from "drizzle-orm/mysql2";
 import { eq, sql } from "drizzle-orm";
 import { users } from "../drizzle/schema";
+import { logger } from './utils/logger';
 
 const SALT_ROUNDS = 10;
 
@@ -12,7 +13,7 @@ async function getDb() {
     try {
       _db = drizzle(process.env.DATABASE_URL);
     } catch (error) {
-      console.warn("[Auth] Failed to connect to database:", error);
+      logger.warn("[Auth] Failed to connect to database", { error: error instanceof Error ? error.message : error });
       _db = null;
     }
   }
@@ -75,7 +76,7 @@ export async function registerUser(data: {
 
     return { success: true, userId: result[0].insertId };
   } catch (error: any) {
-    console.error("[Auth] Registration error:", error);
+    logger.error("[Auth] Registration error", { error: error.message || error });
     return { success: false, error: error.message || "حدث خطأ أثناء التسجيل" };
   }
 }
@@ -140,7 +141,7 @@ export async function loginUser(phone: string, password: string): Promise<{
       },
     };
   } catch (error: any) {
-    console.error("[Auth] Login error:", error);
+    logger.error("[Auth] Login error", { error: error.message || error });
     return { success: false, error: error.message || "حدث خطأ أثناء تسجيل الدخول" };
   }
 }
@@ -186,7 +187,7 @@ export async function changePassword(
 
     return { success: true };
   } catch (error: any) {
-    console.error("[Auth] Change password error:", error);
+    logger.error("[Auth] Change password error", { error: error.message || error });
     return { success: false, error: error.message || "حدث خطأ أثناء تغيير كلمة المرور" };
   }
 }
@@ -212,7 +213,7 @@ export async function resetPassword(
 
     return { success: true };
   } catch (error: any) {
-    console.error("[Auth] Reset password error:", error);
+    logger.error("[Auth] Reset password error", { error: error.message || error });
     return { success: false, error: error.message || "حدث خطأ أثناء إعادة تعيين كلمة المرور" };
   }
 }
@@ -224,7 +225,7 @@ export async function resetPassword(
 export async function ensureDefaultAdmin(): Promise<void> {
   const db = await getDb();
   if (!db) {
-    console.log("[Auth] Database not available, skipping default admin creation");
+    logger.info("[Auth] Database not available, skipping default admin creation");
     return;
   }
 
@@ -240,7 +241,7 @@ export async function ensureDefaultAdmin(): Promise<void> {
       const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
       const adminName = process.env.DEFAULT_ADMIN_NAME || "مدير النظام";
       
-      console.log("[Auth] No admin users found, creating default admin...");
+      logger.info("[Auth] No admin users found, creating default admin...");
       
       const result = await registerUser({
         phone: adminPhone,
@@ -250,16 +251,16 @@ export async function ensureDefaultAdmin(): Promise<void> {
       });
 
       if (result.success) {
-        console.log("✅ [Auth] Default admin created successfully");
+        logger.info("[Auth] Default admin created successfully");
         // لا نطبع البيانات الحساسة في السجلات
-        console.log("[Auth] Admin credentials loaded from environment variables");
+        logger.info("[Auth] Admin credentials loaded from environment variables");
       } else {
-        console.error("[Auth] Failed to create default admin:", result.error);
+        logger.error("[Auth] Failed to create default admin", { error: result.error });
       }
     } else {
-      console.log("[Auth] Admin user already exists");
+      logger.info("[Auth] Admin user already exists");
     }
   } catch (error) {
-    console.error("[Auth] Error checking/creating default admin:", error);
+    logger.error("[Auth] Error checking/creating default admin", { error: error instanceof Error ? error.message : error });
   }
 }
