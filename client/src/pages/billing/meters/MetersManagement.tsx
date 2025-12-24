@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -76,7 +75,7 @@ export default function MetersManagement() {
 
   useEffect(() => {
     if (metersQuery.data) {
-      setMeters(metersQuery.data);
+      setMeters(metersQuery.data as any);
     }
   }, [metersQuery.data]);
 

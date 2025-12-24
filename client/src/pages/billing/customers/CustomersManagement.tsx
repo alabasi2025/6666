@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -68,7 +67,7 @@ export default function CustomersManagement() {
 
   useEffect(() => {
     if (customersQuery.data) {
-      setCustomers(customersQuery.data);
+      setCustomers(customersQuery.data as any);
     }
   }, [customersQuery.data]);
 
