@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
@@ -74,7 +73,7 @@ export default function Depreciation() {
       queryClient.invalidateQueries({ queryKey: [["assets"]] });
       toast({ 
         title: "تم حساب الإهلاك بنجاح",
-        description: `تم حساب الإهلاك لـ ${result.processedCount || 0} أصل`
+        description: `تم حساب الإهلاك لـ ${(result as any).processedCount || result.count || 0} أصل`
       });
       setShowCalculateDialog(false);
     },

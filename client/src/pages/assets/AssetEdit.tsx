@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -125,9 +124,9 @@ export default function AssetEdit({ assetId }: AssetEditProps) {
       purchaseCost: formData.purchaseCost || undefined,
       currentValue: formData.currentValue || undefined,
       location: formData.location || undefined,
-      status: formData.status,
+      status: formData.status as any,
       usefulLife: formData.usefulLife ? parseInt(formData.usefulLife) : undefined,
-      depreciationMethod: formData.depreciationMethod || undefined,
+      depreciationMethod: (formData.depreciationMethod || undefined) as any,
     });
   };
 
