@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./_core/trpc";
@@ -58,13 +57,15 @@ export const maintenanceRouter = router({
         })).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
+        const orderNumber = `WO-${Date.now()}`;
         const id = await db.createWorkOrder({
           ...input,
+          orderNumber,
           businessId: input.businessId || 1,
           requestedBy: ctx.user?.id || 1,
           requestedDate: new Date(),
           createdBy: ctx.user?.id || 1,
-        });
+        } as any);
         return { success: true, id };
       }),
 
