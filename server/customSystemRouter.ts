@@ -5,7 +5,10 @@ import { protectedProcedure, router } from "./_core/trpc";
 import { getDb } from "./db";
 import { 
   customAccounts, customTransactions, customNotes, customMemos, noteCategories,
-  InsertCustomAccount, InsertCustomTransaction, InsertCustomNote, InsertCustomMemo
+  InsertCustomAccount, InsertCustomTransaction, InsertCustomNote, InsertCustomMemo,
+  // الجداول الجديدة
+  customParties, customCategories, customTreasuryMovements, customPartyTransactions, customSettings,
+  InsertCustomParty, InsertCustomCategory, InsertCustomTreasuryMovement, InsertCustomPartyTransaction, InsertCustomSetting
 } from "../drizzle/schema";
 import { eq, and, desc, asc, like, sql } from "drizzle-orm";
 
@@ -1404,6 +1407,550 @@ export const customReconciliationsRouter = router({
 });
 
 // ============================================
+// Custom Parties Router (إدارة الأطراف)
+// ============================================
+export const customPartiesRouter = router({
+  // قائمة الأطراف
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      partyType: z.enum(["customer", "supplier", "employee", "partner", "government", "other"]).optional(),
+      search: z.string().optional(),
+      isActive: z.boolean().optional()
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      let query = db.select().from(customParties).where(eq(customParties.businessId, input.businessId));
+      
+      const results = await query.orderBy(asc(customParties.nameAr));
+      
+      // تصفية إضافية
+      let filtered = results;
+      if (input.subSystemId) filtered = filtered.filter(p => p.subSystemId === input.subSystemId);
+      if (input.partyType) filtered = filtered.filter(p => p.partyType === input.partyType);
+      if (input.isActive !== undefined) filtered = filtered.filter(p => p.isActive === input.isActive);
+      if (input.search) {
+        const s = input.search.toLowerCase();
+        filtered = filtered.filter(p => 
+          p.nameAr.toLowerCase().includes(s) || 
+          p.code.toLowerCase().includes(s) ||
+          (p.phone && p.phone.includes(s)) ||
+          (p.mobile && p.mobile.includes(s))
+        );
+      }
+      
+      return filtered;
+    }),
+
+  // الحصول على طرف بالمعرف
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const result = await db.select().from(customParties).where(eq(customParties.id, input.id)).limit(1);
+      return result[0] || null;
+    }),
+
+  // إنشاء طرف جديد
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      code: z.string().min(1),
+      nameAr: z.string().min(1),
+      nameEn: z.string().optional(),
+      partyType: z.enum(["customer", "supplier", "employee", "partner", "government", "other"]),
+      phone: z.string().optional(),
+      mobile: z.string().optional(),
+      email: z.string().optional(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      country: z.string().optional(),
+      taxNumber: z.string().optional(),
+      commercialRegister: z.string().optional(),
+      creditLimit: z.string().optional(),
+      currency: z.string().optional(),
+      contactPerson: z.string().optional(),
+      notes: z.string().optional(),
+      tags: z.any().optional(),
+      createdBy: z.number().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const result = await db.insert(customParties).values(input as InsertCustomParty);
+      return { id: Number(result[0].insertId), success: true };
+    }),
+
+  // تحديث طرف
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      code: z.string().optional(),
+      nameAr: z.string().optional(),
+      nameEn: z.string().optional(),
+      partyType: z.enum(["customer", "supplier", "employee", "partner", "government", "other"]).optional(),
+      phone: z.string().optional(),
+      mobile: z.string().optional(),
+      email: z.string().optional(),
+      address: z.string().optional(),
+      city: z.string().optional(),
+      country: z.string().optional(),
+      taxNumber: z.string().optional(),
+      commercialRegister: z.string().optional(),
+      creditLimit: z.string().optional(),
+      currency: z.string().optional(),
+      contactPerson: z.string().optional(),
+      notes: z.string().optional(),
+      tags: z.any().optional(),
+      isActive: z.boolean().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const { id, ...data } = input;
+      await db.update(customParties).set(data).where(eq(customParties.id, id));
+      return { success: true };
+    }),
+
+  // حذف طرف
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.delete(customParties).where(eq(customParties.id, input.id));
+      return { success: true };
+    }),
+
+  // الحصول على رصيد طرف
+  getBalance: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const party = await db.select().from(customParties).where(eq(customParties.id, input.id)).limit(1);
+      if (!party[0]) return null;
+      
+      return {
+        partyId: party[0].id,
+        partyName: party[0].nameAr,
+        currentBalance: party[0].currentBalance,
+        creditLimit: party[0].creditLimit,
+        currency: party[0].currency
+      };
+    }),
+
+  // كشف حساب طرف
+  getStatement: protectedProcedure
+    .input(z.object({ 
+      partyId: z.number(),
+      fromDate: z.string().optional(),
+      toDate: z.string().optional()
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const transactions = await db.select()
+        .from(customPartyTransactions)
+        .where(eq(customPartyTransactions.partyId, input.partyId))
+        .orderBy(asc(customPartyTransactions.transactionDate));
+      
+      return transactions;
+    }),
+
+  // تحديث رصيد طرف
+  updateBalance: protectedProcedure
+    .input(z.object({ id: z.number(), amount: z.string() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.update(customParties)
+        .set({ currentBalance: input.amount })
+        .where(eq(customParties.id, input.id));
+      return { success: true };
+    }),
+});
+
+// ============================================
+// Custom Categories Router (إدارة التصنيفات)
+// ============================================
+export const customCategoriesRouter = router({
+  // قائمة التصنيفات
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      categoryType: z.enum(["income", "expense", "both"]).optional(),
+      parentId: z.number().optional(),
+      isActive: z.boolean().optional()
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const results = await db.select()
+        .from(customCategories)
+        .where(eq(customCategories.businessId, input.businessId))
+        .orderBy(asc(customCategories.code));
+      
+      let filtered = results;
+      if (input.subSystemId) filtered = filtered.filter(c => c.subSystemId === input.subSystemId);
+      if (input.categoryType) filtered = filtered.filter(c => c.categoryType === input.categoryType);
+      if (input.parentId !== undefined) filtered = filtered.filter(c => c.parentId === input.parentId);
+      if (input.isActive !== undefined) filtered = filtered.filter(c => c.isActive === input.isActive);
+      
+      return filtered;
+    }),
+
+  // الحصول على تصنيف بالمعرف
+  getById: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const result = await db.select().from(customCategories).where(eq(customCategories.id, input.id)).limit(1);
+      return result[0] || null;
+    }),
+
+  // إنشاء تصنيف جديد
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      code: z.string().min(1),
+      nameAr: z.string().min(1),
+      nameEn: z.string().optional(),
+      categoryType: z.enum(["income", "expense", "both"]),
+      parentId: z.number().optional(),
+      level: z.number().optional(),
+      color: z.string().optional(),
+      icon: z.string().optional(),
+      description: z.string().optional(),
+      linkedAccountId: z.number().optional(),
+      createdBy: z.number().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const result = await db.insert(customCategories).values(input as InsertCustomCategory);
+      return { id: Number(result[0].insertId), success: true };
+    }),
+
+  // تحديث تصنيف
+  update: protectedProcedure
+    .input(z.object({
+      id: z.number(),
+      code: z.string().optional(),
+      nameAr: z.string().optional(),
+      nameEn: z.string().optional(),
+      categoryType: z.enum(["income", "expense", "both"]).optional(),
+      parentId: z.number().optional(),
+      level: z.number().optional(),
+      color: z.string().optional(),
+      icon: z.string().optional(),
+      description: z.string().optional(),
+      linkedAccountId: z.number().optional(),
+      isActive: z.boolean().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const { id, ...data } = input;
+      await db.update(customCategories).set(data).where(eq(customCategories.id, id));
+      return { success: true };
+    }),
+
+  // حذف تصنيف
+  delete: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      await db.delete(customCategories).where(eq(customCategories.id, input.id));
+      return { success: true };
+    }),
+
+  // الحصول على التصنيفات الهرمية (Tree)
+  getTree: protectedProcedure
+    .input(z.object({ businessId: z.number(), categoryType: z.enum(["income", "expense", "both"]).optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const all = await db.select()
+        .from(customCategories)
+        .where(eq(customCategories.businessId, input.businessId))
+        .orderBy(asc(customCategories.code));
+      
+      let filtered = all;
+      if (input.categoryType) filtered = filtered.filter(c => c.categoryType === input.categoryType || c.categoryType === "both");
+      
+      // بناء الشجرة
+      const buildTree = (items: typeof filtered, parentId: number | null = null): any[] => {
+        return items
+          .filter(item => item.parentId === parentId)
+          .map(item => ({
+            ...item,
+            children: buildTree(items, item.id)
+          }));
+      };
+      
+      return buildTree(filtered);
+    }),
+});
+
+// ============================================
+// Custom Treasury Movements Router (حركات الخزينة)
+// ============================================
+export const customTreasuryMovementsRouter = router({
+  // قائمة حركات خزينة
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      treasuryId: z.number().optional(),
+      movementType: z.enum(["receipt", "payment", "transfer_in", "transfer_out", "adjustment", "opening"]).optional(),
+      fromDate: z.string().optional(),
+      toDate: z.string().optional()
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const results = await db.select()
+        .from(customTreasuryMovements)
+        .where(eq(customTreasuryMovements.businessId, input.businessId))
+        .orderBy(desc(customTreasuryMovements.movementDate));
+      
+      let filtered = results;
+      if (input.treasuryId) filtered = filtered.filter(m => m.treasuryId === input.treasuryId);
+      if (input.movementType) filtered = filtered.filter(m => m.movementType === input.movementType);
+      
+      return filtered;
+    }),
+
+  // كشف حساب خزينة
+  getStatement: protectedProcedure
+    .input(z.object({ 
+      treasuryId: z.number(),
+      fromDate: z.string().optional(),
+      toDate: z.string().optional()
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const movements = await db.select()
+        .from(customTreasuryMovements)
+        .where(eq(customTreasuryMovements.treasuryId, input.treasuryId))
+        .orderBy(asc(customTreasuryMovements.movementDate), asc(customTreasuryMovements.id));
+      
+      return movements;
+    }),
+
+  // إنشاء حركة (يستخدم داخلياً)
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      treasuryId: z.number(),
+      movementType: z.enum(["receipt", "payment", "transfer_in", "transfer_out", "adjustment", "opening"]),
+      movementDate: z.string(),
+      amount: z.string(),
+      balanceBefore: z.string(),
+      balanceAfter: z.string(),
+      currency: z.string().optional(),
+      referenceType: z.string().optional(),
+      referenceId: z.number().optional(),
+      referenceNumber: z.string().optional(),
+      description: z.string().optional(),
+      createdBy: z.number().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const result = await db.insert(customTreasuryMovements).values(input as InsertCustomTreasuryMovement);
+      return { id: Number(result[0].insertId), success: true };
+    }),
+
+  // إحصائيات خزينة
+  getStats: protectedProcedure
+    .input(z.object({ treasuryId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const movements = await db.select()
+        .from(customTreasuryMovements)
+        .where(eq(customTreasuryMovements.treasuryId, input.treasuryId));
+      
+      const totalReceipts = movements.filter(m => m.movementType === "receipt" || m.movementType === "transfer_in")
+        .reduce((sum, m) => sum + parseFloat(m.amount || "0"), 0);
+      const totalPayments = movements.filter(m => m.movementType === "payment" || m.movementType === "transfer_out")
+        .reduce((sum, m) => sum + parseFloat(m.amount || "0"), 0);
+      
+      const lastMovement = movements.sort((a, b) => b.id - a.id)[0];
+      
+      return {
+        totalReceipts,
+        totalPayments,
+        currentBalance: lastMovement?.balanceAfter || "0",
+        movementsCount: movements.length
+      };
+    }),
+});
+
+// ============================================
+// Custom Party Transactions Router (حركات الأطراف)
+// ============================================
+export const customPartyTransactionsRouter = router({
+  // قائمة حركات طرف
+  list: protectedProcedure
+    .input(z.object({ 
+      businessId: z.number(),
+      partyId: z.number().optional(),
+      transactionType: z.enum(["receipt", "payment", "invoice", "credit_note", "debit_note", "adjustment"]).optional()
+    }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const results = await db.select()
+        .from(customPartyTransactions)
+        .where(eq(customPartyTransactions.businessId, input.businessId))
+        .orderBy(desc(customPartyTransactions.transactionDate));
+      
+      let filtered = results;
+      if (input.partyId) filtered = filtered.filter(t => t.partyId === input.partyId);
+      if (input.transactionType) filtered = filtered.filter(t => t.transactionType === input.transactionType);
+      
+      return filtered;
+    }),
+
+  // إنشاء حركة (يستخدم داخلياً)
+  create: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      partyId: z.number(),
+      transactionType: z.enum(["receipt", "payment", "invoice", "credit_note", "debit_note", "adjustment"]),
+      transactionDate: z.string(),
+      amount: z.string(),
+      balanceBefore: z.string(),
+      balanceAfter: z.string(),
+      currency: z.string().optional(),
+      referenceType: z.string().optional(),
+      referenceId: z.number().optional(),
+      referenceNumber: z.string().optional(),
+      description: z.string().optional(),
+      createdBy: z.number().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      const result = await db.insert(customPartyTransactions).values(input as InsertCustomPartyTransaction);
+      return { id: Number(result[0].insertId), success: true };
+    }),
+});
+
+// ============================================
+// Custom Settings Router (إعدادات النظام)
+// ============================================
+export const customSettingsRouter = router({
+  // الحصول على إعداد
+  get: protectedProcedure
+    .input(z.object({ businessId: z.number(), key: z.string(), subSystemId: z.number().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const results = await db.select()
+        .from(customSettings)
+        .where(and(
+          eq(customSettings.businessId, input.businessId),
+          eq(customSettings.settingKey, input.key)
+        ));
+      
+      if (input.subSystemId) {
+        const specific = results.find(s => s.subSystemId === input.subSystemId);
+        if (specific) return specific;
+      }
+      
+      return results.find(s => !s.subSystemId) || null;
+    }),
+
+  // حفظ إعداد
+  set: protectedProcedure
+    .input(z.object({
+      businessId: z.number(),
+      subSystemId: z.number().optional(),
+      settingKey: z.string(),
+      settingValue: z.string(),
+      settingType: z.enum(["string", "number", "boolean", "json"]).optional(),
+      description: z.string().optional()
+    }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      
+      // البحث عن إعداد موجود
+      const existing = await db.select()
+        .from(customSettings)
+        .where(and(
+          eq(customSettings.businessId, input.businessId),
+          eq(customSettings.settingKey, input.settingKey)
+        ));
+      
+      const match = input.subSystemId 
+        ? existing.find(s => s.subSystemId === input.subSystemId)
+        : existing.find(s => !s.subSystemId);
+      
+      if (match) {
+        await db.update(customSettings)
+          .set({ settingValue: input.settingValue, settingType: input.settingType })
+          .where(eq(customSettings.id, match.id));
+      } else {
+        await db.insert(customSettings).values(input as InsertCustomSetting);
+      }
+      
+      return { success: true };
+    }),
+
+  // قائمة كل الإعدادات
+  list: protectedProcedure
+    .input(z.object({ businessId: z.number(), subSystemId: z.number().optional() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      
+      const results = await db.select()
+        .from(customSettings)
+        .where(eq(customSettings.businessId, input.businessId));
+      
+      if (input.subSystemId) {
+        return results.filter(s => s.subSystemId === input.subSystemId || !s.subSystemId);
+      }
+      
+      return results;
+    }),
+});
+
+// ============================================
 // Combined Custom System Router
 // ============================================
 export const customSystemRouter = router({
@@ -1420,4 +1967,10 @@ export const customSystemRouter = router({
   paymentVouchers: customPaymentVouchersRouter,
   reconciliations: customReconciliationsRouter,
   transfers: customTransfersRouter,
+  // === الـ Routers الجديدة (إصلاح الفجوات) ===
+  parties: customPartiesRouter,
+  expenseCategories: customCategoriesRouter,
+  treasuryMovements: customTreasuryMovementsRouter,
+  partyTransactions: customPartyTransactionsRouter,
+  settings: customSettingsRouter,
 });
