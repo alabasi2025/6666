@@ -116,3 +116,10 @@ energy_management_backup*.sql
 .env
 .env.local
 .env.production
+
+# القاعدة 2: الملفات المحظورة
+*.backup
+*.dump
+*.pem
+*.key
+add_indexes.sql
