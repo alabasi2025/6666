@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -235,14 +234,14 @@ export default function DieselSuppliers() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => openViewDialog(supplier)}
+                          onClick={() => openViewDialog(supplier as any)}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => openEditDialog(supplier)}
+                          onClick={() => openEditDialog(supplier as any)}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
