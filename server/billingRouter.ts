@@ -15,7 +15,14 @@ export const billingRouter = router({
   getAreas: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    return await db.select().from(areas).orderBy(desc(areas.createdAt));
+    return await db.select({
+      id: areas.id,
+      code: areas.code,
+      name: areas.name,
+      nameEn: areas.nameEn,
+      description: areas.description,
+      createdAt: areas.createdAt,
+    }).from(areas).orderBy(desc(areas.createdAt));
   }),
 
   createArea: publicProcedure.input(z.object({
@@ -170,7 +177,19 @@ export const billingRouter = router({
   getTariffs: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    return await db.select().from(tariffs).orderBy(desc(tariffs.createdAt));
+    return await db.select({
+      id: tariffs.id,
+      code: tariffs.code,
+      name: tariffs.name,
+      serviceType: tariffs.serviceType,
+      customerCategory: tariffs.customerCategory,
+      fromUnit: tariffs.fromUnit,
+      toUnit: tariffs.toUnit,
+      pricePerUnit: tariffs.pricePerUnit,
+      fixedCharge: tariffs.fixedCharge,
+      isActive: tariffs.isActive,
+      createdAt: tariffs.createdAt,
+    }).from(tariffs).orderBy(desc(tariffs.createdAt));
   }),
 
   createTariff: publicProcedure.input(z.object({
@@ -219,7 +238,17 @@ export const billingRouter = router({
   getFeeTypes: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    return await db.select().from(feeTypes).orderBy(desc(feeTypes.createdAt));
+    return await db.select({
+      id: feeTypes.id,
+      code: feeTypes.code,
+      name: feeTypes.name,
+      nameEn: feeTypes.nameEn,
+      feeType: feeTypes.feeType,
+      amount: feeTypes.amount,
+      isRequired: feeTypes.isRequired,
+      isActive: feeTypes.isActive,
+      createdAt: feeTypes.createdAt,
+    }).from(feeTypes).orderBy(desc(feeTypes.createdAt));
   }),
 
   createFeeType: publicProcedure.input(z.object({
@@ -264,7 +293,17 @@ export const billingRouter = router({
   getCashboxes: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    return await db.select().from(cashboxes).orderBy(desc(cashboxes.createdAt));
+    return await db.select({
+      id: cashboxes.id,
+      code: cashboxes.code,
+      name: cashboxes.name,
+      nameEn: cashboxes.nameEn,
+      cashboxType: cashboxes.cashboxType,
+      openingBalance: cashboxes.openingBalance,
+      currentBalance: cashboxes.currentBalance,
+      isActive: cashboxes.isActive,
+      createdAt: cashboxes.createdAt,
+    }).from(cashboxes).orderBy(desc(cashboxes.createdAt));
   }),
 
   createCashbox: publicProcedure.input(z.object({
@@ -306,7 +345,15 @@ export const billingRouter = router({
   getPaymentMethods: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    return await db.select().from(paymentMethodsNew).orderBy(desc(paymentMethodsNew.createdAt));
+    return await db.select({
+      id: paymentMethodsNew.id,
+      code: paymentMethodsNew.code,
+      name: paymentMethodsNew.name,
+      nameEn: paymentMethodsNew.nameEn,
+      methodType: paymentMethodsNew.methodType,
+      isActive: paymentMethodsNew.isActive,
+      createdAt: paymentMethodsNew.createdAt,
+    }).from(paymentMethodsNew).orderBy(desc(paymentMethodsNew.createdAt));
   }),
 
   createPaymentMethod: publicProcedure.input(z.object({
@@ -346,7 +393,21 @@ export const billingRouter = router({
   getCustomers: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    const result = await db.select().from(customersEnhanced).orderBy(desc(customersEnhanced.createdAt));
+    const result = await db.select({
+      id: customersEnhanced.id,
+      accountNumber: customersEnhanced.accountNumber,
+      fullName: customersEnhanced.fullName,
+      fullNameEn: customersEnhanced.fullNameEn,
+      customerType: customersEnhanced.customerType,
+      category: customersEnhanced.category,
+      phone: customersEnhanced.phone,
+      phone2: customersEnhanced.phone2,
+      email: customersEnhanced.email,
+      nationalId: customersEnhanced.nationalId,
+      address: customersEnhanced.address,
+      isActive: customersEnhanced.isActive,
+      createdAt: customersEnhanced.createdAt,
+    }).from(customersEnhanced).orderBy(desc(customersEnhanced.createdAt));
     return result;
   }),
 
@@ -513,7 +574,16 @@ export const billingRouter = router({
   getBillingPeriods: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
-    return await db.select().from(billingPeriods).orderBy(desc(billingPeriods.createdAt));
+    return await db.select({
+      id: billingPeriods.id,
+      code: billingPeriods.code,
+      name: billingPeriods.name,
+      startDate: billingPeriods.startDate,
+      endDate: billingPeriods.endDate,
+      dueDate: billingPeriods.dueDate,
+      status: billingPeriods.status,
+      createdAt: billingPeriods.createdAt,
+    }).from(billingPeriods).orderBy(desc(billingPeriods.createdAt));
   }),
 
   createBillingPeriod: publicProcedure.input(z.object({
@@ -601,7 +671,10 @@ export const billingRouter = router({
     const db = await getDb();
     if (!db) throw new Error("Database not available");
     // الحصول على القراءة السابقة
-    const [meter] = await db.select().from(metersEnhanced).where(eq(metersEnhanced.id, input.meterId));
+    const [meter] = await db.select({
+      id: metersEnhanced.id,
+      lastReading: metersEnhanced.lastReading,
+    }).from(metersEnhanced).where(eq(metersEnhanced.id, input.meterId));
     const previousReading = meter?.lastReading || "0";
     const consumption = (parseFloat(input.currentReading) - parseFloat(previousReading)).toString();
     
@@ -629,7 +702,12 @@ export const billingRouter = router({
       }).where(eq(meterReadingsEnhanced.id, id));
       
       // تحديث آخر قراءة في العداد
-      const [reading] = await db.select().from(meterReadingsEnhanced).where(eq(meterReadingsEnhanced.id, id));
+      const [reading] = await db.select({
+        id: meterReadingsEnhanced.id,
+        meterId: meterReadingsEnhanced.meterId,
+        currentReading: meterReadingsEnhanced.currentReading,
+        readingDate: meterReadingsEnhanced.readingDate,
+      }).from(meterReadingsEnhanced).where(eq(meterReadingsEnhanced.id, id));
       if (reading) {
         await db.update(metersEnhanced).set({
           lastReading: reading.currentReading,
@@ -711,10 +789,22 @@ export const billingRouter = router({
       ));
     
     // الحصول على فترة الفوترة
-    const [period] = await db.select().from(billingPeriods).where(eq(billingPeriods.id, input.billingPeriodId));
+    const [period] = await db.select({
+      id: billingPeriods.id,
+      code: billingPeriods.code,
+      name: billingPeriods.name,
+      dueDate: billingPeriods.dueDate,
+    }).from(billingPeriods).where(eq(billingPeriods.id, input.billingPeriodId));
     
     // الحصول على التعرفة
-    const allTariffs = await db.select().from(tariffs).where(eq(tariffs.isActive, true));
+    const allTariffs = await db.select({
+      id: tariffs.id,
+      serviceType: tariffs.serviceType,
+      customerCategory: tariffs.customerCategory,
+      fromUnit: tariffs.fromUnit,
+      toUnit: tariffs.toUnit,
+      pricePerUnit: tariffs.pricePerUnit,
+    }).from(tariffs).where(eq(tariffs.isActive, true));
     
     let invoicesCreated = 0;
     
@@ -851,7 +941,11 @@ export const billingRouter = router({
     
     // تحديث الفاتورة إذا تم تحديدها
     if (input.invoiceId) {
-      const [invoice] = await db.select().from(invoicesEnhanced).where(eq(invoicesEnhanced.id, input.invoiceId));
+      const [invoice] = await db.select({
+        id: invoicesEnhanced.id,
+        paidAmount: invoicesEnhanced.paidAmount,
+        totalAmount: invoicesEnhanced.totalAmount,
+      }).from(invoicesEnhanced).where(eq(invoicesEnhanced.id, input.invoiceId));
       if (invoice) {
         const newPaidAmount = parseFloat(invoice.paidAmount || "0") + parseFloat(input.amount);
         const newRemainingAmount = parseFloat(invoice.totalAmount) - newPaidAmount;
@@ -868,7 +962,10 @@ export const billingRouter = router({
     
     // تحديث رصيد الصندوق
     if (input.cashboxId && input.paymentMethod === "cash") {
-      const [cashbox] = await db.select().from(cashboxes).where(eq(cashboxes.id, input.cashboxId));
+      const [cashbox] = await db.select({
+        id: cashboxes.id,
+        currentBalance: cashboxes.currentBalance,
+      }).from(cashboxes).where(eq(cashboxes.id, input.cashboxId));
       if (cashbox) {
         const newBalance = parseFloat(cashbox.currentBalance || "0") + parseFloat(input.amount);
         await db.update(cashboxes).set({ currentBalance: newBalance.toFixed(2) }).where(eq(cashboxes.id, input.cashboxId));
