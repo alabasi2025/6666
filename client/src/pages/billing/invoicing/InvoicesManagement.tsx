@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -54,7 +53,7 @@ export default function InvoicesManagement() {
 
   useEffect(() => {
     if (invoicesQuery.data) {
-      setInvoices(invoicesQuery.data);
+      setInvoices(invoicesQuery.data as any);
     }
   }, [invoicesQuery.data]);
 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -57,7 +56,7 @@ export default function BillingPeriodsManagement() {
 
   useEffect(() => {
     if (periodsQuery.data) {
-      setPeriods(periodsQuery.data);
+      setPeriods(periodsQuery.data as any);
     }
   }, [periodsQuery.data]);
 
