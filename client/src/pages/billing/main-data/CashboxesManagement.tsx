@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -11,12 +10,17 @@ import { Edit, Trash2, Search, RefreshCw, Wallet } from "lucide-react";
 
 interface Cashbox {
   id: number;
-  code: string;
-  name: string;
+  code?: string;
+  name?: string;
   nameEn?: string;
-  balance: string;
-  currency: string;
-  isActive: boolean;
+  balance?: string;
+  currency?: string;
+  isActive?: boolean;
+  businessId?: number;
+  branchId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  assignedTo?: number;
 }
 
 export default function CashboxesManagement() {
@@ -41,7 +45,7 @@ export default function CashboxesManagement() {
 
   useEffect(() => {
     if (cashboxesQuery.data) {
-      setCashboxes(cashboxesQuery.data);
+      setCashboxes(cashboxesQuery.data as any);
     }
   }, [cashboxesQuery.data]);
 
