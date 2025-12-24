@@ -7,6 +7,7 @@ import { SignJWT, jwtVerify } from "jose";
 import type { User } from "../../drizzle/schema";
 import * as db from "../db";
 import { ENV } from "./env";
+import { logger } from '../utils/logger';
 import type {
   ExchangeTokenRequest,
   ExchangeTokenResponse,
@@ -30,11 +31,9 @@ const GET_USER_INFO_WITH_JWT_PATH = `/webdev.v1.WebDevAuthPublicService/GetUserI
 
 class OAuthService {
   constructor(private client: ReturnType<typeof axios.create>) {
-    console.log("[OAuth] Initialized with baseURL:", ENV.oAuthServerUrl);
+    logger.info("[OAuth] Initialized with baseURL", { baseURL: ENV.oAuthServerUrl });
     if (!ENV.oAuthServerUrl) {
-      console.error(
-        "[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable."
-      );
+      logger.error("[OAuth] ERROR: OAUTH_SERVER_URL is not configured! Set OAUTH_SERVER_URL environment variable.");
     }
   }
 
@@ -201,7 +200,7 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string } | null> {
     if (!cookieValue) {
-      console.warn("[Auth] Missing session cookie");
+      logger.warn("[Auth] Missing session cookie");
       return null;
     }
 
@@ -214,7 +213,7 @@ class SDKServer {
 
       // openId مطلوب، appId و name اختياريان في الوضع المحلي
       if (!isNonEmptyString(openId)) {
-        console.warn("[Auth] Session payload missing openId");
+        logger.warn("[Auth] Session payload missing openId");
         return null;
       }
 
@@ -224,7 +223,7 @@ class SDKServer {
         name: isNonEmptyString(name) ? name : '',
       };
     } catch (error) {
-      console.warn("[Auth] Session verification failed", String(error));
+      logger.warn("[Auth] Session verification failed", { error: String(error) });
       return null;
     }
   }
@@ -271,7 +270,7 @@ class SDKServer {
     
     // إذا لم يتم العثور على المستخدم، تحقق من نوع تسجيل الدخول
     if (!user) {
-      console.log("[Auth] User not found by openId:", sessionUserId);
+      logger.debug("[Auth] User not found by openId", { openId: sessionUserId });
       
       // إذا كان تسجيل دخول محلي (openId يبدأ بـ local_)
       if (sessionUserId.startsWith('local_')) {
@@ -282,7 +281,7 @@ class SDKServer {
           // البحث عن المستخدم برقم الهاتف
           user = await db.getUserByPhone(phone);
           if (user) {
-            console.log("[Auth] Found user by phone:", phone);
+            logger.debug("[Auth] Found user by phone", { phone });
             // تحديث openId ليتطابق مع الجلسة
             await db.upsertUser({
               openId: user.openId,
@@ -313,7 +312,7 @@ class SDKServer {
           });
           user = await db.getUserByOpenId(userInfo.openId);
         } catch (error) {
-          console.error("[Auth] Failed to sync user from OAuth:", error);
+          logger.error("[Auth] Failed to sync user from OAuth", { error: error instanceof Error ? error.message : error });
           throw ForbiddenError("Failed to sync user info");
         }
       }

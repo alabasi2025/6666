@@ -19,6 +19,7 @@ import { maintenanceRouter } from "./maintenanceRouter";
 import { projectsRouter } from "./projectsRouter";
 import { scadaRouter } from "./scadaRouter";
 import { dieselRouter } from "./dieselRouter";
+import { logger } from './utils/logger';
 
 // Admin procedure - requires admin role
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -118,7 +119,7 @@ export const appRouter = router({
         const cookieOptions = getSessionCookieOptions(ctx.req);
         
         if (process.env.NODE_ENV === 'development') {
-          console.log("[Login] Setting cookie:", {
+          logger.debug("[Login] Setting cookie", {
             name: COOKIE_NAME,
             tokenLength: sessionToken.length,
             options: cookieOptions,
@@ -129,7 +130,7 @@ export const appRouter = router({
         ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
         
         if (process.env.NODE_ENV === 'development') {
-          console.log("[Login] Cookie set successfully, returning user:", { id: user.id, name: user.name, role: user.role });
+          logger.debug("[Login] Cookie set successfully, returning user", { id: user.id, name: user.name, role: user.role });
         }
         
         return { success: true, user: { id: user.id, name: user.name, role: user.role } };
@@ -192,11 +193,11 @@ export const appRouter = router({
   business: router({
     list: protectedProcedure.query(async ({ ctx }) => {
       if (process.env.NODE_ENV === 'development') {
-        console.log("[Business.list] Called by user:", ctx.user?.id, ctx.user?.name);
+        logger.debug("[Business.list] Called by user", { userId: ctx.user?.id, userName: ctx.user?.name });
       }
       const businesses = await db.getBusinesses();
       if (process.env.NODE_ENV === 'development') {
-        console.log("[Business.list] Returning", businesses.length, "businesses");
+        logger.debug("[Business.list] Returning", { count: businesses.length });
       }
       return businesses;
     }),

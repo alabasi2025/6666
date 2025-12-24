@@ -3,6 +3,7 @@
  * @module server/utils/encryption
  */
 import crypto from "crypto";
+import { logger } from './logger';
 
 // مفتاح التشفير (يجب تخزينه في متغيرات البيئة في الإنتاج)
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex').slice(0, 32);
@@ -40,7 +41,7 @@ export function decrypt(encryptedText: string): string {
     
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
+    logger.error('Decryption error', { error: error instanceof Error ? error.message : error });
     return encryptedText;
   }
 }
