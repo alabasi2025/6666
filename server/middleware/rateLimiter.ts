@@ -1,95 +1,103 @@
-// @ts-nocheck
 /**
- * @fileoverview Rate Limiting للحماية من هجمات DDoS
+ * @fileoverview Middleware للحد من معدل الطلبات
  * @module server/middleware/rateLimiter
  */
 
+import type { Request, Response, NextFunction } from "express";
 import { logger } from "../logger";
 
-interface RateLimitConfig {
-  windowMs: number;
-  maxRequests: number;
+interface RateLimitEntry {
+  count: number;
+  resetTime: number;
 }
 
-interface RateLimitStore {
-  [key: string]: {
-    count: number;
-    resetTime: number;
+interface RateLimitConfig {
+  windowMs: number;      // نافذة الوقت بالمللي ثانية
+  maxRequests: number;   // الحد الأقصى للطلبات
+  message?: string;      // رسالة الخطأ
+}
+
+// مخزن الطلبات (في الإنتاج استخدم Redis)
+const requestStore = new Map<string, RateLimitEntry>();
+
+// تنظيف دوري للمخزن
+setInterval(() => {
+  const now = Date.now();
+  const entries = Array.from(requestStore.entries());
+  for (const [key, entry] of entries) {
+    if (entry.resetTime < now) {
+      requestStore.delete(key);
+    }
+  }
+}, 60000); // كل دقيقة
+
+/**
+ * إنشاء middleware للحد من معدل الطلبات
+ */
+export function createRateLimiter(config: RateLimitConfig) {
+  const { windowMs, maxRequests, message = "تم تجاوز الحد الأقصى للطلبات" } = config;
+  
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const key = getClientKey(req);
+    const now = Date.now();
+    
+    let entry = requestStore.get(key);
+    
+    if (!entry || entry.resetTime < now) {
+      entry = {
+        count: 1,
+        resetTime: now + windowMs
+      };
+      requestStore.set(key, entry);
+      next();
+      return;
+    }
+    
+    entry.count++;
+    
+    if (entry.count > maxRequests) {
+      logger.warn("Rate limit exceeded", {
+        ip: req.ip,
+        path: req.path,
+        count: entry.count
+      });
+      
+      res.status(429).json({
+        success: false,
+        error: message,
+        retryAfter: Math.ceil((entry.resetTime - now) / 1000)
+      });
+      return;
+    }
+    
+    next();
   };
 }
 
-// تخزين الطلبات في الذاكرة
-const store: RateLimitStore = {};
-
-// إعدادات Rate Limiting
-export const rateLimitConfigs = {
-  login: { windowMs: 15 * 60 * 1000, maxRequests: 10 },     // 10 محاولات / 15 دقيقة
-  register: { windowMs: 15 * 60 * 1000, maxRequests: 5 },   // 5 محاولات / 15 دقيقة
-  api: { windowMs: 60 * 1000, maxRequests: 100 },           // 100 طلب / دقيقة
-  upload: { windowMs: 60 * 1000, maxRequests: 10 }          // 10 طلبات / دقيقة
-};
-
 /**
- * فحص Rate Limit
+ * الحصول على مفتاح العميل
  */
-export function checkRateLimit(
-  identifier: string,
-  config: RateLimitConfig
-): { allowed: boolean; remaining: number; resetTime: number } {
-  const now = Date.now();
-  const key = identifier;
-  
-  // تنظيف السجلات القديمة
-  if (store[key] && store[key].resetTime < now) {
-    delete store[key];
-  }
-  
-  // إنشاء سجل جديد إذا لم يكن موجوداً
-  if (!store[key]) {
-    store[key] = {
-      count: 0,
-      resetTime: now + config.windowMs
-    };
-  }
-  
-  const record = store[key];
-  record.count++;
-  
-  const allowed = record.count <= config.maxRequests;
-  const remaining = Math.max(0, config.maxRequests - record.count);
-  
-  if (!allowed) {
-    logger.warn("Rate limit exceeded", { identifier, count: record.count });
-  }
-  
-  return { allowed, remaining, resetTime: record.resetTime };
+function getClientKey(req: Request): string {
+  // استخدام IP + User ID إن وجد
+  const userId = (req as any).user?.id;
+  const ip = req.ip || req.socket.remoteAddress || "unknown";
+  return userId ? `user:${userId}` : `ip:${ip}`;
 }
 
-/**
- * إعادة تعيين Rate Limit
- */
-export function resetRateLimit(identifier: string): void {
-  delete store[identifier];
-}
+// إعدادات افتراضية
+export const defaultRateLimiter = createRateLimiter({
+  windowMs: 60000,    // دقيقة واحدة
+  maxRequests: 100    // 100 طلب في الدقيقة
+});
 
-/**
- * تنظيف السجلات المنتهية
- */
-export function cleanupExpiredRecords(): void {
-  const now = Date.now();
-  let cleaned = 0;
-  
-  for (const key in store) {
-    if (store[key].resetTime < now) {
-      delete store[key];
-      cleaned++;
-    }
-  }
-  
-  if (cleaned > 0) {
-    logger.info("Cleaned expired rate limit records", { count: cleaned });
-  }
-}
+export const strictRateLimiter = createRateLimiter({
+  windowMs: 60000,
+  maxRequests: 10,
+  message: "تم تجاوز الحد الأقصى للطلبات الحساسة"
+});
 
-// تنظيف دوري كل 5 دقائق
-setInterval(cleanupExpiredRecords, 5 * 60 * 1000);
+export const authRateLimiter = createRateLimiter({
+  windowMs: 900000,   // 15 دقيقة
+  maxRequests: 5,
+  message: "محاولات تسجيل دخول كثيرة، حاول لاحقاً"
+});

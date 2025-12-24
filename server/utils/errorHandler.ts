@@ -1,87 +1,103 @@
-// @ts-nocheck
 /**
- * @fileoverview معالجة الأخطاء الموحدة
+ * @fileoverview معالج الأخطاء المركزي
  * @module server/utils/errorHandler
  */
 
+import type { Request, Response, NextFunction } from "express";
 import { logger } from "../logger";
 
 // أنواع الأخطاء المخصصة
 export class AppError extends Error {
-  public readonly statusCode: number;
-  public readonly isOperational: boolean;
-
-  constructor(message: string, statusCode: number, isOperational = true) {
+  statusCode: number;
+  isOperational: boolean;
+  
+  constructor(message: string, statusCode: number = 500) {
     super(message);
     this.statusCode = statusCode;
-    this.isOperational = isOperational;
-    Object.setPrototypeOf(this, AppError.prototype);
+    this.isOperational = true;
+    Error.captureStackTrace(this, this.constructor);
   }
 }
 
 export class ValidationError extends AppError {
   constructor(message: string) {
     super(message, 400);
-    this.name = "ValidationError";
   }
 }
 
 export class NotFoundError extends AppError {
-  constructor(resource: string) {
+  constructor(resource: string = "المورد") {
     super(`${resource} غير موجود`, 404);
-    this.name = "NotFoundError";
   }
 }
 
-export class AuthenticationError extends AppError {
-  constructor(message = "غير مصرح") {
+export class UnauthorizedError extends AppError {
+  constructor(message: string = "غير مصرح") {
     super(message, 401);
-    this.name = "AuthenticationError";
   }
 }
 
-export class AuthorizationError extends AppError {
-  constructor(message = "غير مسموح") {
+export class ForbiddenError extends AppError {
+  constructor(message: string = "ممنوع الوصول") {
     super(message, 403);
-    this.name = "AuthorizationError";
   }
 }
 
-export class ConflictError extends AppError {
-  constructor(message: string) {
-    super(message, 409);
-    this.name = "ConflictError";
-  }
-}
-
-// معالج الأخطاء العام
-export function handleError(error: Error): { statusCode: number; message: string } {
-  if (error instanceof AppError) {
-    logger.warn("Operational error", { 
-      name: error.name, 
-      message: error.message,
-      statusCode: error.statusCode 
-    });
-    return { statusCode: error.statusCode, message: error.message };
-  }
-
-  // خطأ غير متوقع
-  logger.error("Unexpected error", { 
-    name: error.name, 
-    message: error.message,
-    stack: error.stack 
+// معالج الأخطاء الرئيسي
+export function errorHandler(
+  err: Error,
+  req: Request,
+  res: Response,
+  _next: NextFunction
+): void {
+  // تسجيل الخطأ
+  logger.error("Error occurred", {
+    message: err.message,
+    path: req.path,
+    method: req.method,
+    stack: process.env.NODE_ENV !== "production" ? err.stack : undefined
   });
   
-  return { 
-    statusCode: 500, 
-    message: "حدث خطأ غير متوقع. يرجى المحاولة لاحقاً." 
-  };
+  // تحديد كود الحالة
+  let statusCode = 500;
+  let message = "حدث خطأ في الخادم";
+  
+  if (err instanceof AppError) {
+    statusCode = err.statusCode;
+    message = err.message;
+  } else if (err.name === "ZodError") {
+    statusCode = 400;
+    message = "خطأ في التحقق من البيانات";
+  } else if (err.name === "JsonWebTokenError") {
+    statusCode = 401;
+    message = "رمز المصادقة غير صالح";
+  }
+  
+  // إرسال الاستجابة
+  res.status(statusCode).json({
+    success: false,
+    error: message,
+    ...(process.env.NODE_ENV !== "production" && { stack: err.stack })
+  });
 }
 
-// دالة مساعدة للتحقق من الأخطاء
-export function assertExists<T>(value: T | null | undefined, resource: string): T {
-  if (value === null || value === undefined) {
-    throw new NotFoundError(resource);
-  }
-  return value;
+// معالج الطلبات غير الموجودة
+export function notFoundHandler(req: Request, res: Response): void {
+  res.status(404).json({
+    success: false,
+    error: `المسار ${req.path} غير موجود`
+  });
+}
+
+// معالج الأخطاء غير المتوقعة
+export function setupGlobalErrorHandlers(): void {
+  process.on("uncaughtException", (error: Error) => {
+    logger.error("Uncaught Exception", { message: error.message, stack: error.stack });
+    process.exit(1);
+  });
+  
+  process.on("unhandledRejection", (reason: unknown) => {
+    const message = reason instanceof Error ? reason.message : String(reason);
+    logger.error("Unhandled Rejection", { reason: message });
+  });
 }

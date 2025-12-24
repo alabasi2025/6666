@@ -1,58 +1,81 @@
-// @ts-nocheck
 /**
- * @fileoverview سجل التدقيق للعمليات الحساسة
+ * @fileoverview Middleware لتسجيل العمليات الحساسة
  * @module server/middleware/auditLog
  */
 
+import type { Request, Response, NextFunction } from "express";
 import { logger } from "../logger";
 
-interface AuditLogEntry {
+// أنواع العمليات
+type AuditAction = "create" | "read" | "update" | "delete" | "login" | "logout" | "export";
+
+interface AuditEntry {
   timestamp: Date;
   userId: number | null;
-  action: string;
+  action: AuditAction;
   resource: string;
-  resourceId: number | string | null;
-  details: Record<string, unknown>;
-  ipAddress: string;
+  resourceId?: number | string;
+  details?: Record<string, unknown>;
+  ip: string;
   userAgent: string;
 }
 
-// تخزين السجلات (في الإنتاج يجب استخدام قاعدة بيانات)
-const auditLogs: AuditLogEntry[] = [];
+// مخزن السجلات (في الإنتاج يجب استخدام قاعدة بيانات)
+const auditLogs: AuditEntry[] = [];
 
 /**
- * تسجيل عملية
+ * تسجيل عملية في سجل المراجعة
  */
-export function logAudit(entry: Omit<AuditLogEntry, "timestamp">): void {
-  const fullEntry: AuditLogEntry = {
+export function logAudit(entry: Omit<AuditEntry, "timestamp">): void {
+  const fullEntry: AuditEntry = {
     ...entry,
     timestamp: new Date()
   };
   
   auditLogs.push(fullEntry);
   
-  logger.info("Audit log", {
+  logger.info("Audit log entry", {
     action: entry.action,
     resource: entry.resource,
     userId: entry.userId
   });
-  
-  // الحفاظ على آخر 10000 سجل فقط
-  if (auditLogs.length > 10000) {
-    auditLogs.shift();
-  }
 }
 
 /**
- * جلب سجلات التدقيق
+ * Middleware لتسجيل الطلبات تلقائياً
+ */
+export function auditMiddleware(resource: string, action: AuditAction) {
+  return (req: Request, _res: Response, next: NextFunction): void => {
+    const userId = (req as any).user?.id || null;
+    const resourceId = req.params.id;
+    
+    logAudit({
+      userId,
+      action,
+      resource,
+      resourceId,
+      ip: req.ip || "unknown",
+      userAgent: req.get("user-agent") || "unknown",
+      details: {
+        method: req.method,
+        path: req.path
+      }
+    });
+    
+    next();
+  };
+}
+
+/**
+ * جلب سجلات المراجعة
  */
 export function getAuditLogs(filters?: {
   userId?: number;
-  action?: string;
+  action?: AuditAction;
   resource?: string;
-  startDate?: Date;
-  endDate?: Date;
-}): AuditLogEntry[] {
+  fromDate?: Date;
+  toDate?: Date;
+}): AuditEntry[] {
   let result = [...auditLogs];
   
   if (filters) {
@@ -65,25 +88,31 @@ export function getAuditLogs(filters?: {
     if (filters.resource) {
       result = result.filter(log => log.resource === filters.resource);
     }
-    if (filters.startDate) {
-      result = result.filter(log => log.timestamp >= filters.startDate!);
+    if (filters.fromDate) {
+      result = result.filter(log => log.timestamp >= filters.fromDate!);
     }
-    if (filters.endDate) {
-      result = result.filter(log => log.timestamp <= filters.endDate!);
+    if (filters.toDate) {
+      result = result.filter(log => log.timestamp <= filters.toDate!);
     }
   }
   
   return result.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
 }
 
-// أنواع العمليات المحددة مسبقاً
-export const AuditActions = {
-  CREATE: "CREATE",
-  READ: "READ",
-  UPDATE: "UPDATE",
-  DELETE: "DELETE",
-  LOGIN: "LOGIN",
-  LOGOUT: "LOGOUT",
-  EXPORT: "EXPORT",
-  IMPORT: "IMPORT"
-} as const;
+/**
+ * مسح السجلات القديمة (للصيانة)
+ */
+export function clearOldLogs(daysToKeep: number = 90): number {
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+  
+  const initialLength = auditLogs.length;
+  const newLogs = auditLogs.filter(log => log.timestamp > cutoffDate);
+  auditLogs.length = 0;
+  auditLogs.push(...newLogs);
+  
+  const deletedCount = initialLength - auditLogs.length;
+  logger.info("Cleared old audit logs", { deletedCount, daysToKeep });
+  
+  return deletedCount;
+}

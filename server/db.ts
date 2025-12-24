@@ -4821,3 +4821,130 @@ export async function saveStationDieselConfig(data: {
     return { id: result[0].insertId, ...data };
   }
 }
+
+// ============================================
+// Sensor Functions - دوال المستشعرات
+// ============================================
+
+export async function getSensors(businessId: number, stationId?: number) {
+  const db = await getDb();
+  let query = db.select().from(sensors).where(eq(sensors.businessId, businessId));
+  if (stationId) {
+    query = db.select().from(sensors).where(
+      and(eq(sensors.businessId, businessId), eq(sensors.stationId, stationId))
+    );
+  }
+  return await query;
+}
+
+export async function getSensorById(id: number) {
+  const db = await getDb();
+  const [sensor] = await db.select().from(sensors).where(eq(sensors.id, id));
+  return sensor || null;
+}
+
+export async function createSensor(data: any) {
+  const db = await getDb();
+  const [result] = await db.insert(sensors).values(data);
+  return result.insertId;
+}
+
+export async function updateSensor(id: number, data: any) {
+  const db = await getDb();
+  await db.update(sensors).set(data).where(eq(sensors.id, id));
+  return { success: true };
+}
+
+export async function deleteSensor(id: number) {
+  const db = await getDb();
+  await db.delete(sensors).where(eq(sensors.id, id));
+  return { success: true };
+}
+
+// ============================================
+// Sensor Readings Functions - دوال قراءات المستشعرات
+// ============================================
+
+export async function getSensorReadings(sensorId: number, options?: { limit?: number; from?: Date; to?: Date }) {
+  const db = await getDb();
+  // Placeholder - needs proper implementation based on schema
+  return [];
+}
+
+export async function getLatestSensorReading(sensorId: number) {
+  const db = await getDb();
+  // Placeholder - needs proper implementation based on schema
+  return null;
+}
+
+// ============================================
+// Alerts Functions - دوال التنبيهات
+// ============================================
+
+export async function getAlerts(businessId: number, options?: { status?: string; type?: string }) {
+  const db = await getDb();
+  return await db.select().from(alerts).where(eq(alerts.businessId, businessId));
+}
+
+export async function getAlertById(id: number) {
+  const db = await getDb();
+  const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
+  return alert || null;
+}
+
+export async function updateAlertStatus(id: number, status: string) {
+  const db = await getDb();
+  await db.update(alerts).set({ status }).where(eq(alerts.id, id));
+  return { success: true };
+}
+
+export async function deleteAlert(id: number) {
+  const db = await getDb();
+  await db.delete(alerts).where(eq(alerts.id, id));
+  return { success: true };
+}
+
+// ============================================
+// Alerts Stats Function
+// ============================================
+
+export async function getAlertsStats(businessId: number) {
+  const db = await getDb();
+  const allAlerts = await db.select().from(alerts).where(eq(alerts.businessId, businessId));
+  return {
+    total: allAlerts.length,
+    active: allAlerts.filter((a: any) => a.status === 'active').length,
+    acknowledged: allAlerts.filter((a: any) => a.status === 'acknowledged').length,
+    resolved: allAlerts.filter((a: any) => a.status === 'resolved').length,
+  };
+}
+
+// ============================================
+// Camera Functions - دوال الكاميرات
+// ============================================
+
+export async function getCameras(businessId: number, stationId?: number) {
+  const db = await getDb();
+  // Placeholder - cameras table may not exist yet
+  return [];
+}
+
+export async function getCameraById(id: number) {
+  // Placeholder
+  return null;
+}
+
+export async function createCamera(data: any) {
+  // Placeholder
+  return 0;
+}
+
+export async function updateCamera(id: number, data: any) {
+  // Placeholder
+  return { success: true };
+}
+
+export async function deleteCamera(id: number) {
+  // Placeholder
+  return { success: true };
+}

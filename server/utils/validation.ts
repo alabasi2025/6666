@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @fileoverview التحقق من المدخلات باستخدام Zod
  * @module server/utils/validation
@@ -56,8 +55,8 @@ export const updateInvoiceSchema = invoiceSchema.partial().extend({
 export function validate<T>(schema: z.ZodSchema<T>, data: unknown): T {
   const result = schema.safeParse(data);
   if (!result.success) {
-    const errors = result.error.errors.map(e => e.message).join(", ");
-    throw new Error(`خطأ في التحقق: ${errors}`);
+    const errors = result.error.issues.map(e => e.message).join(", ");
+    throw new Error("خطأ في التحقق: " + errors);
   }
   return result.data;
 }

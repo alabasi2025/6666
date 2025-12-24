@@ -1,4 +1,3 @@
-// @ts-nocheck
 /**
  * @fileoverview دوال CRUD للمستخدمين
  * @module server/db/users
@@ -33,20 +32,10 @@ export async function getUsers(businessId?: number): Promise<User[]> {
   const db = await getDb();
   
   if (businessId) {
-    return await db.select({
-      id: users.id,
-      nameAr: users.nameAr,
-      phone: users.phone,
-      role: users.role
-    }).from(users).where(eq(users.businessId, businessId));
+    return await db.select().from(users).where(eq(users.businessId, businessId));
   }
   
-  return await db.select({
-    id: users.id,
-    nameAr: users.nameAr,
-    phone: users.phone,
-    role: users.role
-  }).from(users);
+  return await db.select().from(users);
 }
 
 /**
@@ -77,7 +66,7 @@ export async function deleteUser(id: number): Promise<boolean> {
   logger.info("Deleting user", { id });
   
   const result = await db.delete(users).where(eq(users.id, id));
-  return result.rowsAffected > 0;
+  return (result as any).rowsAffected > 0;
 }
 
 /**

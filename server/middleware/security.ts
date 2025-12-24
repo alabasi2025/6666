@@ -1,61 +1,84 @@
-// @ts-nocheck
 /**
- * @fileoverview إعدادات الأمان
+ * @fileoverview Middleware للأمان
  * @module server/middleware/security
  */
 
-// رؤوس الأمان (Helmet-like)
-export const securityHeaders = {
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "X-XSS-Protection": "1; mode=block",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "Content-Security-Policy": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=()"
-};
-
-// إعدادات CORS
-export const corsConfig = {
-  origin: process.env.ALLOWED_ORIGINS?.split(",") || ["http://localhost:5000"],
-  methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  credentials: true,
-  maxAge: 86400 // 24 ساعة
-};
+import type { Request, Response, NextFunction } from "express";
+import { logger } from "../logger";
 
 /**
- * تطهير المدخلات من XSS
+ * إضافة رؤوس الأمان
  */
-export function sanitizeInput(input: string): string {
-  return input
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;");
+export function securityHeaders(_req: Request, res: Response, next: NextFunction): void {
+  // منع تضمين الصفحة في iframe
+  res.setHeader("X-Frame-Options", "DENY");
+  
+  // منع تخمين نوع المحتوى
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  
+  // تفعيل XSS Filter
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  
+  // سياسة الإحالة
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  
+  // سياسة أمان المحتوى
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:;"
+  );
+  
+  next();
 }
 
 /**
- * التحقق من صحة Content-Type
+ * تسجيل الطلبات المشبوهة
  */
-export function validateContentType(contentType: string | undefined): boolean {
-  const allowedTypes = [
-    "application/json",
-    "application/x-www-form-urlencoded",
-    "multipart/form-data"
+export function suspiciousRequestLogger(req: Request, _res: Response, next: NextFunction): void {
+  const suspiciousPatterns = [
+    /(\.\.|\/\/)/,           // Path traversal
+    /<script/i,              // XSS
+    /union\s+select/i,       // SQL injection
+    /eval\(/i,               // Code injection
+    /javascript:/i           // Protocol injection
   ];
   
-  if (!contentType) return false;
-  return allowedTypes.some(type => contentType.includes(type));
+  const fullUrl = req.originalUrl || req.url;
+  const body = JSON.stringify(req.body || {});
+  const combined = fullUrl + body;
+  
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(combined)) {
+      logger.warn("Suspicious request detected", {
+        ip: req.ip,
+        path: req.path,
+        method: req.method,
+        pattern: pattern.source
+      });
+      break;
+    }
+  }
+  
+  next();
 }
 
 /**
- * إنشاء CSRF Token
+ * التحقق من صلاحية الطلب
  */
-export function generateCSRFToken(): string {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array, byte => byte.toString(16).padStart(2, "0")).join("");
+export function validateRequest(req: Request, res: Response, next: NextFunction): void {
+  // التحقق من Content-Type للطلبات POST/PUT
+  if (["POST", "PUT", "PATCH"].includes(req.method)) {
+    const contentType = req.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      if (req.body && Object.keys(req.body).length > 0) {
+        res.status(415).json({
+          success: false,
+          error: "Content-Type يجب أن يكون application/json"
+        });
+        return;
+      }
+    }
+  }
+  
+  next();
 }
