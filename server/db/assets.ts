@@ -1,12 +1,10 @@
-// @ts-nocheck
 /**
  * @fileoverview دوال CRUD للأصول
  * @module server/db/assets
  */
-
-import { eq, inArray, sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "../db";
-import { assets, depreciationRecords } from "../../drizzle/schema";
+import { assets } from "../../drizzle/schema";
 import { logger } from "../logger";
 
 export type Asset = typeof assets.$inferSelect;
@@ -17,7 +15,7 @@ export type InsertAsset = typeof assets.$inferInsert;
  */
 export async function createAsset(data: InsertAsset): Promise<Asset> {
   const db = await getDb();
-  logger.info("Creating new asset", { name: data.name });
+  logger.info("Creating new asset", { nameAr: data.nameAr });
   
   const [result] = await db.insert(assets).values(data);
   const [newAsset] = await db.select().from(assets).where(eq(assets.id, result.insertId));
@@ -32,20 +30,10 @@ export async function getAssets(businessId?: number): Promise<Asset[]> {
   const db = await getDb();
   
   if (businessId) {
-    return await db.select({
-      id: assets.id,
-      name: assets.name,
-      category: assets.category,
-      currentValue: assets.currentValue
-    }).from(assets).where(eq(assets.businessId, businessId));
+    return await db.select().from(assets).where(eq(assets.businessId, businessId));
   }
   
-  return await db.select({
-    id: assets.id,
-    name: assets.name,
-    category: assets.category,
-    currentValue: assets.currentValue
-  }).from(assets);
+  return await db.select().from(assets);
 }
 
 /**
@@ -76,7 +64,7 @@ export async function deleteAsset(id: number): Promise<boolean> {
   logger.info("Deleting asset", { id });
   
   const result = await db.delete(assets).where(eq(assets.id, id));
-  return result.rowsAffected > 0;
+  return (result as any).rowsAffected > 0;
 }
 
 /**
@@ -90,25 +78,30 @@ export async function calculateMonthlyDepreciation(businessId: number): Promise<
   const allAssets = await db.select({
     id: assets.id,
     currentValue: assets.currentValue,
-    depreciationRate: assets.depreciationRate
+    usefulLife: assets.usefulLife,
+    purchaseCost: assets.purchaseCost,
+    salvageValue: assets.salvageValue
   }).from(assets).where(eq(assets.businessId, businessId));
   
-  // حساب الإهلاك لكل أصل
-  const depreciationData = allAssets.map(asset => ({
-    assetId: asset.id,
-    amount: (asset.currentValue * asset.depreciationRate) / 12,
-    date: new Date()
-  }));
-  
-  // إدراج جميع سجلات الإهلاك دفعة واحدة
-  if (depreciationData.length > 0) {
-    await db.insert(depreciationRecords).values(depreciationData);
-    
-    // تحديث القيم الحالية للأصول دفعة واحدة
-    for (const asset of allAssets) {
-      const depreciation = (asset.currentValue * asset.depreciationRate) / 12;
+  // حساب وتحديث الإهلاك لكل أصل
+  for (const asset of allAssets) {
+    if (asset.usefulLife && asset.usefulLife > 0) {
+      const currentValue = Number(asset.currentValue) || 0;
+      const purchaseCost = Number(asset.purchaseCost) || 0;
+      const salvageValue = Number(asset.salvageValue) || 0;
+      
+      // حساب الإهلاك الشهري (القسط الثابت)
+      const annualDepreciation = (purchaseCost - salvageValue) / asset.usefulLife;
+      const monthlyDepreciation = annualDepreciation / 12;
+      
+      const newValue = Math.max(currentValue - monthlyDepreciation, salvageValue);
+      const newAccumulated = purchaseCost - newValue;
+      
       await db.update(assets)
-        .set({ currentValue: sql`${assets.currentValue} - ${depreciation}` })
+        .set({ 
+          currentValue: newValue.toFixed(2),
+          accumulatedDepreciation: newAccumulated.toFixed(2)
+        })
         .where(eq(assets.id, asset.id));
     }
   }

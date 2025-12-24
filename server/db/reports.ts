@@ -1,9 +1,7 @@
-// @ts-nocheck
 /**
  * @fileoverview دوال التقارير
  * @module server/db/reports
  */
-
 import { eq, sql, and, gte, lte } from "drizzle-orm";
 import { getDb } from "../db";
 import { assets, invoices, users } from "../../drizzle/schema";
@@ -44,7 +42,7 @@ export async function getMonthlyReport(
       .where(eq(assets.businessId, businessId)),
     db.select({
       count: sql<number>`count(*)`,
-      total: sql<number>`COALESCE(SUM(amount), 0)`
+      total: sql<number>`COALESCE(SUM(total_amount), 0)`
     })
       .from(invoices)
       .where(
@@ -59,7 +57,7 @@ export async function getMonthlyReport(
   return {
     totalAssets: assetCount[0]?.count || 0,
     totalInvoices: invoiceData[0]?.count || 0,
-    totalRevenue: invoiceData[0]?.total || 0,
+    totalRevenue: Number(invoiceData[0]?.total) || 0,
     totalDepreciation: 0
   };
 }
@@ -75,21 +73,21 @@ export async function getFinancialSummary(businessId: number): Promise<Financial
     db.select({ total: sql<number>`COALESCE(SUM(current_value), 0)` })
       .from(assets)
       .where(eq(assets.businessId, businessId)),
-    db.select({ total: sql<number>`COALESCE(SUM(amount), 0)` })
+    db.select({ total: sql<number>`COALESCE(SUM(total_amount), 0)` })
       .from(invoices)
       .where(and(eq(invoices.businessId, businessId), eq(invoices.status, "paid"))),
-    db.select({ total: sql<number>`COALESCE(SUM(amount), 0)` })
+    db.select({ total: sql<number>`COALESCE(SUM(total_amount), 0)` })
       .from(invoices)
-      .where(and(eq(invoices.businessId, businessId), eq(invoices.status, "pending"))),
+      .where(and(eq(invoices.businessId, businessId), eq(invoices.status, "draft"))),
     db.select({ count: sql<number>`count(*)` })
       .from(users)
       .where(eq(users.businessId, businessId))
   ]);
   
   return {
-    totalAssetValue: assetValue[0]?.total || 0,
-    totalPaidInvoices: paidInvoices[0]?.total || 0,
-    totalPendingInvoices: pendingInvoices[0]?.total || 0,
+    totalAssetValue: Number(assetValue[0]?.total) || 0,
+    totalPaidInvoices: Number(paidInvoices[0]?.total) || 0,
+    totalPendingInvoices: Number(pendingInvoices[0]?.total) || 0,
     userCount: userCount[0]?.count || 0
   };
 }
@@ -102,10 +100,10 @@ export async function getAssetReport(businessId: number) {
   
   return await db.select({
     id: assets.id,
-    name: assets.name,
-    category: assets.category,
-    purchasePrice: assets.purchasePrice,
+    nameAr: assets.nameAr,
+    categoryId: assets.categoryId,
+    purchaseCost: assets.purchaseCost,
     currentValue: assets.currentValue,
-    depreciationRate: assets.depreciationRate
+    accumulatedDepreciation: assets.accumulatedDepreciation
   }).from(assets).where(eq(assets.businessId, businessId));
 }

@@ -1,9 +1,7 @@
-// @ts-nocheck
 /**
  * @fileoverview دوال CRUD للفواتير
  * @module server/db/invoices
  */
-
 import { eq, and, gte, lte } from "drizzle-orm";
 import { getDb } from "../db";
 import { invoices } from "../../drizzle/schema";
@@ -32,21 +30,10 @@ export async function getInvoices(businessId?: number): Promise<Invoice[]> {
   const db = await getDb();
   
   if (businessId) {
-    return await db.select({
-      id: invoices.id,
-      invoiceNumber: invoices.invoiceNumber,
-      amount: invoices.amount,
-      status: invoices.status,
-      dueDate: invoices.dueDate
-    }).from(invoices).where(eq(invoices.businessId, businessId));
+    return await db.select().from(invoices).where(eq(invoices.businessId, businessId));
   }
   
-  return await db.select({
-    id: invoices.id,
-    invoiceNumber: invoices.invoiceNumber,
-    amount: invoices.amount,
-    status: invoices.status
-  }).from(invoices);
+  return await db.select().from(invoices);
 }
 
 /**
@@ -77,7 +64,7 @@ export async function deleteInvoice(id: number): Promise<boolean> {
   logger.info("Deleting invoice", { id });
   
   const result = await db.delete(invoices).where(eq(invoices.id, id));
-  return result.rowsAffected > 0;
+  return (result as any).rowsAffected > 0;
 }
 
 /**
@@ -90,13 +77,7 @@ export async function getInvoicesByDateRange(
 ): Promise<Invoice[]> {
   const db = await getDb();
   
-  return await db.select({
-    id: invoices.id,
-    invoiceNumber: invoices.invoiceNumber,
-    amount: invoices.amount,
-    status: invoices.status,
-    dueDate: invoices.dueDate
-  }).from(invoices).where(
+  return await db.select().from(invoices).where(
     and(
       eq(invoices.businessId, businessId),
       gte(invoices.createdAt, startDate),

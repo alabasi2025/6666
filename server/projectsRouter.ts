@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { z } from "zod";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
@@ -9,11 +8,9 @@ export const projectsRouter = router({
     .input(z.object({
       businessId: z.number(),
       status: z.string().optional(),
-      priority: z.string().optional(),
-      managerId: z.number().optional(),
     }))
     .query(async ({ input }) => {
-      return await db.getProjects(input.businessId, input.status, input.priority);
+      return await db.getProjects(input.businessId, { status: input.status });
     }),
 
   // تفاصيل مشروع
@@ -31,17 +28,18 @@ export const projectsRouter = router({
       nameAr: z.string(),
       nameEn: z.string().optional(),
       description: z.string().optional(),
+      type: z.enum(["construction", "expansion", "maintenance", "upgrade", "installation", "decommission", "study"]),
       managerId: z.number().optional(),
       startDate: z.string().optional(),
       endDate: z.string().optional(),
-      budget: z.number().optional(),
-      status: z.string().optional(),
-      priority: z.string().optional(),
+      budget: z.string().optional(),
+      status: z.enum(["planning", "in_progress", "on_hold", "completed", "cancelled", "delayed", "closed"]).optional(),
+      priority: z.enum(["low", "medium", "high", "critical"]).optional(),
       progress: z.number().optional(),
       location: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      return await db.createProject(input);
+      return await db.createProject(input as any);
     }),
 
   // تحديث مشروع
@@ -56,15 +54,15 @@ export const projectsRouter = router({
         managerId: z.number().optional(),
         startDate: z.string().optional(),
         endDate: z.string().optional(),
-        budget: z.number().optional(),
-        status: z.string().optional(),
-        priority: z.string().optional(),
+        budget: z.string().optional(),
+        status: z.enum(["planning", "in_progress", "on_hold", "completed", "cancelled", "delayed", "closed"]).optional(),
+        priority: z.enum(["low", "medium", "high", "critical"]).optional(),
         progress: z.number().optional(),
         location: z.string().optional(),
       }),
     }))
     .mutation(async ({ input }) => {
-      return await db.updateProject(input.id, input.data);
+      return await db.updateProject(input.id, input.data as any);
     }),
 
   // حذف مشروع
@@ -95,7 +93,7 @@ export const projectsRouter = router({
         sortOrder: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createProjectPhase(input);
+        return await db.createProjectPhase(input as any);
       }),
 
     update: publicProcedure
@@ -113,7 +111,7 @@ export const projectsRouter = router({
         }),
       }))
       .mutation(async ({ input }) => {
-        return await db.updateProjectPhase(input.id, input.data);
+        return await db.updateProjectPhase(input.id, input.data as any);
       }),
 
     delete: publicProcedure
@@ -127,13 +125,11 @@ export const projectsRouter = router({
   tasks: router({
     list: publicProcedure
       .input(z.object({ 
-        projectId: z.number(),
+        projectId: z.number().optional(),
         phaseId: z.number().optional(),
-        status: z.string().optional(),
-        assigneeId: z.number().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getProjectTasks(input.projectId, input.phaseId, input.status);
+        return await db.getProjectTasks(input.projectId, input.phaseId);
       }),
 
     create: publicProcedure
@@ -145,37 +141,32 @@ export const projectsRouter = router({
         description: z.string().optional(),
         assigneeId: z.number().optional(),
         startDate: z.string().optional(),
-        dueDate: z.string().optional(),
-        priority: z.string().optional(),
+        endDate: z.string().optional(),
         status: z.string().optional(),
+        priority: z.string().optional(),
         progress: z.number().optional(),
-        estimatedHours: z.number().optional(),
-        actualHours: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createProjectTask(input);
+        return await db.createProjectTask(input as any);
       }),
 
     update: publicProcedure
       .input(z.object({
         id: z.number(),
         data: z.object({
-          phaseId: z.number().optional(),
           nameAr: z.string().optional(),
           nameEn: z.string().optional(),
           description: z.string().optional(),
           assigneeId: z.number().optional(),
           startDate: z.string().optional(),
-          dueDate: z.string().optional(),
-          priority: z.string().optional(),
+          endDate: z.string().optional(),
           status: z.string().optional(),
+          priority: z.string().optional(),
           progress: z.number().optional(),
-          estimatedHours: z.number().optional(),
-          actualHours: z.number().optional(),
         }),
       }))
       .mutation(async ({ input }) => {
-        return await db.updateProjectTask(input.id, input.data);
+        return await db.updateProjectTask(input.id, input.data as any);
       }),
 
     delete: publicProcedure
@@ -190,12 +181,5 @@ export const projectsRouter = router({
     .input(z.object({ businessId: z.number() }))
     .query(async ({ input }) => {
       return await db.getProjectsStats(input.businessId);
-    }),
-
-  // مخطط جانت
-  ganttData: publicProcedure
-    .input(z.object({ projectId: z.number() }))
-    .query(async ({ input }) => {
-      return await db.getProjectGanttData(input.projectId);
     }),
 });

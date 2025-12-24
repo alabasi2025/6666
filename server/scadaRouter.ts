@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { z } from "zod";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
@@ -9,12 +8,10 @@ export const scadaRouter = router({
     list: publicProcedure
       .input(z.object({
         businessId: z.number(),
-        stationId: z.number().optional(),
-        type: z.string().optional(),
         status: z.string().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getScadaEquipment(input.businessId, input.stationId, input.type);
+        return await db.getScadaEquipment(input.businessId, input.status);
       }),
 
     getById: publicProcedure
@@ -37,7 +34,6 @@ export const scadaRouter = router({
         installationDate: z.string().optional(),
         status: z.string().optional(),
         location: z.string().optional(),
-        specifications: z.any().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createScadaEquipment(input);
@@ -58,7 +54,6 @@ export const scadaRouter = router({
           installationDate: z.string().optional(),
           status: z.string().optional(),
           location: z.string().optional(),
-          specifications: z.any().optional(),
         }),
       }))
       .mutation(async ({ input }) => {
@@ -78,12 +73,9 @@ export const scadaRouter = router({
       .input(z.object({
         businessId: z.number(),
         stationId: z.number().optional(),
-        equipmentId: z.number().optional(),
-        type: z.string().optional(),
-        status: z.string().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getSensors(input.businessId, input.stationId, input.equipmentId);
+        return await db.getSensors(input.businessId, input.stationId);
       }),
 
     getById: publicProcedure
@@ -104,10 +96,7 @@ export const scadaRouter = router({
         unit: z.string().optional(),
         minValue: z.number().optional(),
         maxValue: z.number().optional(),
-        warningThreshold: z.number().optional(),
-        criticalThreshold: z.number().optional(),
         status: z.string().optional(),
-        location: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
         return await db.createSensor(input);
@@ -126,10 +115,7 @@ export const scadaRouter = router({
           unit: z.string().optional(),
           minValue: z.number().optional(),
           maxValue: z.number().optional(),
-          warningThreshold: z.number().optional(),
-          criticalThreshold: z.number().optional(),
           status: z.string().optional(),
-          location: z.string().optional(),
         }),
       }))
       .mutation(async ({ input }) => {
@@ -142,23 +128,13 @@ export const scadaRouter = router({
         return await db.deleteSensor(input.id);
       }),
 
-    // قراءات المستشعرات
     readings: publicProcedure
       .input(z.object({
         sensorId: z.number(),
-        startDate: z.string().optional(),
-        endDate: z.string().optional(),
         limit: z.number().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getSensorReadings(input.sensorId, input.startDate, input.endDate, input.limit);
-      }),
-
-    // أحدث قراءة
-    latestReading: publicProcedure
-      .input(z.object({ sensorId: z.number() }))
-      .query(async ({ input }) => {
-        return await db.getLatestSensorReading(input.sensorId);
+        return await db.getSensorReadings(input.sensorId, { limit: input.limit });
       }),
   }),
 
@@ -167,14 +143,11 @@ export const scadaRouter = router({
     list: publicProcedure
       .input(z.object({
         businessId: z.number(),
-        stationId: z.number().optional(),
-        type: z.string().optional(),
         status: z.string().optional(),
-        startDate: z.string().optional(),
-        endDate: z.string().optional(),
+        type: z.string().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getAlerts(input.businessId, input.stationId, input.type, input.status);
+        return await db.getAlerts(input.businessId, { status: input.status, type: input.type });
       }),
 
     getById: publicProcedure
@@ -186,40 +159,34 @@ export const scadaRouter = router({
     create: publicProcedure
       .input(z.object({
         businessId: z.number(),
+        alertType: z.enum(["info", "warning", "critical", "emergency"]),
+        title: z.string(),
         stationId: z.number().optional(),
         equipmentId: z.number().optional(),
         sensorId: z.number().optional(),
-        alertType: z.string(),
-        title: z.string(),
         message: z.string().optional(),
-        priority: z.string().optional(),
-        status: z.string().optional(),
+        priority: z.enum(["low", "medium", "high", "critical"]).optional(),
+        status: z.enum(["active", "acknowledged", "resolved", "escalated"]).optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.createAlert(input);
+        return await db.createAlert(input as any);
       }),
 
-    // تحديث حالة التنبيه
     updateStatus: publicProcedure
       .input(z.object({
         id: z.number(),
         status: z.string(),
-        acknowledgedBy: z.number().optional(),
-        resolvedBy: z.number().optional(),
-        notes: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return await db.updateAlertStatus(input.id, input.status, input.acknowledgedBy, input.resolvedBy, input.notes);
+        return await db.updateAlertStatus(input.id, input.status);
       }),
 
-    // حذف تنبيه
     delete: publicProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         return await db.deleteAlert(input.id);
       }),
 
-    // إحصائيات التنبيهات
     stats: publicProcedure
       .input(z.object({ businessId: z.number() }))
       .query(async ({ input }) => {
@@ -233,7 +200,6 @@ export const scadaRouter = router({
       .input(z.object({
         businessId: z.number(),
         stationId: z.number().optional(),
-        status: z.string().optional(),
       }))
       .query(async ({ input }) => {
         return await db.getCameras(input.businessId, input.stationId);
@@ -253,12 +219,7 @@ export const scadaRouter = router({
         nameAr: z.string(),
         nameEn: z.string().optional(),
         type: z.string().optional(),
-        ipAddress: z.string().optional(),
-        port: z.number().optional(),
-        username: z.string().optional(),
-        password: z.string().optional(),
         streamUrl: z.string().optional(),
-        location: z.string().optional(),
         status: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
@@ -274,12 +235,7 @@ export const scadaRouter = router({
           nameAr: z.string().optional(),
           nameEn: z.string().optional(),
           type: z.string().optional(),
-          ipAddress: z.string().optional(),
-          port: z.number().optional(),
-          username: z.string().optional(),
-          password: z.string().optional(),
           streamUrl: z.string().optional(),
-          location: z.string().optional(),
           status: z.string().optional(),
         }),
       }))
@@ -293,18 +249,4 @@ export const scadaRouter = router({
         return await db.deleteCamera(input.id);
       }),
   }),
-
-  // لوحة المراقبة
-  dashboard: publicProcedure
-    .input(z.object({ businessId: z.number() }))
-    .query(async ({ input }) => {
-      return await db.getScadaDashboard(input.businessId);
-    }),
-
-  // إحصائيات عامة
-  stats: publicProcedure
-    .input(z.object({ businessId: z.number() }))
-    .query(async ({ input }) => {
-      return await db.getScadaStats(input.businessId);
-    }),
 });
