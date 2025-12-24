@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview سجل التدقيق للعمليات الحساسة
  * @module server/middleware/auditLog

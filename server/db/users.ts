@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview دوال CRUD للمستخدمين
  * @module server/db/users

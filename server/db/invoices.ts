@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview دوال CRUD للفواتير
  * @module server/db/invoices

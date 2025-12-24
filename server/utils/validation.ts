@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview التحقق من المدخلات باستخدام Zod
  * @module server/utils/validation

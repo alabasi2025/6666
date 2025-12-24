@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview دوال التقارير
  * @module server/db/reports

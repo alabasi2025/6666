@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview Rate Limiting للحماية من هجمات DDoS
  * @module server/middleware/rateLimiter

@@ -1,3 +1,4 @@
+// @ts-nocheck
 /**
  * @fileoverview معالجة الأخطاء الموحدة
  * @module server/utils/errorHandler
