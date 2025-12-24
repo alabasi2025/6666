@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -465,7 +464,7 @@ export default function Branches() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(branch)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(branch as any)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button
