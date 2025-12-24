@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,11 +13,8 @@ const queryClient = new QueryClient();
 const redirectToLoginIfUnauthorized = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
   if (typeof window === "undefined") return;
-
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
-
   if (!isUnauthorized) return;
-
   window.location.href = getLoginUrl();
 };
 
@@ -42,7 +38,7 @@ const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
       url: "/api/trpc",
-      transformer: superjson,
+      transformer: superjson as any,
       fetch(input, init) {
         return globalThis.fetch(input, {
           ...(init ?? {}),
