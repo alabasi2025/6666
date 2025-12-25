@@ -1,4 +1,4 @@
-// @ts-nocheck
+
 /**
  * @fileoverview Router للنظام المخصص والحسابات الخاصة
  * @module customSystemRouter

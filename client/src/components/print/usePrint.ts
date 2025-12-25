@@ -51,7 +51,7 @@ const DEFAULT_PRINT_STYLES = `
  * function MyComponent() {
  *   const { printRef, handlePrint, isPrinting } = usePrint({
  *     title: 'تقرير المبيعات',
- *     onAfterPrint: () => console.log('تمت الطباعة'),
+ *     onAfterPrint: () => { /* معالجة ما بعد الطباعة */ },
  *   });
  *
  *   return (

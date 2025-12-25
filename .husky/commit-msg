@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Husky commit-msg hook - الامتثال للقاعدة 42
+. "$(dirname -- "$0")/_/husky.sh"
+
+# التحقق من صيغة رسالة الـ commit باستخدام commitlint
+npx --no -- commitlint --edit ${1}
