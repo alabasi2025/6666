@@ -32,7 +32,7 @@ export default function TechnicalAlerts() {
     severity: severityFilter !== "all" ? severityFilter : undefined,
   });
 
-  const { data: rules } = trpc.developer.alerts.rules.list.useQuery({ businessId: 1 });
+  const { data: rules } = trpc.developer.alerts.rules.list.useQuery({ businessId: 1 } as any);
 
   const acknowledgeMutation = trpc.developer.alerts.acknowledge.useMutation({
     onSuccess: () => { toast.success("تم الإقرار بالتنبيه"); refetch(); },
@@ -140,12 +140,12 @@ export default function TechnicalAlerts() {
                         <TableCell>
                           <div className="flex gap-1">
                             {alert.status === "active" && (
-                              <Button size="sm" variant="outline" onClick={() => acknowledgeMutation.mutate({ id: alert.id })}>
+                              <Button size="sm" variant="outline" onClick={() => acknowledgeMutation.mutate({ id: alert.id } as any)}>
                                 إقرار
                               </Button>
                             )}
                             {alert.status !== "resolved" && (
-                              <Button size="sm" variant="outline" onClick={() => resolveMutation.mutate({ id: alert.id })}>
+                              <Button size="sm" variant="outline" onClick={() => resolveMutation.mutate({ id: alert.id } as any)}>
                                 حل
                               </Button>
                             )}

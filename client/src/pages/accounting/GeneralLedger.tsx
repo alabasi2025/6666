@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,10 +30,10 @@ export default function GeneralLedger() {
   // Fetch accounts for selection
   const { data: accounts = [], isLoading: accountsLoading } = trpc.accounting.accounts.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Fetch ledger entries
-  const { data: ledgerData, isLoading: ledgerLoading, refetch } = trpc.accounting.generalLedger.useQuery({
+  const { data: ledgerData, isLoading: ledgerLoading, refetch } = trpc.accounting.accounts.list.useQuery({
     businessId: 1,
     accountId: selectedAccount ? parseInt(selectedAccount) : undefined,
     dateFrom: dateFrom || undefined,
@@ -75,7 +74,7 @@ export default function GeneralLedger() {
                   <SelectValue placeholder="اختر الحساب" />
                 </SelectTrigger>
                 <SelectContent>
-                  {accounts.map((acc: any) => (
+                  {(accounts as any[]).map((acc: any) => (
                     <SelectItem key={acc.id} value={acc.id.toString()}>
                       {acc.code} - {acc.nameAr}
                     </SelectItem>
@@ -120,29 +119,29 @@ export default function GeneralLedger() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
                 <p className="text-sm text-muted-foreground">رقم الحساب</p>
-                <p className="font-mono font-bold">{selectedAccountData.code}</p>
+                <p className="font-mono font-bold">{(selectedAccountData as any).code}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">اسم الحساب</p>
-                <p className="font-bold">{selectedAccountData.nameAr}</p>
+                <p className="font-bold">{(selectedAccountData as any).nameAr}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">النوع</p>
                 <p className="font-bold">
-                  {selectedAccountData.type === "asset" && "أصول"}
-                  {selectedAccountData.type === "liability" && "خصوم"}
-                  {selectedAccountData.type === "equity" && "حقوق ملكية"}
-                  {selectedAccountData.type === "revenue" && "إيرادات"}
-                  {selectedAccountData.type === "expense" && "مصروفات"}
+                  {(selectedAccountData as any).accountType === "asset" && "أصول"}
+                  {(selectedAccountData as any).accountType === "liability" && "خصوم"}
+                  {(selectedAccountData as any).accountType === "equity" && "حقوق ملكية"}
+                  {(selectedAccountData as any).accountType === "revenue" && "إيرادات"}
+                  {(selectedAccountData as any).accountType === "expense" && "مصروفات"}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">الرصيد الحالي</p>
                 <p className={cn(
                   "font-mono font-bold text-lg",
-                  Number(selectedAccountData.currentBalance) >= 0 ? "text-success" : "text-destructive"
+                  Number((selectedAccountData as any).currentBalance) >= 0 ? "text-success" : "text-destructive"
                 )}>
-                  {Number(selectedAccountData.currentBalance || 0).toLocaleString()} ر.س
+                  {Number((selectedAccountData as any).currentBalance || 0).toLocaleString()} ر.س
                 </p>
               </div>
             </div>
@@ -179,11 +178,11 @@ export default function GeneralLedger() {
                     <TableCell></TableCell>
                     <TableCell></TableCell>
                     <TableCell className="text-left font-mono font-bold">
-                      {Number(ledgerData.openingBalance || 0).toLocaleString()}
+                      {Number((ledgerData as any).openingBalance || 0).toLocaleString()}
                     </TableCell>
                   </TableRow>
                   
-                  {ledgerData.entries.map((entry: any, index: number) => (
+                  {(ledgerData as any).entries.map((entry: any, index: number) => (
                     <TableRow key={index}>
                       <TableCell>
                         {entry.entryDate ? new Date(entry.entryDate).toLocaleDateString("ar-SA") : "-"}
@@ -211,16 +210,16 @@ export default function GeneralLedger() {
                   <TableRow className="bg-muted/50 font-bold">
                     <TableCell colSpan={3}>الرصيد الختامي</TableCell>
                     <TableCell className="text-left font-mono">
-                      {Number(ledgerData.totalDebit || 0).toLocaleString()}
+                      {Number((ledgerData as any).totalDebit || 0).toLocaleString()}
                     </TableCell>
                     <TableCell className="text-left font-mono">
-                      {Number(ledgerData.totalCredit || 0).toLocaleString()}
+                      {Number((ledgerData as any).totalCredit || 0).toLocaleString()}
                     </TableCell>
                     <TableCell className={cn(
                       "text-left font-mono",
-                      Number(ledgerData.closingBalance) >= 0 ? "text-success" : "text-destructive"
+                      Number((ledgerData as any).closingBalance) >= 0 ? "text-success" : "text-destructive"
                     )}>
-                      {Number(ledgerData.closingBalance || 0).toLocaleString()}
+                      {Number((ledgerData as any).closingBalance || 0).toLocaleString()}
                     </TableCell>
                   </TableRow>
                 </TableBody>

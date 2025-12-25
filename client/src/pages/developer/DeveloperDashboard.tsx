@@ -10,7 +10,7 @@ import {
 import { Link } from "wouter";
 
 export default function DeveloperDashboard() {
-  const { data: stats, isLoading, refetch } = trpc.developer.dashboardStats.useQuery({ businessId: 1 });
+  const { data: stats, isLoading, refetch } = trpc.developer.dashboardStats.useQuery({ businessId: 1 } as any);
 
   const statCards = [
     {

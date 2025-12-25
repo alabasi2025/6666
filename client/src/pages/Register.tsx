@@ -39,22 +39,22 @@ export default function Register() {
     e.preventDefault();
     
     // التحقق من البيانات
-    if (!formData.name || !formData.phone || !formData.password) {
+    if (!(formData as any).name || !(formData as any).phone || !(formData as any).password) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
 
-    if (formData.phone.length < 10) {
+    if ((formData as any).phone.length < 10) {
       toast.error("رقم الهاتف يجب أن يكون 10 أرقام على الأقل");
       return;
     }
 
-    if (formData.password.length < 6) {
+    if ((formData as any).password.length < 6) {
       toast.error("كلمة المرور يجب أن تكون 6 أحرف على الأقل");
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if ((formData as any).password !== (formData as any).confirmPassword) {
       toast.error("كلمة المرور وتأكيدها غير متطابقتين");
       return;
     }
@@ -62,11 +62,11 @@ export default function Register() {
     setIsLoading(true);
     try {
       await registerMutation.mutateAsync({
-        name: formData.name,
-        phone: formData.phone,
-        email: formData.email || undefined,
-        password: formData.password,
-      });
+        name: (formData as any).name,
+        phone: (formData as any).phone,
+        email: (formData as any).email || undefined,
+        password: (formData as any).password,
+      } as any);
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +116,7 @@ export default function Register() {
                     name="name"
                     type="text"
                     placeholder="أدخل اسمك الكامل"
-                    value={formData.name}
+                    value={(formData as any).name}
                     onChange={handleChange}
                     className="w-full h-11 pr-10 pl-4 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     autoComplete="name"
@@ -135,7 +135,7 @@ export default function Register() {
                     name="phone"
                     type="tel"
                     placeholder="05xxxxxxxx"
-                    value={formData.phone}
+                    value={(formData as any).phone}
                     onChange={handleChange}
                     className="w-full h-11 pr-10 pl-4 text-right rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     dir="ltr"
@@ -155,7 +155,7 @@ export default function Register() {
                     name="email"
                     type="email"
                     placeholder="example@email.com"
-                    value={formData.email}
+                    value={(formData as any).email}
                     onChange={handleChange}
                     className="w-full h-11 pr-10 pl-4 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     dir="ltr"
@@ -174,7 +174,7 @@ export default function Register() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="6 أحرف على الأقل"
-                    value={formData.password}
+                    value={(formData as any).password}
                     onChange={handleChange}
                     className="w-full h-11 pr-10 pl-10 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     autoComplete="new-password"
@@ -200,7 +200,7 @@ export default function Register() {
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     placeholder="أعد إدخال كلمة المرور"
-                    value={formData.confirmPassword}
+                    value={(formData as any).confirmPassword}
                     onChange={handleChange}
                     className="w-full h-11 pr-10 pl-10 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                     autoComplete="new-password"

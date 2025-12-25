@@ -46,8 +46,8 @@ function AlertTypeBadge({ type }: { type: string }) {
   const config = typeConfig[type] || { label: type, color: "bg-gray-500/20 text-gray-500" };
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-      {config.label}
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${(config as any).color}`}>
+      {(config as any).label}
     </span>
   );
 }
@@ -62,12 +62,12 @@ function AlertStatusBadge({ status }: { status: string }) {
   };
 
   const config = statusConfig[status] || { label: status, color: "bg-gray-500/20 text-gray-500", icon: Bell };
-  const Icon = config.icon;
+  const Icon = (config as any).icon;
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${config.color}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${(config as any).color}`}>
       <Icon className="w-3 h-3" />
-      {config.label}
+      {(config as any).label}
     </span>
   );
 }
@@ -93,7 +93,7 @@ export default function Alerts() {
   });
 
   // Fetch stats
-  const { data: stats } = trpc.scada.alerts.stats.useQuery({ businessId: 1 });
+  const { data: stats } = trpc.scada.alerts.stats.useQuery({ businessId: 1 } as any);
 
   // Mutations
   const createMutation = trpc.scada.alerts.create.useMutation({
@@ -139,35 +139,35 @@ export default function Alerts() {
   };
 
   const handleSubmit = () => {
-    if (!formData.title) {
+    if (!(formData as any).title) {
       toast.error("يرجى إدخال عنوان التنبيه");
       return;
     }
 
     createMutation.mutate({
       businessId: 1,
-      alertType: formData.alertType as any,
-      title: formData.title,
-      message: formData.message || undefined,
-      priority: formData.priority as any,
-    });
+      alertType: (formData as any).alertType as any,
+      title: (formData as any).title,
+      message: (formData as any).message || undefined,
+      priority: (formData as any).priority as any,
+    } as any);
   };
 
   const handleAcknowledge = (id: number) => {
-    updateStatusMutation.mutate({ id, status: "acknowledged" });
+    updateStatusMutation.mutate({ id, status: "acknowledged" } as any);
   };
 
   const handleResolve = (id: number) => {
-    updateStatusMutation.mutate({ id, status: "resolved" });
+    updateStatusMutation.mutate({ id, status: "resolved" } as any);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا التنبيه؟")) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ id } as any);
     }
   };
 
-  const filteredAlerts = alerts.filter((alert: any) => {
+  const filteredAlerts = (alerts as any[]).filter((alert: any) => {
     if (searchQuery && !alert.title?.includes(searchQuery)) {
       return false;
     }
@@ -295,7 +295,7 @@ export default function Alerts() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredAlerts.map((alert: any) => (
+                {(filteredAlerts as any[]).map((alert: any) => (
                   <TableRow key={alert.id}>
                     <TableCell>
                       <div>
@@ -343,14 +343,14 @@ export default function Alerts() {
             <div className="space-y-2">
               <Label>العنوان *</Label>
               <Input
-                value={formData.title}
+                value={(formData as any).title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 placeholder="عنوان التنبيه"
               />
             </div>
             <div className="space-y-2">
               <Label>النوع</Label>
-              <Select value={formData.alertType} onValueChange={(value) => setFormData({ ...formData, alertType: value })}>
+              <Select value={(formData as any).alertType} onValueChange={(value) => setFormData({ ...formData, alertType: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -365,7 +365,7 @@ export default function Alerts() {
             <div className="space-y-2">
               <Label>الرسالة</Label>
               <Textarea
-                value={formData.message}
+                value={(formData as any).message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                 placeholder="تفاصيل التنبيه..."
                 rows={3}

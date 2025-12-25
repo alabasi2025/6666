@@ -120,7 +120,7 @@ export default function FieldOpsDashboard({ businessId: propBusinessId, onNaviga
       cancelled: { label: "ملغاة", variant: "destructive" },
     };
     const config = statusMap[status] || { label: status, variant: "outline" as const };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={(config as any).variant}>{(config as any).label}</Badge>;
   };
 
   const getPriorityBadge = (priority: string) => {
@@ -131,7 +131,7 @@ export default function FieldOpsDashboard({ businessId: propBusinessId, onNaviga
       urgent: { label: "عاجلة", className: "bg-red-100 text-red-800" },
     };
     const config = priorityMap[priority] || { label: priority, className: "" };
-    return <Badge className={config.className}>{config.label}</Badge>;
+    return <Badge className={(config as any).className}>{(config as any).label}</Badge>;
   };
 
   return (

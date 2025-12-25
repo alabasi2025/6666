@@ -65,15 +65,15 @@ export default function BillingPeriodsManagement() {
     setLoading(true);
     try {
       const data = {
-        code: formData.code,
-        name: formData.name,
-        startDate: formData.startDate,
-        endDate: formData.endDate,
-        dueDate: formData.dueDate,
+        code: (formData as any).code,
+        name: (formData as any).name,
+        startDate: (formData as any).startDate,
+        endDate: (formData as any).endDate,
+        dueDate: (formData as any).dueDate,
       };
       
       if (editingPeriod) {
-        await updatePeriodMutation.mutateAsync({ id: editingPeriod.id, ...data });
+        await updatePeriodMutation.mutateAsync({ id: editingPeriod.id, ...data } as any);
       } else {
         await createPeriodMutation.mutateAsync(data);
       }
@@ -89,7 +89,7 @@ export default function BillingPeriodsManagement() {
 
   const handleStatusChange = async (period: BillingPeriod, newStatus: string) => {
     try {
-      await updatePeriodStatusMutation.mutateAsync({ id: period.id, status: newStatus as any });
+      await updatePeriodStatusMutation.mutateAsync({ id: period.id, status: newStatus as any } as any);
       periodsQuery.refetch();
     } catch (error) {
       console.error("Error updating status:", error);
@@ -100,7 +100,7 @@ export default function BillingPeriodsManagement() {
     if (confirm("هل أنت متأكد من توليد الفواتير لهذه الفترة؟")) {
       setLoading(true);
       try {
-        await generateInvoicesMutation.mutateAsync({ billingPeriodId: period.id });
+        await generateInvoicesMutation.mutateAsync({ billingPeriodId: period.id } as any);
         periodsQuery.refetch();
       } catch (error) {
         console.error("Error generating invoices:", error);
@@ -125,7 +125,7 @@ export default function BillingPeriodsManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه الفترة؟")) {
       try {
-        await deletePeriodMutation.mutateAsync({ id });
+        await deletePeriodMutation.mutateAsync({ id } as any);
         periodsQuery.refetch();
       } catch (error) {
         console.error("Error deleting period:", error);
@@ -366,25 +366,25 @@ export default function BillingPeriodsManagement() {
                   <div className="space-y-2">
                     <Label>الكود *</Label>
                     <div className="flex gap-2">
-                      <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />
+                      <Input value={(formData as any).code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required />
                       <Button type="button" variant="outline" onClick={generateCode}>توليد</Button>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>اسم الفترة *</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="فترة يناير 2025" />
+                    <Input value={(formData as any).name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required placeholder="فترة يناير 2025" />
                   </div>
                   <div className="space-y-2">
                     <Label>تاريخ البداية *</Label>
-                    <Input type="date" value={formData.startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required />
+                    <Input type="date" value={(formData as any).startDate} onChange={(e) => setFormData({ ...formData, startDate: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>تاريخ النهاية *</Label>
-                    <Input type="date" value={formData.endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required />
+                    <Input type="date" value={(formData as any).endDate} onChange={(e) => setFormData({ ...formData, endDate: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>تاريخ الاستحقاق *</Label>
-                    <Input type="date" value={formData.dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} required />
+                    <Input type="date" value={(formData as any).dueDate} onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })} required />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

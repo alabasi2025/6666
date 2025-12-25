@@ -107,7 +107,7 @@ export default function PurchaseOrders() {
     },
   });
 
-  const filteredOrders = orders.filter((order: any) => {
+  const filteredOrders = (orders as any[]).filter((order: any) => {
     const matchesSearch =
       order.orderNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       order.supplier?.nameAr?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -121,13 +121,13 @@ export default function PurchaseOrders() {
 
     createMutation.mutate({
       businessId: 1,
-      supplierId: parseInt(formData.get("supplierId") as string),
-      warehouseId: parseInt(formData.get("warehouseId") as string),
-      orderDate: formData.get("orderDate") as string,
-      deliveryDate: formData.get("expectedDeliveryDate") as string || undefined,
-      notes: formData.get("notes") as string || undefined,
+      supplierId: parseInt((formData as any).get("supplierId") as string),
+      warehouseId: parseInt((formData as any).get("warehouseId") as string),
+      orderDate: (formData as any).get("orderDate") as string,
+      deliveryDate: (formData as any).get("expectedDeliveryDate") as string || undefined,
+      notes: (formData as any).get("notes") as string || undefined,
       items: [],
-    });
+    } as any);
   };
 
   const handleViewDetails = (order: any) => {
@@ -139,7 +139,7 @@ export default function PurchaseOrders() {
     updateStatusMutation.mutate({
       id: orderId,
       status: newStatus as any,
-    });
+    } as any);
   };
 
   const getStatusInfo = (status: string) => {
@@ -147,8 +147,8 @@ export default function PurchaseOrders() {
   };
 
   // Stats
-  const pendingOrders = orders.filter((o: any) => o.status === "pending").length;
-  const approvedOrders = orders.filter((o: any) => o.status === "approved").length;
+  const pendingOrders = (orders as any[]).filter((o: any) => o.status === "pending").length;
+  const approvedOrders = (orders as any[]).filter((o: any) => o.status === "approved").length;
   const totalValue = orders.reduce((sum: number, o: any) => sum + (parseFloat(o.totalAmount) || 0), 0);
 
   if (isLoading) {
@@ -290,7 +290,7 @@ export default function PurchaseOrders() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredOrders.map((order: any) => {
+                (filteredOrders as any[]).map((order: any) => {
                   const statusInfo = getStatusInfo(order.status);
                   return (
                     <TableRow key={order.id}>
@@ -375,7 +375,7 @@ export default function PurchaseOrders() {
                     <SelectValue placeholder="اختر المورد" />
                   </SelectTrigger>
                   <SelectContent>
-                    {suppliers.map((supplier: any) => (
+                    {(suppliers as any[]).map((supplier: any) => (
                       <SelectItem key={supplier.id} value={supplier.id.toString()}>
                         {supplier.nameAr}
                       </SelectItem>
@@ -390,7 +390,7 @@ export default function PurchaseOrders() {
                     <SelectValue placeholder="اختر المستودع" />
                   </SelectTrigger>
                   <SelectContent>
-                    {warehouses.map((warehouse: any) => (
+                    {(warehouses as any[]).map((warehouse: any) => (
                       <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
                         {warehouse.nameAr}
                       </SelectItem>

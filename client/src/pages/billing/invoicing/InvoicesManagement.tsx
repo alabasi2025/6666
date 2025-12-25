@@ -61,7 +61,7 @@ export default function InvoicesManagement() {
     if (selectedInvoices.length === 0) return;
     if (confirm(`هل أنت متأكد من اعتماد ${selectedInvoices.length} فاتورة؟`)) {
       try {
-        await approveInvoicesMutation.mutateAsync({ ids: selectedInvoices });
+        await approveInvoicesMutation.mutateAsync({ ids: selectedInvoices } as any);
         invoicesQuery.refetch();
         setSelectedInvoices([]);
       } catch (error) {
@@ -74,7 +74,7 @@ export default function InvoicesManagement() {
     if (selectedInvoices.length === 0) return;
     if (confirm(`هل أنت متأكد من إرسال ${selectedInvoices.length} فاتورة للعملاء؟`)) {
       try {
-        await sendInvoicesMutation.mutateAsync({ ids: selectedInvoices });
+        await sendInvoicesMutation.mutateAsync({ ids: selectedInvoices } as any);
         invoicesQuery.refetch();
         setSelectedInvoices([]);
       } catch (error) {
@@ -100,27 +100,27 @@ export default function InvoicesManagement() {
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =
-      invoice.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      invoice.accountNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      (invoice as any).invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice as any).customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice as any).accountNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || 
-      (filterStatus === "paid" && invoice.isPaid) ||
-      (filterStatus === "unpaid" && !invoice.isPaid) ||
-      (filterStatus === "approved" && invoice.isApproved) ||
-      (filterStatus === "pending" && !invoice.isApproved);
-    const matchesPeriod = filterPeriod === "all" || invoice.billingPeriodId.toString() === filterPeriod;
+      (filterStatus === "paid" && (invoice as any).isPaid) ||
+      (filterStatus === "unpaid" && !(invoice as any).isPaid) ||
+      (filterStatus === "approved" && (invoice as any).isApproved) ||
+      (filterStatus === "pending" && !(invoice as any).isApproved);
+    const matchesPeriod = filterPeriod === "all" || (invoice as any).billingPeriodId.toString() === filterPeriod;
     return matchesSearch && matchesStatus && matchesPeriod;
   });
 
   const getStatusBadge = (invoice: Invoice) => {
-    if (!invoice.isApproved) {
+    if (!(invoice as any).isApproved) {
       return <Badge className="bg-gray-100 text-gray-800">مسودة</Badge>;
     }
-    if (invoice.isPaid) {
+    if ((invoice as any).isPaid) {
       return <Badge className="bg-green-100 text-green-800">مدفوعة</Badge>;
     }
-    const remaining = parseFloat(invoice.remainingAmount);
-    const total = parseFloat(invoice.totalAmount);
+    const remaining = parseFloat((invoice as any).remainingAmount);
+    const total = parseFloat((invoice as any).totalAmount);
     if (remaining < total && remaining > 0) {
       return <Badge className="bg-yellow-100 text-yellow-800">مدفوعة جزئياً</Badge>;
     }
@@ -262,27 +262,27 @@ export default function InvoicesManagement() {
                 </TableRow>
               ) : (
                 filteredInvoices.map((invoice) => (
-                  <TableRow key={invoice.id}>
+                  <TableRow key={(invoice as any).id}>
                     <TableCell>
                       <Checkbox 
-                        checked={selectedInvoices.includes(invoice.id)}
-                        onCheckedChange={() => toggleSelection(invoice.id)}
-                        disabled={invoice.isApproved}
+                        checked={selectedInvoices.includes((invoice as any).id)}
+                        onCheckedChange={() => toggleSelection((invoice as any).id)}
+                        disabled={(invoice as any).isApproved}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell className="font-medium">{(invoice as any).invoiceNumber}</TableCell>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{invoice.customerName}</div>
-                        <div className="text-xs text-muted-foreground">{invoice.accountNumber}</div>
+                        <div className="font-medium">{(invoice as any).customerName}</div>
+                        <div className="text-xs text-muted-foreground">{(invoice as any).accountNumber}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{invoice.meterNumber}</TableCell>
-                    <TableCell>{invoice.billingPeriodName}</TableCell>
-                    <TableCell>{parseFloat(invoice.consumption).toLocaleString()}</TableCell>
-                    <TableCell className="font-semibold">{parseFloat(invoice.totalAmount).toLocaleString()} ر.س</TableCell>
-                    <TableCell className="text-green-600">{parseFloat(invoice.paidAmount).toLocaleString()} ر.س</TableCell>
-                    <TableCell className="text-red-600">{parseFloat(invoice.remainingAmount).toLocaleString()} ر.س</TableCell>
+                    <TableCell>{(invoice as any).meterNumber}</TableCell>
+                    <TableCell>{(invoice as any).billingPeriodName}</TableCell>
+                    <TableCell>{parseFloat((invoice as any).consumption).toLocaleString()}</TableCell>
+                    <TableCell className="font-semibold">{parseFloat((invoice as any).totalAmount).toLocaleString()} ر.س</TableCell>
+                    <TableCell className="text-green-600">{parseFloat((invoice as any).paidAmount).toLocaleString()} ر.س</TableCell>
+                    <TableCell className="text-red-600">{parseFloat((invoice as any).remainingAmount).toLocaleString()} ر.س</TableCell>
                     <TableCell>{getStatusBadge(invoice)}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
@@ -292,7 +292,7 @@ export default function InvoicesManagement() {
                         <Button variant="ghost" size="icon" title="طباعة">
                           <Printer className="h-4 w-4" />
                         </Button>
-                        {invoice.isApproved && !invoice.isPaid && (
+                        {(invoice as any).isApproved && !(invoice as any).isPaid && (
                           <Button variant="ghost" size="icon" title="تحصيل">
                             <DollarSign className="h-4 w-4 text-green-500" />
                           </Button>

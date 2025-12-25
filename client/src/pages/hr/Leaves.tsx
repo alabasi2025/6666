@@ -57,19 +57,19 @@ export default function Leaves({ businessId }: LeavesProps) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const startDate = new Date(formData.get("startDate") as string);
-    const endDate = new Date(formData.get("endDate") as string);
+    const startDate = new Date((formData as any).get("startDate") as string);
+    const endDate = new Date((formData as any).get("endDate") as string);
     const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)) + 1;
 
     createMutation.mutate({
       businessId,
-      employeeId: parseInt(formData.get("employeeId") as string),
-      leaveTypeId: parseInt(formData.get("leaveTypeId") as string),
-      startDate: formData.get("startDate") as string,
-      endDate: formData.get("endDate") as string,
+      employeeId: parseInt((formData as any).get("employeeId") as string),
+      leaveTypeId: parseInt((formData as any).get("leaveTypeId") as string),
+      startDate: (formData as any).get("startDate") as string,
+      endDate: (formData as any).get("endDate") as string,
       totalDays,
-      reason: formData.get("reason") as string || undefined,
-    });
+      reason: (formData as any).get("reason") as string || undefined,
+    } as any);
   };
 
   const getStatusBadge = (status: string) => {
@@ -270,7 +270,7 @@ export default function Leaves({ businessId }: LeavesProps) {
                             size="sm"
                             variant="ghost"
                             className="text-green-600"
-                            onClick={() => approveMutation.mutate({ id: request.id, approvedBy: 1 })}
+                            onClick={() => approveMutation.mutate({ id: request.id, approvedBy: 1 } as any)}
                           >
                             <Check className="h-4 w-4" />
                           </Button>
@@ -281,7 +281,7 @@ export default function Leaves({ businessId }: LeavesProps) {
                             onClick={() => {
                               const reason = prompt("سبب الرفض:");
                               if (reason) {
-                                rejectMutation.mutate({ id: request.id, rejectionReason: reason });
+                                rejectMutation.mutate({ id: request.id, rejectionReason: reason } as any);
                               }
                             }}
                           >

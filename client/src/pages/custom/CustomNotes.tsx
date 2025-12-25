@@ -106,15 +106,15 @@ export default function CustomNotes() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createNote.mutate({ ...formData, businessId });
+    createNote.mutate({ ...formData, businessId } as any);
   };
 
   const togglePin = (id: number, isPinned: boolean) => {
-    updateNote.mutate({ id, isPinned: !isPinned });
+    updateNote.mutate({ id, isPinned: !isPinned } as any);
   };
 
   const toggleArchive = (id: number, isArchived: boolean) => {
-    updateNote.mutate({ id, isArchived: !isArchived });
+    updateNote.mutate({ id, isArchived: !isArchived } as any);
     toast({ title: isArchived ? "تم إلغاء الأرشفة" : "تم أرشفة الملاحظة" });
   };
 
@@ -154,7 +154,7 @@ export default function CustomNotes() {
                 <Label htmlFor="title">العنوان *</Label>
                 <Input
                   id="title"
-                  value={formData.title}
+                  value={(formData as any).title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   placeholder="عنوان الملاحظة"
                   required
@@ -164,7 +164,7 @@ export default function CustomNotes() {
                 <Label htmlFor="content">المحتوى</Label>
                 <Textarea
                   id="content"
-                  value={formData.content}
+                  value={(formData as any).content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder="محتوى الملاحظة..."
                   rows={5}
@@ -174,7 +174,7 @@ export default function CustomNotes() {
                 <div className="space-y-2">
                   <Label htmlFor="priority">الأولوية</Label>
                   <Select
-                    value={formData.priority}
+                    value={(formData as any).priority}
                     onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
                   >
                     <SelectTrigger>
@@ -200,7 +200,7 @@ export default function CustomNotes() {
                         key={c.value}
                         type="button"
                         className={`w-6 h-6 rounded-full border-2 ${
-                          formData.color === c.value ? "border-white ring-2 ring-primary" : "border-transparent"
+                          (formData as any).color === c.value ? "border-white ring-2 ring-primary" : "border-transparent"
                         }`}
                         style={{ backgroundColor: c.value }}
                         onClick={() => setFormData({ ...formData, color: c.value })}
@@ -213,7 +213,7 @@ export default function CustomNotes() {
                 <Label htmlFor="category">التصنيف</Label>
                 <Input
                   id="category"
-                  value={formData.category}
+                  value={(formData as any).category}
                   onChange={(e) => setFormData({ ...formData, category: e.target.value })}
                   placeholder="مثال: عمل، شخصي، أفكار..."
                 />
@@ -311,7 +311,7 @@ export default function CustomNotes() {
                 note={note}
                 onTogglePin={() => togglePin(note.id, note.isPinned)}
                 onToggleArchive={() => toggleArchive(note.id, note.isArchived)}
-                onDelete={() => deleteNote.mutate({ id: note.id })}
+                onDelete={() => deleteNote.mutate({ id: note.id } as any)}
               />
             ))}
           </div>
@@ -342,7 +342,7 @@ export default function CustomNotes() {
                 note={note}
                 onTogglePin={() => togglePin(note.id, note.isPinned)}
                 onToggleArchive={() => toggleArchive(note.id, note.isArchived)}
-                onDelete={() => deleteNote.mutate({ id: note.id })}
+                onDelete={() => deleteNote.mutate({ id: note.id } as any)}
               />
             ))}
           </div>

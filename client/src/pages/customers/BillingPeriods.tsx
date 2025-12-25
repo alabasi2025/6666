@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Plus, Calendar, Play, Check, Lock, X, FileText } from "lucide-react";
@@ -73,8 +72,8 @@ export default function BillingPeriods() {
     createMutation.mutate({
       businessId: 1,
       ...formData,
-      periodNumber: formData.month,
-    });
+      periodNumber: (formData as any).month,
+    } as any);
   };
 
   const getStatusBadge = (status: string) => {
@@ -155,7 +154,7 @@ export default function BillingPeriods() {
             لا توجد فترات فوترة
           </div>
         ) : (
-          data?.data.map((period: BillingPeriod) => (
+          ((data as any)?.data || []).map((period: any) => (
             <div key={period.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -215,7 +214,7 @@ export default function BillingPeriods() {
                         updateStatusMutation.mutate({
                           id: period.id,
                           status: nextStatus as any,
-                        });
+                        } as any);
                       }
                     }}
                     className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 text-sm"
@@ -226,7 +225,7 @@ export default function BillingPeriods() {
                 )}
                 {period.status === "reading_phase" && (
                   <button
-                    onClick={() => calculateInvoicesMutation.mutate({ billingPeriodId: period.id })}
+                    onClick={() => calculateInvoicesMutation.mutate({ billingPeriodId: period.id } as any)}
                     disabled={calculateInvoicesMutation.isPending}
                     className="flex-1 flex items-center justify-center gap-1 px-3 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 text-sm"
                   >
@@ -256,7 +255,7 @@ export default function BillingPeriods() {
                 <input
                   type="text"
                   required
-                  value={formData.name}
+                  value={(formData as any).name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="مثال: فترة يناير 2025"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -266,7 +265,7 @@ export default function BillingPeriods() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">الشهر</label>
                   <select
-                    value={formData.month}
+                    value={(formData as any).month}
                     onChange={(e) => setFormData({ ...formData, month: parseInt(e.target.value) })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
@@ -279,7 +278,7 @@ export default function BillingPeriods() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">السنة</label>
                   <input
                     type="number"
-                    value={formData.year}
+                    value={(formData as any).year}
                     onChange={(e) => setFormData({ ...formData, year: parseInt(e.target.value) })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -291,7 +290,7 @@ export default function BillingPeriods() {
                   <input
                     type="date"
                     required
-                    value={formData.startDate}
+                    value={(formData as any).startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -301,7 +300,7 @@ export default function BillingPeriods() {
                   <input
                     type="date"
                     required
-                    value={formData.endDate}
+                    value={(formData as any).endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -312,7 +311,7 @@ export default function BillingPeriods() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">بداية القراءات</label>
                   <input
                     type="date"
-                    value={formData.readingStartDate}
+                    value={(formData as any).readingStartDate}
                     onChange={(e) => setFormData({ ...formData, readingStartDate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -321,7 +320,7 @@ export default function BillingPeriods() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">نهاية القراءات</label>
                   <input
                     type="date"
-                    value={formData.readingEndDate}
+                    value={(formData as any).readingEndDate}
                     onChange={(e) => setFormData({ ...formData, readingEndDate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -332,7 +331,7 @@ export default function BillingPeriods() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ الفوترة</label>
                   <input
                     type="date"
-                    value={formData.billingDate}
+                    value={(formData as any).billingDate}
                     onChange={(e) => setFormData({ ...formData, billingDate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -341,7 +340,7 @@ export default function BillingPeriods() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ الاستحقاق</label>
                   <input
                     type="date"
-                    value={formData.dueDate}
+                    value={(formData as any).dueDate}
                     onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />

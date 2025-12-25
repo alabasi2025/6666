@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -136,7 +135,7 @@ export default function UsersManagement() {
   });
 
   const toggleActiveMutation = trpc.user.toggleActive.useMutation({
-    onSuccess: (_, variables) => {
+    onSuccess: (_: any, variables: any) => {
       toast.success(variables.isActive ? "تم تفعيل الحساب" : "تم تعطيل الحساب");
       utils.user.list.invalidate();
     },
@@ -169,35 +168,35 @@ export default function UsersManagement() {
   };
 
   const handleCreate = () => {
-    if (!formData.name || !formData.phone || !formData.password) {
+    if (!(formData as any).name || !(formData as any).phone || !(formData as any).password) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
     createMutation.mutate({
-      name: formData.name,
-      phone: formData.phone,
-      email: formData.email || null,
-      password: formData.password,
-      role: formData.role,
-      jobTitle: formData.jobTitle || null,
-    });
+      name: (formData as any).name,
+      phone: (formData as any).phone,
+      email: (formData as any).email || null,
+      password: (formData as any).password,
+      role: (formData as any).role,
+      jobTitle: (formData as any).jobTitle || null,
+    } as any);
   };
 
   const handleEdit = () => {
     if (!selectedUser) return;
     updateMutation.mutate({
       id: selectedUser.id,
-      name: formData.name,
-      phone: formData.phone,
-      email: formData.email || null,
-      role: formData.role,
-      jobTitle: formData.jobTitle || null,
-    });
+      name: (formData as any).name,
+      phone: (formData as any).phone,
+      email: (formData as any).email || null,
+      role: (formData as any).role,
+      jobTitle: (formData as any).jobTitle || null,
+    } as any);
   };
 
   const handleDelete = () => {
     if (!selectedUser) return;
-    deleteMutation.mutate({ id: selectedUser.id });
+    deleteMutation.mutate({ id: selectedUser.id } as any);
   };
 
   const handleResetPassword = () => {
@@ -208,7 +207,7 @@ export default function UsersManagement() {
     resetPasswordMutation.mutate({
       id: selectedUser.id,
       newPassword,
-    });
+    } as any);
   };
 
   const openEditDialog = (user: User) => {
@@ -224,7 +223,7 @@ export default function UsersManagement() {
     setIsEditDialogOpen(true);
   };
 
-  const filteredUsers = users.filter((user: User) => {
+  const filteredUsers = (users as any[]).filter((user: any) => {
     const query = searchQuery.toLowerCase();
     return (
       user.name?.toLowerCase().includes(query) ||
@@ -292,7 +291,7 @@ export default function UsersManagement() {
               <div>
                 <p className="text-sm text-muted-foreground">الحسابات النشطة</p>
                 <p className="text-2xl font-bold text-green-500">
-                  {users.filter((u: User) => u.isActive).length}
+                  {(users as any[]).filter((u: any) => u.isActive).length}
                 </p>
               </div>
               <UserCheck className="w-8 h-8 text-green-500" />
@@ -305,7 +304,7 @@ export default function UsersManagement() {
               <div>
                 <p className="text-sm text-muted-foreground">المديرين</p>
                 <p className="text-2xl font-bold text-blue-500">
-                  {users.filter((u: User) => u.role === "admin" || u.role === "super_admin").length}
+                  {(users as any[]).filter((u: any) => u.role === "admin" || u.role === "super_admin").length}
                 </p>
               </div>
               <Shield className="w-8 h-8 text-blue-500" />
@@ -318,7 +317,7 @@ export default function UsersManagement() {
               <div>
                 <p className="text-sm text-muted-foreground">الحسابات المعطلة</p>
                 <p className="text-2xl font-bold text-red-500">
-                  {users.filter((u: User) => !u.isActive).length}
+                  {(users as any[]).filter((u: any) => !u.isActive).length}
                 </p>
               </div>
               <UserX className="w-8 h-8 text-red-500" />
@@ -369,7 +368,7 @@ export default function UsersManagement() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredUsers.map((user: User) => (
+                  (filteredUsers as any[]).map((user: any) => (
                     <TableRow key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -437,7 +436,7 @@ export default function UsersManagement() {
                                 toggleActiveMutation.mutate({
                                   id: user.id,
                                   isActive: !user.isActive,
-                                })
+                                } as any)
                               }
                             >
                               {user.isActive ? (
@@ -487,7 +486,7 @@ export default function UsersManagement() {
               <Label htmlFor="name">الاسم *</Label>
               <Input
                 id="name"
-                value={formData.name}
+                value={(formData as any).name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="أدخل الاسم"
               />
@@ -496,7 +495,7 @@ export default function UsersManagement() {
               <Label htmlFor="phone">رقم الهاتف *</Label>
               <Input
                 id="phone"
-                value={formData.phone}
+                value={(formData as any).phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="05xxxxxxxx"
                 dir="ltr"
@@ -507,7 +506,7 @@ export default function UsersManagement() {
               <Input
                 id="email"
                 type="email"
-                value={formData.email}
+                value={(formData as any).email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 placeholder="example@email.com"
                 dir="ltr"
@@ -518,7 +517,7 @@ export default function UsersManagement() {
               <Input
                 id="password"
                 type="password"
-                value={formData.password}
+                value={(formData as any).password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="6 أحرف على الأقل"
               />
@@ -526,7 +525,7 @@ export default function UsersManagement() {
             <div className="space-y-2">
               <Label htmlFor="role">الصلاحية</Label>
               <Select
-                value={formData.role}
+                value={(formData as any).role}
                 onValueChange={(value: "user" | "admin" | "super_admin") =>
                   setFormData({ ...formData, role: value })
                 }
@@ -545,7 +544,7 @@ export default function UsersManagement() {
               <Label htmlFor="jobTitle">المسمى الوظيفي</Label>
               <Input
                 id="jobTitle"
-                value={formData.jobTitle}
+                value={(formData as any).jobTitle}
                 onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
                 placeholder="مثال: محاسب"
               />
@@ -574,7 +573,7 @@ export default function UsersManagement() {
               <Label htmlFor="edit-name">الاسم</Label>
               <Input
                 id="edit-name"
-                value={formData.name}
+                value={(formData as any).name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
             </div>
@@ -582,7 +581,7 @@ export default function UsersManagement() {
               <Label htmlFor="edit-phone">رقم الهاتف</Label>
               <Input
                 id="edit-phone"
-                value={formData.phone}
+                value={(formData as any).phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 dir="ltr"
               />
@@ -592,7 +591,7 @@ export default function UsersManagement() {
               <Input
                 id="edit-email"
                 type="email"
-                value={formData.email}
+                value={(formData as any).email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 dir="ltr"
               />
@@ -600,7 +599,7 @@ export default function UsersManagement() {
             <div className="space-y-2">
               <Label htmlFor="edit-role">الصلاحية</Label>
               <Select
-                value={formData.role}
+                value={(formData as any).role}
                 onValueChange={(value: "user" | "admin" | "super_admin") =>
                   setFormData({ ...formData, role: value })
                 }
@@ -619,7 +618,7 @@ export default function UsersManagement() {
               <Label htmlFor="edit-jobTitle">المسمى الوظيفي</Label>
               <Input
                 id="edit-jobTitle"
-                value={formData.jobTitle}
+                value={(formData as any).jobTitle}
                 onChange={(e) => setFormData({ ...formData, jobTitle: e.target.value })}
               />
             </div>

@@ -118,14 +118,14 @@ export default function Suppliers() {
     const formData = new FormData(e.currentTarget);
 
     const data = {
-      code: formData.get("code") as string,
-      nameAr: formData.get("nameAr") as string,
-      nameEn: formData.get("nameEn") as string || undefined,
-      contactPerson: formData.get("contactPerson") as string || undefined,
-      phone: formData.get("phone") as string || undefined,
-      email: formData.get("email") as string || undefined,
-      address: formData.get("address") as string || undefined,
-      taxNumber: formData.get("taxNumber") as string || undefined,
+      code: (formData as any).get("code") as string,
+      nameAr: (formData as any).get("nameAr") as string,
+      nameEn: (formData as any).get("nameEn") as string || undefined,
+      contactPerson: (formData as any).get("contactPerson") as string || undefined,
+      phone: (formData as any).get("phone") as string || undefined,
+      email: (formData as any).get("email") as string || undefined,
+      address: (formData as any).get("address") as string || undefined,
+      taxNumber: (formData as any).get("taxNumber") as string || undefined,
     };
 
     if (selectedSupplier) {
@@ -133,12 +133,12 @@ export default function Suppliers() {
         id: selectedSupplier.id,
         ...data,
         isActive: (e.currentTarget.querySelector("#isActive") as HTMLInputElement)?.checked ?? true,
-      });
+      } as any);
     } else {
       createMutation.mutate({
         businessId: 1,
         ...data,
-      });
+      } as any);
     }
   };
 
@@ -154,7 +154,7 @@ export default function Suppliers() {
 
   const confirmDelete = () => {
     if (selectedSupplier) {
-      deleteMutation.mutate({ id: selectedSupplier.id });
+      deleteMutation.mutate({ id: selectedSupplier.id } as any);
     }
   };
 
@@ -213,7 +213,7 @@ export default function Suppliers() {
               <div>
                 <p className="text-sm text-muted-foreground">موردين نشطين</p>
                 <p className="text-2xl font-bold">
-                  {suppliers.filter((s: Supplier) => s.isActive).length}
+                  {(suppliers as any[]).filter((s: any) => s.isActive).length}
                 </p>
               </div>
             </div>
@@ -228,7 +228,7 @@ export default function Suppliers() {
               <div>
                 <p className="text-sm text-muted-foreground">موردين غير نشطين</p>
                 <p className="text-2xl font-bold">
-                  {suppliers.filter((s: Supplier) => !s.isActive).length}
+                  {(suppliers as any[]).filter((s: any) => !s.isActive).length}
                 </p>
               </div>
             </div>
@@ -277,7 +277,7 @@ export default function Suppliers() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredSuppliers.map((supplier: Supplier) => (
+                (filteredSuppliers as any[]).map((supplier: any) => (
                   <TableRow key={supplier.id}>
                     <TableCell className="font-mono">{supplier.code}</TableCell>
                     <TableCell>

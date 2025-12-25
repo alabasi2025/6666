@@ -83,30 +83,30 @@ export default function Depreciation() {
   });
 
   // Filter assets that have depreciation
-  const depreciableAssets = assets.filter((asset: any) => 
-    asset.purchaseCost && asset.usefulLife && asset.status === "active"
+  const depreciableAssets = (assets as any[]).filter((asset: any) => 
+    (asset as any).purchaseCost && (asset as any).usefulLife && (asset as any).status === "active"
   );
 
-  const filteredAssets = depreciableAssets.filter((asset: any) =>
-    asset.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    asset.code?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredAssets = (depreciableAssets as any[]).filter((asset: any) =>
+    (asset as any).nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (asset as any).code?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Calculate totals
   const totalPurchaseCost = depreciableAssets.reduce((sum: number, asset: any) => 
-    sum + (parseFloat(asset.purchaseCost) || 0), 0
+    sum + (parseFloat((asset as any).purchaseCost) || 0), 0
   );
   const totalCurrentValue = depreciableAssets.reduce((sum: number, asset: any) => 
-    sum + (parseFloat(asset.currentValue) || 0), 0
+    sum + (parseFloat((asset as any).currentValue) || 0), 0
   );
   const totalAccumulatedDepreciation = depreciableAssets.reduce((sum: number, asset: any) => 
-    sum + (parseFloat(asset.accumulatedDepreciation) || 0), 0
+    sum + (parseFloat((asset as any).accumulatedDepreciation) || 0), 0
   );
 
   const handleCalculateDepreciation = () => {
     calculateMutation.mutate({
       businessId: 1,
-    });
+    } as any);
   };
 
   if (isLoading) {
@@ -233,26 +233,26 @@ export default function Depreciation() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredAssets.map((asset: any) => (
-                  <TableRow key={asset.id}>
-                    <TableCell className="font-mono">{asset.code}</TableCell>
-                    <TableCell className="font-medium">{asset.nameAr}</TableCell>
+                (filteredAssets as any[]).map((asset: any) => (
+                  <TableRow key={(asset as any).id}>
+                    <TableCell className="font-mono">{(asset as any).code}</TableCell>
+                    <TableCell className="font-medium">{(asset as any).nameAr}</TableCell>
                     <TableCell>
-                      {asset.purchaseCost ? `${parseFloat(asset.purchaseCost).toLocaleString()} ر.س` : "-"}
+                      {(asset as any).purchaseCost ? `${parseFloat((asset as any).purchaseCost).toLocaleString()} ر.س` : "-"}
                     </TableCell>
                     <TableCell>
-                      {asset.currentValue ? `${parseFloat(asset.currentValue).toLocaleString()} ر.س` : "-"}
+                      {(asset as any).currentValue ? `${parseFloat((asset as any).currentValue).toLocaleString()} ر.س` : "-"}
                     </TableCell>
                     <TableCell>
-                      {asset.accumulatedDepreciation ? `${parseFloat(asset.accumulatedDepreciation).toLocaleString()} ر.س` : "0 ر.س"}
+                      {(asset as any).accumulatedDepreciation ? `${parseFloat((asset as any).accumulatedDepreciation).toLocaleString()} ر.س` : "0 ر.س"}
                     </TableCell>
-                    <TableCell>{asset.usefulLife ? `${asset.usefulLife} سنة` : "-"}</TableCell>
+                    <TableCell>{(asset as any).usefulLife ? `${(asset as any).usefulLife} سنة` : "-"}</TableCell>
                     <TableCell>
                       <Badge variant="outline">
-                        {asset.depreciationMethod === "straight_line" && "القسط الثابت"}
-                        {asset.depreciationMethod === "declining_balance" && "القسط المتناقص"}
-                        {asset.depreciationMethod === "units_of_production" && "وحدات الإنتاج"}
-                        {!asset.depreciationMethod && "غير محدد"}
+                        {(asset as any).depreciationMethod === "straight_line" && "القسط الثابت"}
+                        {(asset as any).depreciationMethod === "declining_balance" && "القسط المتناقص"}
+                        {(asset as any).depreciationMethod === "units_of_production" && "وحدات الإنتاج"}
+                        {!(asset as any).depreciationMethod && "غير محدد"}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -304,7 +304,7 @@ export default function Depreciation() {
                   </TableCell>
                 </TableRow>
               ) : (
-                depreciationHistory.map((record: any) => (
+                (depreciationHistory as any[]).map((record: any) => (
                   <TableRow key={record.id}>
                     <TableCell>
                       <div>

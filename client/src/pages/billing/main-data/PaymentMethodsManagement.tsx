@@ -48,14 +48,14 @@ export default function PaymentMethodsManagement() {
     setLoading(true);
     try {
       const data = {
-        code: formData.code,
-        name: formData.name,
-        nameEn: formData.nameEn || undefined,
-        methodType: formData.methodType as any,
+        code: (formData as any).code,
+        name: (formData as any).name,
+        nameEn: (formData as any).nameEn || undefined,
+        methodType: (formData as any).methodType as any,
       };
       
       if (editingMethod) {
-        await updateMethodMutation.mutateAsync({ id: editingMethod.id, ...data });
+        await updateMethodMutation.mutateAsync({ id: editingMethod.id, ...data } as any);
       } else {
         await createMethodMutation.mutateAsync(data);
       }
@@ -83,7 +83,7 @@ export default function PaymentMethodsManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف طريقة الدفع هذه؟")) {
       try {
-        await deleteMethodMutation.mutateAsync({ id });
+        await deleteMethodMutation.mutateAsync({ id } as any);
         methodsQuery.refetch();
       } catch (error) {
         console.error("Error deleting payment method:", error);
@@ -208,19 +208,19 @@ export default function PaymentMethodsManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>الكود *</Label>
-                    <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="PM-001" />
+                    <Input value={(formData as any).code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="PM-001" />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم *</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                    <Input value={(formData as any).name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم بالإنجليزية</Label>
-                    <Input value={formData.nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
+                    <Input value={(formData as any).nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>نوع الدفع</Label>
-                    <Select value={formData.methodType} onValueChange={(v) => setFormData({ ...formData, methodType: v })}>
+                    <Select value={(formData as any).methodType} onValueChange={(v) => setFormData({ ...formData, methodType: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="cash">نقدي</SelectItem>

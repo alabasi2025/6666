@@ -36,7 +36,7 @@ export default function Login() {
 
     setIsLoading(true);
     try {
-      await loginMutation.mutateAsync({ phone, password: passwordToSend });
+      await loginMutation.mutateAsync({ phone, password: passwordToSend } as any);
     } finally {
       setIsLoading(false);
     }

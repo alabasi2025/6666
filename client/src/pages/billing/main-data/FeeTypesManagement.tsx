@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -47,7 +46,7 @@ export default function FeeTypesManagement() {
 
   useEffect(() => {
     if (feeTypesQuery.data) {
-      setFeeTypes(feeTypesQuery.data);
+      setFeeTypes(feeTypesQuery.data as any);
     }
   }, [feeTypesQuery.data]);
 
@@ -56,19 +55,19 @@ export default function FeeTypesManagement() {
     setLoading(true);
     try {
       const data = {
-        code: formData.code,
-        name: formData.name,
-        nameEn: formData.nameEn || undefined,
-        description: formData.description || undefined,
-        feeType: formData.feeType as any,
-        amount: parseFloat(formData.amount),
-        isRecurring: formData.isRecurring,
+        code: (formData as any).code,
+        name: (formData as any).name,
+        nameEn: (formData as any).nameEn || undefined,
+        description: (formData as any).description || undefined,
+        feeType: (formData as any).feeType as any,
+        amount: parseFloat((formData as any).amount),
+        isRecurring: (formData as any).isRecurring,
       };
       
       if (editingFeeType) {
-        await updateFeeTypeMutation.mutateAsync({ id: editingFeeType.id, ...data });
+        await updateFeeTypeMutation.mutateAsync({ id: editingFeeType.id, ...data } as any);
       } else {
-        await createFeeTypeMutation.mutateAsync(data);
+        await createFeeTypeMutation.mutateAsync(data as any);
       }
       feeTypesQuery.refetch();
       resetForm();
@@ -97,7 +96,7 @@ export default function FeeTypesManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا النوع؟")) {
       try {
-        await deleteFeeTypeMutation.mutateAsync({ id });
+        await deleteFeeTypeMutation.mutateAsync({ id } as any);
         feeTypesQuery.refetch();
       } catch (error) {
         console.error("Error deleting fee type:", error);
@@ -228,19 +227,19 @@ export default function FeeTypesManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>الكود *</Label>
-                    <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="FEE-001" />
+                    <Input value={(formData as any).code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="FEE-001" />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم *</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                    <Input value={(formData as any).name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم بالإنجليزية</Label>
-                    <Input value={formData.nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
+                    <Input value={(formData as any).nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>نوع الرسم</Label>
-                    <Select value={formData.feeType} onValueChange={(v) => setFormData({ ...formData, feeType: v })}>
+                    <Select value={(formData as any).feeType} onValueChange={(v) => setFormData({ ...formData, feeType: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="fixed">مبلغ ثابت</SelectItem>
@@ -251,18 +250,18 @@ export default function FeeTypesManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>المبلغ / النسبة</Label>
-                    <Input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} />
+                    <Input type="number" step="0.01" value={(formData as any).amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>رسم متكرر</Label>
                     <div className="flex items-center space-x-2 pt-2">
-                      <Switch checked={formData.isRecurring} onCheckedChange={(v) => setFormData({ ...formData, isRecurring: v })} />
-                      <span className="text-sm">{formData.isRecurring ? "نعم" : "لا"}</span>
+                      <Switch checked={(formData as any).isRecurring} onCheckedChange={(v) => setFormData({ ...formData, isRecurring: v })} />
+                      <span className="text-sm">{(formData as any).isRecurring ? "نعم" : "لا"}</span>
                     </div>
                   </div>
                   <div className="space-y-2 md:col-span-2 lg:col-span-3">
                     <Label>الوصف</Label>
-                    <Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                    <Input value={(formData as any).description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

@@ -39,12 +39,12 @@ export default function FieldEquipment({ businessId }: FieldEquipmentProps) {
     createMutation.mutate({
       businessId,
       equipmentCode: `EQ-${Date.now()}`,
-      nameAr: formData.get("nameAr") as string,
-      nameEn: formData.get("nameEn") as string || undefined,
-      equipmentType: formData.get("equipmentType") as any,
-      serialNumber: formData.get("serialNumber") as string || undefined,
-      brand: formData.get("brand") as string || undefined,
-      assignedTeamId: formData.get("teamId") ? Number(formData.get("teamId")) : undefined,
+      nameAr: (formData as any).get("nameAr") as string,
+      nameEn: (formData as any).get("nameEn") as string || undefined,
+      equipmentType: (formData as any).get("equipmentType") as any,
+      serialNumber: (formData as any).get("serialNumber") as string || undefined,
+      brand: (formData as any).get("brand") as string || undefined,
+      assignedTeamId: (formData as any).get("teamId") ? Number((formData as any).get("teamId")) : undefined,
     });
   };
 
@@ -54,11 +54,11 @@ export default function FieldEquipment({ businessId }: FieldEquipmentProps) {
     updateMutation.mutate({
       id: editingEquipment.id,
       data: {
-        nameAr: formData.get("nameAr") as string,
-        nameEn: formData.get("nameEn") as string || undefined,
-        status: formData.get("status") as any,
-        condition: formData.get("condition") as any,
-        assignedTeamId: formData.get("teamId") ? Number(formData.get("teamId")) : undefined,
+        nameAr: (formData as any).get("nameAr") as string,
+        nameEn: (formData as any).get("nameEn") as string || undefined,
+        status: (formData as any).get("status") as any,
+        condition: (formData as any).get("condition") as any,
+        assignedTeamId: (formData as any).get("teamId") ? Number((formData as any).get("teamId")) : undefined,
       },
     });
   };
@@ -72,7 +72,7 @@ export default function FieldEquipment({ businessId }: FieldEquipmentProps) {
       lost: { label: "مفقودة", variant: "destructive" },
     };
     const config = map[status] || { label: status, variant: "secondary" as const };
-    return <Badge variant={config.variant}>{config.label}</Badge>;
+    return <Badge variant={(config as any).variant}>{(config as any).label}</Badge>;
   };
 
   const getTypeBadge = (type: string) => {

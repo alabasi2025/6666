@@ -55,8 +55,8 @@ export default function MiscAssets() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
 
   const filteredAssets = miscAssets.filter(asset => {
-    const matchesSearch = asset.name.includes(searchTerm) || asset.code.includes(searchTerm);
-    const matchesCategory = selectedCategory === "all" || asset.category === selectedCategory;
+    const matchesSearch = (asset as any).name.includes(searchTerm) || (asset as any).code.includes(searchTerm);
+    const matchesCategory = selectedCategory === "all" || (asset as any).category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
@@ -201,27 +201,27 @@ export default function MiscAssets() {
             </TableHeader>
             <TableBody>
               {filteredAssets.map((asset) => {
-                const catInfo = getCategoryInfo(asset.category);
+                const catInfo = getCategoryInfo((asset as any).category);
                 const CategoryIcon = catInfo.icon;
                 return (
-                  <TableRow key={asset.id}>
-                    <TableCell className="font-mono">{asset.code}</TableCell>
+                  <TableRow key={(asset as any).id}>
+                    <TableCell className="font-mono">{(asset as any).code}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-                        {asset.name}
+                        {(asset as any).name}
                       </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant="outline">{catInfo.label}</Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={asset.status === "active" ? "default" : "secondary"}>
-                        {asset.status === "active" ? "نشط" : "غير نشط"}
+                      <Badge variant={(asset as any).status === "active" ? "default" : "secondary"}>
+                        {(asset as any).status === "active" ? "نشط" : "غير نشط"}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{asset.location}</TableCell>
-                    <TableCell>{asset.value}</TableCell>
+                    <TableCell className="text-muted-foreground">{(asset as any).location}</TableCell>
+                    <TableCell>{(asset as any).value}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Button variant="ghost" size="icon">

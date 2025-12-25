@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -74,7 +73,7 @@ export default function PaymentsManagement() {
 
   useEffect(() => {
     if (paymentsQuery.data) {
-      setPayments(paymentsQuery.data);
+      setPayments(paymentsQuery.data as any);
     }
   }, [paymentsQuery.data]);
 
@@ -83,16 +82,16 @@ export default function PaymentsManagement() {
     setLoading(true);
     try {
       await createPaymentMutation.mutateAsync({
-        customerId: parseInt(formData.customerId),
-        invoiceId: formData.invoiceId ? parseInt(formData.invoiceId) : undefined,
-        amount: formData.amount,
-        paymentMethod: formData.paymentMethod as any,
-        paymentDate: formData.paymentDate,
-        referenceNumber: formData.referenceNumber || undefined,
-        cashboxId: formData.cashboxId ? parseInt(formData.cashboxId) : undefined,
-        bankId: formData.bankId ? parseInt(formData.bankId) : undefined,
-        notes: formData.notes || undefined,
-      });
+        customerId: parseInt((formData as any).customerId),
+        invoiceId: (formData as any).invoiceId ? parseInt((formData as any).invoiceId) : undefined,
+        amount: (formData as any).amount,
+        paymentMethod: (formData as any).paymentMethod as any,
+        paymentDate: (formData as any).paymentDate,
+        referenceNumber: (formData as any).referenceNumber || undefined,
+        cashboxId: (formData as any).cashboxId ? parseInt((formData as any).cashboxId) : undefined,
+        bankId: (formData as any).bankId ? parseInt((formData as any).bankId) : undefined,
+        notes: (formData as any).notes || undefined,
+      } as any);
       paymentsQuery.refetch();
       resetForm();
       setActiveTab("list");
@@ -121,18 +120,18 @@ export default function PaymentsManagement() {
   const openPaymentDialog = (customer?: CustomerBalance) => {
     if (customer) {
       setSelectedCustomer(customer);
-      setFormData({ ...formData, customerId: customer.customerId.toString() });
+      setFormData({ ...formData, customerId: (customer as any).customerId.toString() });
     }
     setShowPaymentDialog(true);
   };
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =
-      payment.receiptNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.accountNumber.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesMethod = filterMethod === "all" || payment.paymentMethod === filterMethod;
-    const matchesDate = !filterDate || payment.paymentDate.startsWith(filterDate);
+      (payment as any).receiptNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment as any).customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (payment as any).accountNumber.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesMethod = filterMethod === "all" || (payment as any).paymentMethod === filterMethod;
+    const matchesDate = !filterDate || (payment as any).paymentDate.startsWith(filterDate);
     return matchesSearch && matchesMethod && matchesDate;
   });
 
@@ -160,14 +159,14 @@ export default function PaymentsManagement() {
 
   // حساب أرصدة العملاء
   const customerBalances: CustomerBalance[] = customersQuery.data?.map(customer => {
-    const customerInvoices = invoicesQuery.data?.filter(i => i.customerId === customer.id) || [];
+    const customerInvoices = invoicesQuery.data?.filter(i => i.customerId === (customer as any).id) || [];
     const totalInvoices = customerInvoices.reduce((sum, i) => sum + parseFloat(i.totalAmount || "0"), 0);
     const totalPaid = customerInvoices.reduce((sum, i) => sum + parseFloat(i.paidAmount || "0"), 0);
     const unpaidInvoices = customerInvoices.filter(i => i.status !== 'paid').length;
     return {
-      customerId: customer.id,
-      customerName: customer.fullName,
-      accountNumber: customer.accountNumber,
+      customerId: (customer as any).id,
+      customerName: (customer as any).fullName,
+      accountNumber: (customer as any).accountNumber,
       totalInvoices: totalInvoices.toString(),
       totalPaid: totalPaid.toString(),
       balance: (totalInvoices - totalPaid).toString(),
@@ -277,24 +276,24 @@ export default function PaymentsManagement() {
                     </TableRow>
                   ) : (
                     filteredPayments.map((payment) => (
-                      <TableRow key={payment.id}>
-                        <TableCell className="font-medium">{payment.receiptNumber}</TableCell>
+                      <TableRow key={(payment as any).id}>
+                        <TableCell className="font-medium">{(payment as any).receiptNumber}</TableCell>
                         <TableCell>
                           <div>
-                            <div className="font-medium">{payment.customerName}</div>
-                            <div className="text-xs text-muted-foreground">{payment.accountNumber}</div>
+                            <div className="font-medium">{(payment as any).customerName}</div>
+                            <div className="text-xs text-muted-foreground">{(payment as any).accountNumber}</div>
                           </div>
                         </TableCell>
-                        <TableCell>{payment.invoiceNumber || "-"}</TableCell>
-                        <TableCell className="font-semibold text-green-600">{parseFloat(payment.amount).toLocaleString()} ر.س</TableCell>
+                        <TableCell>{(payment as any).invoiceNumber || "-"}</TableCell>
+                        <TableCell className="font-semibold text-green-600">{parseFloat((payment as any).amount).toLocaleString()} ر.س</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {getPaymentMethodIcon(payment.paymentMethod)}
-                            {getPaymentMethodLabel(payment.paymentMethod)}
+                            {getPaymentMethodIcon((payment as any).paymentMethod)}
+                            {getPaymentMethodLabel((payment as any).paymentMethod)}
                           </div>
                         </TableCell>
-                        <TableCell>{new Date(payment.paymentDate).toLocaleDateString("ar-SA")}</TableCell>
-                        <TableCell>{payment.cashboxName || "-"}</TableCell>
+                        <TableCell>{new Date((payment as any).paymentDate).toLocaleDateString("ar-SA")}</TableCell>
+                        <TableCell>{(payment as any).cashboxName || "-"}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-1">
                             <Button variant="ghost" size="icon" title="طباعة الإيصال">
@@ -342,14 +341,14 @@ export default function PaymentsManagement() {
                     </TableRow>
                   ) : (
                     customerBalances.map((customer) => (
-                      <TableRow key={customer.customerId}>
-                        <TableCell className="font-medium">{customer.accountNumber}</TableCell>
-                        <TableCell>{customer.customerName}</TableCell>
-                        <TableCell>{parseFloat(customer.totalInvoices).toLocaleString()} ر.س</TableCell>
-                        <TableCell className="text-green-600">{parseFloat(customer.totalPaid).toLocaleString()} ر.س</TableCell>
-                        <TableCell className="font-semibold text-red-600">{parseFloat(customer.balance).toLocaleString()} ر.س</TableCell>
+                      <TableRow key={(customer as any).customerId}>
+                        <TableCell className="font-medium">{(customer as any).accountNumber}</TableCell>
+                        <TableCell>{(customer as any).customerName}</TableCell>
+                        <TableCell>{parseFloat((customer as any).totalInvoices).toLocaleString()} ر.س</TableCell>
+                        <TableCell className="text-green-600">{parseFloat((customer as any).totalPaid).toLocaleString()} ر.س</TableCell>
+                        <TableCell className="font-semibold text-red-600">{parseFloat((customer as any).balance).toLocaleString()} ر.س</TableCell>
                         <TableCell>
-                          <Badge variant="outline">{customer.unpaidInvoices}</Badge>
+                          <Badge variant="outline">{(customer as any).unpaidInvoices}</Badge>
                         </TableCell>
                         <TableCell>
                           <Button size="sm" onClick={() => openPaymentDialog(customer)}>
@@ -416,7 +415,7 @@ export default function PaymentsManagement() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label>العميل *</Label>
-              <Select value={formData.customerId} onValueChange={(v) => setFormData({ ...formData, customerId: v })}>
+              <Select value={(formData as any).customerId} onValueChange={(v) => setFormData({ ...formData, customerId: v })}>
                 <SelectTrigger><SelectValue placeholder="اختر العميل" /></SelectTrigger>
                 <SelectContent>
                   {customersQuery.data?.map(c => (
@@ -427,12 +426,12 @@ export default function PaymentsManagement() {
             </div>
             <div className="space-y-2">
               <Label>الفاتورة (اختياري)</Label>
-              <Select value={formData.invoiceId} onValueChange={(v) => setFormData({ ...formData, invoiceId: v })}>
+              <Select value={(formData as any).invoiceId} onValueChange={(v) => setFormData({ ...formData, invoiceId: v })}>
                 <SelectTrigger><SelectValue placeholder="اختر الفاتورة" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">بدون فاتورة محددة</SelectItem>
-                  {invoicesQuery.data?.filter(i => i.customerId.toString() === formData.customerId && i.status !== 'paid').map(i => (
-                    <SelectItem key={i.id} value={i.id.toString()}>{i.invoiceNo} - {parseFloat(i.balanceDue || '0').toLocaleString()} ر.س</SelectItem>
+                  {((invoicesQuery.data as any) || []).filter((i: any) => i.customerId?.toString() === (formData as any).customerId && i.status !== 'paid').map((i: any) => (
+                    <SelectItem key={i.id} value={i.id?.toString()}>{(i as any).invoiceNo || i.invoiceNumber} - {parseFloat((i as any).balanceDue || '0').toLocaleString()} ر.س</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -440,16 +439,16 @@ export default function PaymentsManagement() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>المبلغ *</Label>
-                <Input type="number" step="0.01" value={formData.amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
+                <Input type="number" step="0.01" value={(formData as any).amount} onChange={(e) => setFormData({ ...formData, amount: e.target.value })} required />
               </div>
               <div className="space-y-2">
                 <Label>تاريخ الدفع *</Label>
-                <Input type="date" value={formData.paymentDate} onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })} required />
+                <Input type="date" value={(formData as any).paymentDate} onChange={(e) => setFormData({ ...formData, paymentDate: e.target.value })} required />
               </div>
             </div>
             <div className="space-y-2">
               <Label>طريقة الدفع</Label>
-              <Select value={formData.paymentMethod} onValueChange={(v) => setFormData({ ...formData, paymentMethod: v })}>
+              <Select value={(formData as any).paymentMethod} onValueChange={(v) => setFormData({ ...formData, paymentMethod: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash">نقدي</SelectItem>
@@ -459,10 +458,10 @@ export default function PaymentsManagement() {
                 </SelectContent>
               </Select>
             </div>
-            {formData.paymentMethod === "cash" && (
+            {(formData as any).paymentMethod === "cash" && (
               <div className="space-y-2">
                 <Label>الصندوق</Label>
-                <Select value={formData.cashboxId} onValueChange={(v) => setFormData({ ...formData, cashboxId: v })}>
+                <Select value={(formData as any).cashboxId} onValueChange={(v) => setFormData({ ...formData, cashboxId: v })}>
                   <SelectTrigger><SelectValue placeholder="اختر الصندوق" /></SelectTrigger>
                   <SelectContent>
                     {cashboxesQuery.data?.map(c => (
@@ -472,15 +471,15 @@ export default function PaymentsManagement() {
                 </Select>
               </div>
             )}
-            {(formData.paymentMethod === "bank_transfer" || formData.paymentMethod === "check") && (
+            {((formData as any).paymentMethod === "bank_transfer" || (formData as any).paymentMethod === "check") && (
               <div className="space-y-2">
                 <Label>رقم المرجع</Label>
-                <Input value={formData.referenceNumber} onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value })} />
+                <Input value={(formData as any).referenceNumber} onChange={(e) => setFormData({ ...formData, referenceNumber: e.target.value })} />
               </div>
             )}
             <div className="space-y-2">
               <Label>ملاحظات</Label>
-              <Textarea value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} />
+              <Textarea value={(formData as any).notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} rows={2} />
             </div>
             <div className="flex justify-end gap-2 pt-4">
               <Button type="button" variant="outline" onClick={() => { resetForm(); setShowPaymentDialog(false); }}>إلغاء</Button>

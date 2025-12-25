@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useParams, useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import {
@@ -66,7 +65,7 @@ const priorityLabels: Record<string, string> = {
 };
 
 export default function ProjectDetails() {
-  const { id } = useParams();
+  const { id } = useParams() as { id: string };
   const navigate = useNavigate();
 
   // Fetch project details
@@ -105,7 +104,7 @@ export default function ProjectDetails() {
   }
 
   // Calculate stats
-  const completedTasks = tasks.filter((t: any) => t.status === "completed").length;
+  const completedTasks = (tasks as any[]).filter((t: any) => t.status === "completed").length;
   const totalTasks = tasks.length;
   const progressPercentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
@@ -121,19 +120,19 @@ export default function ProjectDetails() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <FolderKanban className="w-8 h-8 text-primary" />
-              {project.nameAr}
+              {(project as any).nameAr}
             </h1>
-            <p className="text-muted-foreground mt-1 font-mono">{project.code}</p>
+            <p className="text-muted-foreground mt-1 font-mono">{(project as any).code}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={`${statusColors[project.status || "planning"]} text-white`}>
-            {statusLabels[project.status || "planning"]}
+          <Badge className={`${statusColors[(project as any).status || "planning"]} text-white`}>
+            {statusLabels[(project as any).status || "planning"]}
           </Badge>
-          <Badge className={`${priorityColors[project.priority || "medium"]} text-white`}>
-            {priorityLabels[project.priority || "medium"]}
+          <Badge className={`${priorityColors[(project as any).priority || "medium"]} text-white`}>
+            {priorityLabels[(project as any).priority || "medium"]}
           </Badge>
-          <Button variant="outline" onClick={() => navigate(`/dashboard/projects/edit/${project.id}`)}>
+          <Button variant="outline" onClick={() => navigate(`/dashboard/projects/edit/${(project as any).id}`)}>
             <Pencil className="w-4 h-4 ml-2" />
             تعديل
           </Button>
@@ -151,7 +150,7 @@ export default function ProjectDetails() {
               <div>
                 <p className="text-sm text-muted-foreground">الميزانية</p>
                 <p className="text-2xl font-bold">
-                  {project.budget ? `${parseFloat(project.budget).toLocaleString()} ر.س` : "-"}
+                  {(project as any).budget ? `${parseFloat((project as any).budget).toLocaleString()} ر.س` : "-"}
                 </p>
               </div>
             </div>
@@ -166,8 +165,8 @@ export default function ProjectDetails() {
               <div>
                 <p className="text-sm text-muted-foreground">تاريخ البدء</p>
                 <p className="text-2xl font-bold">
-                  {project.startDate
-                    ? format(new Date(project.startDate), "yyyy/MM/dd")
+                  {(project as any).startDate
+                    ? format(new Date((project as any).startDate), "yyyy/MM/dd")
                     : "-"}
                 </p>
               </div>
@@ -183,8 +182,8 @@ export default function ProjectDetails() {
               <div>
                 <p className="text-sm text-muted-foreground">تاريخ الانتهاء</p>
                 <p className="text-2xl font-bold">
-                  {project.endDate
-                    ? format(new Date(project.endDate), "yyyy/MM/dd")
+                  {(project as any).endDate
+                    ? format(new Date((project as any).endDate), "yyyy/MM/dd")
                     : "-"}
                 </p>
               </div>
@@ -245,27 +244,27 @@ export default function ProjectDetails() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <p className="text-sm text-muted-foreground">الاسم بالإنجليزية</p>
-                  <p className="font-medium">{project.nameEn || "-"}</p>
+                  <p className="font-medium">{(project as any).nameEn || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">مدير المشروع</p>
-                  <p className="font-medium">{project.manager?.nameAr || "-"}</p>
+                  <p className="font-medium">{(project as any).manager?.nameAr || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">العميل</p>
-                  <p className="font-medium">{project.customer?.nameAr || "-"}</p>
+                  <p className="font-medium">{(project as any).customer?.nameAr || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">المصروفات الفعلية</p>
                   <p className="font-medium">
-                    {project.actualCost
-                      ? `${parseFloat(project.actualCost).toLocaleString()} ر.س`
+                    {(project as any).actualCost
+                      ? `${parseFloat((project as any).actualCost).toLocaleString()} ر.س`
                       : "-"}
                   </p>
                 </div>
                 <div className="md:col-span-2 lg:col-span-3">
                   <p className="text-sm text-muted-foreground">الوصف</p>
-                  <p className="font-medium">{project.description || "-"}</p>
+                  <p className="font-medium">{(project as any).description || "-"}</p>
                 </div>
               </div>
             </CardContent>
@@ -297,7 +296,7 @@ export default function ProjectDetails() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    phases.map((phase: any) => (
+                    (phases as any[]).map((phase: any) => (
                       <TableRow key={phase.id}>
                         <TableCell className="font-medium">{phase.nameAr}</TableCell>
                         <TableCell>
@@ -355,32 +354,32 @@ export default function ProjectDetails() {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    tasks.map((task: any) => (
-                      <TableRow key={task.id}>
+                    (tasks as any[]).map((task: any) => (
+                      <TableRow key={(task as any).id}>
                         <TableCell>
                           <div>
-                            <p className="font-medium">{task.title}</p>
-                            {task.description && (
+                            <p className="font-medium">{(task as any).title}</p>
+                            {(task as any).description && (
                               <p className="text-sm text-muted-foreground truncate max-w-xs">
-                                {task.description}
+                                {(task as any).description}
                               </p>
                             )}
                           </div>
                         </TableCell>
-                        <TableCell>{task.assignee?.nameAr || "-"}</TableCell>
+                        <TableCell>{(task as any).assignee?.nameAr || "-"}</TableCell>
                         <TableCell>
-                          {task.dueDate
-                            ? format(new Date(task.dueDate), "yyyy/MM/dd")
+                          {(task as any).dueDate
+                            ? format(new Date((task as any).dueDate), "yyyy/MM/dd")
                             : "-"}
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${priorityColors[task.priority || "medium"]} text-white`}>
-                            {priorityLabels[task.priority || "medium"]}
+                          <Badge className={`${priorityColors[(task as any).priority || "medium"]} text-white`}>
+                            {priorityLabels[(task as any).priority || "medium"]}
                           </Badge>
                         </TableCell>
                         <TableCell>
-                          <Badge className={`${statusColors[task.status || "planning"]} text-white`}>
-                            {statusLabels[task.status || "planning"]}
+                          <Badge className={`${statusColors[(task as any).status || "planning"]} text-white`}>
+                            {statusLabels[(task as any).status || "planning"]}
                           </Badge>
                         </TableCell>
                       </TableRow>

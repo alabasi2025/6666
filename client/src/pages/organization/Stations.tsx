@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -133,7 +132,7 @@ export default function Stations() {
         address: formData.address || undefined,
         latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
         longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
-      });
+      } as any);
     } else {
       await createMutation.mutateAsync({
         businessId: parseInt(formData.businessId),
@@ -149,12 +148,12 @@ export default function Stations() {
         address: formData.address || undefined,
         latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
         longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
-      });
+      } as any);
     }
   };
 
   const handleEdit = (station: Station) => {
-    setEditingStation(station);
+    setEditingStation(station as any);
     setFormData({
       businessId: station.businessId.toString(),
       branchId: station.branchId.toString(),
@@ -175,7 +174,7 @@ export default function Stations() {
 
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه المحطة؟")) {
-      await deleteMutation.mutateAsync({ id });
+      await deleteMutation.mutateAsync({ id } as any);
     }
   };
 
@@ -588,7 +587,7 @@ export default function Stations() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(station)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(station as any)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button

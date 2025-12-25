@@ -60,18 +60,18 @@ export default function CabinetsManagement() {
     setLoading(true);
     try {
       const data = {
-        squareId: parseInt(formData.squareId),
-        code: formData.code,
-        name: formData.name,
-        nameEn: formData.nameEn || undefined,
-        cabinetType: formData.cabinetType as "main" | "sub" | "distribution",
-        capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
+        squareId: parseInt((formData as any).squareId),
+        code: (formData as any).code,
+        name: (formData as any).name,
+        nameEn: (formData as any).nameEn || undefined,
+        cabinetType: (formData as any).cabinetType as "main" | "sub" | "distribution",
+        capacity: (formData as any).capacity ? parseInt((formData as any).capacity) : undefined,
+        latitude: (formData as any).latitude ? parseFloat((formData as any).latitude) : undefined,
+        longitude: (formData as any).longitude ? parseFloat((formData as any).longitude) : undefined,
       };
       
       if (editingCabinet) {
-        await updateCabinetMutation.mutateAsync({ id: editingCabinet.id, ...data });
+        await updateCabinetMutation.mutateAsync({ id: editingCabinet.id, ...data } as any);
       } else {
         await createCabinetMutation.mutateAsync(data);
       }
@@ -103,7 +103,7 @@ export default function CabinetsManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه الكابينة؟")) {
       try {
-        await deleteCabinetMutation.mutateAsync({ id });
+        await deleteCabinetMutation.mutateAsync({ id } as any);
         cabinetsQuery.refetch();
       } catch (error) {
         console.error("Error deleting cabinet:", error);
@@ -258,7 +258,7 @@ export default function CabinetsManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>المربع *</Label>
-                    <Select value={formData.squareId} onValueChange={(v) => setFormData({ ...formData, squareId: v })}>
+                    <Select value={(formData as any).squareId} onValueChange={(v) => setFormData({ ...formData, squareId: v })}>
                       <SelectTrigger><SelectValue placeholder="اختر المربع" /></SelectTrigger>
                       <SelectContent>
                         {squaresQuery.data?.map((sq: any) => (
@@ -269,19 +269,19 @@ export default function CabinetsManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>كود الكابينة *</Label>
-                    <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="CAB-001" />
+                    <Input value={(formData as any).code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="CAB-001" />
                   </div>
                   <div className="space-y-2">
                     <Label>اسم الكابينة *</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                    <Input value={(formData as any).name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم بالإنجليزية</Label>
-                    <Input value={formData.nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
+                    <Input value={(formData as any).nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>نوع الكابينة</Label>
-                    <Select value={formData.cabinetType} onValueChange={(v) => setFormData({ ...formData, cabinetType: v })}>
+                    <Select value={(formData as any).cabinetType} onValueChange={(v) => setFormData({ ...formData, cabinetType: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="main">رئيسية</SelectItem>
@@ -292,15 +292,15 @@ export default function CabinetsManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>السعة</Label>
-                    <Input type="number" value={formData.capacity} onChange={(e) => setFormData({ ...formData, capacity: e.target.value })} />
+                    <Input type="number" value={(formData as any).capacity} onChange={(e) => setFormData({ ...formData, capacity: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>خط العرض</Label>
-                    <Input type="number" step="any" value={formData.latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} />
+                    <Input type="number" step="any" value={(formData as any).latitude} onChange={(e) => setFormData({ ...formData, latitude: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>خط الطول</Label>
-                    <Input type="number" step="any" value={formData.longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} />
+                    <Input type="number" step="any" value={(formData as any).longitude} onChange={(e) => setFormData({ ...formData, longitude: e.target.value })} />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

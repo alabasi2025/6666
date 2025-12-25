@@ -54,15 +54,15 @@ export default function CashboxesManagement() {
     setLoading(true);
     try {
       const data = {
-        code: formData.code,
-        name: formData.name,
-        nameEn: formData.nameEn || undefined,
-        balance: parseFloat(formData.balance),
-        currency: formData.currency,
+        code: (formData as any).code,
+        name: (formData as any).name,
+        nameEn: (formData as any).nameEn || undefined,
+        balance: parseFloat((formData as any).balance),
+        currency: (formData as any).currency,
       };
       
       if (editingCashbox) {
-        await updateCashboxMutation.mutateAsync({ id: editingCashbox.id, ...data });
+        await updateCashboxMutation.mutateAsync({ id: editingCashbox.id, ...data } as any);
       } else {
         await createCashboxMutation.mutateAsync(data);
       }
@@ -91,7 +91,7 @@ export default function CashboxesManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا الصندوق؟")) {
       try {
-        await deleteCashboxMutation.mutateAsync({ id });
+        await deleteCashboxMutation.mutateAsync({ id } as any);
         cashboxesQuery.refetch();
       } catch (error) {
         console.error("Error deleting cashbox:", error);
@@ -203,23 +203,23 @@ export default function CashboxesManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>الكود *</Label>
-                    <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="CB-001" />
+                    <Input value={(formData as any).code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="CB-001" />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم *</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                    <Input value={(formData as any).name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم بالإنجليزية</Label>
-                    <Input value={formData.nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
+                    <Input value={(formData as any).nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>الرصيد الافتتاحي</Label>
-                    <Input type="number" step="0.01" value={formData.balance} onChange={(e) => setFormData({ ...formData, balance: e.target.value })} />
+                    <Input type="number" step="0.01" value={(formData as any).balance} onChange={(e) => setFormData({ ...formData, balance: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>العملة</Label>
-                    <Input value={formData.currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} />
+                    <Input value={(formData as any).currency} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

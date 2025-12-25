@@ -98,7 +98,7 @@ export default function Branches() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.businessId || !formData.code || !formData.nameAr) {
+    if (!(formData as any).businessId || !(formData as any).code || !(formData as any).nameAr) {
       toast.error("يرجى إدخال الشركة والكود والاسم العربي");
       return;
     }
@@ -106,25 +106,25 @@ export default function Branches() {
     if (editingBranch) {
       await updateMutation.mutateAsync({
         id: editingBranch.id,
-        code: formData.code,
-        nameAr: formData.nameAr,
-        nameEn: formData.nameEn || undefined,
-        type: formData.type,
-        address: formData.address || undefined,
-        phone: formData.phone || undefined,
-        email: formData.email || undefined,
-      });
+        code: (formData as any).code,
+        nameAr: (formData as any).nameAr,
+        nameEn: (formData as any).nameEn || undefined,
+        type: (formData as any).type,
+        address: (formData as any).address || undefined,
+        phone: (formData as any).phone || undefined,
+        email: (formData as any).email || undefined,
+      } as any);
     } else {
       await createMutation.mutateAsync({
-        businessId: parseInt(formData.businessId),
-        code: formData.code,
-        nameAr: formData.nameAr,
-        nameEn: formData.nameEn || undefined,
-        type: formData.type,
-        address: formData.address || undefined,
-        phone: formData.phone || undefined,
-        email: formData.email || undefined,
-      });
+        businessId: parseInt((formData as any).businessId),
+        code: (formData as any).code,
+        nameAr: (formData as any).nameAr,
+        nameEn: (formData as any).nameEn || undefined,
+        type: (formData as any).type,
+        address: (formData as any).address || undefined,
+        phone: (formData as any).phone || undefined,
+        email: (formData as any).email || undefined,
+      } as any);
     }
   };
 
@@ -145,7 +145,7 @@ export default function Branches() {
 
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا الفرع؟")) {
-      await deleteMutation.mutateAsync({ id });
+      await deleteMutation.mutateAsync({ id } as any);
     }
   };
 
@@ -228,7 +228,7 @@ export default function Branches() {
                   <div className="space-y-2">
                     <Label htmlFor="businessId">الشركة *</Label>
                     <Select
-                      value={formData.businessId}
+                      value={(formData as any).businessId}
                       onValueChange={(value) => setFormData({ ...formData, businessId: value })}
                       disabled={!!editingBranch}
                     >
@@ -249,7 +249,7 @@ export default function Branches() {
                     <Input
                       id="code"
                       placeholder="مثال: BR-001"
-                      value={formData.code}
+                      value={(formData as any).code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     />
                   </div>
@@ -257,7 +257,7 @@ export default function Branches() {
                 <div className="space-y-2">
                   <Label htmlFor="type">نوع الفرع</Label>
                   <Select
-                    value={formData.type}
+                    value={(formData as any).type}
                     onValueChange={(value: "main" | "regional" | "local") =>
                       setFormData({ ...formData, type: value })
                     }
@@ -278,7 +278,7 @@ export default function Branches() {
                     <Input
                       id="nameAr"
                       placeholder="اسم الفرع بالعربي"
-                      value={formData.nameAr}
+                      value={(formData as any).nameAr}
                       onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                     />
                   </div>
@@ -287,7 +287,7 @@ export default function Branches() {
                     <Input
                       id="nameEn"
                       placeholder="Branch Name in English"
-                      value={formData.nameEn}
+                      value={(formData as any).nameEn}
                       onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                     />
                   </div>
@@ -303,7 +303,7 @@ export default function Branches() {
                     <Input
                       id="phone"
                       placeholder="05xxxxxxxx"
-                      value={formData.phone}
+                      value={(formData as any).phone}
                       onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     />
                   </div>
@@ -313,7 +313,7 @@ export default function Branches() {
                       id="email"
                       type="email"
                       placeholder="branch@company.com"
-                      value={formData.email}
+                      value={(formData as any).email}
                       onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     />
                   </div>
@@ -323,7 +323,7 @@ export default function Branches() {
                   <Textarea
                     id="address"
                     placeholder="عنوان الفرع الكامل"
-                    value={formData.address}
+                    value={(formData as any).address}
                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   />
                 </div>

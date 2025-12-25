@@ -93,7 +93,7 @@ export type AIChatBoxProps = {
  *   const handleSend = (content: string) => {
  *     const newMessages = [...messages, { role: "user", content }];
  *     setMessages(newMessages);
- *     chatMutation.mutate({ messages: newMessages });
+ *     chatMutation.mutate({ messages: newMessages } as any);
  *   };
  *
  *   return (

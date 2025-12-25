@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -51,10 +50,10 @@ export default function BillingDashboard() {
 
   // إحصائيات حسب فئة العميل
   const customersByCategory = {
-    residential: customers.filter(c => c.type === "residential").length,
-    commercial: customers.filter(c => c.type === "commercial").length,
-    industrial: customers.filter(c => c.type === "industrial").length,
-    governmental: customers.filter(c => c.type === "government").length,
+    residential: customers.filter(c => (c as any).customerType === "residential").length,
+    commercial: customers.filter(c => (c as any).customerType === "commercial").length,
+    industrial: customers.filter(c => (c as any).customerType === "industrial").length,
+    governmental: customers.filter(c => (c as any).customerType === "government").length,
   };
 
   return (

@@ -45,12 +45,12 @@ function StatusBadge({ status }: { status: string }) {
   };
 
   const config = statusConfig[status] || { label: status, color: "bg-gray-500/20 text-gray-500", icon: Server };
-  const Icon = config.icon;
+  const Icon = (config as any).icon;
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${config.color}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${(config as any).color}`}>
       <Icon className="w-3 h-3" />
-      {config.label}
+      {(config as any).label}
     </span>
   );
 }
@@ -131,28 +131,28 @@ export default function Equipment() {
   };
 
   const handleSubmit = () => {
-    if (!formData.code || !formData.nameAr) {
+    if (!(formData as any).code || !(formData as any).nameAr) {
       toast.error("يرجى ملء الحقول المطلوبة");
       return;
     }
 
     const data = {
       businessId: 1,
-      code: formData.code,
-      nameAr: formData.nameAr,
-      nameEn: formData.nameEn || undefined,
-      type: formData.type || undefined,
-      manufacturer: formData.manufacturer || undefined,
-      model: formData.model || undefined,
-      serialNumber: formData.serialNumber || undefined,
-      location: formData.location || undefined,
-      installationDate: formData.installationDate || undefined,
-      status: formData.status,
-      description: formData.description || undefined,
+      code: (formData as any).code,
+      nameAr: (formData as any).nameAr,
+      nameEn: (formData as any).nameEn || undefined,
+      type: (formData as any).type || undefined,
+      manufacturer: (formData as any).manufacturer || undefined,
+      model: (formData as any).model || undefined,
+      serialNumber: (formData as any).serialNumber || undefined,
+      location: (formData as any).location || undefined,
+      installationDate: (formData as any).installationDate || undefined,
+      status: (formData as any).status,
+      description: (formData as any).description || undefined,
     };
 
     if (editingEquipment) {
-      updateMutation.mutate({ id: editingEquipment.id, data });
+      updateMutation.mutate({ id: editingEquipment.id, data } as any);
     } else {
       createMutation.mutate(data);
     }
@@ -177,11 +177,11 @@ export default function Equipment() {
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه المعدة؟")) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ id } as any);
     }
   };
 
-  const filteredEquipment = equipment.filter((item: any) => {
+  const filteredEquipment = (equipment as any[]).filter((item: any) => {
     if (searchQuery && !item.nameAr?.includes(searchQuery) && !item.code?.includes(searchQuery)) {
       return false;
     }
@@ -193,9 +193,9 @@ export default function Equipment() {
 
   const statCards = [
     { label: "إجمالي المعدات", value: equipment.length, icon: Server, color: "primary" },
-    { label: "متصلة", value: equipment.filter((e: any) => e.status === "active" || e.status === "online").length, icon: Wifi, color: "success" },
-    { label: "غير متصلة", value: equipment.filter((e: any) => e.status === "inactive" || e.status === "offline").length, icon: WifiOff, color: "destructive" },
-    { label: "صيانة", value: equipment.filter((e: any) => e.status === "maintenance").length, icon: Settings, color: "warning" },
+    { label: "متصلة", value: (equipment as any[]).filter((e: any) => e.status === "active" || e.status === "online").length, icon: Wifi, color: "success" },
+    { label: "غير متصلة", value: (equipment as any[]).filter((e: any) => e.status === "inactive" || e.status === "offline").length, icon: WifiOff, color: "destructive" },
+    { label: "صيانة", value: (equipment as any[]).filter((e: any) => e.status === "maintenance").length, icon: Settings, color: "warning" },
   ];
 
   return (
@@ -296,7 +296,7 @@ export default function Equipment() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEquipment.map((item: any) => (
+                {(filteredEquipment as any[]).map((item: any) => (
                   <TableRow key={item.id}>
                     <TableCell className="font-mono">{item.code}</TableCell>
                     <TableCell>{item.nameAr}</TableCell>
@@ -338,7 +338,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>الكود *</Label>
               <Input
-                value={formData.code}
+                value={(formData as any).code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 placeholder="EQP-001"
               />
@@ -346,7 +346,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>الاسم (عربي) *</Label>
               <Input
-                value={formData.nameAr}
+                value={(formData as any).nameAr}
                 onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                 placeholder="اسم المعدة"
               />
@@ -354,7 +354,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>الاسم (إنجليزي)</Label>
               <Input
-                value={formData.nameEn}
+                value={(formData as any).nameEn}
                 onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                 placeholder="Equipment Name"
               />
@@ -362,7 +362,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>النوع</Label>
               <Input
-                value={formData.type}
+                value={(formData as any).type}
                 onChange={(e) => setFormData({ ...formData, type: e.target.value })}
                 placeholder="نوع المعدة"
               />
@@ -370,7 +370,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>الشركة المصنعة</Label>
               <Input
-                value={formData.manufacturer}
+                value={(formData as any).manufacturer}
                 onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
                 placeholder="الشركة المصنعة"
               />
@@ -378,7 +378,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>الموديل</Label>
               <Input
-                value={formData.model}
+                value={(formData as any).model}
                 onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                 placeholder="رقم الموديل"
               />
@@ -386,7 +386,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>الرقم التسلسلي</Label>
               <Input
-                value={formData.serialNumber}
+                value={(formData as any).serialNumber}
                 onChange={(e) => setFormData({ ...formData, serialNumber: e.target.value })}
                 placeholder="الرقم التسلسلي"
               />
@@ -395,13 +395,13 @@ export default function Equipment() {
               <Label>تاريخ التركيب</Label>
               <Input
                 type="date"
-                value={formData.installationDate}
+                value={(formData as any).installationDate}
                 onChange={(e) => setFormData({ ...formData, installationDate: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>الحالة</Label>
-              <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
+              <Select value={(formData as any).status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -415,7 +415,7 @@ export default function Equipment() {
             <div className="space-y-2">
               <Label>الموقع</Label>
               <Input
-                value={formData.location}
+                value={(formData as any).location}
                 onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                 placeholder="موقع المعدة"
               />
@@ -423,7 +423,7 @@ export default function Equipment() {
             <div className="col-span-2 space-y-2">
               <Label>الوصف</Label>
               <Textarea
-                value={formData.description}
+                value={(formData as any).description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="وصف المعدة..."
                 rows={3}

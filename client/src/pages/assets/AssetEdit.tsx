@@ -127,7 +127,7 @@ export default function AssetEdit({ assetId }: AssetEditProps) {
       status: formData.status as any,
       usefulLife: formData.usefulLife ? parseInt(formData.usefulLife) : undefined,
       depreciationMethod: (formData.depreciationMethod || undefined) as any,
-    });
+    } as any);
   };
 
   if (isLoadingAsset) {

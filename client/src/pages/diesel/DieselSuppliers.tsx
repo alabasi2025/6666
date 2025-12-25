@@ -119,43 +119,43 @@ export default function DieselSuppliers() {
   };
 
   const handleAdd = () => {
-    if (!formData.code || !formData.nameAr) {
+    if (!(formData as any).code || !(formData as any).nameAr) {
       toast({ title: "خطأ", description: "يرجى ملء الحقول المطلوبة", variant: "destructive" });
       return;
     }
     createMutation.mutate({
       businessId: user?.businessId || 1,
-      code: formData.code,
-      nameAr: formData.nameAr,
-      nameEn: formData.nameEn || undefined,
-      phone: formData.phone || undefined,
-      address: formData.address || undefined,
-      latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
-      longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
-      contactPerson: formData.contactPerson || undefined,
-      isActive: formData.isActive,
-    });
+      code: (formData as any).code,
+      nameAr: (formData as any).nameAr,
+      nameEn: (formData as any).nameEn || undefined,
+      phone: (formData as any).phone || undefined,
+      address: (formData as any).address || undefined,
+      latitude: (formData as any).latitude ? parseFloat((formData as any).latitude) : undefined,
+      longitude: (formData as any).longitude ? parseFloat((formData as any).longitude) : undefined,
+      contactPerson: (formData as any).contactPerson || undefined,
+      isActive: (formData as any).isActive,
+    } as any);
   };
 
   const handleEdit = () => {
     if (!selectedSupplier) return;
     updateMutation.mutate({
       id: selectedSupplier.id,
-      code: formData.code || undefined,
-      nameAr: formData.nameAr || undefined,
-      nameEn: formData.nameEn || undefined,
-      phone: formData.phone || undefined,
-      address: formData.address || undefined,
-      latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
-      longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
-      contactPerson: formData.contactPerson || undefined,
-      isActive: formData.isActive,
-    });
+      code: (formData as any).code || undefined,
+      nameAr: (formData as any).nameAr || undefined,
+      nameEn: (formData as any).nameEn || undefined,
+      phone: (formData as any).phone || undefined,
+      address: (formData as any).address || undefined,
+      latitude: (formData as any).latitude ? parseFloat((formData as any).latitude) : undefined,
+      longitude: (formData as any).longitude ? parseFloat((formData as any).longitude) : undefined,
+      contactPerson: (formData as any).contactPerson || undefined,
+      isActive: (formData as any).isActive,
+    } as any);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا المورد؟")) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ id } as any);
     }
   };
 
@@ -272,7 +272,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>الكود *</Label>
               <Input
-                value={formData.code}
+                value={(formData as any).code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 placeholder="SUP001"
               />
@@ -280,7 +280,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>الاسم بالعربي *</Label>
               <Input
-                value={formData.nameAr}
+                value={(formData as any).nameAr}
                 onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                 placeholder="محمود الحجة"
               />
@@ -288,7 +288,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>الاسم بالإنجليزي</Label>
               <Input
-                value={formData.nameEn}
+                value={(formData as any).nameEn}
                 onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                 placeholder="Mahmoud Al-Hujja"
               />
@@ -296,7 +296,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>الهاتف</Label>
               <Input
-                value={formData.phone}
+                value={(formData as any).phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+966xxxxxxxxx"
                 dir="ltr"
@@ -305,7 +305,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>جهة الاتصال</Label>
               <Input
-                value={formData.contactPerson}
+                value={(formData as any).contactPerson}
                 onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
                 placeholder="اسم الشخص المسؤول"
               />
@@ -313,7 +313,7 @@ export default function DieselSuppliers() {
             <div className="col-span-2 space-y-2">
               <Label>العنوان</Label>
               <Input
-                value={formData.address}
+                value={(formData as any).address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 placeholder="العنوان الكامل"
               />
@@ -321,7 +321,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>خط العرض</Label>
               <Input
-                value={formData.latitude}
+                value={(formData as any).latitude}
                 onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                 placeholder="24.7136"
                 dir="ltr"
@@ -332,7 +332,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>خط الطول</Label>
               <Input
-                value={formData.longitude}
+                value={(formData as any).longitude}
                 onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                 placeholder="46.6753"
                 dir="ltr"
@@ -342,7 +342,7 @@ export default function DieselSuppliers() {
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <Switch
-                checked={formData.isActive}
+                checked={(formData as any).isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
               <Label>نشط</Label>
@@ -369,28 +369,28 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>الكود *</Label>
               <Input
-                value={formData.code}
+                value={(formData as any).code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>الاسم بالعربي *</Label>
               <Input
-                value={formData.nameAr}
+                value={(formData as any).nameAr}
                 onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>الاسم بالإنجليزي</Label>
               <Input
-                value={formData.nameEn}
+                value={(formData as any).nameEn}
                 onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>الهاتف</Label>
               <Input
-                value={formData.phone}
+                value={(formData as any).phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 dir="ltr"
               />
@@ -398,21 +398,21 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>جهة الاتصال</Label>
               <Input
-                value={formData.contactPerson}
+                value={(formData as any).contactPerson}
                 onChange={(e) => setFormData({ ...formData, contactPerson: e.target.value })}
               />
             </div>
             <div className="col-span-2 space-y-2">
               <Label>العنوان</Label>
               <Input
-                value={formData.address}
+                value={(formData as any).address}
                 onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>خط العرض</Label>
               <Input
-                value={formData.latitude}
+                value={(formData as any).latitude}
                 onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                 dir="ltr"
                 type="number"
@@ -422,7 +422,7 @@ export default function DieselSuppliers() {
             <div className="space-y-2">
               <Label>خط الطول</Label>
               <Input
-                value={formData.longitude}
+                value={(formData as any).longitude}
                 onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                 dir="ltr"
                 type="number"
@@ -431,7 +431,7 @@ export default function DieselSuppliers() {
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <Switch
-                checked={formData.isActive}
+                checked={(formData as any).isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
               <Label>نشط</Label>

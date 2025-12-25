@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { DataTable, Column, StatusBadge } from "@/components/DataTable";
@@ -68,17 +67,17 @@ export default function Items() {
     businessId: 1,
     categoryId: filterCategory !== "all" ? parseInt(filterCategory) : undefined,
     type: filterType !== "all" ? filterType : undefined,
-  });
+  } as any);
 
   // Fetch categories
   const { data: categories = [] } = trpc.inventory.categories.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Fetch dashboard stats
   const { data: stats } = trpc.inventory.dashboardStats.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Mutations
   const createItem = trpc.inventory.items.create.useMutation({
@@ -244,28 +243,28 @@ export default function Items() {
 
   const confirmDelete = () => {
     if (selectedItem) {
-      deleteItem.mutate({ id: selectedItem.id });
+      deleteItem.mutate({ id: selectedItem.id } as any);
     }
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.code || !formData.nameAr || !formData.unit) {
+    if (!(formData as any).code || !(formData as any).nameAr || !(formData as any).unit) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
 
     const data = {
       ...formData,
-      categoryId: formData.categoryId ? parseInt(formData.categoryId) : undefined,
+      categoryId: (formData as any).categoryId ? parseInt((formData as any).categoryId) : undefined,
       businessId: 1,
     };
 
     if (selectedItem) {
-      updateItem.mutate({ id: selectedItem.id, ...data });
+      updateItem.mutate({ id: selectedItem.id, ...data } as any);
     } else {
-      createItem.mutate(data);
+      createItem.mutate(data as any);
     }
   };
 
@@ -322,7 +321,7 @@ export default function Items() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع الفئات</SelectItem>
-                  {categories.map((cat: any) => (
+                  {(categories as any[]).map((cat: any) => (
                     <SelectItem key={cat.id} value={cat.id.toString()}>
                       {cat.nameAr}
                     </SelectItem>
@@ -380,7 +379,7 @@ export default function Items() {
                 <Label htmlFor="code">الكود *</Label>
                 <Input
                   id="code"
-                  value={formData.code}
+                  value={(formData as any).code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                   placeholder="ITM-001"
                   required
@@ -390,7 +389,7 @@ export default function Items() {
                 <Label htmlFor="nameAr">اسم الصنف *</Label>
                 <Input
                   id="nameAr"
-                  value={formData.nameAr}
+                  value={(formData as any).nameAr}
                   onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                   required
                 />
@@ -399,7 +398,7 @@ export default function Items() {
                 <Label htmlFor="nameEn">الاسم بالإنجليزية</Label>
                 <Input
                   id="nameEn"
-                  value={formData.nameEn}
+                  value={(formData as any).nameEn}
                   onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                 />
               </div>
@@ -407,7 +406,7 @@ export default function Items() {
                 <Label htmlFor="unit">الوحدة *</Label>
                 <Input
                   id="unit"
-                  value={formData.unit}
+                  value={(formData as any).unit}
                   onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
                   placeholder="قطعة / متر / كجم"
                   required
@@ -416,14 +415,14 @@ export default function Items() {
               <div className="space-y-2">
                 <Label htmlFor="categoryId">الفئة</Label>
                 <Select
-                  value={formData.categoryId}
+                  value={(formData as any).categoryId}
                   onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الفئة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat: any) => (
+                    {(categories as any[]).map((cat: any) => (
                       <SelectItem key={cat.id} value={cat.id.toString()}>
                         {cat.nameAr}
                       </SelectItem>
@@ -434,7 +433,7 @@ export default function Items() {
               <div className="space-y-2">
                 <Label htmlFor="type">النوع</Label>
                 <Select
-                  value={formData.type}
+                  value={(formData as any).type}
                   onValueChange={(value) => setFormData({ ...formData, type: value })}
                 >
                   <SelectTrigger>
@@ -452,7 +451,7 @@ export default function Items() {
                 <Label htmlFor="barcode">الباركود</Label>
                 <Input
                   id="barcode"
-                  value={formData.barcode}
+                  value={(formData as any).barcode}
                   onChange={(e) => setFormData({ ...formData, barcode: e.target.value })}
                 />
               </div>
@@ -461,7 +460,7 @@ export default function Items() {
                 <Input
                   id="standardCost"
                   type="number"
-                  value={formData.standardCost}
+                  value={(formData as any).standardCost}
                   onChange={(e) => setFormData({ ...formData, standardCost: e.target.value })}
                 />
               </div>
@@ -470,7 +469,7 @@ export default function Items() {
                 <Input
                   id="minStock"
                   type="number"
-                  value={formData.minStock}
+                  value={(formData as any).minStock}
                   onChange={(e) => setFormData({ ...formData, minStock: e.target.value })}
                 />
               </div>
@@ -479,7 +478,7 @@ export default function Items() {
                 <Input
                   id="maxStock"
                   type="number"
-                  value={formData.maxStock}
+                  value={(formData as any).maxStock}
                   onChange={(e) => setFormData({ ...formData, maxStock: e.target.value })}
                 />
               </div>
@@ -487,7 +486,7 @@ export default function Items() {
                 <Label htmlFor="description">الوصف</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={(formData as any).description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                 />

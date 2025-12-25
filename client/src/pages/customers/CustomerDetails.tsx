@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +17,7 @@ import { useLocation, useParams } from "wouter";
 export default function CustomerDetails() {
   const [, setLocation] = useLocation();
   const params = useParams();
-  const customerId = params.id;
+  const customerId = (params as any)?.id;
 
   // بيانات تجريبية للعميل
   const customer = {
@@ -85,8 +84,8 @@ export default function CustomerDetails() {
               معلومات العميل
             </CardTitle>
             <div className="flex gap-2">
-              {getStatusBadge(customer.status)}
-              {getTypeBadge(customer.type)}
+              {getStatusBadge((customer as any).status)}
+              {getTypeBadge((customer as any).type)}
             </div>
           </div>
         </CardHeader>
@@ -96,42 +95,42 @@ export default function CustomerDetails() {
               <User className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">الاسم</p>
-                <p className="font-medium">{customer.name}</p>
+                <p className="font-medium">{(customer as any).name}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Phone className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">رقم الهاتف</p>
-                <p className="font-medium" dir="ltr">{customer.phone}</p>
+                <p className="font-medium" dir="ltr">{(customer as any).phone}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Mail className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">البريد الإلكتروني</p>
-                <p className="font-medium">{customer.email}</p>
+                <p className="font-medium">{(customer as any).email}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <MapPin className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">العنوان</p>
-                <p className="font-medium">{customer.address}</p>
+                <p className="font-medium">{(customer as any).address}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <FileText className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">رقم الحساب</p>
-                <p className="font-medium">{customer.accountNumber}</p>
+                <p className="font-medium">{(customer as any).accountNumber}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">تاريخ الانضمام</p>
-                <p className="font-medium">{customer.joinDate}</p>
+                <p className="font-medium">{(customer as any).joinDate}</p>
               </div>
             </div>
           </div>
@@ -145,7 +144,7 @@ export default function CustomerDetails() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">العدادات</p>
-                <p className="text-2xl font-bold">{customer.totalMeters}</p>
+                <p className="text-2xl font-bold">{(customer as any).totalMeters}</p>
               </div>
               <Activity className="w-8 h-8 text-primary" />
             </div>
@@ -161,7 +160,7 @@ export default function CustomerDetails() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">الفواتير</p>
-                <p className="text-2xl font-bold">{customer.totalInvoices}</p>
+                <p className="text-2xl font-bold">{(customer as any).totalInvoices}</p>
               </div>
               <FileText className="w-8 h-8 text-blue-500" />
             </div>
@@ -177,7 +176,7 @@ export default function CustomerDetails() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">المدفوعات</p>
-                <p className="text-2xl font-bold">{customer.totalPayments}</p>
+                <p className="text-2xl font-bold">{(customer as any).totalPayments}</p>
               </div>
               <CreditCard className="w-8 h-8 text-green-500" />
             </div>
@@ -193,7 +192,7 @@ export default function CustomerDetails() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">الرصيد المستحق</p>
-                <p className="text-2xl font-bold text-orange-500">{customer.balance} ر.س</p>
+                <p className="text-2xl font-bold text-orange-500">{(customer as any).balance} ر.س</p>
               </div>
               <CreditCard className="w-8 h-8 text-orange-500" />
             </div>

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { DataTable, Column, StatusBadge } from "@/components/DataTable";
@@ -62,12 +61,12 @@ export default function ChartOfAccounts() {
   // Fetch accounts from API
   const { data: accounts = [], isLoading, refetch } = trpc.accounting.accounts.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Fetch dashboard stats
   const { data: stats } = trpc.accounting.dashboardStats.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Mutations
   const createAccount = trpc.accounting.accounts.create.useMutation({
@@ -209,26 +208,26 @@ export default function ChartOfAccounts() {
 
   const confirmDelete = () => {
     if (selectedAccount) {
-      deleteAccount.mutate({ id: selectedAccount.id });
+      deleteAccount.mutate({ id: selectedAccount.id } as any);
     }
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.code || !formData.nameAr) {
+    if (!(formData as any).code || !(formData as any).nameAr) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
 
     const data = {
       ...formData,
-      parentId: formData.parentId ? parseInt(formData.parentId) : undefined,
+      parentId: (formData as any).parentId ? parseInt((formData as any).parentId) : undefined,
       businessId: 1,
     };
 
     if (selectedAccount) {
-      updateAccount.mutate({ id: selectedAccount.id, ...data });
+      updateAccount.mutate({ id: selectedAccount.id, ...data } as any);
     } else {
       createAccount.mutate(data);
     }
@@ -304,7 +303,7 @@ export default function ChartOfAccounts() {
                   <Label htmlFor="code">رقم الحساب *</Label>
                   <Input
                     id="code"
-                    value={formData.code}
+                    value={(formData as any).code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     placeholder="1001"
                     required
@@ -313,7 +312,7 @@ export default function ChartOfAccounts() {
                 <div className="space-y-2">
                   <Label htmlFor="type">النوع</Label>
                   <Select
-                    value={formData.type}
+                    value={(formData as any).type}
                     onValueChange={(value) => setFormData({ ...formData, type: value })}
                   >
                     <SelectTrigger>
@@ -333,7 +332,7 @@ export default function ChartOfAccounts() {
                 <Label htmlFor="nameAr">اسم الحساب *</Label>
                 <Input
                   id="nameAr"
-                  value={formData.nameAr}
+                  value={(formData as any).nameAr}
                   onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                   required
                 />
@@ -342,7 +341,7 @@ export default function ChartOfAccounts() {
                 <Label htmlFor="nameEn">الاسم بالإنجليزية</Label>
                 <Input
                   id="nameEn"
-                  value={formData.nameEn}
+                  value={(formData as any).nameEn}
                   onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                 />
               </div>
@@ -350,7 +349,7 @@ export default function ChartOfAccounts() {
                 <div className="space-y-2">
                   <Label htmlFor="nature">الطبيعة</Label>
                   <Select
-                    value={formData.nature}
+                    value={(formData as any).nature}
                     onValueChange={(value) => setFormData({ ...formData, nature: value })}
                   >
                     <SelectTrigger>
@@ -365,7 +364,7 @@ export default function ChartOfAccounts() {
                 <div className="space-y-2">
                   <Label htmlFor="parentId">الحساب الأب</Label>
                   <Select
-                    value={formData.parentId}
+                    value={(formData as any).parentId}
                     onValueChange={(value) => setFormData({ ...formData, parentId: value })}
                   >
                     <SelectTrigger>
@@ -373,7 +372,7 @@ export default function ChartOfAccounts() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">بدون</SelectItem>
-                      {accounts.filter((a: any) => a.id !== selectedAccount?.id).map((acc: any) => (
+                      {(accounts as any[]).filter((a: any) => a.id !== selectedAccount?.id).map((acc: any) => (
                         <SelectItem key={acc.id} value={acc.id.toString()}>
                           {acc.code} - {acc.nameAr}
                         </SelectItem>
@@ -386,7 +385,7 @@ export default function ChartOfAccounts() {
                 <Label htmlFor="description">الوصف</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={(formData as any).description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                 />
@@ -395,7 +394,7 @@ export default function ChartOfAccounts() {
                 <Label htmlFor="isActive">نشط</Label>
                 <Switch
                   id="isActive"
-                  checked={formData.isActive}
+                  checked={(formData as any).isActive}
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
               </div>

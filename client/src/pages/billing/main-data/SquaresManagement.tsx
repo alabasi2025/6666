@@ -56,20 +56,20 @@ export default function SquaresManagement() {
       if (editingSquare) {
         await updateSquareMutation.mutateAsync({
           id: editingSquare.id,
-          areaId: parseInt(formData.areaId),
-          code: formData.code,
-          name: formData.name,
-          nameEn: formData.nameEn || undefined,
-          description: formData.description || undefined,
-        });
+          areaId: parseInt((formData as any).areaId),
+          code: (formData as any).code,
+          name: (formData as any).name,
+          nameEn: (formData as any).nameEn || undefined,
+          description: (formData as any).description || undefined,
+        } as any);
       } else {
         await createSquareMutation.mutateAsync({
-          areaId: parseInt(formData.areaId),
-          code: formData.code,
-          name: formData.name,
-          nameEn: formData.nameEn || undefined,
-          description: formData.description || undefined,
-        });
+          areaId: parseInt((formData as any).areaId),
+          code: (formData as any).code,
+          name: (formData as any).name,
+          nameEn: (formData as any).nameEn || undefined,
+          description: (formData as any).description || undefined,
+        } as any);
       }
       squaresQuery.refetch();
       resetForm();
@@ -96,7 +96,7 @@ export default function SquaresManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا المربع؟")) {
       try {
-        await deleteSquareMutation.mutateAsync({ id });
+        await deleteSquareMutation.mutateAsync({ id } as any);
         squaresQuery.refetch();
       } catch (error) {
         console.error("Error deleting square:", error);
@@ -259,7 +259,7 @@ export default function SquaresManagement() {
                   <div className="space-y-2">
                     <Label htmlFor="areaId">المنطقة *</Label>
                     <Select
-                      value={formData.areaId}
+                      value={(formData as any).areaId}
                       onValueChange={(value) => setFormData({ ...formData, areaId: value })}
                     >
                       <SelectTrigger>
@@ -278,7 +278,7 @@ export default function SquaresManagement() {
                     <Label htmlFor="code">كود المربع *</Label>
                     <Input
                       id="code"
-                      value={formData.code}
+                      value={(formData as any).code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                       required
                       placeholder="مثال: SQ-001"
@@ -288,7 +288,7 @@ export default function SquaresManagement() {
                     <Label htmlFor="name">اسم المربع *</Label>
                     <Input
                       id="name"
-                      value={formData.name}
+                      value={(formData as any).name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                       placeholder="اسم المربع بالعربية"
@@ -298,7 +298,7 @@ export default function SquaresManagement() {
                     <Label htmlFor="nameEn">الاسم بالإنجليزية</Label>
                     <Input
                       id="nameEn"
-                      value={formData.nameEn}
+                      value={(formData as any).nameEn}
                       onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                       placeholder="Square Name in English"
                     />
@@ -307,7 +307,7 @@ export default function SquaresManagement() {
                     <Label htmlFor="description">الوصف</Label>
                     <Input
                       id="description"
-                      value={formData.description}
+                      value={(formData as any).description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="وصف المربع"
                     />

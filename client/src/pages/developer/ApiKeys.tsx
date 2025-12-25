@@ -20,7 +20,7 @@ export default function ApiKeys() {
   const [newApiKey, setNewApiKey] = useState<string | null>(null);
   const [showKey, setShowKey] = useState(false);
 
-  const { data: apiKeys, isLoading, refetch } = trpc.developer.apiKeys.list.useQuery({ businessId: 1 });
+  const { data: apiKeys, isLoading, refetch } = trpc.developer.apiKeys.list.useQuery({ businessId: 1 } as any);
 
   const createMutation = trpc.developer.apiKeys.create.useMutation({
     onSuccess: (data) => {
@@ -48,11 +48,11 @@ export default function ApiKeys() {
     const formData = new FormData(e.currentTarget);
     createMutation.mutate({
       businessId: 1,
-      name: formData.get("name") as string,
-      description: formData.get("description") as string || undefined,
-      rateLimitPerMinute: parseInt(formData.get("rateLimitPerMinute") as string) || 60,
-      rateLimitPerDay: parseInt(formData.get("rateLimitPerDay") as string) || 10000,
-    });
+      name: (formData as any).get("name") as string,
+      description: (formData as any).get("description") as string || undefined,
+      rateLimitPerMinute: parseInt((formData as any).get("rateLimitPerMinute") as string) || 60,
+      rateLimitPerDay: parseInt((formData as any).get("rateLimitPerDay") as string) || 10000,
+    } as any);
   };
 
   const copyToClipboard = (text: string) => {
@@ -264,7 +264,7 @@ export default function ApiKeys() {
                           size="icon"
                           onClick={() => {
                             if (confirm("هل أنت متأكد من إلغاء هذا المفتاح؟")) {
-                              revokeMutation.mutate({ id: key.id });
+                              revokeMutation.mutate({ id: key.id } as any);
                             }
                           }}
                         >
