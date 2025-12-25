@@ -30,7 +30,7 @@ export default function DieselPumpsAssets() {
   const { data: pumps, isLoading } = trpc.diesel.pumpMeters.list.useQuery();
   const { data: stations } = trpc.station.list.useQuery();
 
-  const createMutation = trpc.diesel.pumpMeters.createMeter.useMutation({
+  const createMutation = trpc.diesel.pumpMeters.create.useMutation({
     onSuccess: () => {
       toast({ title: "تم إضافة الطرمبة بنجاح" });
       utils.diesel.pumpMeters.list.invalidate();
@@ -42,7 +42,7 @@ export default function DieselPumpsAssets() {
     },
   });
 
-  const updateMutation = trpc.diesel.pumpMeters.updateMeter.useMutation({
+  const updateMutation = trpc.diesel.pumpMeters.update.useMutation({
     onSuccess: () => {
       toast({ title: "تم تحديث الطرمبة بنجاح" });
       utils.diesel.pumpMeters.list.invalidate();
@@ -54,7 +54,7 @@ export default function DieselPumpsAssets() {
     },
   });
 
-  const deleteMutation = trpc.diesel.pumpMeters.deleteMeter.useMutation({
+  const deleteMutation = trpc.diesel.pumpMeters.delete.useMutation({
     onSuccess: () => {
       toast({ title: "تم حذف الطرمبة بنجاح" });
       utils.diesel.pumpMeters.list.invalidate();
@@ -83,7 +83,7 @@ export default function DieselPumpsAssets() {
       currentReading: formData.currentReading || "0",
     };
     if (editingPump) { updateMutation.mutate({ id: editingPump.id, ...data } as any); }
-    else { createMutation.mutate(data); }
+    else { createMutation.mutate(data as any); }
   };
 
   const handleEdit = (pump: any) => {

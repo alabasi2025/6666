@@ -94,7 +94,7 @@ export default function DieselTanksAssets() {
       openingsCount: parseInt(formData.openingsCount) || 1,
     };
     if (editingTank) { updateMutation.mutate({ id: editingTank.id, ...data } as any); }
-    else { createMutation.mutate(data); }
+    else { createMutation.mutate(data as any); }
   };
 
   const handleEdit = (tank: any) => {

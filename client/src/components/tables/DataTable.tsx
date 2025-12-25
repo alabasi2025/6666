@@ -372,13 +372,13 @@ export const DataTable = memo(function DataTable<T extends Record<string, any>>(
   const visibleColumns = columns.filter((col) => !col.hidden);
 
   // معالج التصدير
-  const handleExport = useCallback(() => {
+  const handleExport = useCallback((format?: any, exportData?: any[]) => {
     if (onExport) {
-      onExport();
+      onExport(format || 'csv', exportData || sortedData);
     } else if (exportable) {
       setShowExportDialog(true);
     }
-  }, [onExport, exportable]);
+  }, [onExport, exportable, sortedData]);
 
   return (
     <Card className={cn("w-full", containerClassName)}>

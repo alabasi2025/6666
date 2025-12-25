@@ -76,6 +76,13 @@ export interface DataTableProps<T> {
   emptyMessage?: string;
   addButtonText?: string;
   getRowId?: (row: T) => string | number;
+  customActions?: Array<{
+    id: string;
+    label: string;
+    icon?: React.ReactNode;
+    onClick: (row: T) => void;
+    isVisible?: (row: T) => boolean;
+  }>;
 }
 
 type SortDirection = "asc" | "desc" | null;
@@ -99,6 +106,7 @@ export function DataTable<T extends Record<string, any>>({
   actions = true,
   emptyMessage = "لا توجد بيانات",
   getRowId = (row) => row.id,
+  customActions = [],
 }: DataTableProps<T>) {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);

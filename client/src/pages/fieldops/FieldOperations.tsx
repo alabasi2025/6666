@@ -511,7 +511,6 @@ export default function FieldOperations({ businessId }: FieldOperationsProps) {
                   title: (formData as any).get("title") as string,
                   description: (formData as any).get("description") as string || undefined,
                   address: (formData as any).get("address") as string || undefined,
-                  operationType: (formData as any).get("operationType") as any,
                   priority: (formData as any).get("priority") as any,
                   scheduledDate: (formData as any).get("scheduledDate") as string || undefined,
                   assignedTeamId: (formData as any).get("teamId") ? Number((formData as any).get("teamId")) : undefined,

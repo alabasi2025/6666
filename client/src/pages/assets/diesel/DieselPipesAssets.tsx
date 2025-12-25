@@ -85,7 +85,7 @@ export default function DieselPipesAssets() {
       condition: formData.condition as "good" | "fair" | "poor" | "needs_replacement",
     };
     if (editingPipe) { updateMutation.mutate({ id: editingPipe.id, ...data } as any); }
-    else { createMutation.mutate(data); }
+    else { createMutation.mutate(data as any); }
   };
 
   const handleEdit = (pipe: any) => {

@@ -31,7 +31,7 @@ export default function DieselReceiving() {
   });
 
   const utils = trpc.useUtils();
-  const { data: stations } = trpc.organization.stations.list.useQuery({ businessId: 1 } as any);
+  const { data: stations } = trpc.assets.stations.list.useQuery({ businessId: 1 } as any);
   const { data: suppliers } = trpc.diesel.suppliers.list.useQuery({ businessId: 1 } as any);
   const { data: tankers } = trpc.diesel.tankers.list.useQuery({ businessId: 1 } as any);
   const { data: tanks } = trpc.diesel.tanks.list.useQuery({ businessId: 1 } as any);
@@ -82,17 +82,16 @@ export default function DieselReceiving() {
 
   const handleSubmit = () => {
     const data = {
+      businessId: 1,
       stationId: parseInt((formData as any).stationId),
-      supplierId: (formData as any).supplierId ? parseInt((formData as any).supplierId) : undefined,
-      tankerId: (formData as any).tankerId ? parseInt((formData as any).tankerId) : undefined,
-      receivingTankId: (formData as any).receivingTankId ? parseInt((formData as any).receivingTankId) : undefined,
-      quantityOrdered: (formData as any).quantityOrdered,
-      quantityReceived: (formData as any).quantityReceived || undefined,
-      meterReadingBefore: (formData as any).meterReadingBefore || undefined,
-      meterReadingAfter: (formData as any).meterReadingAfter || undefined,
+      taskNumber: `RT-${Date.now()}`,
+      taskDate: new Date().toISOString().split('T')[0],
+      employeeId: 1, // TODO: get from context
+      supplierId: parseInt((formData as any).supplierId) || 1,
+      tankerId: parseInt((formData as any).tankerId) || 1,
       notes: (formData as any).notes || undefined,
     };
-    createMutation.mutate(data);
+    createMutation.mutate(data as any);
   };
 
   const addDistributionTank = () => {
@@ -236,7 +235,7 @@ export default function DieselReceiving() {
               </div>
 
               {/* قراءات العداد */}
-              {stationConfig?.config?.hasIntakePump && stationConfig?.config?.intakePumpHasMeter && (
+              {(stationConfig as any)?.config?.hasIntakePump && (stationConfig as any)?.config?.intakePumpHasMeter && (
                 <Card className="bg-muted/50">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm">قراءات عداد الطرمبة</CardTitle>

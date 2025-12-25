@@ -229,7 +229,7 @@ export default function ChartOfAccounts() {
     if (selectedAccount) {
       updateAccount.mutate({ id: selectedAccount.id, ...data } as any);
     } else {
-      createAccount.mutate(data);
+      createAccount.mutate(data as any);
     }
   };
 

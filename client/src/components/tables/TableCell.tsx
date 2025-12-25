@@ -116,12 +116,13 @@ export function DateCell({
 }) {
   const date = value instanceof Date ? value : new Date(value);
   
-  const formatOptions: Intl.DateTimeFormatOptions = {
+  const formatOptionsMap: Record<string, Intl.DateTimeFormatOptions> = {
     short: { day: "numeric", month: "numeric", year: "numeric" },
     medium: { day: "numeric", month: "short", year: "numeric" },
     long: { day: "numeric", month: "long", year: "numeric" },
     full: { weekday: "long", day: "numeric", month: "long", year: "numeric" },
-  }[format];
+  };
+  const formatOptions = formatOptionsMap[format];
 
   return (
     <span className={className}>

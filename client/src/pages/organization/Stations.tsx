@@ -580,7 +580,7 @@ export default function Stations() {
                     <TableCell>{getBranchName(station.branchId)}</TableCell>
                     <TableCell>{getTypeLabel(station.type)}</TableCell>
                     <TableCell>
-                      {station.capacity ? `${station.capacity} ${station.capacityUnit || "MW"}` : "-"}
+                      {station.capacity ? `${station.capacity} ${(station as any).capacityUnit || "MW"}` : "-"}
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(station.status)}>{getStatusLabel(station.status)}</Badge>

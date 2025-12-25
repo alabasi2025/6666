@@ -159,13 +159,13 @@ export default function PaymentsManagement() {
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
           <p className="text-sm text-gray-500">إجمالي المبالغ المحصلة</p>
           <p className="text-2xl font-bold text-green-600">
-            {data?.data.reduce((sum: number, p: Payment) => sum + parseFloat(p.amount), 0).toLocaleString()} ر.س
+            {(data as any)?.data?.reduce((sum: number, p: any) => sum + parseFloat(p.amount || '0'), 0)?.toLocaleString() || 0} ر.س
           </p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
           <p className="text-sm text-gray-500">مدفوعات اليوم</p>
           <p className="text-2xl font-bold text-blue-600">
-            {data?.(data as any[]).filter((p: any) => p.paymentDate === new Date().toISOString().split("T")[0]).length || 0}
+            {(data as any)?.data?.filter((p: any) => p.paymentDate === new Date().toISOString().split("T")[0])?.length || 0}
           </p>
         </div>
       </div>

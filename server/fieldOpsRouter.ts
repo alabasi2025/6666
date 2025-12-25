@@ -140,6 +140,7 @@ export const fieldOpsRouter = router({
         data: z.object({
           title: z.string().optional(),
           description: z.string().optional(),
+          address: z.string().optional(),
           priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
           scheduledDate: z.string().optional(),
           scheduledTime: z.string().optional(),

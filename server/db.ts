@@ -2096,10 +2096,14 @@ export async function getFieldOperations(businessId: number, filters?: {
     businessId: fieldOperations.businessId,
     operationNumber: fieldOperations.operationNumber,
     operationType: fieldOperations.operationType,
+    title: fieldOperations.title,
+    description: fieldOperations.description,
+    address: fieldOperations.address,
     status: fieldOperations.status,
     priority: fieldOperations.priority,
     scheduledDate: fieldOperations.scheduledDate,
     assignedTeamId: fieldOperations.assignedTeamId,
+    assignedWorkerId: fieldOperations.assignedWorkerId,
   }).from(fieldOperations)
     .where(and(...conditions))
     .orderBy(desc(fieldOperations.createdAt));
@@ -2196,6 +2200,10 @@ export async function getFieldTeams(businessId: number) {
     code: fieldTeams.code,
     nameAr: fieldTeams.nameAr,
     nameEn: fieldTeams.nameEn,
+    teamType: fieldTeams.teamType,
+    workingArea: fieldTeams.workingArea,
+    maxMembers: fieldTeams.maxMembers,
+    currentMembers: fieldTeams.currentMembers,
     status: fieldTeams.status,
     isActive: fieldTeams.isActive,
   }).from(fieldTeams)
@@ -2258,8 +2266,14 @@ export async function getFieldWorkers(businessId: number, filters?: {
     businessId: fieldWorkers.businessId,
     teamId: fieldWorkers.teamId,
     employeeId: fieldWorkers.employeeId,
+    employeeNumber: fieldWorkers.employeeNumber,
     nameAr: fieldWorkers.nameAr,
     phone: fieldWorkers.phone,
+    email: fieldWorkers.email,
+    workerType: fieldWorkers.workerType,
+    specialization: fieldWorkers.specialization,
+    currentLocationLat: fieldWorkers.currentLocationLat,
+    currentLocationLng: fieldWorkers.currentLocationLng,
     status: fieldWorkers.status,
     isActive: fieldWorkers.isActive,
   }).from(fieldWorkers)

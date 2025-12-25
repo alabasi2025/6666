@@ -299,7 +299,7 @@ export default function AssetsList() {
     if (selectedAsset) {
       updateAsset.mutate({ id: selectedAsset.id, ...data } as any);
     } else {
-      createAsset.mutate(data);
+      createAsset.mutate(data as any);
     }
   };
 

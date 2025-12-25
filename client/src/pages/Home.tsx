@@ -16,10 +16,10 @@ export default function Home() {
   const [, setLocation] = useLocation();
 
   // Fetch public stats from API
-  const { data: billingStats } = trpc.billing.stats.useQuery(
+  const { data: billingStats } = (trpc.billing as any).stats?.useQuery?.(
     { businessId: 1 },
     { enabled: false } // Disabled for public page - will use static data
-  );
+  ) || { data: null };
 
   useEffect(() => {
     if (isAuthenticated && !loading) {

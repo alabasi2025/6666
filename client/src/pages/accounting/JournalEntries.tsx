@@ -253,6 +253,7 @@ export default function JournalEntries() {
     createEntry.mutate({
       businessId: 1,
       entryDate: (formData as any).entryDate,
+      periodId: 1, // TODO: get from context
       type: (formData as any).type,
       description: (formData as any).description,
       lines: validLines.map(line => ({
@@ -260,8 +261,8 @@ export default function JournalEntries() {
         debit: line.debit || "0",
         credit: line.credit || "0",
         description: line.description,
-      } as any)),
-    });
+      })),
+    } as any);
   };
 
   const { totalDebit, totalCredit, isBalanced } = calculateTotals();
@@ -305,11 +306,13 @@ export default function JournalEntries() {
         addButtonText="إنشاء قيد"
         searchPlaceholder="البحث في القيود..."
         searchKeys={["entryNumber", "description"]}
-        customActions={(row) => row.status === "draft" ? (
-          <Button size="sm" variant="outline" onClick={() => handlePost(row)}>
-            ترحيل
-          </Button>
-        ) : null}
+        customActions={[{
+          id: 'post',
+          label: 'ترحيل',
+          icon: undefined,
+          onClick: (row: any) => handlePost(row),
+          isVisible: (row: any) => row.status === 'draft',
+        }]}
       />
 
       {/* Add Dialog */}

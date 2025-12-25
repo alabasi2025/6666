@@ -35,10 +35,7 @@ export default function GeneralLedger() {
   // Fetch ledger entries
   const { data: ledgerData, isLoading: ledgerLoading, refetch } = trpc.accounting.accounts.list.useQuery({
     businessId: 1,
-    accountId: selectedAccount ? parseInt(selectedAccount) : undefined,
-    dateFrom: dateFrom || undefined,
-    dateTo: dateTo || undefined,
-  }, {
+  } as any, {
     enabled: !!selectedAccount,
   });
 

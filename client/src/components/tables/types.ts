@@ -372,7 +372,7 @@ export interface DataTableProps<T = any>
  */
 export interface TableHeaderProps<T = any> {
   /** تعريفات الأعمدة */
-  columns: ColumnDefinition<T>[];
+  columns: ColumnDefinition<any>[];
   /** حالة الترتيب */
   sortState?: SortState;
   /** دالة عند تغيير الترتيب */
@@ -400,7 +400,7 @@ export interface TableBodyProps<T = any> {
   /** البيانات */
   data: T[];
   /** تعريفات الأعمدة */
-  columns: ColumnDefinition<T>[];
+  columns: ColumnDefinition<any>[];
   /** دالة للحصول على معرف الصف */
   getRowId: (row: T) => string | number;
   /** هل الجدول في حالة تحميل */
@@ -442,7 +442,7 @@ export interface TableRowProps<T = any> {
   /** فهرس الصف */
   index: number;
   /** تعريفات الأعمدة */
-  columns: ColumnDefinition<T>[];
+  columns: ColumnDefinition<any>[];
   /** معرف الصف */
   rowId: string | number;
   /** هل التحديد مفعل */
@@ -578,7 +578,7 @@ export interface TableExportProps<T = any> {
   /** البيانات */
   data: T[];
   /** تعريفات الأعمدة */
-  columns: ColumnDefinition<T>[];
+  columns: ColumnDefinition<any>[];
   /** اسم الملف */
   fileName?: string;
   /** الصيغ المتاحة */

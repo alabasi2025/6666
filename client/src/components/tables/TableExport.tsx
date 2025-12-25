@@ -195,12 +195,12 @@ export const TableExport = memo(function TableExport<T>({
                   className="flex items-center space-x-2 space-x-reverse"
                 >
                   <Checkbox
-                    id={`col-${column.key}`}
+                    id={`col-${String(column.key)}`}
                     checked={selectedColumns.includes(column.key as string)}
                     onCheckedChange={() => toggleColumn(column.key as string)}
                   />
                   <Label
-                    htmlFor={`col-${column.key}`}
+                    htmlFor={`col-${String(column.key)}`}
                     className="text-sm cursor-pointer"
                   >
                     {column.title}
