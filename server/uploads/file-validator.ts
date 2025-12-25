@@ -2,6 +2,16 @@
 
 import { UploadConfig, ValidationResult, MIME_TYPE_CATEGORIES, FileCategory } from './types';
 
+// تعريف نوع الملف
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 const DEFAULT_CONFIG: UploadConfig = {
   maxFileSize: 10 * 1024 * 1024, // 10MB
   allowedMimeTypes: [
@@ -26,7 +36,7 @@ export class FileValidator {
   /**
    * التحقق من صحة الملف
    */
-  validate(file: Express.Multer.File): ValidationResult {
+  validate(file: MulterFile): ValidationResult {
     const errors: string[] = [];
 
     // التحقق من الحجم

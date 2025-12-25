@@ -67,7 +67,8 @@ class CacheManager {
     if (!keys) return 0;
 
     let count = 0;
-    for (const key of keys) {
+    const keysArray = Array.from(keys);
+    for (const key of keysArray) {
       if (this.cache.delete(key)) count++;
     }
     this.namespaces.delete(namespace);

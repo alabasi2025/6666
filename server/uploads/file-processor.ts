@@ -6,6 +6,16 @@ import * as crypto from 'crypto';
 import { FileInfo, ProcessedFile, ThumbnailSize } from './types';
 import { fileValidator } from './file-validator';
 
+// تعريف نوع الملف
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 export class FileProcessor {
   private uploadDir: string;
 
@@ -27,7 +37,7 @@ export class FileProcessor {
    * معالجة ملف مرفوع
    */
   async process(
-    file: Express.Multer.File,
+    file: MulterFile,
     options: { userId?: number; businessId?: number } = {}
   ): Promise<ProcessedFile> {
     const fileId = this.generateFileId();

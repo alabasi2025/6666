@@ -4,6 +4,16 @@ import { FileInfo, ProcessedFile } from './types';
 import { fileProcessor } from './file-processor';
 import { fileValidator } from './file-validator';
 
+// تعريف نوع الملف
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 interface StorageStats {
   totalFiles: number;
   totalSize: number;
@@ -17,7 +27,7 @@ class StorageService {
    * رفع ملف
    */
   async upload(
-    file: Express.Multer.File,
+    file: MulterFile,
     options: { userId?: number; businessId?: number } = {}
   ): Promise<ProcessedFile> {
     // التحقق من صحة الملف

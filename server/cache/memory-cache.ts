@@ -76,7 +76,8 @@ class MemoryCache {
    */
   invalidateByTag(tag: string): number {
     let count = 0;
-    for (const [key, entry] of this.cache.entries()) {
+    const entries = Array.from(this.cache.entries());
+    for (const [key, entry] of entries) {
       if (entry.tags.includes(tag)) {
         this.cache.delete(key);
         count++;
@@ -91,7 +92,8 @@ class MemoryCache {
   invalidateByPattern(pattern: string): number {
     const regex = new RegExp(pattern);
     let count = 0;
-    for (const key of this.cache.keys()) {
+    const keys = Array.from(this.cache.keys());
+    for (const key of keys) {
       if (regex.test(key)) {
         this.cache.delete(key);
         count++;
@@ -127,7 +129,8 @@ class MemoryCache {
    */
   private estimateMemoryUsage(): number {
     let size = 0;
-    for (const [key, entry] of this.cache.entries()) {
+    const entries = Array.from(this.cache.entries());
+    for (const [key, entry] of entries) {
       size += key.length * 2;
       size += JSON.stringify(entry.value).length * 2;
     }
@@ -140,7 +143,8 @@ class MemoryCache {
   private evictOldest(): void {
     let oldest: { key: string; createdAt: number } | null = null;
     
-    for (const [key, entry] of this.cache.entries()) {
+    const entries = Array.from(this.cache.entries());
+    for (const [key, entry] of entries) {
       if (!oldest || entry.createdAt < oldest.createdAt) {
         oldest = { key, createdAt: entry.createdAt };
       }
@@ -157,7 +161,8 @@ class MemoryCache {
   private startCleanup(): void {
     this.cleanupTimer = setInterval(() => {
       const now = Date.now();
-      for (const [key, entry] of this.cache.entries()) {
+      const entries = Array.from(this.cache.entries());
+      for (const [key, entry] of entries) {
         if (now > entry.expiresAt) {
           this.cache.delete(key);
         }

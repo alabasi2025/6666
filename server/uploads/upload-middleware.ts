@@ -6,6 +6,17 @@ const multer = require('multer');
 import { fileValidator } from './file-validator';
 import { storageService } from './storage-service';
 
+
+// تعريف نوع الملف
+interface MulterFile {
+  fieldname: string;
+  originalname: string;
+  encoding: string;
+  mimetype: string;
+  size: number;
+  buffer: Buffer;
+}
+
 // إعداد multer
 const storage = multer.memoryStorage();
 
@@ -14,7 +25,7 @@ export const upload = multer({
   limits: {
     fileSize: fileValidator.getConfig().maxFileSize,
   },
-  fileFilter: (_req: Request, file: Express.Multer.File, cb: (error: Error | null, acceptFile: boolean) => void) => {
+  fileFilter: (_req: Request, file: MulterFile, cb: (error: Error | null, acceptFile: boolean) => void) => {
     const validation = fileValidator.validate(file);
     if (validation.valid) {
       cb(null, true);
@@ -32,7 +43,7 @@ export const uploadSingle = (fieldName: string) => {
     upload.single(fieldName),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const file = (req as Request & { file?: Express.Multer.File }).file;
+        const file = (req as Request & { file?: MulterFile }).file;
         if (!file) {
           return res.status(400).json({ error: 'لم يتم رفع أي ملف' });
         }
@@ -63,7 +74,7 @@ export const uploadMultiple = (fieldName: string, maxCount: number) => {
     upload.array(fieldName, maxCount),
     async (req: Request, res: Response, next: NextFunction) => {
       try {
-        const files = (req as Request & { files?: Express.Multer.File[] }).files;
+        const files = (req as Request & { files?: MulterFile[] }).files;
         if (!files || files.length === 0) {
           return res.status(400).json({ error: 'لم يتم رفع أي ملفات' });
         }
@@ -72,7 +83,7 @@ export const uploadMultiple = (fieldName: string, maxCount: number) => {
         const businessId = (req as any).user?.businessId;
 
         const processed = await Promise.all(
-          files.map((file: Express.Multer.File) =>
+          files.map((file: MulterFile) =>
             storageService.upload(file, { userId, businessId })
           )
         );
