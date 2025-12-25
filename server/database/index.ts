@@ -6,6 +6,8 @@
 // Types
 export * from './types';
 
+import { logger } from '../utils/logger';
+
 // Connection Pool
 import { ConnectionPoolManager, connectionPool as _connectionPool } from './connection-pool';
 export { ConnectionPoolManager };
@@ -44,7 +46,7 @@ export async function initializeDatabase(): Promise<void> {
   // بدء فحص الصحة
   _dbHealthChecker.startPeriodicCheck();
 
-  console.log('[Database] تم تهيئة نظام قاعدة البيانات');
+  logger.debug('[Database] تم تهيئة نظام قاعدة البيانات');
 }
 
 /**
@@ -60,5 +62,5 @@ export async function shutdownDatabase(): Promise<void> {
   // إغلاق Pool
   await _connectionPool.shutdown();
 
-  console.log('[Database] تم إغلاق نظام قاعدة البيانات');
+  logger.debug('[Database] تم إغلاق نظام قاعدة البيانات');
 }

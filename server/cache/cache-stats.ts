@@ -2,6 +2,7 @@
 
 import { cacheManager } from './cache-manager';
 import { CacheStats } from './types';
+import { logger } from '../utils/logger';
 
 interface DetailedStats extends CacheStats {
   uptime: number;
@@ -54,13 +55,14 @@ class CacheStatsCollector {
    */
   printStats(): void {
     const stats = this.getDetailedStats();
-    console.log('=== Cache Statistics ===');
-    console.log(`Hits: ${stats.hits}`);
-    console.log(`Misses: ${stats.misses}`);
-    console.log(`Hit Rate: ${(stats.hitRate * 100).toFixed(2)}%`);
-    console.log(`Size: ${stats.size} entries`);
-    console.log(`Memory: ${(stats.memoryUsage / 1024).toFixed(2)} KB`);
-    console.log(`Uptime: ${Math.floor(stats.uptime / 1000)}s`);
+    logger.info('=== Cache Statistics ===', {
+      hits: stats.hits,
+      misses: stats.misses,
+      hitRate: `${(stats.hitRate * 100).toFixed(2)}%`,
+      size: `${stats.size} entries`,
+      memory: `${(stats.memoryUsage / 1024).toFixed(2)} KB`,
+      uptime: `${Math.floor(stats.uptime / 1000)}s`,
+    });
   }
 }
 

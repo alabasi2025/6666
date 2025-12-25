@@ -1,6 +1,7 @@
 // server/notifications/channels/sms.ts
 
 import { Notification, NotificationRecipient, NotificationResult } from '../types';
+import { logger } from '../../utils/logger';
 
 interface SmsConfig {
   provider: 'twilio' | 'nexmo' | 'local';
@@ -38,10 +39,7 @@ class SmsChannel {
       const message = this.formatSmsMessage(notification);
 
       // محاكاة الإرسال
-      console.log('Sending SMS:', {
-        to: recipient.phone,
-        message,
-      });
+      logger.debug('Sending SMS', { to: recipient.phone, message });
 
       return {
         success: true,

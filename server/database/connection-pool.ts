@@ -4,6 +4,7 @@
  */
 
 import { PoolConfig, PoolStats, ConnectionState } from './types';
+import { logger } from '../utils/logger';
 
 /**
  * إعدادات افتراضية لـ Connection Pool
@@ -50,7 +51,7 @@ export class ConnectionPoolManager {
     // بدء فحص الصحة الدوري
     this.startHealthCheck();
 
-    console.log(`[ConnectionPool] تم تهيئة Pool بـ ${this.connections.size} اتصال`);
+    logger.debug(`[ConnectionPool] تم تهيئة Pool بـ ${this.connections.size} اتصال`);
   }
 
   /**
@@ -197,7 +198,7 @@ export class ConnectionPoolManager {
         this.connections.size > this.config.minConnections
       ) {
         this.connections.delete(id);
-        console.log(`[ConnectionPool] تم إغلاق اتصال خامل: ${id}`);
+        logger.debug(`[ConnectionPool] تم إغلاق اتصال خامل: ${id}`);
       }
     }
   }
@@ -219,7 +220,7 @@ export class ConnectionPoolManager {
     // إغلاق جميع الاتصالات
     this.connections.clear();
 
-    console.log('[ConnectionPool] تم إغلاق Pool');
+    logger.debug('[ConnectionPool] تم إغلاق Pool');
   }
 }
 

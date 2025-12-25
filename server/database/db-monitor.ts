@@ -4,6 +4,7 @@
  */
 
 import { MonitoringMetrics } from './types';
+import { logger } from '../utils/logger';
 import { connectionPool } from './connection-pool';
 import { queryCache } from './query-cache';
 import { queryOptimizer } from './query-optimizer';
@@ -32,7 +33,7 @@ export class DatabaseMonitor {
       this.collectMetrics();
     }, intervalMs);
 
-    console.log(`[DatabaseMonitor] بدأت المراقبة بفاصل ${intervalMs}ms`);
+    logger.debug(`[DatabaseMonitor] بدأت المراقبة بفاصل ${intervalMs}ms`);
   }
 
   /**

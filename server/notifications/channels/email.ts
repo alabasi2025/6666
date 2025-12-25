@@ -1,6 +1,7 @@
 // server/notifications/channels/email.ts
 
 import { Notification, NotificationRecipient, NotificationResult } from '../types';
+import { logger } from '../../utils/logger';
 
 interface EmailConfig {
   from: string;
@@ -46,7 +47,7 @@ class EmailChannel {
       };
 
       // محاكاة الإرسال
-      console.log('Sending email:', emailData);
+      logger.debug('Sending email', emailData);
 
       return {
         success: true,
