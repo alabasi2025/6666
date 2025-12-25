@@ -1,0 +1,116 @@
+{
+  "titles": {
+    "list": "قائمة السندات",
+    "create": "إنشاء سند جديد",
+    "edit": "تعديل السند",
+    "view": "عرض السند",
+    "receipt": "سند قبض",
+    "payment": "سند صرف",
+    "transfer": "سند تحويل",
+    "journal": "قيد يومية"
+  },
+  "fields": {
+    "voucherNumber": "رقم السند",
+    "voucherType": "نوع السند",
+    "date": "التاريخ",
+    "amount": "المبلغ",
+    "party": "الطرف",
+    "treasury": "الخزينة",
+    "description": "البيان",
+    "reference": "المرجع",
+    "status": "الحالة",
+    "createdBy": "أنشئ بواسطة",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "تاريخ التحديث",
+    "approvedBy": "اعتمد بواسطة",
+    "approvedAt": "تاريخ الاعتماد",
+    "notes": "ملاحظات",
+    "attachments": "المرفقات",
+    "currency": "العملة",
+    "exchangeRate": "سعر الصرف",
+    "localAmount": "المبلغ المحلي"
+  },
+  "types": {
+    "receipt": "قبض",
+    "payment": "صرف",
+    "transfer": "تحويل",
+    "adjustment": "تسوية",
+    "opening": "افتتاحي",
+    "closing": "ختامي"
+  },
+  "status": {
+    "draft": "مسودة",
+    "pending": "قيد المراجعة",
+    "approved": "معتمد",
+    "rejected": "مرفوض",
+    "cancelled": "ملغي",
+    "posted": "مرحّل"
+  },
+  "actions": {
+    "approve": "اعتماد",
+    "reject": "رفض",
+    "print": "طباعة",
+    "export": "تصدير",
+    "duplicate": "نسخ",
+    "void": "إلغاء",
+    "post": "ترحيل",
+    "unpost": "إلغاء الترحيل"
+  },
+  "messages": {
+    "created": "تم إنشاء السند بنجاح",
+    "updated": "تم تحديث السند بنجاح",
+    "deleted": "تم حذف السند بنجاح",
+    "approved": "تم اعتماد السند بنجاح",
+    "rejected": "تم رفض السند",
+    "printed": "تم طباعة السند",
+    "exported": "تم تصدير السند",
+    "posted": "تم ترحيل السند",
+    "voided": "تم إلغاء السند",
+    "duplicated": "تم نسخ السند"
+  },
+  "errors": {
+    "notFound": "السند غير موجود",
+    "alreadyApproved": "السند معتمد بالفعل",
+    "alreadyPosted": "السند مرحّل بالفعل",
+    "cannotEdit": "لا يمكن تعديل السند المعتمد",
+    "cannotDelete": "لا يمكن حذف السند المعتمد",
+    "insufficientBalance": "الرصيد غير كافي",
+    "invalidAmount": "المبلغ غير صالح",
+    "invalidDate": "التاريخ غير صالح"
+  },
+  "filters": {
+    "all": "الكل",
+    "today": "اليوم",
+    "thisWeek": "هذا الأسبوع",
+    "thisMonth": "هذا الشهر",
+    "thisYear": "هذه السنة",
+    "custom": "مخصص",
+    "dateFrom": "من تاريخ",
+    "dateTo": "إلى تاريخ",
+    "amountFrom": "من مبلغ",
+    "amountTo": "إلى مبلغ"
+  },
+  "print": {
+    "title": "سند {{type}}",
+    "number": "رقم السند",
+    "date": "التاريخ",
+    "amount": "المبلغ",
+    "amountInWords": "المبلغ كتابة",
+    "receivedFrom": "استلمنا من",
+    "paidTo": "دفعنا إلى",
+    "purpose": "وذلك مقابل",
+    "signature": "التوقيع",
+    "stamp": "الختم",
+    "preparedBy": "أعد بواسطة",
+    "approvedBy": "اعتمد بواسطة",
+    "receivedBy": "استلم بواسطة"
+  },
+  "summary": {
+    "totalReceipts": "إجمالي القبض",
+    "totalPayments": "إجمالي الصرف",
+    "netAmount": "صافي المبلغ",
+    "count": "عدد السندات",
+    "pending": "قيد المراجعة",
+    "approved": "معتمدة"
+  }
+}

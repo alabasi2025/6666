@@ -1,0 +1,128 @@
+{
+  "titles": {
+    "list": "Treasuries List",
+    "create": "Create New Treasury",
+    "edit": "Edit Treasury",
+    "view": "View Treasury",
+    "main": "Main Treasury",
+    "branch": "Branch Treasury",
+    "management": "Treasury Management"
+  },
+  "fields": {
+    "name": "Treasury Name",
+    "code": "Treasury Code",
+    "type": "Treasury Type",
+    "balance": "Balance",
+    "currency": "Currency",
+    "branch": "Branch",
+    "manager": "Manager",
+    "status": "Status",
+    "openingBalance": "Opening Balance",
+    "currentBalance": "Current Balance",
+    "minimumBalance": "Minimum Balance",
+    "maximumBalance": "Maximum Balance",
+    "bankName": "Bank Name",
+    "accountNumber": "Account Number",
+    "iban": "IBAN",
+    "swiftCode": "SWIFT Code",
+    "description": "Description",
+    "notes": "Notes",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "lastTransaction": "Last Transaction"
+  },
+  "types": {
+    "cash": "Cash",
+    "bank": "Bank",
+    "safe": "Safe",
+    "petty": "Petty Cash",
+    "pos": "Point of Sale"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "closed": "Closed",
+    "suspended": "Suspended"
+  },
+  "actions": {
+    "open": "Open",
+    "close": "Close",
+    "suspend": "Suspend",
+    "activate": "Activate",
+    "transfer": "Transfer",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
+    "reconcile": "Reconcile",
+    "viewStatement": "View Statement"
+  },
+  "messages": {
+    "created": "Treasury created successfully",
+    "updated": "Treasury updated successfully",
+    "deleted": "Treasury deleted successfully",
+    "opened": "Treasury opened",
+    "closed": "Treasury closed",
+    "suspended": "Treasury suspended",
+    "activated": "Treasury activated",
+    "transferred": "Transfer completed successfully",
+    "deposited": "Deposit completed successfully",
+    "withdrawn": "Withdrawal completed successfully"
+  },
+  "errors": {
+    "notFound": "Treasury not found",
+    "codeExists": "Treasury code already exists",
+    "insufficientBalance": "Insufficient balance",
+    "belowMinimum": "Balance below minimum",
+    "aboveMaximum": "Balance above maximum",
+    "hasTransactions": "Cannot delete treasury with transactions",
+    "alreadyClosed": "Treasury is already closed",
+    "alreadyActive": "Treasury is already active",
+    "cannotTransfer": "Cannot transfer from/to closed treasury"
+  },
+  "filters": {
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "closed": "Closed",
+    "cash": "Cash",
+    "bank": "Bank"
+  },
+  "transfer": {
+    "title": "Transfer Between Treasuries",
+    "from": "From Treasury",
+    "to": "To Treasury",
+    "amount": "Amount",
+    "date": "Date",
+    "reference": "Reference",
+    "notes": "Notes"
+  },
+  "statement": {
+    "title": "Treasury Statement",
+    "period": "Period",
+    "openingBalance": "Opening Balance",
+    "closingBalance": "Closing Balance",
+    "totalIn": "Total In",
+    "totalOut": "Total Out",
+    "date": "Date",
+    "description": "Description",
+    "in": "In",
+    "out": "Out",
+    "balance": "Balance"
+  },
+  "summary": {
+    "totalTreasuries": "Total Treasuries",
+    "totalBalance": "Total Balance",
+    "cashBalance": "Cash Balance",
+    "bankBalance": "Bank Balance",
+    "activeTreasuries": "Active Treasuries",
+    "todayTransactions": "Today's Transactions"
+  },
+  "reconciliation": {
+    "title": "Treasury Reconciliation",
+    "systemBalance": "System Balance",
+    "actualBalance": "Actual Balance",
+    "difference": "Difference",
+    "date": "Reconciliation Date",
+    "notes": "Notes",
+    "adjust": "Adjust Difference"
+  }
+}

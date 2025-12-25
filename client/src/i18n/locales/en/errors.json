@@ -1,0 +1,135 @@
+{
+  "general": {
+    "unknown": "An unexpected error occurred",
+    "network": "Network connection error",
+    "server": "Server error",
+    "timeout": "Request timeout",
+    "notFound": "Page not found",
+    "forbidden": "Access denied",
+    "unauthorized": "Please login first",
+    "badRequest": "Invalid request",
+    "conflict": "Data conflict",
+    "validation": "Validation error",
+    "maintenance": "System under maintenance",
+    "unavailable": "Service currently unavailable"
+  },
+  "form": {
+    "required": "This field is required",
+    "invalid": "Invalid value",
+    "minLength": "Must be at least {{min}} characters",
+    "maxLength": "Must not exceed {{max}} characters",
+    "min": "Must be at least {{min}}",
+    "max": "Must not exceed {{max}}",
+    "email": "Invalid email address",
+    "phone": "Invalid phone number",
+    "unique": "This value already exists",
+    "mismatch": "Values do not match",
+    "pattern": "Invalid format",
+    "number": "Must be a number",
+    "integer": "Must be an integer",
+    "positive": "Must be a positive number",
+    "date": "Invalid date",
+    "dateRange": "Invalid date range",
+    "url": "Invalid URL",
+    "file": "Invalid file",
+    "fileSize": "File size too large",
+    "fileType": "File type not supported"
+  },
+  "api": {
+    "fetchFailed": "Failed to fetch data",
+    "createFailed": "Failed to create record",
+    "updateFailed": "Failed to update record",
+    "deleteFailed": "Failed to delete record",
+    "uploadFailed": "Failed to upload file",
+    "downloadFailed": "Failed to download file",
+    "exportFailed": "Failed to export",
+    "importFailed": "Failed to import",
+    "printFailed": "Failed to print",
+    "sendFailed": "Failed to send"
+  },
+  "auth": {
+    "invalidCredentials": "Invalid credentials",
+    "sessionExpired": "Session expired",
+    "accountLocked": "Account locked",
+    "accountDisabled": "Account disabled",
+    "permissionDenied": "Permission denied",
+    "tokenExpired": "Token expired",
+    "tokenInvalid": "Invalid token",
+    "refreshFailed": "Failed to refresh session"
+  },
+  "business": {
+    "insufficientBalance": "Insufficient balance",
+    "limitExceeded": "Limit exceeded",
+    "duplicateEntry": "Record already exists",
+    "invalidOperation": "Operation not allowed",
+    "recordInUse": "Record is in use and cannot be deleted",
+    "recordLocked": "Record is locked for editing",
+    "periodClosed": "Period is closed",
+    "sequenceError": "Sequence error",
+    "referenceError": "Reference error",
+    "calculationError": "Calculation error"
+  },
+  "file": {
+    "notFound": "File not found",
+    "tooLarge": "File size too large (maximum {{max}})",
+    "invalidType": "File type not supported",
+    "uploadFailed": "Failed to upload file",
+    "downloadFailed": "Failed to download file",
+    "deleteFailed": "Failed to delete file",
+    "corrupted": "File is corrupted",
+    "empty": "File is empty"
+  },
+  "database": {
+    "connectionFailed": "Database connection failed",
+    "queryFailed": "Query execution failed",
+    "transactionFailed": "Transaction failed",
+    "constraintViolation": "Data constraint violation",
+    "deadlock": "Data access conflict"
+  },
+  "http": {
+    "400": "Bad Request",
+    "401": "Unauthorized",
+    "403": "Forbidden",
+    "404": "Not Found",
+    "405": "Method Not Allowed",
+    "408": "Request Timeout",
+    "409": "Conflict",
+    "413": "Payload Too Large",
+    "422": "Unprocessable Entity",
+    "429": "Too Many Requests",
+    "500": "Internal Server Error",
+    "502": "Bad Gateway",
+    "503": "Service Unavailable",
+    "504": "Gateway Timeout"
+  },
+  "actions": {
+    "retry": "Retry",
+    "goBack": "Go Back",
+    "goHome": "Go to Home",
+    "refresh": "Refresh Page",
+    "contactSupport": "Contact Support",
+    "tryAgain": "Try Again"
+  },
+  "pages": {
+    "notFound": {
+      "title": "Page Not Found",
+      "message": "Sorry, the page you are looking for does not exist",
+      "suggestion": "Check the URL or go back to the home page"
+    },
+    "serverError": {
+      "title": "Server Error",
+      "message": "Sorry, a server error occurred",
+      "suggestion": "Please try again later or contact support"
+    },
+    "forbidden": {
+      "title": "Access Forbidden",
+      "message": "You do not have permission to access this page",
+      "suggestion": "Contact the administrator for permissions"
+    },
+    "maintenance": {
+      "title": "System Maintenance",
+      "message": "The system is currently under maintenance",
+      "suggestion": "Please try again later"
+    }
+  }
+}

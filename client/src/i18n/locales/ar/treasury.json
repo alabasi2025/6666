@@ -1,0 +1,128 @@
+{
+  "titles": {
+    "list": "قائمة الخزائن",
+    "create": "إنشاء خزينة جديدة",
+    "edit": "تعديل الخزينة",
+    "view": "عرض الخزينة",
+    "main": "الخزينة الرئيسية",
+    "branch": "خزينة الفرع",
+    "management": "إدارة الخزائن"
+  },
+  "fields": {
+    "name": "اسم الخزينة",
+    "code": "رمز الخزينة",
+    "type": "نوع الخزينة",
+    "balance": "الرصيد",
+    "currency": "العملة",
+    "branch": "الفرع",
+    "manager": "المسؤول",
+    "status": "الحالة",
+    "openingBalance": "الرصيد الافتتاحي",
+    "currentBalance": "الرصيد الحالي",
+    "minimumBalance": "الحد الأدنى للرصيد",
+    "maximumBalance": "الحد الأقصى للرصيد",
+    "bankName": "اسم البنك",
+    "accountNumber": "رقم الحساب",
+    "iban": "رقم الآيبان",
+    "swiftCode": "رمز السويفت",
+    "description": "الوصف",
+    "notes": "ملاحظات",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "تاريخ التحديث",
+    "lastTransaction": "آخر معاملة"
+  },
+  "types": {
+    "cash": "نقدية",
+    "bank": "بنكية",
+    "safe": "خزنة",
+    "petty": "مصروفات نثرية",
+    "pos": "نقاط البيع"
+  },
+  "status": {
+    "active": "نشطة",
+    "inactive": "غير نشطة",
+    "closed": "مغلقة",
+    "suspended": "معلقة"
+  },
+  "actions": {
+    "open": "فتح",
+    "close": "إغلاق",
+    "suspend": "تعليق",
+    "activate": "تفعيل",
+    "transfer": "تحويل",
+    "deposit": "إيداع",
+    "withdraw": "سحب",
+    "reconcile": "مطابقة",
+    "viewStatement": "عرض كشف الحساب"
+  },
+  "messages": {
+    "created": "تم إنشاء الخزينة بنجاح",
+    "updated": "تم تحديث الخزينة بنجاح",
+    "deleted": "تم حذف الخزينة بنجاح",
+    "opened": "تم فتح الخزينة",
+    "closed": "تم إغلاق الخزينة",
+    "suspended": "تم تعليق الخزينة",
+    "activated": "تم تفعيل الخزينة",
+    "transferred": "تم التحويل بنجاح",
+    "deposited": "تم الإيداع بنجاح",
+    "withdrawn": "تم السحب بنجاح"
+  },
+  "errors": {
+    "notFound": "الخزينة غير موجودة",
+    "codeExists": "رمز الخزينة مستخدم بالفعل",
+    "insufficientBalance": "الرصيد غير كافي",
+    "belowMinimum": "الرصيد أقل من الحد الأدنى",
+    "aboveMaximum": "الرصيد أعلى من الحد الأقصى",
+    "hasTransactions": "لا يمكن حذف الخزينة لوجود معاملات",
+    "alreadyClosed": "الخزينة مغلقة بالفعل",
+    "alreadyActive": "الخزينة نشطة بالفعل",
+    "cannotTransfer": "لا يمكن التحويل من/إلى خزينة مغلقة"
+  },
+  "filters": {
+    "all": "الكل",
+    "active": "النشطة",
+    "inactive": "غير النشطة",
+    "closed": "المغلقة",
+    "cash": "النقدية",
+    "bank": "البنكية"
+  },
+  "transfer": {
+    "title": "تحويل بين الخزائن",
+    "from": "من خزينة",
+    "to": "إلى خزينة",
+    "amount": "المبلغ",
+    "date": "التاريخ",
+    "reference": "المرجع",
+    "notes": "ملاحظات"
+  },
+  "statement": {
+    "title": "كشف حساب الخزينة",
+    "period": "الفترة",
+    "openingBalance": "الرصيد الافتتاحي",
+    "closingBalance": "الرصيد الختامي",
+    "totalIn": "إجمالي الوارد",
+    "totalOut": "إجمالي الصادر",
+    "date": "التاريخ",
+    "description": "البيان",
+    "in": "وارد",
+    "out": "صادر",
+    "balance": "الرصيد"
+  },
+  "summary": {
+    "totalTreasuries": "إجمالي الخزائن",
+    "totalBalance": "إجمالي الرصيد",
+    "cashBalance": "رصيد النقدية",
+    "bankBalance": "رصيد البنوك",
+    "activeTreasuries": "الخزائن النشطة",
+    "todayTransactions": "معاملات اليوم"
+  },
+  "reconciliation": {
+    "title": "مطابقة الخزينة",
+    "systemBalance": "رصيد النظام",
+    "actualBalance": "الرصيد الفعلي",
+    "difference": "الفرق",
+    "date": "تاريخ المطابقة",
+    "notes": "ملاحظات",
+    "adjust": "تسوية الفرق"
+  }
+}
