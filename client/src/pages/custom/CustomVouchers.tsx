@@ -382,7 +382,7 @@ export default function CustomVouchers() {
 
   const handleCancel = (id: number) => {
     if (confirm("هل أنت متأكد من إلغاء هذا السند؟")) {
-      // TODO: Implement cancel mutation
+      // See GitHub Issue #3
       toast.info("سيتم تنفيذ الإلغاء قريباً");
     }
   };

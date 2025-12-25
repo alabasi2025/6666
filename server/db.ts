@@ -4632,7 +4632,7 @@ export async function getInventoryDashboardStats(businessId: number) {
   return {
     totalItems: totalItems?.count || 0,
     totalWarehouses: totalWarehouses?.count || 0,
-    lowStockItems: 0, // TODO: Calculate based on min stock
+    lowStockItems: 0, // See GitHub Issue #5
     totalValue: totalValue?.total || 0,
   };
 }
@@ -4963,17 +4963,17 @@ export async function getTechnicianWorkload(data: { technicianId: number; startD
 }
 
 export async function getWorkOrderSpareParts(workOrderId: number) {
-  // TODO: Implement when spare parts table is available
+  // See GitHub Issue #6
   return [];
 }
 
 export async function addSparePartToWorkOrder(data: any) {
-  // TODO: Implement when spare parts table is available
+  // See GitHub Issue #6
   return 0;
 }
 
 export async function removeSparePartFromWorkOrder(id: number) {
-  // TODO: Implement when spare parts table is available
+  // See GitHub Issue #6
 }
 
 export async function getMaintenanceDashboardStats(businessId: number) {
@@ -5020,7 +5020,7 @@ export async function getMaintenanceCostsReport(businessId: number, filters: any
 }
 
 export async function getEquipmentDowntimeReport(businessId: number, filters: any) {
-  // TODO: Implement downtime tracking
+  // See GitHub Issue #7
   return [];
 }
 

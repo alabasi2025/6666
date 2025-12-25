@@ -81,7 +81,7 @@
     "react-router-dom": "^7.11.0",
     "recharts": "^2.15.2",
     "sonner": "^2.0.7",
-    "streamdown": "^1.4.0",
+    "streamdown": "^1.6.10",
     "superjson": "^1.13.3",
     "tailwind-merge": "^3.3.1",
     "tailwindcss-animate": "^1.0.7",
@@ -121,11 +121,14 @@
   },
   "packageManager": "pnpm@10.4.1+sha512.c753b6c3ad7afa13af388fa6d808035a008e30ea9993f58c6663e2bc5ff21679aa834db094987129aa4d488b86df57f7b634981b2f827cdcacc698cc0cfb88af",
   "pnpm": {
-    "patchedDependencies": {
-      "wouter@3.7.1": "patches/wouter@3.7.1.patch"
-    },
     "overrides": {
-      "tailwindcss>nanoid": "3.3.7"
+      "tailwindcss>nanoid": "3.3.7",
+      "tar": ">=7.5.2",
+      "cross-spawn": ">=7.0.6",
+      "mdast-util-to-hast": ">=13.2.1",
+      "hast-util-to-html": ">=9.0.5",
+      "esbuild": ">=0.25.0",
+      "vite": ">=7.1.11"
     },
     "onlyBuiltDependencies": [
       "@tailwindcss/oxide",

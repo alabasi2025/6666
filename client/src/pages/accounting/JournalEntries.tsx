@@ -253,7 +253,7 @@ export default function JournalEntries() {
     createEntry.mutate({
       businessId: 1,
       entryDate: (formData as any).entryDate,
-      periodId: 1, // TODO: get from context
+      periodId: 1, // See GitHub Issue #2
       type: (formData as any).type,
       description: (formData as any).description,
       lines: validLines.map(line => ({

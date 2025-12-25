@@ -51,7 +51,7 @@ export async function registerUser(data: {
 
   try {
     // التحقق من عدم وجود المستخدم مسبقاً
-    const existingUser = await db.select().from(users).where(eq(users.phone, data.phone)).limit(1);
+    const existingUser = await db.select({ id: users.id, phone: users.phone }).from(users).where(eq(users.phone, data.phone)).limit(1);
     if (existingUser.length > 0) {
       return { success: false, error: "رقم الهاتف مسجل مسبقاً" };
     }
@@ -103,7 +103,16 @@ export async function loginUser(phone: string, password: string): Promise<{
 
   try {
     // البحث عن المستخدم
-    const result = await db.select().from(users).where(eq(users.phone, phone)).limit(1);
+    const result = await db.select({
+      id: users.id,
+      openId: users.openId,
+      name: users.name,
+      phone: users.phone,
+      email: users.email,
+      role: users.role,
+      password: users.password,
+      isActive: users.isActive,
+    }).from(users).where(eq(users.phone, phone)).limit(1);
     
     if (result.length === 0) {
       return { success: false, error: "رقم الهاتف غير مسجل" };
@@ -161,7 +170,10 @@ export async function changePassword(
 
   try {
     // البحث عن المستخدم
-    const result = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+    const result = await db.select({
+      id: users.id,
+      password: users.password,
+    }).from(users).where(eq(users.id, userId)).limit(1);
     
     if (result.length === 0) {
       return { success: false, error: "المستخدم غير موجود" };
@@ -231,7 +243,7 @@ export async function ensureDefaultAdmin(): Promise<void> {
 
   try {
     // التحقق من وجود أي مستخدم admin أو super_admin
-    const adminUsers = await db.select().from(users).where(
+    const adminUsers = await db.select({ id: users.id, role: users.role }).from(users).where(
       sql`${users.role} IN ('admin', 'super_admin')`
     ).limit(1);
 

@@ -86,7 +86,7 @@ export default function DieselReceiving() {
       stationId: parseInt((formData as any).stationId),
       taskNumber: `RT-${Date.now()}`,
       taskDate: new Date().toISOString().split('T')[0],
-      employeeId: 1, // TODO: get from context
+      employeeId: 1, // See GitHub Issue #4
       supplierId: parseInt((formData as any).supplierId) || 1,
       tankerId: parseInt((formData as any).tankerId) || 1,
       notes: (formData as any).notes || undefined,

@@ -21,7 +21,7 @@ async function main() {
     logger.info("Connected to database");
 
     // Check if admin exists
-    const adminUsers = await db.select().from(users).where(
+    const adminUsers = await db.select({ id: users.id, phone: users.phone, role: users.role }).from(users).where(
       sql`${users.role} IN ('admin', 'super_admin')`
     ).limit(1);
 
