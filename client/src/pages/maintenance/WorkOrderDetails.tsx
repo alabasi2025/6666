@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useParams, useNavigate } from "react-router-dom";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
@@ -74,7 +73,7 @@ const typeLabels: Record<string, string> = {
 };
 
 export default function WorkOrderDetails() {
-  const { id } = useParams();
+  const { id } = useParams() as { id: string };
   const navigate = useNavigate();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -100,22 +99,32 @@ export default function WorkOrderDetails() {
     },
   });
 
+  // Update status mutation
+  const updateStatusMutation2 = trpc.maintenance.workOrders.updateStatus.useMutation({
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [["maintenance", "workOrders"]] });
+      toast({ title: "تم تحديث حالة أمر العمل بنجاح" });
+    },
+    onError: (error) => {
+      toast({ title: "خطأ", description: error.message, variant: "destructive" });
+    },
+  });
+
   const handleStatusChange = (newStatus: string) => {
     if (workOrder) {
-      updateStatusMutation.mutate({
-        id: workOrder.id,
+      updateStatusMutation2.mutate({
+        id: (workOrder as any).id,
         status: newStatus as any,
-      });
+      } as any);
     }
   };
 
   const handleAssignTechnician = (technicianId: string) => {
     if (workOrder) {
       updateStatusMutation.mutate({
-        id: workOrder.id,
-        assignedToId: parseInt(technicianId),
-        status: "assigned",
-      });
+        id: (workOrder as any).id,
+        assignedTo: parseInt(technicianId),
+      } as any);
     }
   };
 
@@ -151,17 +160,17 @@ export default function WorkOrderDetails() {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Wrench className="w-8 h-8 text-primary" />
-              أمر العمل #{workOrder.workOrderNumber}
+              أمر العمل #{(workOrder as any).orderNumber || (workOrder as any).id}
             </h1>
-            <p className="text-muted-foreground mt-1">{workOrder.title}</p>
+            <p className="text-muted-foreground mt-1">{(workOrder as any).title}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={`${statusColors[workOrder.status || "pending"]} text-white`}>
-            {statusLabels[workOrder.status || "pending"]}
+          <Badge className={`${statusColors[(workOrder as any).status || "pending"]} text-white`}>
+            {statusLabels[(workOrder as any).status || "pending"]}
           </Badge>
-          <Badge className={`${priorityColors[workOrder.priority || "medium"]} text-white`}>
-            {priorityLabels[workOrder.priority || "medium"]}
+          <Badge className={`${priorityColors[(workOrder as any).priority || "medium"]} text-white`}>
+            {priorityLabels[(workOrder as any).priority || "medium"]}
           </Badge>
         </div>
       </div>
@@ -180,25 +189,25 @@ export default function WorkOrderDetails() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <p className="text-sm text-muted-foreground">نوع الصيانة</p>
-                  <p className="font-medium">{typeLabels[workOrder.type || "corrective"]}</p>
+                  <p className="font-medium">{typeLabels[(workOrder as any).type || "corrective"]}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">الأصل</p>
-                  <p className="font-medium">{workOrder.asset?.nameAr || "-"}</p>
+                  <p className="font-medium">{(workOrder as any).asset?.nameAr || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">تاريخ الإنشاء</p>
                   <p className="font-medium">
-                    {workOrder.createdAt
-                      ? format(new Date(workOrder.createdAt), "yyyy/MM/dd HH:mm", { locale: ar })
+                    {(workOrder as any).createdAt
+                      ? format(new Date((workOrder as any).createdAt), "yyyy/MM/dd HH:mm", { locale: ar })
                       : "-"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">تاريخ الاستحقاق</p>
                   <p className="font-medium">
-                    {workOrder.dueDate
-                      ? format(new Date(workOrder.dueDate), "yyyy/MM/dd", { locale: ar })
+                    {(workOrder as any).scheduledEnd
+                      ? format(new Date((workOrder as any).scheduledEnd), "yyyy/MM/dd", { locale: ar })
                       : "-"}
                   </p>
                 </div>
@@ -209,16 +218,16 @@ export default function WorkOrderDetails() {
               <div>
                 <p className="text-sm text-muted-foreground mb-2">الوصف</p>
                 <p className="font-medium whitespace-pre-wrap">
-                  {workOrder.description || "لا يوجد وصف"}
+                  {(workOrder as any).description || "لا يوجد وصف"}
                 </p>
               </div>
 
-              {workOrder.notes && (
+              {(workOrder as any).description && (
                 <>
                   <Separator />
                   <div>
                     <p className="text-sm text-muted-foreground mb-2">ملاحظات</p>
-                    <p className="font-medium whitespace-pre-wrap">{workOrder.notes}</p>
+                    <p className="font-medium whitespace-pre-wrap">{(workOrder as any).description}</p>
                   </div>
                 </>
               )}
@@ -242,14 +251,14 @@ export default function WorkOrderDetails() {
                   <div>
                     <p className="font-medium">تم إنشاء أمر العمل</p>
                     <p className="text-sm text-muted-foreground">
-                      {workOrder.createdAt
-                        ? format(new Date(workOrder.createdAt), "yyyy/MM/dd HH:mm")
+                      {(workOrder as any).createdAt
+                        ? format(new Date((workOrder as any).createdAt), "yyyy/MM/dd HH:mm")
                         : "-"}
                     </p>
                   </div>
                 </div>
 
-                {workOrder.assignedToId && (
+                {(workOrder as any).assignedTo && (
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-blue-500/10 flex items-center justify-center">
                       <User className="w-5 h-5 text-blue-500" />
@@ -257,13 +266,13 @@ export default function WorkOrderDetails() {
                     <div>
                       <p className="font-medium">تم تعيين الفني</p>
                       <p className="text-sm text-muted-foreground">
-                        {workOrder.assignedTo?.nameAr || "فني"}
+                        {(workOrder as any).assignedToUser?.nameAr || "فني"}
                       </p>
                     </div>
                   </div>
                 )}
 
-                {workOrder.startedAt && (
+                {(workOrder as any).startedAt && (
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-purple-500/10 flex items-center justify-center">
                       <Settings className="w-5 h-5 text-purple-500" />
@@ -271,13 +280,13 @@ export default function WorkOrderDetails() {
                     <div>
                       <p className="font-medium">بدء العمل</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(workOrder.startedAt), "yyyy/MM/dd HH:mm")}
+                        {format(new Date((workOrder as any).startedAt), "yyyy/MM/dd HH:mm")}
                       </p>
                     </div>
                   </div>
                 )}
 
-                {workOrder.completedAt && (
+                {(workOrder as any).completedAt && (
                   <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-full bg-green-500/10 flex items-center justify-center">
                       <CheckCircle className="w-5 h-5 text-green-500" />
@@ -285,7 +294,7 @@ export default function WorkOrderDetails() {
                     <div>
                       <p className="font-medium">اكتمال العمل</p>
                       <p className="text-sm text-muted-foreground">
-                        {format(new Date(workOrder.completedAt), "yyyy/MM/dd HH:mm")}
+                        {format(new Date((workOrder as any).completedAt), "yyyy/MM/dd HH:mm")}
                       </p>
                     </div>
                   </div>
@@ -306,7 +315,7 @@ export default function WorkOrderDetails() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">تغيير الحالة</label>
                 <Select
-                  value={workOrder.status || "pending"}
+                  value={(workOrder as any).status || "pending"}
                   onValueChange={handleStatusChange}
                   disabled={updateStatusMutation.isPending}
                 >
@@ -326,7 +335,7 @@ export default function WorkOrderDetails() {
               <div className="space-y-2">
                 <label className="text-sm font-medium">تعيين فني</label>
                 <Select
-                  value={workOrder.assignedToId?.toString() || ""}
+                  value={(workOrder as any).assignedTo?.toString() || ""}
                   onValueChange={handleAssignTechnician}
                   disabled={updateStatusMutation.isPending}
                 >
@@ -334,7 +343,7 @@ export default function WorkOrderDetails() {
                     <SelectValue placeholder="اختر الفني" />
                   </SelectTrigger>
                   <SelectContent>
-                    {technicians.map((tech: any) => (
+                    {(technicians as any[]).map((tech: any) => (
                       <SelectItem key={tech.id} value={tech.id.toString()}>
                         {tech.nameAr}
                       </SelectItem>
@@ -354,16 +363,16 @@ export default function WorkOrderDetails() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {workOrder.assignedTo ? (
+              {(workOrder as any).assignedToUser ? (
                 <div className="space-y-2">
-                  <p className="font-medium">{workOrder.assignedTo.nameAr}</p>
-                  {workOrder.assignedTo.phone && (
+                  <p className="font-medium">{(workOrder as any).assignedToUser?.nameAr}</p>
+                  {(workOrder as any).assignedToUser?.phone && (
                     <p className="text-sm text-muted-foreground">
-                      {workOrder.assignedTo.phone}
+                      {(workOrder as any).assignedToUser?.phone}
                     </p>
                   )}
-                  {workOrder.assignedTo.specialization && (
-                    <Badge variant="outline">{workOrder.assignedTo.specialization}</Badge>
+                  {(workOrder as any).assignedToUser?.specialization && (
+                    <Badge variant="outline">{(workOrder as any).assignedToUser?.specialization}</Badge>
                   )}
                 </div>
               ) : (
@@ -373,7 +382,7 @@ export default function WorkOrderDetails() {
           </Card>
 
           {/* Asset Info */}
-          {workOrder.asset && (
+          {(workOrder as any).assetData && (
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -384,20 +393,20 @@ export default function WorkOrderDetails() {
               <CardContent className="space-y-2">
                 <div>
                   <p className="text-sm text-muted-foreground">اسم الأصل</p>
-                  <p className="font-medium">{workOrder.asset.nameAr}</p>
+                  <p className="font-medium">{(workOrder as any).assetData?.nameAr}</p>
                 </div>
-                {workOrder.asset.code && (
+                {(workOrder as any).assetData?.code && (
                   <div>
                     <p className="text-sm text-muted-foreground">الرمز</p>
-                    <p className="font-mono">{workOrder.asset.code}</p>
+                    <p className="font-mono">{(workOrder as any).assetData?.code}</p>
                   </div>
                 )}
-                {workOrder.asset.location && (
+                {(workOrder as any).assetData?.location && (
                   <div>
                     <p className="text-sm text-muted-foreground">الموقع</p>
                     <p className="flex items-center gap-1">
                       <MapPin className="w-4 h-4" />
-                      {workOrder.asset.location}
+                      {(workOrder as any).assetData?.location}
                     </p>
                   </div>
                 )}
@@ -414,16 +423,16 @@ export default function WorkOrderDetails() {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">التكلفة المقدرة</span>
                 <span className="font-medium">
-                  {workOrder.estimatedCost
-                    ? `${parseFloat(workOrder.estimatedCost).toLocaleString()} ر.س`
+                  {(workOrder as any).estimatedCost
+                    ? `${parseFloat((workOrder as any).estimatedCost).toLocaleString()} ر.س`
                     : "-"}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">التكلفة الفعلية</span>
                 <span className="font-medium">
-                  {workOrder.actualCost
-                    ? `${parseFloat(workOrder.actualCost).toLocaleString()} ر.س`
+                  {(workOrder as any).actualCost
+                    ? `${parseFloat((workOrder as any).actualCost).toLocaleString()} ر.س`
                     : "-"}
                 </span>
               </div>

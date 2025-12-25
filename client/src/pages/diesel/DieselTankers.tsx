@@ -116,41 +116,41 @@ export default function DieselTankers() {
   };
 
   const handleAdd = () => {
-    if (!formData.code || !formData.plateNumber || !formData.capacity) {
+    if (!(formData as any).code || !(formData as any).plateNumber || !(formData as any).capacity) {
       toast({ title: "خطأ", description: "يرجى ملء الحقول المطلوبة", variant: "destructive" });
       return;
     }
     createMutation.mutate({
       businessId: user?.businessId || 1,
-      code: formData.code,
-      plateNumber: formData.plateNumber,
-      capacity: parseFloat(formData.capacity),
-      compartment1Capacity: formData.compartment1Capacity ? parseFloat(formData.compartment1Capacity) : undefined,
-      compartment2Capacity: formData.compartment2Capacity ? parseFloat(formData.compartment2Capacity) : undefined,
-      driverName: formData.driverName || undefined,
-      driverPhone: formData.driverPhone || undefined,
-      isActive: formData.isActive,
-    });
+      code: (formData as any).code,
+      plateNumber: (formData as any).plateNumber,
+      capacity: parseFloat((formData as any).capacity),
+      compartment1Capacity: (formData as any).compartment1Capacity ? parseFloat((formData as any).compartment1Capacity) : undefined,
+      compartment2Capacity: (formData as any).compartment2Capacity ? parseFloat((formData as any).compartment2Capacity) : undefined,
+      driverName: (formData as any).driverName || undefined,
+      driverPhone: (formData as any).driverPhone || undefined,
+      isActive: (formData as any).isActive,
+    } as any);
   };
 
   const handleEdit = () => {
     if (!selectedTanker) return;
     updateMutation.mutate({
       id: selectedTanker.id,
-      code: formData.code || undefined,
-      plateNumber: formData.plateNumber || undefined,
-      capacity: formData.capacity ? parseFloat(formData.capacity) : undefined,
-      compartment1Capacity: formData.compartment1Capacity ? parseFloat(formData.compartment1Capacity) : undefined,
-      compartment2Capacity: formData.compartment2Capacity ? parseFloat(formData.compartment2Capacity) : undefined,
-      driverName: formData.driverName || undefined,
-      driverPhone: formData.driverPhone || undefined,
-      isActive: formData.isActive,
-    });
+      code: (formData as any).code || undefined,
+      plateNumber: (formData as any).plateNumber || undefined,
+      capacity: (formData as any).capacity ? parseFloat((formData as any).capacity) : undefined,
+      compartment1Capacity: (formData as any).compartment1Capacity ? parseFloat((formData as any).compartment1Capacity) : undefined,
+      compartment2Capacity: (formData as any).compartment2Capacity ? parseFloat((formData as any).compartment2Capacity) : undefined,
+      driverName: (formData as any).driverName || undefined,
+      driverPhone: (formData as any).driverPhone || undefined,
+      isActive: (formData as any).isActive,
+    } as any);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا الوايت؟")) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ id } as any);
     }
   };
 
@@ -176,8 +176,8 @@ export default function DieselTankers() {
 
   // حساب السعة الإجمالية من العينين
   const calculateTotalCapacity = () => {
-    const c1 = parseFloat(formData.compartment1Capacity) || 0;
-    const c2 = parseFloat(formData.compartment2Capacity) || 0;
+    const c1 = parseFloat((formData as any).compartment1Capacity) || 0;
+    const c2 = parseFloat((formData as any).compartment2Capacity) || 0;
     if (c1 > 0 || c2 > 0) {
       setFormData({ ...formData, capacity: (c1 + c2).toString() });
     }
@@ -279,7 +279,7 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>الكود *</Label>
               <Input
-                value={formData.code}
+                value={(formData as any).code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                 placeholder="TAN001"
               />
@@ -287,7 +287,7 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>رقم اللوحة *</Label>
               <Input
-                value={formData.plateNumber}
+                value={(formData as any).plateNumber}
                 onChange={(e) => setFormData({ ...formData, plateNumber: e.target.value })}
                 placeholder="أ ب ج 1234"
               />
@@ -295,7 +295,7 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>سعة عين 1 (لتر)</Label>
               <Input
-                value={formData.compartment1Capacity}
+                value={(formData as any).compartment1Capacity}
                 onChange={(e) => setFormData({ ...formData, compartment1Capacity: e.target.value })}
                 onBlur={calculateTotalCapacity}
                 placeholder="3070"
@@ -305,7 +305,7 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>سعة عين 2 (لتر)</Label>
               <Input
-                value={formData.compartment2Capacity}
+                value={(formData as any).compartment2Capacity}
                 onChange={(e) => setFormData({ ...formData, compartment2Capacity: e.target.value })}
                 onBlur={calculateTotalCapacity}
                 placeholder="2970"
@@ -315,7 +315,7 @@ export default function DieselTankers() {
             <div className="col-span-2 space-y-2">
               <Label>السعة الكلية (لتر) *</Label>
               <Input
-                value={formData.capacity}
+                value={(formData as any).capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                 placeholder="6040"
                 type="number"
@@ -325,7 +325,7 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>اسم السائق</Label>
               <Input
-                value={formData.driverName}
+                value={(formData as any).driverName}
                 onChange={(e) => setFormData({ ...formData, driverName: e.target.value })}
                 placeholder="اسم السائق"
               />
@@ -333,7 +333,7 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>هاتف السائق</Label>
               <Input
-                value={formData.driverPhone}
+                value={(formData as any).driverPhone}
                 onChange={(e) => setFormData({ ...formData, driverPhone: e.target.value })}
                 placeholder="+966xxxxxxxxx"
                 dir="ltr"
@@ -341,7 +341,7 @@ export default function DieselTankers() {
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <Switch
-                checked={formData.isActive}
+                checked={(formData as any).isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
               <Label>نشط</Label>
@@ -368,21 +368,21 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>الكود *</Label>
               <Input
-                value={formData.code}
+                value={(formData as any).code}
                 onChange={(e) => setFormData({ ...formData, code: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>رقم اللوحة *</Label>
               <Input
-                value={formData.plateNumber}
+                value={(formData as any).plateNumber}
                 onChange={(e) => setFormData({ ...formData, plateNumber: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>سعة عين 1 (لتر)</Label>
               <Input
-                value={formData.compartment1Capacity}
+                value={(formData as any).compartment1Capacity}
                 onChange={(e) => setFormData({ ...formData, compartment1Capacity: e.target.value })}
                 onBlur={calculateTotalCapacity}
                 type="number"
@@ -391,7 +391,7 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>سعة عين 2 (لتر)</Label>
               <Input
-                value={formData.compartment2Capacity}
+                value={(formData as any).compartment2Capacity}
                 onChange={(e) => setFormData({ ...formData, compartment2Capacity: e.target.value })}
                 onBlur={calculateTotalCapacity}
                 type="number"
@@ -400,7 +400,7 @@ export default function DieselTankers() {
             <div className="col-span-2 space-y-2">
               <Label>السعة الكلية (لتر) *</Label>
               <Input
-                value={formData.capacity}
+                value={(formData as any).capacity}
                 onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
                 type="number"
               />
@@ -408,21 +408,21 @@ export default function DieselTankers() {
             <div className="space-y-2">
               <Label>اسم السائق</Label>
               <Input
-                value={formData.driverName}
+                value={(formData as any).driverName}
                 onChange={(e) => setFormData({ ...formData, driverName: e.target.value })}
               />
             </div>
             <div className="space-y-2">
               <Label>هاتف السائق</Label>
               <Input
-                value={formData.driverPhone}
+                value={(formData as any).driverPhone}
                 onChange={(e) => setFormData({ ...formData, driverPhone: e.target.value })}
                 dir="ltr"
               />
             </div>
             <div className="col-span-2 flex items-center gap-2">
               <Switch
-                checked={formData.isActive}
+                checked={(formData as any).isActive}
                 onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
               />
               <Label>نشط</Label>

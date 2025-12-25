@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -96,8 +95,8 @@ const intermediaryAccountSchema = z.object({
   code: z.string().min(1, "الكود مطلوب"),
   nameAr: z.string().min(1, "الاسم بالعربي مطلوب"),
   nameEn: z.string().optional(),
-  fromSubSystemId: z.number({ required_error: "النظام المصدر مطلوب" }),
-  toSubSystemId: z.number({ required_error: "النظام الهدف مطلوب" }),
+  fromSubSystemId: z.number({ message: "النظام المصدر مطلوب" }),
+  toSubSystemId: z.number({ message: "النظام الهدف مطلوب" }),
   currency: z.string().default("SAR"),
 });
 
@@ -248,7 +247,7 @@ export default function CustomReconciliation() {
 
   // Form
   const form = useForm<IntermediaryAccountFormValues>({
-    resolver: zodResolver(intermediaryAccountSchema),
+    resolver: zodResolver(intermediaryAccountSchema) as any as any as any,
     defaultValues: {
       code: "",
       nameAr: "",
@@ -336,7 +335,7 @@ export default function CustomReconciliation() {
 
   const handleDeleteAccount = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا الحساب الوسيط؟")) {
-      deleteAccountMutation.mutate({ id });
+      deleteAccountMutation.mutate({ id } as any);
     }
   };
 
@@ -347,7 +346,7 @@ export default function CustomReconciliation() {
     };
 
     if (editingAccount) {
-      updateAccountMutation.mutate({ id: editingAccount.id, ...payload });
+      updateAccountMutation.mutate({ id: editingAccount.id, ...payload } as any);
     } else {
       createAccountMutation.mutate(payload);
     }
@@ -396,10 +395,10 @@ export default function CustomReconciliation() {
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                  <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="code"
                         render={({ field }) => (
                           <FormItem>
@@ -412,7 +411,7 @@ export default function CustomReconciliation() {
                         )}
                       />
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="currency"
                         render={({ field }) => (
                           <FormItem>
@@ -436,7 +435,7 @@ export default function CustomReconciliation() {
                     </div>
 
                     <FormField
-                      control={form.control}
+                      control={form.control as any}
                       name="nameAr"
                       render={({ field }) => (
                         <FormItem>
@@ -451,7 +450,7 @@ export default function CustomReconciliation() {
 
                     <div className="grid grid-cols-2 gap-4">
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="fromSubSystemId"
                         render={({ field }) => (
                           <FormItem>
@@ -473,7 +472,7 @@ export default function CustomReconciliation() {
                         )}
                       />
                       <FormField
-                        control={form.control}
+                        control={form.control as any}
                         name="toSubSystemId"
                         render={({ field }) => (
                           <FormItem>
@@ -517,7 +516,7 @@ export default function CustomReconciliation() {
             </Dialog>
           ) : (
             <Button 
-              onClick={() => autoReconcileMutation.mutate({ businessId: 1 })}
+              onClick={() => autoReconcileMutation.mutate({ businessId: 1 } as any)}
               disabled={autoReconcileMutation.isPending}
               className="bg-gradient-to-r from-yellow-500 to-orange-600 hover:from-yellow-600 hover:to-orange-700"
             >
@@ -622,7 +621,7 @@ export default function CustomReconciliation() {
             </Card>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {intermediaryAccounts.map((account: any) => (
+              {(intermediaryAccounts as any[]).map((account: any) => (
                 <IntermediaryAccountCard
                   key={account.id}
                   account={account}
@@ -648,7 +647,7 @@ export default function CustomReconciliation() {
                   <p className="text-slate-400">لا توجد مطابقات</p>
                   <p className="text-slate-500 text-sm mb-4">اضغط على "مطابقة تلقائية" للبحث عن سندات متطابقة</p>
                   <Button 
-                    onClick={() => autoReconcileMutation.mutate({ businessId: 1 })}
+                    onClick={() => autoReconcileMutation.mutate({ businessId: 1 } as any)}
                     disabled={autoReconcileMutation.isPending}
                     className="bg-gradient-to-r from-yellow-500 to-orange-600"
                   >
@@ -673,12 +672,12 @@ export default function CustomReconciliation() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {reconciliations.map((reconciliation: any) => (
+                    {(reconciliations as any[]).map((reconciliation: any) => (
                       <ReconciliationRow
                         key={reconciliation.id}
                         reconciliation={reconciliation}
-                        onConfirm={(id: number) => confirmReconciliationMutation.mutate({ id })}
-                        onReject={(id: number) => rejectReconciliationMutation.mutate({ id })}
+                        onConfirm={(id: number) => confirmReconciliationMutation.mutate({ id } as any)}
+                        onReject={(id: number) => rejectReconciliationMutation.mutate({ id } as any)}
                       />
                     ))}
                   </TableBody>

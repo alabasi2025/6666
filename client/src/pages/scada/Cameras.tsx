@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
@@ -37,12 +36,12 @@ function StatusBadge({ status }: { status: string }) {
   };
 
   const config = statusConfig[status] || { label: status, color: "bg-gray-500/20 text-gray-500", icon: Camera };
-  const Icon = config.icon;
+  const Icon = (config as any).icon;
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${config.color}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${(config as any).color}`}>
       <Icon className="w-3 h-3" />
-      {config.label}
+      {(config as any).label}
     </span>
   );
 }
@@ -79,7 +78,7 @@ export default function Cameras() {
   const { data: cameras = [], isLoading, refetch } = trpc.scada.equipment.list.useQuery({
     businessId: 1,
     type: "camera",
-  });
+  } as any);
 
   // Create mutation
   const createMutation = trpc.scada.equipment.create.useMutation({
@@ -153,7 +152,7 @@ export default function Cameras() {
     };
 
     if (editingCamera) {
-      updateMutation.mutate({ id: editingCamera.id, ...data });
+      updateMutation.mutate({ id: editingCamera.id, ...data } as any);
     } else {
       createMutation.mutate(data);
     }
@@ -161,12 +160,12 @@ export default function Cameras() {
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه الكاميرا؟")) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ id } as any);
     }
   };
 
   // Filter cameras
-  const filteredCameras = cameras.filter((camera: any) => {
+  const filteredCameras = (cameras as any[]).filter((camera: any) => {
     const matchesSearch =
       camera.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       camera.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -177,8 +176,8 @@ export default function Cameras() {
 
   const statCards = [
     { label: "إجمالي الكاميرات", value: cameras.length, icon: Camera, color: "primary" },
-    { label: "نشطة", value: cameras.filter((c: any) => c.status === "active" || c.status === "online").length, icon: CheckCircle, color: "success" },
-    { label: "غير نشطة", value: cameras.filter((c: any) => c.status === "inactive" || c.status === "offline").length, icon: XCircle, color: "destructive" },
+    { label: "نشطة", value: (cameras as any[]).filter((c: any) => c.status === "active" || c.status === "online").length, icon: CheckCircle, color: "success" },
+    { label: "غير نشطة", value: (cameras as any[]).filter((c: any) => c.status === "inactive" || c.status === "offline").length, icon: XCircle, color: "destructive" },
   ];
 
   if (isLoading) {
@@ -280,7 +279,7 @@ export default function Cameras() {
             </CardContent>
           </Card>
         ) : (
-          filteredCameras.map((camera: any) => (
+          (filteredCameras as any[]).map((camera: any) => (
             <Card key={camera.id} className="overflow-hidden">
               <div className="aspect-video bg-muted flex items-center justify-center relative">
                 <Video className="w-12 h-12 text-muted-foreground" />

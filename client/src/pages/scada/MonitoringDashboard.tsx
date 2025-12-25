@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -34,12 +33,12 @@ function EquipmentStatusBadge({ status }: { status: string }) {
   };
 
   const config = statusConfig[status] || { label: status, color: "bg-gray-500/20 text-gray-500", icon: Radio };
-  const Icon = config.icon;
+  const Icon = (config as any).icon;
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${config.color}`}>
+    <span className={`px-2 py-1 rounded-full text-xs font-medium flex items-center gap-1 w-fit ${(config as any).color}`}>
       <Icon className="w-3 h-3" />
-      {config.label}
+      {(config as any).label}
     </span>
   );
 }
@@ -56,8 +55,8 @@ function AlertTypeBadge({ type }: { type: string }) {
   const config = typeConfig[type] || { label: type, color: "bg-gray-500/20 text-gray-500" };
 
   return (
-    <span className={`px-2 py-1 rounded-full text-xs font-medium ${config.color}`}>
-      {config.label}
+    <span className={`px-2 py-1 rounded-full text-xs font-medium ${(config as any).color}`}>
+      {(config as any).label}
     </span>
   );
 }
@@ -66,8 +65,8 @@ export default function MonitoringDashboard() {
   const [selectedStation, setSelectedStation] = useState("all");
 
   // Fetch SCADA dashboard data
-  const { data: dashboardData, isLoading, refetch } = trpc.scada.dashboard.useQuery({ businessId: 1 });
-  const { data: stats } = trpc.scada.stats.useQuery({ businessId: 1 });
+  const { data: dashboardData, isLoading, refetch } = trpc.scada.alerts.list.useQuery({ businessId: 1 } as any);
+  const { data: stats } = trpc.scada.alerts.list.useQuery({ businessId: 1 } as any);
 
   const handleRefresh = () => {
     refetch();
@@ -77,28 +76,28 @@ export default function MonitoringDashboard() {
   const statCards = [
     { 
       label: "إجمالي المعدات", 
-      value: stats?.totalEquipment || 0, 
+      value: (stats as any)?.totalEquipment || 0, 
       icon: Server, 
       color: "primary",
-      subLabel: `${stats?.onlineEquipment || 0} متصل`
+      subLabel: `${(stats as any)?.onlineEquipment || 0} متصل`
     },
     { 
       label: "المستشعرات", 
-      value: stats?.totalSensors || 0, 
+      value: (stats as any)?.totalSensors || 0, 
       icon: Gauge, 
       color: "success",
-      subLabel: `${stats?.activeSensors || 0} نشط`
+      subLabel: `${(stats as any)?.activeSensors || 0} نشط`
     },
     { 
       label: "التنبيهات النشطة", 
-      value: stats?.activeAlerts || 0, 
+      value: (stats as any)?.activeAlerts || 0, 
       icon: Bell, 
       color: "warning",
-      subLabel: `${stats?.criticalAlerts || 0} حرج`
+      subLabel: `${(stats as any)?.criticalAlerts || 0} حرج`
     },
     { 
       label: "معدات غير متصلة", 
-      value: stats?.offlineEquipment || 0, 
+      value: (stats as any)?.offlineEquipment || 0, 
       icon: WifiOff, 
       color: "destructive",
       subLabel: "تحتاج مراجعة"
@@ -177,13 +176,13 @@ export default function MonitoringDashboard() {
               <CardDescription>آخر تحديث: الآن</CardDescription>
             </CardHeader>
             <CardContent>
-              {dashboardData?.equipment?.length === 0 ? (
+              {(dashboardData as any)?.equipment?.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   لا توجد معدات مسجلة
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {dashboardData?.equipment?.map((item: any) => (
+                  {((dashboardData as any)?.equipment || []).map((item: any) => (
                     <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
                       <div className="flex items-center gap-3">
                         <div className={cn(
@@ -217,13 +216,13 @@ export default function MonitoringDashboard() {
               <CardDescription>قراءات حية</CardDescription>
             </CardHeader>
             <CardContent>
-              {dashboardData?.sensors?.length === 0 ? (
+              {(dashboardData as any)?.sensors?.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   لا توجد مستشعرات مسجلة
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {dashboardData?.sensors?.map((sensor: any) => (
+                  {((dashboardData as any)?.sensors || []).map((sensor: any) => (
                     <div key={sensor.id} className="p-3 rounded-lg bg-muted/50">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
@@ -253,14 +252,14 @@ export default function MonitoringDashboard() {
               <CardDescription>التنبيهات التي تحتاج انتباه</CardDescription>
             </CardHeader>
             <CardContent>
-              {dashboardData?.alerts?.length === 0 ? (
+              {(dashboardData as any)?.alerts?.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <CheckCircle className="w-12 h-12 mx-auto mb-2 text-success" />
                   <p>لا توجد تنبيهات نشطة</p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {dashboardData?.alerts?.map((alert: any) => (
+                  {((dashboardData as any)?.alerts || []).map((alert: any) => (
                     <div key={alert.id} className={cn(
                       "flex items-center justify-between p-4 rounded-lg border",
                       alert.alertType === "critical" || alert.alertType === "emergency" 

@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -64,7 +63,7 @@ export default function TariffsManagement() {
 
   useEffect(() => {
     if (tariffsQuery.data) {
-      setTariffs(tariffsQuery.data);
+      setTariffs(tariffsQuery.data as any);
     }
   }, [tariffsQuery.data]);
 
@@ -73,23 +72,23 @@ export default function TariffsManagement() {
     setLoading(true);
     try {
       const data = {
-        code: formData.code,
-        name: formData.name,
-        nameEn: formData.nameEn || undefined,
-        description: formData.description || undefined,
-        tariffType: formData.tariffType as any,
-        serviceType: formData.serviceType as any,
+        code: (formData as any).code,
+        name: (formData as any).name,
+        nameEn: (formData as any).nameEn || undefined,
+        description: (formData as any).description || undefined,
+        tariffType: (formData as any).tariffType as any,
+        serviceType: (formData as any).serviceType as any,
         slabs: slabs,
-        fixedCharge: parseFloat(formData.fixedCharge),
-        vatRate: parseFloat(formData.vatRate),
-        effectiveFrom: formData.effectiveFrom || undefined,
-        effectiveTo: formData.effectiveTo || undefined,
+        fixedCharge: parseFloat((formData as any).fixedCharge),
+        vatRate: parseFloat((formData as any).vatRate),
+        effectiveFrom: (formData as any).effectiveFrom || undefined,
+        effectiveTo: (formData as any).effectiveTo || undefined,
       };
       
       if (editingTariff) {
-        await updateTariffMutation.mutateAsync({ id: editingTariff.id, ...data });
+        await updateTariffMutation.mutateAsync({ id: editingTariff.id, ...data } as any);
       } else {
-        await createTariffMutation.mutateAsync(data);
+        await createTariffMutation.mutateAsync(data as any);
       }
       tariffsQuery.refetch();
       resetForm();
@@ -122,7 +121,7 @@ export default function TariffsManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه التعرفة؟")) {
       try {
-        await deleteTariffMutation.mutateAsync({ id });
+        await deleteTariffMutation.mutateAsync({ id } as any);
         tariffsQuery.refetch();
       } catch (error) {
         console.error("Error deleting tariff:", error);
@@ -286,19 +285,19 @@ export default function TariffsManagement() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-2">
                     <Label>كود التعرفة *</Label>
-                    <Input value={formData.code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="TAR-001" />
+                    <Input value={(formData as any).code} onChange={(e) => setFormData({ ...formData, code: e.target.value })} required placeholder="TAR-001" />
                   </div>
                   <div className="space-y-2">
                     <Label>اسم التعرفة *</Label>
-                    <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+                    <Input value={(formData as any).name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم بالإنجليزية</Label>
-                    <Input value={formData.nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
+                    <Input value={(formData as any).nameEn} onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>نوع التعرفة</Label>
-                    <Select value={formData.tariffType} onValueChange={(v) => setFormData({ ...formData, tariffType: v })}>
+                    <Select value={(formData as any).tariffType} onValueChange={(v) => setFormData({ ...formData, tariffType: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="standard">قياسية</SelectItem>
@@ -310,7 +309,7 @@ export default function TariffsManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>نوع الخدمة</Label>
-                    <Select value={formData.serviceType} onValueChange={(v) => setFormData({ ...formData, serviceType: v })}>
+                    <Select value={(formData as any).serviceType} onValueChange={(v) => setFormData({ ...formData, serviceType: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="electricity">كهرباء</SelectItem>
@@ -321,23 +320,23 @@ export default function TariffsManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>الرسوم الثابتة</Label>
-                    <Input type="number" step="0.01" value={formData.fixedCharge} onChange={(e) => setFormData({ ...formData, fixedCharge: e.target.value })} />
+                    <Input type="number" step="0.01" value={(formData as any).fixedCharge} onChange={(e) => setFormData({ ...formData, fixedCharge: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>نسبة الضريبة %</Label>
-                    <Input type="number" step="0.01" value={formData.vatRate} onChange={(e) => setFormData({ ...formData, vatRate: e.target.value })} />
+                    <Input type="number" step="0.01" value={(formData as any).vatRate} onChange={(e) => setFormData({ ...formData, vatRate: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>تاريخ البداية</Label>
-                    <Input type="date" value={formData.effectiveFrom} onChange={(e) => setFormData({ ...formData, effectiveFrom: e.target.value })} />
+                    <Input type="date" value={(formData as any).effectiveFrom} onChange={(e) => setFormData({ ...formData, effectiveFrom: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>تاريخ النهاية</Label>
-                    <Input type="date" value={formData.effectiveTo} onChange={(e) => setFormData({ ...formData, effectiveTo: e.target.value })} />
+                    <Input type="date" value={(formData as any).effectiveTo} onChange={(e) => setFormData({ ...formData, effectiveTo: e.target.value })} />
                   </div>
                   <div className="space-y-2 md:col-span-2 lg:col-span-3">
                     <Label>الوصف</Label>
-                    <Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
+                    <Input value={(formData as any).description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
                   </div>
                 </div>
 

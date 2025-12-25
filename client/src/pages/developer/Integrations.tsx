@@ -108,25 +108,25 @@ export default function Integrations() {
     const formData = new FormData(e.currentTarget);
     createMutation.mutate({
       businessId: 1,
-      code: formData.get("code") as string,
-      nameAr: formData.get("nameAr") as string,
-      nameEn: formData.get("nameEn") as string || undefined,
-      description: formData.get("description") as string || undefined,
-      integrationType: formData.get("integrationType") as any,
-      category: formData.get("category") as any || "local",
-      provider: formData.get("provider") as string || undefined,
-      baseUrl: formData.get("baseUrl") as string || undefined,
-      apiVersion: formData.get("apiVersion") as string || undefined,
-      authType: formData.get("authType") as any || "api_key",
-      webhookUrl: formData.get("webhookUrl") as string || undefined,
-      rateLimitPerMinute: parseInt(formData.get("rateLimitPerMinute") as string) || 60,
-      timeoutSeconds: parseInt(formData.get("timeoutSeconds") as string) || 30,
-      retryAttempts: parseInt(formData.get("retryAttempts") as string) || 3,
-    });
+      code: (formData as any).get("code") as string,
+      nameAr: (formData as any).get("nameAr") as string,
+      nameEn: (formData as any).get("nameEn") as string || undefined,
+      description: (formData as any).get("description") as string || undefined,
+      integrationType: (formData as any).get("integrationType") as any,
+      category: (formData as any).get("category") as any || "local",
+      provider: (formData as any).get("provider") as string || undefined,
+      baseUrl: (formData as any).get("baseUrl") as string || undefined,
+      apiVersion: (formData as any).get("apiVersion") as string || undefined,
+      authType: (formData as any).get("authType") as any || "api_key",
+      webhookUrl: (formData as any).get("webhookUrl") as string || undefined,
+      rateLimitPerMinute: parseInt((formData as any).get("rateLimitPerMinute") as string) || 60,
+      timeoutSeconds: parseInt((formData as any).get("timeoutSeconds") as string) || 30,
+      retryAttempts: parseInt((formData as any).get("retryAttempts") as string) || 3,
+    } as any);
   };
 
   const toggleActive = (id: number, isActive: boolean) => {
-    updateMutation.mutate({ id, isActive: !isActive });
+    updateMutation.mutate({ id, isActive: !isActive } as any);
   };
 
   return (
@@ -363,7 +363,7 @@ export default function Integrations() {
                         <Button variant="ghost" size="icon" onClick={() => setSelectedIntegration(integration)}>
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate({ id: integration.id })}>
+                        <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate({ id: integration.id } as any)}>
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>

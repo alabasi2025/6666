@@ -132,7 +132,7 @@ export default function CustomMemos() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMemo.mutate({ ...formData, businessId });
+    createMemo.mutate({ ...formData, businessId } as any);
   };
 
   const viewMemo = (memo: any) => {
@@ -141,11 +141,11 @@ export default function CustomMemos() {
   };
 
   const sendMemo = (id: number) => {
-    updateMemo.mutate({ id, status: "sent" });
+    updateMemo.mutate({ id, status: "sent" } as any);
   };
 
   const archiveMemo = (id: number) => {
-    updateMemo.mutate({ id, status: "archived" });
+    updateMemo.mutate({ id, status: "archived" } as any);
   };
 
   const filteredMemos = memos.filter(
@@ -189,7 +189,7 @@ export default function CustomMemos() {
                   <Label htmlFor="memoNumber">رقم المذكرة *</Label>
                   <Input
                     id="memoNumber"
-                    value={formData.memoNumber}
+                    value={(formData as any).memoNumber}
                     onChange={(e) => setFormData({ ...formData, memoNumber: e.target.value })}
                     required
                   />
@@ -199,7 +199,7 @@ export default function CustomMemos() {
                   <Input
                     id="memoDate"
                     type="date"
-                    value={formData.memoDate}
+                    value={(formData as any).memoDate}
                     onChange={(e) => setFormData({ ...formData, memoDate: e.target.value })}
                     required
                   />
@@ -207,7 +207,7 @@ export default function CustomMemos() {
                 <div className="space-y-2">
                   <Label htmlFor="memoType">نوع المذكرة</Label>
                   <Select
-                    value={formData.memoType}
+                    value={(formData as any).memoType}
                     onValueChange={(value: any) => setFormData({ ...formData, memoType: value })}
                   >
                     <SelectTrigger>
@@ -227,7 +227,7 @@ export default function CustomMemos() {
                 <Label htmlFor="subject">الموضوع *</Label>
                 <Input
                   id="subject"
-                  value={formData.subject}
+                  value={(formData as any).subject}
                   onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                   placeholder="موضوع المذكرة"
                   required
@@ -238,7 +238,7 @@ export default function CustomMemos() {
                   <Label htmlFor="fromDepartment">من</Label>
                   <Input
                     id="fromDepartment"
-                    value={formData.fromDepartment}
+                    value={(formData as any).fromDepartment}
                     onChange={(e) => setFormData({ ...formData, fromDepartment: e.target.value })}
                     placeholder="القسم المرسل"
                   />
@@ -247,7 +247,7 @@ export default function CustomMemos() {
                   <Label htmlFor="toDepartment">إلى</Label>
                   <Input
                     id="toDepartment"
-                    value={formData.toDepartment}
+                    value={(formData as any).toDepartment}
                     onChange={(e) => setFormData({ ...formData, toDepartment: e.target.value })}
                     placeholder="القسم المستلم"
                   />
@@ -257,7 +257,7 @@ export default function CustomMemos() {
                 <Label htmlFor="content">المحتوى</Label>
                 <Textarea
                   id="content"
-                  value={formData.content}
+                  value={(formData as any).content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   placeholder="نص المذكرة..."
                   rows={5}
@@ -267,7 +267,7 @@ export default function CustomMemos() {
                 <div className="space-y-2">
                   <Label htmlFor="priority">الأولوية</Label>
                   <Select
-                    value={formData.priority}
+                    value={(formData as any).priority}
                     onValueChange={(value: any) => setFormData({ ...formData, priority: value })}
                   >
                     <SelectTrigger>
@@ -290,7 +290,7 @@ export default function CustomMemos() {
                   <Input
                     id="responseDeadline"
                     type="date"
-                    value={formData.responseDeadline}
+                    value={(formData as any).responseDeadline}
                     onChange={(e) => setFormData({ ...formData, responseDeadline: e.target.value })}
                   />
                 </div>
@@ -411,7 +411,7 @@ export default function CustomMemos() {
                               <Archive className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="icon" onClick={() => deleteMemo.mutate({ id: memo.id })}>
+                          <Button variant="ghost" size="icon" onClick={() => deleteMemo.mutate({ id: memo.id } as any)}>
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>
                         </div>

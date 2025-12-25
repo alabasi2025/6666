@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Search, FileText, Check, Eye, Printer, Download, X } from "lucide-react";
@@ -94,19 +93,19 @@ export default function InvoicesManagement() {
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
           <p className="text-sm text-gray-500">فواتير مدفوعة</p>
           <p className="text-2xl font-bold text-green-600">
-            {data?.data.filter((i: Invoice) => i.status === "paid").length || 0}
+            {((data as any) || []).filter((i: any) => i.status === "paid").length || 0}
           </p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
           <p className="text-sm text-gray-500">فواتير معلقة</p>
           <p className="text-2xl font-bold text-yellow-600">
-            {data?.data.filter((i: Invoice) => i.status !== "paid" && i.status !== "cancelled").length || 0}
+            {((data as any) || []).filter((i: any) => i.status !== "paid" && i.status !== "cancelled").length || 0}
           </p>
         </div>
         <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-100">
           <p className="text-sm text-gray-500">إجمالي المستحقات</p>
           <p className="text-2xl font-bold text-red-600">
-            {data?.data.reduce((sum: number, i: Invoice) => sum + parseFloat(i.balanceDue || "0"), 0).toLocaleString()} ر.س
+            {((data as any) || []).reduce((sum: number, i: any) => sum + parseFloat(i.balanceDue || "0"), 0).toLocaleString()} ر.س
           </p>
         </div>
       </div>
@@ -141,31 +140,31 @@ export default function InvoicesManagement() {
                   </td>
                 </tr>
               ) : (
-                data?.data.map((invoice: Invoice) => (
-                  <tr key={invoice.id} className="hover:bg-gray-50">
+                ((data as any)?.data || []).map((invoice: any) => (
+                  <tr key={(invoice as any).id} className="hover:bg-gray-50">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <FileText className="h-5 w-5 text-gray-400" />
                         <div>
-                          <div className="font-medium text-gray-900">{invoice.invoiceNo}</div>
-                          <div className="text-sm text-gray-500">{invoice.invoiceDate}</div>
+                          <div className="font-medium text-gray-900">{(invoice as any).invoiceNo}</div>
+                          <div className="text-sm text-gray-500">{(invoice as any).invoiceDate}</div>
                         </div>
                       </div>
                     </td>
-                    <td className="px-6 py-4 text-gray-600">{getCustomerName(invoice.customerId)}</td>
-                    <td className="px-6 py-4 text-gray-600 font-mono">{invoice.meterNumber || "-"}</td>
+                    <td className="px-6 py-4 text-gray-600">{getCustomerName((invoice as any).customerId)}</td>
+                    <td className="px-6 py-4 text-gray-600 font-mono">{(invoice as any).meterNumber || "-"}</td>
                     <td className="px-6 py-4 text-gray-600">
-                      {parseFloat(invoice.totalConsumptionKWH || "0").toLocaleString()} kWh
+                      {parseFloat((invoice as any).totalConsumptionKWH || "0").toLocaleString()} kWh
                     </td>
                     <td className="px-6 py-4 font-medium text-gray-900">
-                      {parseFloat(invoice.finalAmount || "0").toLocaleString()} ر.س
+                      {parseFloat((invoice as any).finalAmount || "0").toLocaleString()} ر.س
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`font-bold ${parseFloat(invoice.balanceDue || "0") > 0 ? "text-red-600" : "text-green-600"}`}>
-                        {parseFloat(invoice.balanceDue || "0").toLocaleString()} ر.س
+                      <span className={`font-bold ${parseFloat((invoice as any).balanceDue || "0") > 0 ? "text-red-600" : "text-green-600"}`}>
+                        {parseFloat((invoice as any).balanceDue || "0").toLocaleString()} ر.س
                       </span>
                     </td>
-                    <td className="px-6 py-4">{getStatusBadge(invoice.status)}</td>
+                    <td className="px-6 py-4">{getStatusBadge((invoice as any).status)}</td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
                         <button
@@ -178,9 +177,9 @@ export default function InvoicesManagement() {
                         >
                           <Eye className="h-4 w-4" />
                         </button>
-                        {invoice.status === "generated" && (
+                        {(invoice as any).status === "generated" && (
                           <button
-                            onClick={() => approveMutation.mutate({ id: invoice.id, approvedBy: 1 })}
+                            onClick={() => approveMutation.mutate({ id: (invoice as any).id, approvedBy: 1 } as any)}
                             className="p-1 text-green-600 hover:bg-green-50 rounded"
                             title="اعتماد"
                           >

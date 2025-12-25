@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Plus, Edit, Trash2, X, DollarSign } from "lucide-react";
@@ -83,7 +82,7 @@ export default function TariffsManagement() {
     createMutation.mutate({
       businessId: 1,
       ...formData,
-    });
+    } as any);
   };
 
   const getMeterTypeLabel = (type: string) => {
@@ -137,7 +136,7 @@ export default function TariffsManagement() {
             لا توجد تعرفات
           </div>
         ) : (
-          data?.data.map((tariff: Tariff) => (
+          ((data as any)?.data || []).map((tariff: any) => (
             <div key={tariff.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex justify-between items-start mb-4">
                 <div>
@@ -222,7 +221,7 @@ export default function TariffsManagement() {
                   <input
                     type="text"
                     required
-                    value={formData.name}
+                    value={(formData as any).name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="مثال: تعرفة سكنية"
@@ -232,7 +231,7 @@ export default function TariffsManagement() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">الكود</label>
                   <input
                     type="text"
-                    value={formData.code}
+                    value={(formData as any).code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     placeholder="RES-01"
@@ -244,7 +243,7 @@ export default function TariffsManagement() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">نوع العداد</label>
                   <select
-                    value={formData.meterType}
+                    value={(formData as any).meterType}
                     onChange={(e) => setFormData({ ...formData, meterType: e.target.value as any })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
@@ -256,7 +255,7 @@ export default function TariffsManagement() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">نوع العميل</label>
                   <select
-                    value={formData.customerType}
+                    value={(formData as any).customerType}
                     onChange={(e) => setFormData({ ...formData, customerType: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
@@ -274,7 +273,7 @@ export default function TariffsManagement() {
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.baseCharge}
+                    value={(formData as any).baseCharge}
                     onChange={(e) => setFormData({ ...formData, baseCharge: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -284,7 +283,7 @@ export default function TariffsManagement() {
                   <input
                     type="number"
                     step="0.01"
-                    value={formData.vatRate}
+                    value={(formData as any).vatRate}
                     onChange={(e) => setFormData({ ...formData, vatRate: e.target.value })}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
@@ -300,7 +299,7 @@ export default function TariffsManagement() {
                       <label className="text-xs text-gray-500">الحد (kWh)</label>
                       <input
                         type="number"
-                        value={formData.tier1Limit}
+                        value={(formData as any).tier1Limit}
                         onChange={(e) => setFormData({ ...formData, tier1Limit: e.target.value })}
                         className="w-full px-3 py-1 border border-gray-300 rounded"
                       />
@@ -310,7 +309,7 @@ export default function TariffsManagement() {
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.tier1Rate}
+                        value={(formData as any).tier1Rate}
                         onChange={(e) => setFormData({ ...formData, tier1Rate: e.target.value })}
                         className="w-full px-3 py-1 border border-gray-300 rounded"
                       />
@@ -322,7 +321,7 @@ export default function TariffsManagement() {
                       <label className="text-xs text-gray-500">الحد (kWh)</label>
                       <input
                         type="number"
-                        value={formData.tier2Limit}
+                        value={(formData as any).tier2Limit}
                         onChange={(e) => setFormData({ ...formData, tier2Limit: e.target.value })}
                         className="w-full px-3 py-1 border border-gray-300 rounded"
                       />
@@ -332,7 +331,7 @@ export default function TariffsManagement() {
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.tier2Rate}
+                        value={(formData as any).tier2Rate}
                         onChange={(e) => setFormData({ ...formData, tier2Rate: e.target.value })}
                         className="w-full px-3 py-1 border border-gray-300 rounded"
                       />
@@ -344,7 +343,7 @@ export default function TariffsManagement() {
                       <label className="text-xs text-gray-500">الحد (kWh)</label>
                       <input
                         type="number"
-                        value={formData.tier3Limit}
+                        value={(formData as any).tier3Limit}
                         onChange={(e) => setFormData({ ...formData, tier3Limit: e.target.value })}
                         className="w-full px-3 py-1 border border-gray-300 rounded"
                       />
@@ -354,7 +353,7 @@ export default function TariffsManagement() {
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.tier3Rate}
+                        value={(formData as any).tier3Rate}
                         onChange={(e) => setFormData({ ...formData, tier3Rate: e.target.value })}
                         className="w-full px-3 py-1 border border-gray-300 rounded"
                       />
@@ -368,7 +367,7 @@ export default function TariffsManagement() {
                       <input
                         type="number"
                         step="0.01"
-                        value={formData.tier4Rate}
+                        value={(formData as any).tier4Rate}
                         onChange={(e) => setFormData({ ...formData, tier4Rate: e.target.value })}
                         className="w-full px-3 py-1 border border-gray-300 rounded"
                       />
@@ -381,7 +380,7 @@ export default function TariffsManagement() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">تاريخ السريان</label>
                 <input
                   type="date"
-                  value={formData.effectiveFrom}
+                  value={(formData as any).effectiveFrom}
                   onChange={(e) => setFormData({ ...formData, effectiveFrom: e.target.value })}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                 />
@@ -390,7 +389,7 @@ export default function TariffsManagement() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">الوصف</label>
                 <textarea
-                  value={formData.description}
+                  value={(formData as any).description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={2}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"

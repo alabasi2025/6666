@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -48,7 +47,7 @@ export default function AreasManagement() {
 
   useEffect(() => {
     if (areasQuery.data) {
-      setAreas(areasQuery.data);
+      setAreas(areasQuery.data as any);
     }
   }, [areasQuery.data]);
 
@@ -60,15 +59,15 @@ export default function AreasManagement() {
         await updateAreaMutation.mutateAsync({
           id: editingArea.id,
           ...formData,
-          latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
-          longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
-        });
+          latitude: (formData as any).latitude ? parseFloat((formData as any).latitude) : undefined,
+          longitude: (formData as any).longitude ? parseFloat((formData as any).longitude) : undefined,
+        } as any);
       } else {
         await createAreaMutation.mutateAsync({
           ...formData,
-          latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
-          longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
-        });
+          latitude: (formData as any).latitude ? parseFloat((formData as any).latitude) : undefined,
+          longitude: (formData as any).longitude ? parseFloat((formData as any).longitude) : undefined,
+        } as any);
       }
       areasQuery.refetch();
       resetForm();
@@ -97,7 +96,7 @@ export default function AreasManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه المنطقة؟")) {
       try {
-        await deleteAreaMutation.mutateAsync({ id });
+        await deleteAreaMutation.mutateAsync({ id } as any);
         areasQuery.refetch();
       } catch (error) {
         console.error("Error deleting area:", error);
@@ -249,7 +248,7 @@ export default function AreasManagement() {
                     <Label htmlFor="code">كود المنطقة *</Label>
                     <Input
                       id="code"
-                      value={formData.code}
+                      value={(formData as any).code}
                       onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                       required
                       placeholder="مثال: AREA-001"
@@ -259,7 +258,7 @@ export default function AreasManagement() {
                     <Label htmlFor="name">اسم المنطقة *</Label>
                     <Input
                       id="name"
-                      value={formData.name}
+                      value={(formData as any).name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                       required
                       placeholder="اسم المنطقة بالعربية"
@@ -269,7 +268,7 @@ export default function AreasManagement() {
                     <Label htmlFor="nameEn">الاسم بالإنجليزية</Label>
                     <Input
                       id="nameEn"
-                      value={formData.nameEn}
+                      value={(formData as any).nameEn}
                       onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                       placeholder="Area Name in English"
                     />
@@ -278,7 +277,7 @@ export default function AreasManagement() {
                     <Label htmlFor="description">الوصف</Label>
                     <Input
                       id="description"
-                      value={formData.description}
+                      value={(formData as any).description}
                       onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                       placeholder="وصف المنطقة"
                     />
@@ -287,7 +286,7 @@ export default function AreasManagement() {
                     <Label htmlFor="address">العنوان</Label>
                     <Input
                       id="address"
-                      value={formData.address}
+                      value={(formData as any).address}
                       onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                       placeholder="العنوان التفصيلي"
                     />
@@ -298,7 +297,7 @@ export default function AreasManagement() {
                       id="latitude"
                       type="number"
                       step="any"
-                      value={formData.latitude}
+                      value={(formData as any).latitude}
                       onChange={(e) => setFormData({ ...formData, latitude: e.target.value })}
                       placeholder="مثال: 24.7136"
                     />
@@ -309,7 +308,7 @@ export default function AreasManagement() {
                       id="longitude"
                       type="number"
                       step="any"
-                      value={formData.longitude}
+                      value={(formData as any).longitude}
                       onChange={(e) => setFormData({ ...formData, longitude: e.target.value })}
                       placeholder="مثال: 46.6753"
                     />

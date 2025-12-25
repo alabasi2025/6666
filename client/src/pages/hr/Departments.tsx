@@ -86,13 +86,13 @@ export default function Departments({ businessId }: DepartmentsProps) {
     const formData = new FormData(e.currentTarget);
     const data = {
       businessId,
-      code: formData.get("code") as string,
-      nameAr: formData.get("nameAr") as string,
-      nameEn: formData.get("nameEn") as string || undefined,
+      code: (formData as any).get("code") as string,
+      nameAr: (formData as any).get("nameAr") as string,
+      nameEn: (formData as any).get("nameEn") as string || undefined,
     };
 
     if (selectedDept) {
-      updateDeptMutation.mutate({ id: selectedDept.id, ...data });
+      updateDeptMutation.mutate({ id: selectedDept.id, ...data } as any);
     } else {
       createDeptMutation.mutate(data);
     }
@@ -103,14 +103,14 @@ export default function Departments({ businessId }: DepartmentsProps) {
     const formData = new FormData(e.currentTarget);
     const data = {
       businessId,
-      code: formData.get("code") as string,
-      titleAr: formData.get("titleAr") as string,
-      titleEn: formData.get("titleEn") as string || undefined,
-      description: formData.get("description") as string || undefined,
+      code: (formData as any).get("code") as string,
+      titleAr: (formData as any).get("titleAr") as string,
+      titleEn: (formData as any).get("titleEn") as string || undefined,
+      description: (formData as any).get("description") as string || undefined,
     };
 
     if (selectedJob) {
-      updateJobMutation.mutate({ id: selectedJob.id, ...data });
+      updateJobMutation.mutate({ id: selectedJob.id, ...data } as any);
     } else {
       createJobMutation.mutate(data);
     }
@@ -219,7 +219,7 @@ export default function Departments({ businessId }: DepartmentsProps) {
                             variant="ghost"
                             onClick={() => {
                               if (confirm("هل أنت متأكد من حذف هذا القسم؟")) {
-                                deleteDeptMutation.mutate({ id: dept.id });
+                                deleteDeptMutation.mutate({ id: dept.id } as any);
                               }
                             }}
                             title="حذف"
@@ -332,7 +332,7 @@ export default function Departments({ businessId }: DepartmentsProps) {
                             variant="ghost"
                             onClick={() => {
                               if (confirm("هل أنت متأكد من حذف هذا المسمى؟")) {
-                                deleteJobMutation.mutate({ id: job.id });
+                                deleteJobMutation.mutate({ id: job.id } as any);
                               }
                             }}
                             title="حذف"

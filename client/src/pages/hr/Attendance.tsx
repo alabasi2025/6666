@@ -45,14 +45,14 @@ export default function Attendance({ businessId }: AttendanceProps) {
       employeeId,
       businessId,
       checkInMethod: "manual",
-    });
+    } as any);
   };
 
   const handleCheckOut = (employeeId: number) => {
     checkOutMutation.mutate({
       employeeId,
       checkOutMethod: "manual",
-    });
+    } as any);
   };
 
   const getStatusBadge = (status: string) => {

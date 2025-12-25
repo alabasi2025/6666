@@ -31,7 +31,7 @@ export default function Events() {
     limit: 100,
   });
 
-  const { data: subscriptions } = trpc.developer.subscriptions.list.useQuery({ businessId: 1 });
+  const { data: subscriptions } = trpc.developer.subscriptions.list.useQuery({ businessId: 1 } as any);
 
   const formatDate = (date: Date | string | null) => {
     if (!date) return "-";

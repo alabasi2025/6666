@@ -45,8 +45,8 @@ export default function Payroll({ businessId }: PayrollProps) {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const month = parseInt(formData.get("month") as string);
-    const year = parseInt(formData.get("year") as string);
+    const month = parseInt((formData as any).get("month") as string);
+    const year = parseInt((formData as any).get("year") as string);
 
     // حساب تواريخ الفترة
     const startDate = new Date(year, month - 1, 1);
@@ -252,7 +252,7 @@ export default function Payroll({ businessId }: PayrollProps) {
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => calculateMutation.mutate({ payrollRunId: payroll.id, businessId })}
+                        onClick={() => calculateMutation.mutate({ payrollRunId: payroll.id, businessId } as any)}
                         disabled={calculateMutation.isPending}
                       >
                         <Calculator className="h-4 w-4 ml-1" />

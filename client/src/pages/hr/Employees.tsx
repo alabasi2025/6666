@@ -86,21 +86,21 @@ export default function Employees({ businessId }: EmployeesProps) {
     const formData = new FormData(e.currentTarget);
     const data: any = {
       businessId,
-      employeeNumber: formData.get("employeeNumber") as string,
-      firstName: formData.get("firstName") as string,
-      middleName: formData.get("middleName") as string || undefined,
-      lastName: formData.get("lastName") as string,
-      idNumber: formData.get("idNumber") as string,
-      mobile: formData.get("mobile") as string,
-      email: formData.get("email") as string || undefined,
-      hireDate: formData.get("hireDate") as string,
-      departmentId: formData.get("departmentId") ? parseInt(formData.get("departmentId") as string) : undefined,
-      jobTitleId: formData.get("jobTitleId") ? parseInt(formData.get("jobTitleId") as string) : undefined,
-      status: formData.get("status") as any || "active",
+      employeeNumber: (formData as any).get("employeeNumber") as string,
+      firstName: (formData as any).get("firstName") as string,
+      middleName: (formData as any).get("middleName") as string || undefined,
+      lastName: (formData as any).get("lastName") as string,
+      idNumber: (formData as any).get("idNumber") as string,
+      mobile: (formData as any).get("mobile") as string,
+      email: (formData as any).get("email") as string || undefined,
+      hireDate: (formData as any).get("hireDate") as string,
+      departmentId: (formData as any).get("departmentId") ? parseInt((formData as any).get("departmentId") as string) : undefined,
+      jobTitleId: (formData as any).get("jobTitleId") ? parseInt((formData as any).get("jobTitleId") as string) : undefined,
+      status: (formData as any).get("status") as any || "active",
     };
 
     if (selectedEmployee) {
-      updateMutation.mutate({ id: selectedEmployee.id, ...data });
+      updateMutation.mutate({ id: selectedEmployee.id, ...data } as any);
     } else {
       createMutation.mutate(data);
     }
@@ -334,7 +334,7 @@ export default function Employees({ businessId }: EmployeesProps) {
                         <Button
                           size="sm"
                           variant="ghost"
-                          onClick={() => unlinkMutation.mutate({ employeeId: emp.id })}
+                          onClick={() => unlinkMutation.mutate({ employeeId: emp.id } as any)}
                           title="إلغاء الربط"
                         >
                           <Unlink className="h-4 w-4 text-orange-500" />
@@ -357,7 +357,7 @@ export default function Employees({ businessId }: EmployeesProps) {
                         variant="ghost"
                         onClick={() => {
                           if (confirm("هل أنت متأكد من حذف هذا الموظف؟")) {
-                            deleteMutation.mutate({ id: emp.id });
+                            deleteMutation.mutate({ id: emp.id } as any);
                           }
                         }}
                       >
@@ -399,13 +399,13 @@ export default function Employees({ businessId }: EmployeesProps) {
                     linkMutation.mutate({
                       employeeId: selectedEmployee.id,
                       fieldWorkerId: worker.id,
-                    });
+                    } as any);
                   }}
                 >
                   {worker.nameAr} - {worker.employeeNumber}
                 </Button>
               ))}
-              {(!fieldWorkers || fieldWorkers.filter((w: any) => !w.employeeId).length === 0) && (
+              {(!fieldWorkers || (fieldWorkers as any[]).filter((w: any) => !w.employeeId).length === 0) && (
                 <p className="text-center text-muted-foreground py-4">
                   لا يوجد عاملين ميدانيين متاحين للربط
                 </p>

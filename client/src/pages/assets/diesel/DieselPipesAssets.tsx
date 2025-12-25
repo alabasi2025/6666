@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -85,7 +84,7 @@ export default function DieselPipesAssets() {
       length: formData.length || undefined,
       condition: formData.condition as "good" | "fair" | "poor" | "needs_replacement",
     };
-    if (editingPipe) { updateMutation.mutate({ id: editingPipe.id, ...data }); }
+    if (editingPipe) { updateMutation.mutate({ id: editingPipe.id, ...data } as any); }
     else { createMutation.mutate(data); }
   };
 
@@ -283,7 +282,7 @@ export default function DieselPipesAssets() {
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(pipe)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => { if (confirm("هل أنت متأكد من حذف هذه المواصير؟")) { deleteMutation.mutate({ id: pipe.id }); } }}>
+                        <Button variant="ghost" size="icon" onClick={() => { if (confirm("هل أنت متأكد من حذف هذه المواصير؟")) { deleteMutation.mutate({ id: pipe.id } as any); } }}>
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>

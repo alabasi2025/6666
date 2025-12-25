@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { DataTable, Column, StatusBadge } from "@/components/DataTable";
@@ -55,12 +54,12 @@ export default function MaintenancePlans() {
   // Fetch plans from API
   const { data: plans = [], isLoading, refetch } = trpc.maintenance.plans.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Fetch asset categories
   const { data: categories = [] } = trpc.assets.categories.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Mutations
   const createPlan = trpc.maintenance.plans.create.useMutation({
@@ -201,28 +200,28 @@ export default function MaintenancePlans() {
 
   const confirmDelete = () => {
     if (selectedPlan) {
-      deletePlan.mutate({ id: selectedPlan.id });
+      deletePlan.mutate({ id: selectedPlan.id } as any);
     }
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.code || !formData.nameAr) {
+    if (!(formData as any).code || !(formData as any).nameAr) {
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
 
     const data = {
       ...formData,
-      assetCategoryId: formData.assetCategoryId ? parseInt(formData.assetCategoryId) : undefined,
+      assetCategoryId: (formData as any).assetCategoryId ? parseInt((formData as any).assetCategoryId) : undefined,
       businessId: 1,
     };
 
     if (selectedPlan) {
-      updatePlan.mutate({ id: selectedPlan.id, ...data });
+      updatePlan.mutate({ id: selectedPlan.id, ...data } as any);
     } else {
-      createPlan.mutate(data);
+      createPlan.mutate(data as any);
     }
   };
 
@@ -268,7 +267,7 @@ export default function MaintenancePlans() {
                   <Label htmlFor="code">الكود *</Label>
                   <Input
                     id="code"
-                    value={formData.code}
+                    value={(formData as any).code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     placeholder="MP-001"
                     required
@@ -277,7 +276,7 @@ export default function MaintenancePlans() {
                 <div className="space-y-2">
                   <Label htmlFor="frequency">التكرار</Label>
                   <Select
-                    value={formData.frequency}
+                    value={(formData as any).frequency}
                     onValueChange={(value) => setFormData({ ...formData, frequency: value })}
                   >
                     <SelectTrigger>
@@ -297,7 +296,7 @@ export default function MaintenancePlans() {
                 <Label htmlFor="nameAr">اسم الخطة *</Label>
                 <Input
                   id="nameAr"
-                  value={formData.nameAr}
+                  value={(formData as any).nameAr}
                   onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                   required
                 />
@@ -306,21 +305,21 @@ export default function MaintenancePlans() {
                 <Label htmlFor="nameEn">الاسم بالإنجليزية</Label>
                 <Input
                   id="nameEn"
-                  value={formData.nameEn}
+                  value={(formData as any).nameEn}
                   onChange={(e) => setFormData({ ...formData, nameEn: e.target.value })}
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="assetCategoryId">فئة الأصول</Label>
                 <Select
-                  value={formData.assetCategoryId}
+                  value={(formData as any).assetCategoryId}
                   onValueChange={(value) => setFormData({ ...formData, assetCategoryId: value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="اختر الفئة" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat: any) => (
+                    {(categories as any[]).map((cat: any) => (
                       <SelectItem key={cat.id} value={cat.id.toString()}>
                         {cat.nameAr}
                       </SelectItem>
@@ -334,7 +333,7 @@ export default function MaintenancePlans() {
                   <Input
                     id="estimatedHours"
                     type="number"
-                    value={formData.estimatedHours}
+                    value={(formData as any).estimatedHours}
                     onChange={(e) => setFormData({ ...formData, estimatedHours: e.target.value })}
                   />
                 </div>
@@ -343,7 +342,7 @@ export default function MaintenancePlans() {
                   <Input
                     id="estimatedCost"
                     type="number"
-                    value={formData.estimatedCost}
+                    value={(formData as any).estimatedCost}
                     onChange={(e) => setFormData({ ...formData, estimatedCost: e.target.value })}
                   />
                 </div>
@@ -352,7 +351,7 @@ export default function MaintenancePlans() {
                 <Label htmlFor="description">الوصف</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={(formData as any).description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows={3}
                 />
@@ -361,7 +360,7 @@ export default function MaintenancePlans() {
                 <Label htmlFor="isActive">نشط</Label>
                 <Switch
                   id="isActive"
-                  checked={formData.isActive}
+                  checked={(formData as any).isActive}
                   onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
                 />
               </div>

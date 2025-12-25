@@ -97,7 +97,7 @@ export default function MetersManagement() {
       };
       
       if (editingMeter) {
-        await updateMeterMutation.mutateAsync({ id: editingMeter.id, ...data });
+        await updateMeterMutation.mutateAsync({ id: editingMeter.id, ...data } as any);
       } else {
         await createMeterMutation.mutateAsync(data);
       }
@@ -120,7 +120,7 @@ export default function MetersManagement() {
         customerId: parseInt(linkData.customerId),
         installationDate: linkData.installationDate || undefined,
         initialReading: parseFloat(linkData.initialReading),
-      });
+      } as any);
       metersQuery.refetch();
       setShowLinkDialog(false);
       setLinkData({ customerId: "", installationDate: "", initialReading: "0" });
@@ -152,7 +152,7 @@ export default function MetersManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا العداد؟")) {
       try {
-        await deleteMeterMutation.mutateAsync({ id });
+        await deleteMeterMutation.mutateAsync({ id } as any);
         metersQuery.refetch();
       } catch (error) {
         console.error("Error deleting meter:", error);

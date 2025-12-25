@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -74,22 +73,22 @@ export default function AssetsList() {
     businessId: 1,
     status: filterStatus !== "all" ? filterStatus : undefined,
     categoryId: filterCategory !== "all" ? parseInt(filterCategory) : undefined,
-  });
+  } as any);
 
   // Fetch categories
   const { data: categories = [] } = trpc.assets.categories.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Fetch stations
   const { data: stations = [] } = trpc.station.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Fetch dashboard stats
   const { data: stats } = trpc.assets.dashboardStats.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Mutations
   const createAsset = trpc.assets.create.useMutation({
@@ -278,7 +277,7 @@ export default function AssetsList() {
 
   const confirmDelete = () => {
     if (selectedAsset) {
-      deleteAsset.mutate({ id: selectedAsset.id });
+      deleteAsset.mutate({ id: selectedAsset.id } as any);
     }
   };
 
@@ -298,7 +297,7 @@ export default function AssetsList() {
     };
 
     if (selectedAsset) {
-      updateAsset.mutate({ id: selectedAsset.id, ...data });
+      updateAsset.mutate({ id: selectedAsset.id, ...data } as any);
     } else {
       createAsset.mutate(data);
     }

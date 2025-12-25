@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,18 +25,18 @@ export default function DieselConfiguration() {
 
   const utils = trpc.useUtils();
   const { data: stations } = trpc.station.list.useQuery();
-  const { data: tanks } = trpc.diesel.getDieselTanks.useQuery();
-  const { data: pumps } = trpc.diesel.getDieselPumpMeters.useQuery();
-  const { data: pipes } = trpc.diesel.getDieselPipes.useQuery();
-  const { data: existingConfig } = trpc.diesel.getStationDieselConfig.useQuery(
+  const { data: tanks } = trpc.diesel.tanks.list.useQuery();
+  const { data: pumps } = trpc.diesel.pumpMeters.list.useQuery();
+  const { data: pipes } = (trpc.diesel as any).pipes?.list?.useQuery() || { data: [] };
+  const { data: existingConfig } = trpc.diesel.stationConfig.get.useQuery(
     { stationId: parseInt(selectedStation) },
     { enabled: !!selectedStation }
   );
 
-  const saveConfigMutation = trpc.diesel.saveStationDieselConfig.useMutation({
+  const saveConfigMutation = trpc.diesel.stationConfig.save.useMutation({
     onSuccess: () => {
       toast({ title: "تم حفظ التهيئة بنجاح" });
-      utils.diesel.getStationDieselConfig.invalidate();
+      utils.diesel.stationConfig.get.invalidate();
     },
     onError: (error) => {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
@@ -53,7 +52,7 @@ export default function DieselConfiguration() {
         intakePumpHasMeter: existingConfig.config?.intakePumpHasMeter || false,
         outputPumpHasMeter: existingConfig.config?.outputPumpHasMeter || false,
       });
-      setPathElements(existingConfig.path || []);
+      setPathElements((existingConfig as any).path || []);
     } else {
       setConfig({
         hasIntakePump: false,
@@ -102,7 +101,7 @@ export default function DieselConfiguration() {
       stationId: parseInt(selectedStation),
       config,
       path: pathElements,
-    });
+    } as any);
   };
 
   const getElementTypeLabel = (type: string) => {

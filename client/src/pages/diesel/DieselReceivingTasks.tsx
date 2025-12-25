@@ -167,12 +167,12 @@ export default function DieselReceivingTasks() {
       tankerId: parseInt(formData.tankerId),
       employeeId: user?.id || 1,
       notes: formData.notes || undefined,
-    });
+    } as any);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذه المهمة؟")) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ id } as any);
     }
   };
 

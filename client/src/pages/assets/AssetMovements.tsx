@@ -95,7 +95,7 @@ export default function AssetMovements() {
     },
   });
 
-  const filteredMovements = movements.filter((mov: any) => {
+  const filteredMovements = (movements as any[]).filter((mov: any) => {
     const matchesSearch =
       mov.asset?.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       mov.asset?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -109,14 +109,14 @@ export default function AssetMovements() {
     const formData = new FormData(e.currentTarget);
 
     createMutation.mutate({
-      assetId: parseInt(formData.get("assetId") as string),
-      movementType: formData.get("movementType") as any,
-      movementDate: formData.get("movementDate") as string,
-      fromStationId: formData.get("fromStationId") ? parseInt(formData.get("fromStationId") as string) : undefined,
-      toStationId: formData.get("toStationId") ? parseInt(formData.get("toStationId") as string) : undefined,
-      amount: formData.get("amount") as string || undefined,
-      description: formData.get("description") as string || undefined,
-    });
+      assetId: parseInt((formData as any).get("assetId") as string),
+      movementType: (formData as any).get("movementType") as any,
+      movementDate: (formData as any).get("movementDate") as string,
+      fromStationId: (formData as any).get("fromStationId") ? parseInt((formData as any).get("fromStationId") as string) : undefined,
+      toStationId: (formData as any).get("toStationId") ? parseInt((formData as any).get("toStationId") as string) : undefined,
+      amount: (formData as any).get("amount") as string || undefined,
+      description: (formData as any).get("description") as string || undefined,
+    } as any);
   };
 
   const getMovementTypeInfo = (type: string) => {
@@ -126,9 +126,9 @@ export default function AssetMovements() {
   // Stats
   const stats = [
     { title: "إجمالي الحركات", value: movements.length, icon: ArrowRightLeft, color: "text-primary bg-primary/10" },
-    { title: "حركات النقل", value: movements.filter((m: any) => m.movementType === "transfer").length, icon: ArrowRightLeft, color: "text-blue-500 bg-blue-500/10" },
-    { title: "حركات الصيانة", value: movements.filter((m: any) => m.movementType === "maintenance").length, icon: Clock, color: "text-yellow-500 bg-yellow-500/10" },
-    { title: "حركات الإهلاك", value: movements.filter((m: any) => m.movementType === "depreciation").length, icon: CheckCircle, color: "text-orange-500 bg-orange-500/10" },
+    { title: "حركات النقل", value: (movements as any[]).filter((m: any) => m.movementType === "transfer").length, icon: ArrowRightLeft, color: "text-blue-500 bg-blue-500/10" },
+    { title: "حركات الصيانة", value: (movements as any[]).filter((m: any) => m.movementType === "maintenance").length, icon: Clock, color: "text-yellow-500 bg-yellow-500/10" },
+    { title: "حركات الإهلاك", value: (movements as any[]).filter((m: any) => m.movementType === "depreciation").length, icon: CheckCircle, color: "text-orange-500 bg-orange-500/10" },
   ];
 
   if (isLoading) {
@@ -232,7 +232,7 @@ export default function AssetMovements() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredMovements.map((movement: any) => {
+                (filteredMovements as any[]).map((movement: any) => {
                   const typeInfo = getMovementTypeInfo(movement.movementType);
                   return (
                     <TableRow key={movement.id}>
@@ -294,9 +294,9 @@ export default function AssetMovements() {
                     <SelectValue placeholder="اختر الأصل" />
                   </SelectTrigger>
                   <SelectContent>
-                    {assets.map((asset: any) => (
-                      <SelectItem key={asset.id} value={asset.id.toString()}>
-                        {asset.nameAr} ({asset.code})
+                    {(assets as any[]).map((asset: any) => (
+                      <SelectItem key={(asset as any).id} value={(asset as any).id.toString()}>
+                        {(asset as any).nameAr} ({(asset as any).code})
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -345,9 +345,9 @@ export default function AssetMovements() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">-</SelectItem>
-                    {stations.map((station: any) => (
-                      <SelectItem key={station.id} value={station.id.toString()}>
-                        {station.nameAr}
+                    {(stations as any[]).map((station: any) => (
+                      <SelectItem key={(station as any).id} value={(station as any).id.toString()}>
+                        {(station as any).nameAr}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -361,9 +361,9 @@ export default function AssetMovements() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">-</SelectItem>
-                    {stations.map((station: any) => (
-                      <SelectItem key={station.id} value={station.id.toString()}>
-                        {station.nameAr}
+                    {(stations as any[]).map((station: any) => (
+                      <SelectItem key={(station as any).id} value={(station as any).id.toString()}>
+                        {(station as any).nameAr}
                       </SelectItem>
                     ))}
                   </SelectContent>

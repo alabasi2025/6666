@@ -777,7 +777,7 @@ export default function Dashboard() {
                               </Button>
                               {expandedItems.includes(child.id) && (
                                 <div className="mr-3 pr-3 space-y-0.5 border-r border-border/20">
-                                  {child.children.map((subChild: any) => (
+                                  {((child as any).children || []).map((subChild: any) => (
                                     subChild.children ? (
                                       // المستوى الثالث - عنصر له أبناء
                                       <div key={subChild.id}>
@@ -799,7 +799,7 @@ export default function Dashboard() {
                                         </Button>
                                         {expandedItems.includes(subChild.id) && (
                                           <div className="mr-3 pr-3 space-y-0.5 border-r border-border/10">
-                                            {subChild.children.map((deepChild: any) => (
+                                            {((subChild as any).children || []).map((deepChild: any) => (
                                               <Button
                                                 key={deepChild.id}
                                                 variant={isActivePath(deepChild.path) ? "secondary" : "ghost"}

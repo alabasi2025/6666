@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -235,7 +234,7 @@ function VoucherRow({ voucher, type, onView }: any) {
 // Main Component
 export default function SubSystemDetails() {
   const [, params] = useRoute("/custom/sub-systems/:id");
-  const id = params?.id;
+  const id = (params as any)?.id;
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [isAddTreasuryOpen, setIsAddTreasuryOpen] = useState(false);
@@ -480,7 +479,7 @@ export default function SubSystemDetails() {
       amount: newTransfer.amount,
       description: newTransfer.description,
       transferDate: new Date().toISOString().split("T")[0],
-    });
+    } as any);
   };
 
   const resetVoucherForm = () => {
@@ -503,7 +502,7 @@ export default function SubSystemDetails() {
       businessId: 1,
       subSystemId: parseInt(id || "0"),
       ...newTreasury,
-    });
+    } as any);
   };
 
   const handleCreateVoucher = () => {
@@ -517,7 +516,7 @@ export default function SubSystemDetails() {
         sourceIntermediaryId: newVoucher.sourceIntermediaryId,
         treasuryId: newVoucher.treasuryId,
         description: newVoucher.description,
-      });
+      } as any);
     } else {
       createPaymentMutation.mutate({
         businessId: 1,
@@ -528,13 +527,13 @@ export default function SubSystemDetails() {
         destinationIntermediaryId: newVoucher.destinationIntermediaryId,
         treasuryId: newVoucher.treasuryId,
         description: newVoucher.description,
-      });
+      } as any);
     }
   };
 
   const handleDeleteTreasury = (treasuryId: number) => {
     if (confirm("هل أنت متأكد من حذف هذه الخزينة؟")) {
-      deleteTreasuryMutation.mutate({ id: treasuryId });
+      deleteTreasuryMutation.mutate({ id: treasuryId } as any);
     }
   };
 
@@ -1335,9 +1334,9 @@ export default function SubSystemDetails() {
               <CardDescription>المبالغ المحولة من هذا النظام إلى أنظمة أخرى</CardDescription>
             </CardHeader>
             <CardContent>
-              {transfers?.outgoing && transfers.outgoing.length > 0 ? (
+              {(transfers as any)?.outgoing && (transfers as any).outgoing.length > 0 ? (
                 <div className="space-y-3">
-                  {transfers.outgoing.map((transfer: any) => (
+                  {((transfers as any).outgoing || []).map((transfer: any) => (
                     <div key={transfer.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
@@ -1381,9 +1380,9 @@ export default function SubSystemDetails() {
               <CardDescription>المبالغ المحولة إلى هذا النظام من أنظمة أخرى</CardDescription>
             </CardHeader>
             <CardContent>
-              {transfers?.incoming && transfers.incoming.length > 0 ? (
+              {(transfers as any)?.incoming && (transfers as any).incoming.length > 0 ? (
                 <div className="space-y-3">
-                  {transfers.incoming.map((transfer: any) => (
+                  {((transfers as any).incoming || []).map((transfer: any) => (
                     <div key={transfer.id} className="flex items-center justify-between p-3 bg-slate-800/50 rounded-lg border border-slate-700">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
@@ -1434,7 +1433,7 @@ export default function SubSystemDetails() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => autoReconcileMutation.mutate({ businessId: 1 })}
+                  onClick={() => autoReconcileMutation.mutate({ businessId: 1 } as any)}
                   disabled={autoReconcileMutation.isPending}
                   className="bg-purple-600 hover:bg-purple-700"
                 >
@@ -1607,7 +1606,7 @@ export default function SubSystemDetails() {
                             size="sm"
                             variant="outline"
                             className="border-red-500/30 text-red-500 hover:bg-red-500/10"
-                            onClick={() => rejectReconciliationMutation.mutate({ id: rec.id })}
+                            onClick={() => rejectReconciliationMutation.mutate({ id: rec.id } as any)}
                             disabled={rejectReconciliationMutation.isPending}
                           >
                             <XCircle className="h-4 w-4 ml-1" />
@@ -1616,7 +1615,7 @@ export default function SubSystemDetails() {
                           <Button
                             size="sm"
                             className="bg-green-600 hover:bg-green-700"
-                            onClick={() => confirmReconciliationMutation.mutate({ id: rec.id })}
+                            onClick={() => confirmReconciliationMutation.mutate({ id: rec.id } as any)}
                             disabled={confirmReconciliationMutation.isPending}
                           >
                             <CheckCircle2 className="h-4 w-4 ml-1" />

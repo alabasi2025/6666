@@ -76,20 +76,20 @@ export default function CustomersManagement() {
     setLoading(true);
     try {
       const data = {
-        accountNumber: formData.accountNumber,
-        fullName: formData.fullName,
-        fullNameEn: formData.fullNameEn || undefined,
-        customerType: formData.customerType as any,
-        category: formData.category as any,
-        phone: formData.phone,
-        phone2: formData.phone2 || undefined,
-        email: formData.email || undefined,
-        nationalId: formData.nationalId || undefined,
-        address: formData.address || undefined,
+        accountNumber: (formData as any).accountNumber,
+        fullName: (formData as any).fullName,
+        fullNameEn: (formData as any).fullNameEn || undefined,
+        customerType: (formData as any).customerType as any,
+        category: (formData as any).category as any,
+        phone: (formData as any).phone,
+        phone2: (formData as any).phone2 || undefined,
+        email: (formData as any).email || undefined,
+        nationalId: (formData as any).nationalId || undefined,
+        address: (formData as any).address || undefined,
       };
       
       if (editingCustomer) {
-        await updateCustomerMutation.mutateAsync({ id: editingCustomer.id, ...data });
+        await updateCustomerMutation.mutateAsync({ id: editingCustomer.id, ...data } as any);
       } else {
         await createCustomerMutation.mutateAsync(data);
       }
@@ -106,16 +106,16 @@ export default function CustomersManagement() {
   const handleEdit = (customer: Customer) => {
     setEditingCustomer(customer);
     setFormData({
-      accountNumber: customer.accountNumber,
-      fullName: customer.fullName,
-      fullNameEn: customer.fullNameEn || "",
-      customerType: customer.customerType,
-      category: customer.category,
-      phone: customer.phone,
-      phone2: customer.phone2 || "",
-      email: customer.email || "",
-      nationalId: customer.nationalId || "",
-      address: customer.address || "",
+      accountNumber: (customer as any).accountNumber,
+      fullName: (customer as any).fullName,
+      fullNameEn: (customer as any).fullNameEn || "",
+      customerType: (customer as any).customerType,
+      category: (customer as any).category,
+      phone: (customer as any).phone,
+      phone2: (customer as any).phone2 || "",
+      email: (customer as any).email || "",
+      nationalId: (customer as any).nationalId || "",
+      address: (customer as any).address || "",
     });
     setActiveTab("add");
   };
@@ -123,7 +123,7 @@ export default function CustomersManagement() {
   const handleDelete = async (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا العميل؟")) {
       try {
-        await deleteCustomerMutation.mutateAsync({ id });
+        await deleteCustomerMutation.mutateAsync({ id } as any);
         customersQuery.refetch();
       } catch (error) {
         console.error("Error deleting customer:", error);
@@ -132,10 +132,10 @@ export default function CustomersManagement() {
   };
 
   const handleToggleStatus = async (customer: Customer) => {
-    const action = customer.isActive ? "حظر" : "تفعيل";
+    const action = (customer as any).isActive ? "حظر" : "تفعيل";
     if (confirm(`هل أنت متأكد من ${action} هذا العميل؟`)) {
       try {
-        await toggleCustomerStatusMutation.mutateAsync({ id: customer.id, isActive: !customer.isActive });
+        await toggleCustomerStatusMutation.mutateAsync({ id: (customer as any).id, isActive: !(customer as any).isActive } as any);
         customersQuery.refetch();
       } catch (error) {
         console.error("Error toggling status:", error);
@@ -146,7 +146,7 @@ export default function CustomersManagement() {
   const handleResetPassword = async () => {
     if (!selectedCustomer || !newPassword) return;
     try {
-      await resetCustomerPasswordMutation.mutateAsync({ id: selectedCustomer.id, newPassword });
+      await resetCustomerPasswordMutation.mutateAsync({ id: selectedCustomer.id, newPassword } as any);
       setShowResetPasswordDialog(false);
       setNewPassword("");
     } catch (error) {
@@ -177,13 +177,13 @@ export default function CustomersManagement() {
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
-      customer.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.accountNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.includes(searchTerm);
+      (customer as any).fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (customer as any).accountNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (customer as any).phone.includes(searchTerm);
     const matchesStatus = filterStatus === "all" || 
-      (filterStatus === "active" && customer.isActive) ||
-      (filterStatus === "inactive" && !customer.isActive);
-    const matchesCategory = filterCategory === "all" || customer.category === filterCategory;
+      (filterStatus === "active" && (customer as any).isActive) ||
+      (filterStatus === "inactive" && !(customer as any).isActive);
+    const matchesCategory = filterCategory === "all" || (customer as any).category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
@@ -331,24 +331,24 @@ export default function CustomersManagement() {
                     </TableRow>
                   ) : (
                     filteredCustomers.map((customer) => {
-                      const status = getStatusLabel(customer.status, customer.isActive);
+                      const status = getStatusLabel((customer as any).status, (customer as any).isActive);
                       return (
-                        <TableRow key={customer.id}>
-                          <TableCell className="font-medium">{customer.accountNumber}</TableCell>
+                        <TableRow key={(customer as any).id}>
+                          <TableCell className="font-medium">{(customer as any).accountNumber}</TableCell>
                           <TableCell>
                             <div>
-                              <div className="font-medium">{customer.fullName}</div>
-                              {customer.fullNameEn && <div className="text-xs text-muted-foreground">{customer.fullNameEn}</div>}
+                              <div className="font-medium">{(customer as any).fullName}</div>
+                              {(customer as any).fullNameEn && <div className="text-xs text-muted-foreground">{(customer as any).fullNameEn}</div>}
                             </div>
                           </TableCell>
-                          <TableCell>{getCustomerTypeLabel(customer.customerType)}</TableCell>
-                          <TableCell>{getCategoryLabel(customer.category)}</TableCell>
-                          <TableCell dir="ltr">{customer.phone}</TableCell>
-                          <TableCell className={parseFloat(customer.balance) < 0 ? "text-red-600" : "text-green-600"}>
-                            {parseFloat(customer.balance).toLocaleString()} ر.س
+                          <TableCell>{getCustomerTypeLabel((customer as any).customerType)}</TableCell>
+                          <TableCell>{getCategoryLabel((customer as any).category)}</TableCell>
+                          <TableCell dir="ltr">{(customer as any).phone}</TableCell>
+                          <TableCell className={parseFloat((customer as any).balance) < 0 ? "text-red-600" : "text-green-600"}>
+                            {parseFloat((customer as any).balance).toLocaleString()} ر.س
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{customer.meters?.length || 0}</Badge>
+                            <Badge variant="outline">{(customer as any).meters?.length || 0}</Badge>
                           </TableCell>
                           <TableCell>
                             <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>{status.label}</span>
@@ -364,10 +364,10 @@ export default function CustomersManagement() {
                               <Button variant="ghost" size="icon" onClick={() => { setSelectedCustomer(customer); setShowResetPasswordDialog(true); }} title="إعادة تعيين كلمة المرور">
                                 <Key className="h-4 w-4 text-blue-500" />
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(customer)} title={customer.isActive ? "حظر" : "تفعيل"}>
-                                {customer.isActive ? <Ban className="h-4 w-4 text-orange-500" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
+                              <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(customer)} title={(customer as any).isActive ? "حظر" : "تفعيل"}>
+                                {(customer as any).isActive ? <Ban className="h-4 w-4 text-orange-500" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
                               </Button>
-                              <Button variant="ghost" size="icon" onClick={() => handleDelete(customer.id)} className="text-red-500" title="حذف">
+                              <Button variant="ghost" size="icon" onClick={() => handleDelete((customer as any).id)} className="text-red-500" title="حذف">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                             </div>
@@ -393,21 +393,21 @@ export default function CustomersManagement() {
                   <div className="space-y-2">
                     <Label>رقم الحساب *</Label>
                     <div className="flex gap-2">
-                      <Input value={formData.accountNumber} onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })} required />
+                      <Input value={(formData as any).accountNumber} onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })} required />
                       <Button type="button" variant="outline" onClick={generateAccountNumber}>توليد</Button>
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم الكامل *</Label>
-                    <Input value={formData.fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required />
+                    <Input value={(formData as any).fullName} onChange={(e) => setFormData({ ...formData, fullName: e.target.value })} required />
                   </div>
                   <div className="space-y-2">
                     <Label>الاسم بالإنجليزية</Label>
-                    <Input value={formData.fullNameEn} onChange={(e) => setFormData({ ...formData, fullNameEn: e.target.value })} />
+                    <Input value={(formData as any).fullNameEn} onChange={(e) => setFormData({ ...formData, fullNameEn: e.target.value })} />
                   </div>
                   <div className="space-y-2">
                     <Label>نوع العميل</Label>
-                    <Select value={formData.customerType} onValueChange={(v) => setFormData({ ...formData, customerType: v })}>
+                    <Select value={(formData as any).customerType} onValueChange={(v) => setFormData({ ...formData, customerType: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="individual">فرد</SelectItem>
@@ -418,7 +418,7 @@ export default function CustomersManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>الفئة</Label>
-                    <Select value={formData.category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
+                    <Select value={(formData as any).category} onValueChange={(v) => setFormData({ ...formData, category: v })}>
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="residential">سكني</SelectItem>
@@ -431,23 +431,23 @@ export default function CustomersManagement() {
                   </div>
                   <div className="space-y-2">
                     <Label>رقم الهاتف *</Label>
-                    <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required dir="ltr" />
+                    <Input value={(formData as any).phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required dir="ltr" />
                   </div>
                   <div className="space-y-2">
                     <Label>رقم هاتف إضافي</Label>
-                    <Input value={formData.phone2} onChange={(e) => setFormData({ ...formData, phone2: e.target.value })} dir="ltr" />
+                    <Input value={(formData as any).phone2} onChange={(e) => setFormData({ ...formData, phone2: e.target.value })} dir="ltr" />
                   </div>
                   <div className="space-y-2">
                     <Label>البريد الإلكتروني</Label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} dir="ltr" />
+                    <Input type="email" value={(formData as any).email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} dir="ltr" />
                   </div>
                   <div className="space-y-2">
                     <Label>رقم الهوية</Label>
-                    <Input value={formData.nationalId} onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })} />
+                    <Input value={(formData as any).nationalId} onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })} />
                   </div>
                   <div className="space-y-2 md:col-span-2 lg:col-span-3">
                     <Label>العنوان</Label>
-                    <Textarea value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} />
+                    <Textarea value={(formData as any).address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} rows={2} />
                   </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">
@@ -514,10 +514,10 @@ export default function CustomersManagement() {
                 <Label className="text-muted-foreground">العدادات المرتبطة</Label>
                 {selectedCustomer.meters && selectedCustomer.meters.length > 0 ? (
                   <div className="mt-2 space-y-2">
-                    {selectedCustomer.meters.map((meter: any) => (
-                      <div key={meter.id} className="flex items-center justify-between p-2 bg-muted rounded">
-                        <span>{meter.meterNumber}</span>
-                        <Badge variant="outline">{meter.serviceType}</Badge>
+                    {((selectedCustomer as any).meters || []).map((meter: any) => (
+                      <div key={(meter as any).id} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span>{(meter as any).meterNumber}</span>
+                        <Badge variant="outline">{(meter as any).serviceType}</Badge>
                       </div>
                     ))}
                   </div>

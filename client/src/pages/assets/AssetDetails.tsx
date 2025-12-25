@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import {
@@ -108,16 +107,16 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-2">
               <Package className="w-8 h-8 text-primary" />
-              {asset.nameAr}
+              {(asset as any).nameAr}
             </h1>
-            <p className="text-muted-foreground mt-1 font-mono">{asset.code}</p>
+            <p className="text-muted-foreground mt-1 font-mono">{(asset as any).code}</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge className={`${statusColors[asset.status || "active"]} text-white`}>
-            {statusLabels[asset.status || "active"]}
+          <Badge className={`${statusColors[(asset as any).status || "active"]} text-white`}>
+            {statusLabels[(asset as any).status || "active"]}
           </Badge>
-          <Button variant="outline" onClick={() => setLocation(`/dashboard/assets/edit/${asset.id}`)}>
+          <Button variant="outline" onClick={() => setLocation(`/dashboard/assets/edit/${(asset as any).id}`)}>
             <Pencil className="w-4 h-4 ml-2" />
             تعديل
           </Button>
@@ -135,7 +134,7 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
               <div>
                 <p className="text-sm text-muted-foreground">تكلفة الشراء</p>
                 <p className="text-2xl font-bold">
-                  {asset.purchaseCost ? `${parseFloat(asset.purchaseCost).toLocaleString()} ر.س` : "-"}
+                  {(asset as any).purchaseCost ? `${parseFloat((asset as any).purchaseCost).toLocaleString()} ر.س` : "-"}
                 </p>
               </div>
             </div>
@@ -150,7 +149,7 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
               <div>
                 <p className="text-sm text-muted-foreground">القيمة الحالية</p>
                 <p className="text-2xl font-bold">
-                  {asset.currentValue ? `${parseFloat(asset.currentValue).toLocaleString()} ر.س` : "-"}
+                  {(asset as any).currentValue ? `${parseFloat((asset as any).currentValue).toLocaleString()} ر.س` : "-"}
                 </p>
               </div>
             </div>
@@ -165,7 +164,7 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
               <div>
                 <p className="text-sm text-muted-foreground">مجمع الإهلاك</p>
                 <p className="text-2xl font-bold">
-                  {asset.accumulatedDepreciation ? `${parseFloat(asset.accumulatedDepreciation).toLocaleString()} ر.س` : "0 ر.س"}
+                  {(asset as any).accumulatedDepreciation ? `${parseFloat((asset as any).accumulatedDepreciation).toLocaleString()} ر.س` : "0 ر.س"}
                 </p>
               </div>
             </div>
@@ -180,7 +179,7 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
               <div>
                 <p className="text-sm text-muted-foreground">العمر الإنتاجي</p>
                 <p className="text-2xl font-bold">
-                  {asset.usefulLife ? `${asset.usefulLife} سنة` : "-"}
+                  {(asset as any).usefulLife ? `${(asset as any).usefulLife} سنة` : "-"}
                 </p>
               </div>
             </div>
@@ -218,68 +217,68 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <p className="text-sm text-muted-foreground">الاسم بالإنجليزية</p>
-                  <p className="font-medium">{asset.nameEn || "-"}</p>
+                  <p className="font-medium">{(asset as any).nameEn || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">الفئة</p>
-                  <p className="font-medium">{asset.category?.nameAr || "-"}</p>
+                  <p className="font-medium">{(asset as any).category?.nameAr || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">المحطة</p>
-                  <p className="font-medium">{asset.station?.nameAr || "-"}</p>
+                  <p className="font-medium">{(asset as any).station?.nameAr || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">الرقم التسلسلي</p>
-                  <p className="font-medium font-mono">{asset.serialNumber || "-"}</p>
+                  <p className="font-medium font-mono">{(asset as any).serialNumber || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">الشركة المصنعة</p>
-                  <p className="font-medium">{asset.manufacturer || "-"}</p>
+                  <p className="font-medium">{(asset as any).manufacturer || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">الموديل</p>
-                  <p className="font-medium">{asset.model || "-"}</p>
+                  <p className="font-medium">{(asset as any).model || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">تاريخ الشراء</p>
                   <p className="font-medium">
-                    {asset.purchaseDate
-                      ? format(new Date(asset.purchaseDate), "yyyy/MM/dd", { locale: ar })
+                    {(asset as any).purchaseDate
+                      ? format(new Date((asset as any).purchaseDate), "yyyy/MM/dd", { locale: ar })
                       : "-"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">تاريخ التشغيل</p>
                   <p className="font-medium">
-                    {asset.commissionDate
-                      ? format(new Date(asset.commissionDate), "yyyy/MM/dd", { locale: ar })
+                    {(asset as any).commissionDate
+                      ? format(new Date((asset as any).commissionDate), "yyyy/MM/dd", { locale: ar })
                       : "-"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">انتهاء الضمان</p>
                   <p className="font-medium">
-                    {asset.warrantyExpiry
-                      ? format(new Date(asset.warrantyExpiry), "yyyy/MM/dd", { locale: ar })
+                    {(asset as any).warrantyExpiry
+                      ? format(new Date((asset as any).warrantyExpiry), "yyyy/MM/dd", { locale: ar })
                       : "-"}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">الموقع</p>
-                  <p className="font-medium">{asset.location || "-"}</p>
+                  <p className="font-medium">{(asset as any).location || "-"}</p>
                 </div>
                 <div>
                   <p className="text-sm text-muted-foreground">طريقة الإهلاك</p>
                   <p className="font-medium">
-                    {asset.depreciationMethod === "straight_line" && "القسط الثابت"}
-                    {asset.depreciationMethod === "declining_balance" && "القسط المتناقص"}
-                    {asset.depreciationMethod === "units_of_production" && "وحدات الإنتاج"}
-                    {!asset.depreciationMethod && "-"}
+                    {(asset as any).depreciationMethod === "straight_line" && "القسط الثابت"}
+                    {(asset as any).depreciationMethod === "declining_balance" && "القسط المتناقص"}
+                    {(asset as any).depreciationMethod === "units_of_production" && "وحدات الإنتاج"}
+                    {!(asset as any).depreciationMethod && "-"}
                   </p>
                 </div>
                 <div className="md:col-span-2 lg:col-span-3">
                   <p className="text-sm text-muted-foreground">الوصف</p>
-                  <p className="font-medium">{asset.description || "-"}</p>
+                  <p className="font-medium">{(asset as any).description || "-"}</p>
                 </div>
               </div>
             </CardContent>
@@ -312,7 +311,7 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    movements.map((movement: any) => (
+                    (movements as any[]).map((movement: any) => (
                       <TableRow key={movement.id}>
                         <TableCell>
                           {movement.movementDate
@@ -359,7 +358,7 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
                       </TableCell>
                     </TableRow>
                   ) : (
-                    depreciationHistory.map((record: any) => (
+                    (depreciationHistory as any[]).map((record: any) => (
                       <TableRow key={record.id}>
                         <TableCell>{record.period?.name || "-"}</TableCell>
                         <TableCell>
@@ -388,9 +387,9 @@ export default function AssetDetails({ assetId }: AssetDetailsProps) {
               <CardTitle>المواصفات الفنية</CardTitle>
             </CardHeader>
             <CardContent>
-              {asset.specifications ? (
+              {(asset as any).specifications ? (
                 <pre className="bg-muted p-4 rounded-lg overflow-auto">
-                  {JSON.stringify(asset.specifications, null, 2)}
+                  {JSON.stringify((asset as any).specifications, null, 2)}
                 </pre>
               ) : (
                 <p className="text-center py-8 text-muted-foreground">

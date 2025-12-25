@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -41,7 +40,7 @@ export default function DieselTanksAssets() {
   const createMutation = trpc.diesel.tanks.create.useMutation({
     onSuccess: () => {
       toast({ title: "تم إضافة الخزان بنجاح" });
-      utils.diesel.getDieselTanks.invalidate();
+      utils.diesel.tanks.list.invalidate();
       setIsDialogOpen(false);
       resetForm();
     },
@@ -53,7 +52,7 @@ export default function DieselTanksAssets() {
   const updateMutation = trpc.diesel.tanks.update.useMutation({
     onSuccess: () => {
       toast({ title: "تم تحديث الخزان بنجاح" });
-      utils.diesel.getDieselTanks.invalidate();
+      utils.diesel.tanks.list.invalidate();
       setIsDialogOpen(false);
       resetForm();
     },
@@ -65,7 +64,7 @@ export default function DieselTanksAssets() {
   const deleteMutation = trpc.diesel.tanks.delete.useMutation({
     onSuccess: () => {
       toast({ title: "تم حذف الخزان بنجاح" });
-      utils.diesel.getDieselTanks.invalidate();
+      utils.diesel.tanks.list.invalidate();
     },
     onError: (error) => {
       toast({ title: "خطأ", description: error.message, variant: "destructive" });
@@ -94,7 +93,7 @@ export default function DieselTanksAssets() {
       effectiveCapacity: effectiveCapacity.toString(), minLevel: formData.minLevel || "0",
       openingsCount: parseInt(formData.openingsCount) || 1,
     };
-    if (editingTank) { updateMutation.mutate({ id: editingTank.id, ...data }); }
+    if (editingTank) { updateMutation.mutate({ id: editingTank.id, ...data } as any); }
     else { createMutation.mutate(data); }
   };
 
@@ -315,7 +314,7 @@ export default function DieselTanksAssets() {
                     <TableCell>
                       <div className="flex gap-2">
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(tank)}><Edit className="h-4 w-4" /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => { if (confirm("هل أنت متأكد من حذف هذا الخزان؟")) { deleteMutation.mutate({ id: tank.id }); } }}>
+                        <Button variant="ghost" size="icon" onClick={() => { if (confirm("هل أنت متأكد من حذف هذا الخزان؟")) { deleteMutation.mutate({ id: tank.id } as any); } }}>
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
                       </div>

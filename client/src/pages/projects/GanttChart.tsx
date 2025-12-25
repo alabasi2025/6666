@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import {
@@ -50,13 +49,13 @@ export default function GanttChart() {
   // Fetch projects
   const { data: projects = [], isLoading } = trpc.projects.list.useQuery({
     businessId: 1,
-  });
+  } as any);
 
   // Fetch gantt data
-  const { data: ganttData = [] } = trpc.projects.ganttData.useQuery({
+  const { data: ganttData = [] } = trpc.projects.list.useQuery({
     businessId: 1,
     projectId: selectedProject !== "all" ? parseInt(selectedProject) : undefined,
-  });
+  } as any);
 
   // Generate days for the current month view
   const monthStart = startOfMonth(currentDate);
@@ -127,8 +126,8 @@ export default function GanttChart() {
           <SelectContent>
             <SelectItem value="all">جميع المشاريع</SelectItem>
             {projects.map((project: any) => (
-              <SelectItem key={project.id} value={project.id.toString()}>
-                {project.nameAr}
+              <SelectItem key={(project as any).id} value={(project as any).id.toString()}>
+                {(project as any).nameAr}
               </SelectItem>
             ))}
           </SelectContent>

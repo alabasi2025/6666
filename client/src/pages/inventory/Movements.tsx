@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
@@ -92,7 +91,7 @@ export default function Movements() {
     },
   });
 
-  const filteredMovements = movements.filter((mov: any) => {
+  const filteredMovements = (movements as any[]).filter((mov: any) => {
     const matchesSearch =
       mov.item?.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       mov.item?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -106,15 +105,15 @@ export default function Movements() {
     const formData = new FormData(e.currentTarget);
 
     createMutation.mutate({
-      itemId: parseInt(formData.get("itemId") as string),
-      warehouseId: parseInt(formData.get("warehouseId") as string),
-      movementType: formData.get("movementType") as any,
-      quantity: parseFloat(formData.get("quantity") as string),
-      unitCost: formData.get("unitCost") as string || undefined,
-      reference: formData.get("reference") as string || undefined,
-      notes: formData.get("notes") as string || undefined,
-      movementDate: formData.get("movementDate") as string,
-    });
+      itemId: parseInt((formData as any).get("itemId") as string),
+      warehouseId: parseInt((formData as any).get("warehouseId") as string),
+      movementType: (formData as any).get("movementType") as any,
+      quantity: parseFloat((formData as any).get("quantity") as string),
+      unitCost: (formData as any).get("unitCost") as string || undefined,
+      reference: (formData as any).get("reference") as string || undefined,
+      notes: (formData as any).get("notes") as string || undefined,
+      movementDate: (formData as any).get("movementDate") as string,
+    } as any);
   };
 
   const getMovementTypeInfo = (type: string) => {
@@ -122,8 +121,8 @@ export default function Movements() {
   };
 
   // Stats
-  const totalIn = movements.filter((m: any) => m.movementType === "in").reduce((sum: number, m: any) => sum + (m.quantity || 0), 0);
-  const totalOut = movements.filter((m: any) => m.movementType === "out").reduce((sum: number, m: any) => sum + (m.quantity || 0), 0);
+  const totalIn = (movements as any[]).filter((m: any) => m.movementType === "in").reduce((sum: number, m: any) => sum + (m.quantity || 0), 0);
+  const totalOut = (movements as any[]).filter((m: any) => m.movementType === "out").reduce((sum: number, m: any) => sum + (m.quantity || 0), 0);
 
   if (isLoading) {
     return (
@@ -263,7 +262,7 @@ export default function Movements() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredMovements.map((movement: any) => {
+                (filteredMovements as any[]).map((movement: any) => {
                   const typeInfo = getMovementTypeInfo(movement.movementType);
                   return (
                     <TableRow key={movement.id}>
@@ -320,7 +319,7 @@ export default function Movements() {
                     <SelectValue placeholder="اختر الصنف" />
                   </SelectTrigger>
                   <SelectContent>
-                    {items.map((item: any) => (
+                    {(items as any[]).map((item: any) => (
                       <SelectItem key={item.id} value={item.id.toString()}>
                         {item.nameAr} ({item.code})
                       </SelectItem>
@@ -335,7 +334,7 @@ export default function Movements() {
                     <SelectValue placeholder="اختر المستودع" />
                   </SelectTrigger>
                   <SelectContent>
-                    {warehouses.map((warehouse: any) => (
+                    {(warehouses as any[]).map((warehouse: any) => (
                       <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
                         {warehouse.nameAr}
                       </SelectItem>

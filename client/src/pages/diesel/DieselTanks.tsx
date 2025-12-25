@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -92,11 +91,11 @@ export default function DieselTanks() {
 
   const { data: tanks = [], isLoading } = trpc.diesel.tanks.list.useQuery({
     businessId: user?.businessId ?? undefined,
-  });
+  } as any);
 
   const { data: stations = [] } = trpc.station.list.useQuery({
     businessId: user?.businessId ?? undefined,
-  });
+  } as any);
 
   const createMutation = trpc.diesel.tanks.create.useMutation({
     onSuccess: () => {
@@ -165,7 +164,7 @@ export default function DieselTanks() {
       minLevel: parseFloat(formData.minLevel) || 0,
       linkedGeneratorId: formData.linkedGeneratorId ? parseInt(formData.linkedGeneratorId) : undefined,
       isActive: formData.isActive,
-    });
+    } as any);
   };
 
   const handleEdit = () => {
@@ -181,17 +180,17 @@ export default function DieselTanks() {
       minLevel: formData.minLevel ? parseFloat(formData.minLevel) : undefined,
       linkedGeneratorId: formData.linkedGeneratorId ? parseInt(formData.linkedGeneratorId) : undefined,
       isActive: formData.isActive,
-    });
+    } as any);
   };
 
   const handleDelete = (id: number) => {
     if (confirm("هل أنت متأكد من حذف هذا الخزان؟")) {
-      deleteMutation.mutate({ id });
+      deleteMutation.mutate({ id } as any);
     }
   };
 
   const openEditDialog = (tank: Tank) => {
-    setSelectedTank(tank);
+    setSelectedTank(tank as any);
     setFormData({
       code: tank.code,
       nameAr: tank.nameAr,
@@ -208,7 +207,7 @@ export default function DieselTanks() {
   };
 
   const openViewDialog = (tank: Tank) => {
-    setSelectedTank(tank);
+    setSelectedTank(tank as any);
     setIsViewOpen(true);
   };
 
@@ -240,8 +239,8 @@ export default function DieselTanks() {
       {/* ملخص الخزانات */}
       <div className="grid grid-cols-4 gap-4">
         {Object.entries(tankTypeLabels).map(([type, label]) => {
-          const typeTanks = tanks.filter(t => t.type === type);
-          const lowLevelCount = typeTanks.filter(t => isLowLevel(t)).length;
+          const typeTanks = tanks.filter((t: any) => t.type === type);
+          const lowLevelCount = typeTanks.filter((t: any) => isLowLevel(t as any)).length;
           return (
             <Card key={type}>
               <CardContent className="pt-4">
@@ -290,9 +289,9 @@ export default function DieselTanks() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {tanks.map((tank) => {
-                  const percentage = getLevelPercentage(tank);
-                  const lowLevel = isLowLevel(tank);
+                {tanks.map((tank: any) => {
+                  const percentage = getLevelPercentage(tank as any);
+                  const lowLevel = isLowLevel(tank as any);
                   return (
                     <TableRow key={tank.id}>
                       <TableCell className="font-mono">{tank.code}</TableCell>
@@ -331,14 +330,14 @@ export default function DieselTanks() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => openViewDialog(tank)}
+                            onClick={() => openViewDialog(tank as any)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => openEditDialog(tank)}
+                            onClick={() => openEditDialog(tank as any)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>

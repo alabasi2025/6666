@@ -92,7 +92,7 @@ export default function CustomAccounts() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createAccount.mutate({ ...formData, businessId });
+    createAccount.mutate({ ...formData, businessId } as any);
   };
 
   const filteredAccounts = accounts.filter(
@@ -137,7 +137,7 @@ export default function CustomAccounts() {
                   <Label htmlFor="accountNumber">رقم الحساب *</Label>
                   <Input
                     id="accountNumber"
-                    value={formData.accountNumber}
+                    value={(formData as any).accountNumber}
                     onChange={(e) => setFormData({ ...formData, accountNumber: e.target.value })}
                     placeholder="1001"
                     required
@@ -146,7 +146,7 @@ export default function CustomAccounts() {
                 <div className="space-y-2">
                   <Label htmlFor="accountType">نوع الحساب *</Label>
                   <Select
-                    value={formData.accountType}
+                    value={(formData as any).accountType}
                     onValueChange={(value: any) => setFormData({ ...formData, accountType: value })}
                   >
                     <SelectTrigger>
@@ -166,7 +166,7 @@ export default function CustomAccounts() {
                 <Label htmlFor="accountName">اسم الحساب *</Label>
                 <Input
                   id="accountName"
-                  value={formData.accountName}
+                  value={(formData as any).accountName}
                   onChange={(e) => setFormData({ ...formData, accountName: e.target.value })}
                   placeholder="الصندوق"
                   required
@@ -175,7 +175,7 @@ export default function CustomAccounts() {
               <div className="space-y-2">
                 <Label htmlFor="currency">العملة</Label>
                 <Select
-                  value={formData.currency}
+                  value={(formData as any).currency}
                   onValueChange={(value) => setFormData({ ...formData, currency: value })}
                 >
                   <SelectTrigger>
@@ -192,7 +192,7 @@ export default function CustomAccounts() {
                 <Label htmlFor="description">الوصف</Label>
                 <Textarea
                   id="description"
-                  value={formData.description}
+                  value={(formData as any).description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   placeholder="وصف الحساب..."
                   rows={3}
@@ -303,7 +303,7 @@ export default function CustomAccounts() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => deleteAccount.mutate({ id: account.id })}
+                            onClick={() => deleteAccount.mutate({ id: account.id } as any)}
                           >
                             <Trash2 className="h-4 w-4 text-red-500" />
                           </Button>

@@ -139,11 +139,11 @@ export function DataTable<T extends Record<string, any>>({
   // Paginate data
   const paginatedData = useMemo(() => {
     const start = (currentPage - 1) * pageSize;
-    return sortedData.slice(start, start + pageSize);
+    return (sortedData as any).slice(start, start + pageSize);
   }, [sortedData, currentPage, pageSize]);
 
-  const totalPages = Math.ceil(sortedData.length / pageSize);
-  const totalItems = sortedData.length;
+  const totalPages = Math.ceil((sortedData as any).length / pageSize);
+  const totalItems = (sortedData as any).length;
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
@@ -280,7 +280,7 @@ export function DataTable<T extends Record<string, any>>({
                       </div>
                     </TableCell>
                   </TableRow>
-                ) : paginatedData.length === 0 ? (
+                ) : (paginatedData as any).length === 0 ? (
                   <TableRow>
                     <TableCell
                       colSpan={columns.length + (actions ? 1 : 0)}
@@ -290,7 +290,7 @@ export function DataTable<T extends Record<string, any>>({
                     </TableCell>
                   </TableRow>
                 ) : (
-                  paginatedData.map((row) => (
+                  (paginatedData as any).map((row) => (
                     <TableRow
                       key={getRowId(row)}
                       className="hover:bg-muted/30 transition-colors"
@@ -457,9 +457,9 @@ export function StatusBadge({
   return (
     <Badge 
       variant="outline" 
-      className={cn("font-medium", variantClasses[config.variant])}
+      className={cn("font-medium", variantClasses[(config as any).variant])}
     >
-      {config.label}
+      {(config as any).label}
     </Badge>
   );
 }

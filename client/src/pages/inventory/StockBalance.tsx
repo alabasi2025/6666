@@ -72,7 +72,7 @@ export default function StockBalance() {
     return { status: "normal", label: "طبيعي", color: "bg-green-500", icon: CheckCircle };
   };
 
-  const filteredItems = items.filter((item: any) => {
+  const filteredItems = (items as any[]).filter((item: any) => {
     const matchesSearch =
       item.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.code?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -85,8 +85,8 @@ export default function StockBalance() {
 
   // Stats
   const totalItems = items.length;
-  const outOfStock = items.filter((i: any) => (i.currentQuantity || 0) <= 0).length;
-  const lowStock = items.filter((i: any) => {
+  const outOfStock = (items as any[]).filter((i: any) => (i.currentQuantity || 0) <= 0).length;
+  const lowStock = (items as any[]).filter((i: any) => {
     const qty = i.currentQuantity || 0;
     const min = i.minimumQuantity || 0;
     return qty > 0 && qty <= min;
@@ -215,7 +215,7 @@ export default function StockBalance() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">جميع المستودعات</SelectItem>
-                  {warehouses.map((warehouse: any) => (
+                  {(warehouses as any[]).map((warehouse: any) => (
                     <SelectItem key={warehouse.id} value={warehouse.id.toString()}>
                       {warehouse.nameAr}
                     </SelectItem>
@@ -259,7 +259,7 @@ export default function StockBalance() {
                   </TableCell>
                 </TableRow>
               ) : (
-                filteredItems.map((item: any) => {
+                (filteredItems as any[]).map((item: any) => {
                   const status = getStockStatus(item);
                   const currentQty = item.currentQuantity || 0;
                   const maxQty = item.maximumQuantity || 100;

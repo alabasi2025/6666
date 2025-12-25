@@ -148,14 +148,14 @@ export default function Technicians() {
 
   const confirmDelete = () => {
     if (selectedTechnician) {
-      deleteTechnician.mutate({ id: selectedTechnician.id });
+      deleteTechnician.mutate({ id: selectedTechnician.id } as any);
     }
   };
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.nameAr) {
+    if (!(formData as any).nameAr) {
       toast.error("يرجى إدخال اسم الفني");
       return;
     }
@@ -166,7 +166,7 @@ export default function Technicians() {
     };
 
     if (selectedTechnician) {
-      updateTechnician.mutate({ id: selectedTechnician.id, ...data });
+      updateTechnician.mutate({ id: selectedTechnician.id, ...data } as any);
     } else {
       createTechnician.mutate(data);
     }
@@ -214,7 +214,7 @@ export default function Technicians() {
                   <Label htmlFor="code">الرقم الوظيفي</Label>
                   <Input
                     id="code"
-                    value={formData.code}
+                    value={(formData as any).code}
                     onChange={(e) => setFormData({ ...formData, code: e.target.value })}
                     placeholder="EMP-001"
                   />
@@ -223,7 +223,7 @@ export default function Technicians() {
                   <Label htmlFor="nameAr">الاسم *</Label>
                   <Input
                     id="nameAr"
-                    value={formData.nameAr}
+                    value={(formData as any).nameAr}
                     onChange={(e) => setFormData({ ...formData, nameAr: e.target.value })}
                     required
                   />
@@ -233,7 +233,7 @@ export default function Technicians() {
                 <Label htmlFor="phone">الهاتف</Label>
                 <Input
                   id="phone"
-                  value={formData.phone}
+                  value={(formData as any).phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   placeholder="05XXXXXXXX"
                 />
@@ -243,7 +243,7 @@ export default function Technicians() {
                 <Input
                   id="email"
                   type="email"
-                  value={formData.email}
+                  value={(formData as any).email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 />
               </div>
@@ -251,7 +251,7 @@ export default function Technicians() {
                 <Label htmlFor="specialization">التخصص</Label>
                 <Input
                   id="specialization"
-                  value={formData.specialization}
+                  value={(formData as any).specialization}
                   onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                   placeholder="كهرباء / ميكانيكا / ..."
                 />

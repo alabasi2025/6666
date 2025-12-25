@@ -23,7 +23,7 @@ const modelTypes = [
 
 export default function AiModels() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const { data: models, isLoading, refetch } = trpc.developer.ai.models.list.useQuery({ businessId: 1 });
+  const { data: models, isLoading, refetch } = trpc.developer.ai.models.list.useQuery({ businessId: 1 } as any);
   const { data: predictions } = trpc.developer.ai.predictions.list.useQuery({ businessId: 1, limit: 50 });
 
   const createMutation = trpc.developer.ai.models.create.useMutation({
@@ -40,11 +40,11 @@ export default function AiModels() {
     const formData = new FormData(e.currentTarget);
     createMutation.mutate({
       businessId: 1,
-      code: formData.get("code") as string,
-      nameAr: formData.get("nameAr") as string,
-      modelType: formData.get("modelType") as any,
-      provider: formData.get("provider") as any || "internal",
-    });
+      code: (formData as any).get("code") as string,
+      nameAr: (formData as any).get("nameAr") as string,
+      modelType: (formData as any).get("modelType") as any,
+      provider: (formData as any).get("provider") as any || "internal",
+    } as any);
   };
 
   return (
