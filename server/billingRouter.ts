@@ -1,4 +1,20 @@
 // @ts-nocheck
+/**
+ * @fileoverview Router لنظام الفوترة والتحصيل
+ * @module billingRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بنظام الفوترة والتحصيل
+ * بما في ذلك إدارة المناطق والمربعات والكابينات، التعرفة، العملاء، العدادات،
+ * فترات الفوترة، القراءات، الفواتير، والمدفوعات.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires drizzle-orm - للتعامل مع قاعدة البيانات
+ * @requires ./_core/trpc - لإنشاء الـ API endpoints
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import { z } from "zod";
 import { router, publicProcedure } from "./_core/trpc";
 import { getDb } from "./db";
@@ -10,8 +26,51 @@ import {
 } from "../drizzle/schema";
 import { eq, desc, and, sql, gte, lte } from "drizzle-orm";
 
+/**
+ * @fileoverview Router لنظام الفوترة والتحصيل
+ * @module billingRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بنظام الفوترة
+ * بما في ذلك إدارة العملاء، العدادات، القراءات، الفواتير، المدفوعات،
+ * الشرائح، والتقارير.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires @trpc/server - لإنشاء الـ API endpoints
+ * @requires ./db - للتعامل مع قاعدة البيانات
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
+/**
+ * @fileoverview Router لنظام الفوترة والتحصيل
+ * @module billingRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بنظام الفوترة
+ * بما في ذلك إدارة العملاء، العدادات، القراءات، الفواتير، المدفوعات،
+ * الشرائح، والتقارير.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires @trpc/server - لإنشاء الـ API endpoints
+ * @requires ./db - للتعامل مع قاعدة البيانات
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 export const billingRouter = router({
   // ==================== المناطق ====================
+  /**
+   * استرجاع قائمة المناطق
+   * 
+   * @procedure getAreas
+   * @description يسترجع قائمة المناطق الجغرافية المعرفة في النظام مرتبة حسب تاريخ الإنشاء.
+   * 
+   * @returns {Promise<Area[]>} قائمة المناطق
+   * 
+   * @example
+   * const areas = await trpc.billing.getAreas();
+   */
   getAreas: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -25,6 +84,23 @@ export const billingRouter = router({
     }).from(areas).orderBy(desc(areas.createdAt));
   }),
 
+  /**
+   * إنشاء منطقة جديدة
+   * 
+   * @procedure createArea
+   * @description ينشئ منطقة جغرافية جديدة في النظام.
+   * 
+   * @param {object} input - بيانات المنطقة
+   * @param {string} input.code - رمز المنطقة
+   * @param {string} input.name - اسم المنطقة بالعربية
+   * @param {string} [input.nameEn] - اسم المنطقة بالإنجليزية
+   * @param {string} [input.description] - وصف المنطقة
+   * 
+   * @returns {Promise<{id: number}>} معرف المنطقة الجديدة
+   * 
+   * @example
+   * const result = await trpc.billing.createArea({ code: "A01", name: "المنطقة الشمالية" });
+   */
   createArea: publicProcedure.input(z.object({
     code: z.string(),
     name: z.string(),
@@ -37,6 +113,21 @@ export const billingRouter = router({
     return { id: result.insertId };
   }),
 
+  /**
+   * تحديث منطقة
+   * 
+   * @procedure updateArea
+   * @description يحدث بيانات منطقة موجودة.
+   * 
+   * @param {object} input - بيانات التحديث
+   * @param {number} input.id - معرف المنطقة
+   * @param {string} [input.code] - الرمز الجديد
+   * @param {string} [input.name] - الاسم الجديد
+   * @param {string} [input.nameEn] - الاسم الإنجليزي الجديد
+   * @param {string} [input.description] - الوصف الجديد
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   updateArea: publicProcedure.input(z.object({
     id: z.number(),
     code: z.string().optional(),
@@ -51,6 +142,17 @@ export const billingRouter = router({
     return { success: true };
   }),
 
+  /**
+   * حذف منطقة
+   * 
+   * @procedure deleteArea
+   * @description يحذف منطقة من النظام.
+   * 
+   * @param {object} input - معاملات الحذف
+   * @param {number} input.id - معرف المنطقة
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   deleteArea: publicProcedure.input(z.object({ id: z.number() })).mutation(async ({ input }) => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -59,6 +161,14 @@ export const billingRouter = router({
   }),
 
   // ==================== المربعات ====================
+  /**
+   * استرجاع قائمة المربعات
+   * 
+   * @procedure getSquares
+   * @description يسترجع قائمة المربعات مع بيانات المناطق المرتبطة بها.
+   * 
+   * @returns {Promise<Square[]>} قائمة المربعات
+   */
   getSquares: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -77,6 +187,21 @@ export const billingRouter = router({
     return result;
   }),
 
+  /**
+   * إنشاء مربع جديد
+   * 
+   * @procedure createSquare
+   * @description ينشئ مربع جديد ضمن منطقة محددة.
+   * 
+   * @param {object} input - بيانات المربع
+   * @param {string} input.code - رمز المربع
+   * @param {string} input.name - اسم المربع
+   * @param {string} [input.nameEn] - الاسم بالإنجليزية
+   * @param {number} input.areaId - معرف المنطقة
+   * @param {string} [input.description] - وصف المربع
+   * 
+   * @returns {Promise<{id: number}>} معرف المربع الجديد
+   */
   createSquare: publicProcedure.input(z.object({
     code: z.string(),
     name: z.string(),
@@ -113,6 +238,14 @@ export const billingRouter = router({
   }),
 
   // ==================== الكابينات ====================
+  /**
+   * استرجاع قائمة الكابينات
+   * 
+   * @procedure getCabinets
+   * @description يسترجع قائمة الكابينات الكهربائية مع بيانات المربعات والمناطق.
+   * 
+   * @returns {Promise<Cabinet[]>} قائمة الكابينات
+   */
   getCabinets: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -135,6 +268,22 @@ export const billingRouter = router({
     return result;
   }),
 
+  /**
+   * إنشاء كابينة جديدة
+   * 
+   * @procedure createCabinet
+   * @description ينشئ كابينة كهربائية جديدة ضمن مربع محدد.
+   * 
+   * @param {object} input - بيانات الكابينة
+   * @param {string} input.code - رمز الكابينة
+   * @param {string} input.name - اسم الكابينة
+   * @param {number} input.squareId - معرف المربع
+   * @param {string} [input.cabinetType] - نوع الكابينة (main|sub|distribution)
+   * @param {number} [input.capacity] - السعة
+   * @param {string} [input.location] - الموقع
+   * 
+   * @returns {Promise<{id: number}>} معرف الكابينة الجديدة
+   */
   createCabinet: publicProcedure.input(z.object({
     code: z.string(),
     name: z.string(),
@@ -174,6 +323,14 @@ export const billingRouter = router({
   }),
 
   // ==================== التعرفة ====================
+  /**
+   * استرجاع قائمة التعرفة
+   * 
+   * @procedure getTariffs
+   * @description يسترجع قائمة شرائح التعرفة المعرفة في النظام.
+   * 
+   * @returns {Promise<Tariff[]>} قائمة التعرفة
+   */
   getTariffs: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -192,6 +349,24 @@ export const billingRouter = router({
     }).from(tariffs).orderBy(desc(tariffs.createdAt));
   }),
 
+  /**
+   * إنشاء شريحة تعرفة جديدة
+   * 
+   * @procedure createTariff
+   * @description ينشئ شريحة تعرفة جديدة مع تحديد نطاق الاستهلاك والسعر.
+   * 
+   * @param {object} input - بيانات التعرفة
+   * @param {string} input.code - رمز التعرفة
+   * @param {string} input.name - اسم التعرفة
+   * @param {string} input.serviceType - نوع الخدمة (electricity|water|gas)
+   * @param {string} input.customerCategory - فئة العميل
+   * @param {number} input.fromUnit - بداية الشريحة
+   * @param {number} input.toUnit - نهاية الشريحة
+   * @param {string} input.pricePerUnit - سعر الوحدة
+   * @param {string} [input.fixedCharge] - الرسوم الثابتة
+   * 
+   * @returns {Promise<{id: number}>} معرف التعرفة الجديدة
+   */
   createTariff: publicProcedure.input(z.object({
     code: z.string(),
     name: z.string(),
@@ -235,6 +410,14 @@ export const billingRouter = router({
   }),
 
   // ==================== أنواع الرسوم ====================
+  /**
+   * استرجاع أنواع الرسوم
+   * 
+   * @procedure getFeeTypes
+   * @description يسترجع قائمة أنواع الرسوم الإضافية المعرفة في النظام.
+   * 
+   * @returns {Promise<FeeType[]>} قائمة أنواع الرسوم
+   */
   getFeeTypes: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -290,6 +473,14 @@ export const billingRouter = router({
   }),
 
   // ==================== الصناديق ====================
+  /**
+   * استرجاع قائمة الصناديق
+   * 
+   * @procedure getCashboxes
+   * @description يسترجع قائمة صناديق النقد مع أرصدتها الحالية.
+   * 
+   * @returns {Promise<Cashbox[]>} قائمة الصناديق
+   */
   getCashboxes: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -306,6 +497,21 @@ export const billingRouter = router({
     }).from(cashboxes).orderBy(desc(cashboxes.createdAt));
   }),
 
+  /**
+   * إنشاء صندوق نقد جديد
+   * 
+   * @procedure createCashbox
+   * @description ينشئ صندوق نقد جديد مع تحديد الرصيد الافتتاحي.
+   * 
+   * @param {object} input - بيانات الصندوق
+   * @param {string} input.code - رمز الصندوق
+   * @param {string} input.name - اسم الصندوق
+   * @param {string} [input.nameEn] - الاسم بالإنجليزية
+   * @param {string} [input.cashboxType] - نوع الصندوق (main|branch)
+   * @param {string} [input.openingBalance] - الرصيد الافتتاحي
+   * 
+   * @returns {Promise<{id: number}>} معرف الصندوق الجديد
+   */
   createCashbox: publicProcedure.input(z.object({
     code: z.string(),
     name: z.string(),
@@ -342,6 +548,14 @@ export const billingRouter = router({
   }),
 
   // ==================== طرق الدفع ====================
+  /**
+   * استرجاع طرق الدفع
+   * 
+   * @procedure getPaymentMethods
+   * @description يسترجع قائمة طرق الدفع المتاحة في النظام.
+   * 
+   * @returns {Promise<PaymentMethod[]>} قائمة طرق الدفع
+   */
   getPaymentMethods: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -356,6 +570,20 @@ export const billingRouter = router({
     }).from(paymentMethodsNew).orderBy(desc(paymentMethodsNew.createdAt));
   }),
 
+  /**
+   * إنشاء طريقة دفع جديدة
+   * 
+   * @procedure createPaymentMethod
+   * @description ينشئ طريقة دفع جديدة في النظام.
+   * 
+   * @param {object} input - بيانات طريقة الدفع
+   * @param {string} input.code - رمز طريقة الدفع
+   * @param {string} input.name - اسم طريقة الدفع
+   * @param {string} [input.nameEn] - الاسم بالإنجليزية
+   * @param {string} input.methodType - نوع الطريقة (cash|card|bank_transfer|check|online)
+   * 
+   * @returns {Promise<{id: number}>} معرف طريقة الدفع الجديدة
+   */
   createPaymentMethod: publicProcedure.input(z.object({
     code: z.string(),
     name: z.string(),
@@ -390,6 +618,14 @@ export const billingRouter = router({
   }),
 
   // ==================== العملاء ====================
+  /**
+   * استرجاع قائمة العملاء
+   * 
+   * @procedure getCustomers
+   * @description يسترجع قائمة العملاء المسجلين في النظام.
+   * 
+   * @returns {Promise<Customer[]>} قائمة العملاء
+   */
   getCustomers: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -411,6 +647,26 @@ export const billingRouter = router({
     return result;
   }),
 
+  /**
+   * إنشاء عميل جديد
+   * 
+   * @procedure createCustomer
+   * @description يسجل عميل جديد في النظام مع إنشاء محفظة له تلقائياً.
+   * 
+   * @param {object} input - بيانات العميل
+   * @param {string} input.accountNumber - رقم الحساب
+   * @param {string} input.fullName - الاسم الكامل
+   * @param {string} [input.fullNameEn] - الاسم بالإنجليزية
+   * @param {string} input.customerType - نوع العميل (individual|company|organization)
+   * @param {string} input.category - فئة العميل (residential|commercial|industrial|governmental|agricultural)
+   * @param {string} input.phone - رقم الهاتف
+   * @param {string} [input.phone2] - رقم هاتف إضافي
+   * @param {string} [input.email] - البريد الإلكتروني
+   * @param {string} [input.nationalId] - رقم الهوية
+   * @param {string} [input.address] - العنوان
+   * 
+   * @returns {Promise<{id: number}>} معرف العميل الجديد
+   */
   createCustomer: publicProcedure.input(z.object({
     accountNumber: z.string(),
     fullName: z.string(),
@@ -479,6 +735,14 @@ export const billingRouter = router({
   }),
 
   // ==================== العدادات ====================
+  /**
+   * استرجاع قائمة العدادات
+   * 
+   * @procedure getMeters
+   * @description يسترجع قائمة العدادات مع بيانات العملاء المرتبطين.
+   * 
+   * @returns {Promise<Meter[]>} قائمة العدادات
+   */
   getMeters: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -506,6 +770,27 @@ export const billingRouter = router({
     return result;
   }),
 
+  /**
+   * إنشاء عداد جديد
+   * 
+   * @procedure createMeter
+   * @description يسجل عداد جديد في النظام.
+   * 
+   * @param {object} input - بيانات العداد
+   * @param {string} input.meterNumber - رقم العداد
+   * @param {string} [input.serialNumber] - الرقم التسلسلي
+   * @param {number} [input.customerId] - معرف العميل
+   * @param {number} [input.cabinetId] - معرف الكابينة
+   * @param {string} input.serviceType - نوع الخدمة (electricity|water|gas)
+   * @param {string} [input.meterType] - نوع العداد
+   * @param {string} [input.connectionType] - نوع التوصيل
+   * @param {string} [input.installationDate] - تاريخ التركيب
+   * @param {string} [input.initialReading] - القراءة الأولية
+   * @param {number} [input.multiplier] - معامل الضرب
+   * @param {boolean} [input.isIot] - هل هو عداد ذكي
+   * 
+   * @returns {Promise<{id: number}>} معرف العداد الجديد
+   */
   createMeter: publicProcedure.input(z.object({
     meterNumber: z.string(),
     serialNumber: z.string().optional(),
@@ -555,6 +840,20 @@ export const billingRouter = router({
     return { success: true };
   }),
 
+  /**
+   * ربط عداد بعميل
+   * 
+   * @procedure linkMeterToCustomer
+   * @description يربط عداد موجود بعميل محدد.
+   * 
+   * @param {object} input - بيانات الربط
+   * @param {number} input.meterId - معرف العداد
+   * @param {number} input.customerId - معرف العميل
+   * @param {string} [input.installationDate] - تاريخ التركيب
+   * @param {number} [input.initialReading] - القراءة الأولية
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   linkMeterToCustomer: publicProcedure.input(z.object({
     meterId: z.number(),
     customerId: z.number(),
@@ -571,6 +870,14 @@ export const billingRouter = router({
   }),
 
   // ==================== فترات الفوترة ====================
+  /**
+   * استرجاع فترات الفوترة
+   * 
+   * @procedure getBillingPeriods
+   * @description يسترجع قائمة فترات الفوترة المعرفة في النظام.
+   * 
+   * @returns {Promise<BillingPeriod[]>} قائمة فترات الفوترة
+   */
   getBillingPeriods: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -586,6 +893,21 @@ export const billingRouter = router({
     }).from(billingPeriods).orderBy(desc(billingPeriods.createdAt));
   }),
 
+  /**
+   * إنشاء فترة فوترة جديدة
+   * 
+   * @procedure createBillingPeriod
+   * @description ينشئ فترة فوترة جديدة مع تحديد تواريخ البداية والنهاية والاستحقاق.
+   * 
+   * @param {object} input - بيانات الفترة
+   * @param {string} input.code - رمز الفترة
+   * @param {string} input.name - اسم الفترة
+   * @param {string} input.startDate - تاريخ البداية
+   * @param {string} input.endDate - تاريخ النهاية
+   * @param {string} input.dueDate - تاريخ الاستحقاق
+   * 
+   * @returns {Promise<{id: number}>} معرف الفترة الجديدة
+   */
   createBillingPeriod: publicProcedure.input(z.object({
     code: z.string(),
     name: z.string(),
@@ -632,6 +954,14 @@ export const billingRouter = router({
   }),
 
   // ==================== قراءات العدادات ====================
+  /**
+   * استرجاع قراءات العدادات
+   * 
+   * @procedure getMeterReadings
+   * @description يسترجع قائمة قراءات العدادات مع بيانات العملاء والفترات.
+   * 
+   * @returns {Promise<MeterReading[]>} قائمة القراءات
+   */
   getMeterReadings: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -660,6 +990,22 @@ export const billingRouter = router({
     return result;
   }),
 
+  /**
+   * تسجيل قراءة عداد
+   * 
+   * @procedure createMeterReading
+   * @description يسجل قراءة جديدة لعداد مع حساب الاستهلاك تلقائياً.
+   * 
+   * @param {object} input - بيانات القراءة
+   * @param {number} input.meterId - معرف العداد
+   * @param {number} input.billingPeriodId - معرف فترة الفوترة
+   * @param {string} input.currentReading - القراءة الحالية
+   * @param {string} input.readingDate - تاريخ القراءة
+   * @param {string} [input.readingType] - نوع القراءة (manual|automatic|estimated)
+   * @param {string} [input.notes] - ملاحظات
+   * 
+   * @returns {Promise<{id: number}>} معرف القراءة الجديدة
+   */
   createMeterReading: publicProcedure.input(z.object({
     meterId: z.number(),
     billingPeriodId: z.number(),
@@ -689,6 +1035,17 @@ export const billingRouter = router({
     return { id: result.insertId };
   }),
 
+  /**
+   * اعتماد القراءات
+   * 
+   * @procedure approveReadings
+   * @description يعتمد مجموعة من قراءات العدادات ويحدث آخر قراءة في العداد.
+   * 
+   * @param {object} input - معاملات الاعتماد
+   * @param {number[]} input.ids - قائمة معرفات القراءات
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   approveReadings: publicProcedure.input(z.object({
     ids: z.array(z.number()),
   })).mutation(async ({ input }) => {
@@ -718,6 +1075,17 @@ export const billingRouter = router({
     return { success: true };
   }),
 
+  /**
+   * رفض القراءات
+   * 
+   * @procedure rejectReadings
+   * @description يرفض مجموعة من قراءات العدادات.
+   * 
+   * @param {object} input - معاملات الرفض
+   * @param {number[]} input.ids - قائمة معرفات القراءات
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   rejectReadings: publicProcedure.input(z.object({
     ids: z.array(z.number()),
   })).mutation(async ({ input }) => {
@@ -730,6 +1098,14 @@ export const billingRouter = router({
   }),
 
   // ==================== الفواتير ====================
+  /**
+   * استرجاع قائمة الفواتير
+   * 
+   * @procedure getInvoices
+   * @description يسترجع قائمة الفواتير مع بيانات العملاء وفترات الفوترة.
+   * 
+   * @returns {Promise<Invoice[]>} قائمة الفواتير
+   */
   getInvoices: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -764,6 +1140,18 @@ export const billingRouter = router({
     return result;
   }),
 
+  /**
+   * توليد الفواتير
+   * 
+   * @procedure generateInvoices
+   * @description يولد فواتير لجميع القراءات المعتمدة في فترة فوترة محددة
+   * مع حساب قيمة الاستهلاك حسب التعرفة.
+   * 
+   * @param {object} input - معاملات التوليد
+   * @param {number} input.billingPeriodId - معرف فترة الفوترة
+   * 
+   * @returns {Promise<{success: boolean, invoicesCreated: number}>} نتيجة العملية مع عدد الفواتير
+   */
   generateInvoices: publicProcedure.input(z.object({
     billingPeriodId: z.number(),
   })).mutation(async ({ input }) => {
@@ -864,6 +1252,17 @@ export const billingRouter = router({
     return { success: true, invoicesCreated };
   }),
 
+  /**
+   * اعتماد الفواتير
+   * 
+   * @procedure approveInvoices
+   * @description يعتمد مجموعة من الفواتير.
+   * 
+   * @param {object} input - معاملات الاعتماد
+   * @param {number[]} input.ids - قائمة معرفات الفواتير
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   approveInvoices: publicProcedure.input(z.object({
     ids: z.array(z.number()),
   })).mutation(async ({ input }) => {
@@ -878,6 +1277,17 @@ export const billingRouter = router({
     return { success: true };
   }),
 
+  /**
+   * إرسال الفواتير
+   * 
+   * @procedure sendInvoices
+   * @description يحدث حالة الفواتير إلى "مرسلة".
+   * 
+   * @param {object} input - معاملات الإرسال
+   * @param {number[]} input.ids - قائمة معرفات الفواتير
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   sendInvoices: publicProcedure.input(z.object({
     ids: z.array(z.number()),
   })).mutation(async ({ input }) => {
@@ -890,6 +1300,14 @@ export const billingRouter = router({
   }),
 
   // ==================== المدفوعات ====================
+  /**
+   * استرجاع قائمة المدفوعات
+   * 
+   * @procedure getPayments
+   * @description يسترجع قائمة المدفوعات مع بيانات العملاء والفواتير.
+   * 
+   * @returns {Promise<Payment[]>} قائمة المدفوعات
+   */
   getPayments: publicProcedure.query(async () => {
     const db = await getDb();
     if (!db) throw new Error("Database not available");
@@ -917,6 +1335,25 @@ export const billingRouter = router({
     return result;
   }),
 
+  /**
+   * تسجيل دفعة جديدة
+   * 
+   * @procedure createPayment
+   * @description يسجل دفعة جديدة مع تحديث رصيد الفاتورة والصندوق وإنشاء إيصال.
+   * 
+   * @param {object} input - بيانات الدفعة
+   * @param {number} input.customerId - معرف العميل
+   * @param {number} [input.invoiceId] - معرف الفاتورة
+   * @param {string} input.amount - المبلغ
+   * @param {string} input.paymentMethod - طريقة الدفع
+   * @param {string} input.paymentDate - تاريخ الدفع
+   * @param {string} [input.referenceNumber] - رقم المرجع
+   * @param {number} [input.cashboxId] - معرف الصندوق
+   * @param {number} [input.bankId] - معرف البنك
+   * @param {string} [input.notes] - ملاحظات
+   * 
+   * @returns {Promise<{id: number, receiptNumber: string}>} معرف الدفعة ورقم الإيصال
+   */
   createPayment: publicProcedure.input(z.object({
     customerId: z.number(),
     invoiceId: z.number().optional(),

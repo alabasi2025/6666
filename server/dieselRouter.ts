@@ -4,16 +4,50 @@ import { TRPCError } from "@trpc/server";
 import * as db from "./db";
 import { storagePut } from "./storage";
 
+/**
+ * @fileoverview Router لنظام إدارة استهلاك الديزل
+ * @module dieselRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بنظام استهلاك الديزل
+ * بما في ذلك إدارة الموردين، الوايتات (الصهاريج)، خزانات المحطات،
+ * طرمبات العدادات، مهام الاستلام، حركات التحويل، والتقارير.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires @trpc/server - لإنشاء الـ API endpoints
+ * @requires ./db - للتعامل مع قاعدة البيانات
+ * @requires ./storage - لتخزين الملفات والصور
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 // ============================================
 // نظام استهلاك الديزل - Diesel Consumption System
 // ============================================
 
 export const dieselRouter = router({
   // ============================================
+  /**
+   * @namespace suppliers
+   * @description إدارة موردي الديزل - يتيح تسجيل وتعديل وحذف الموردين
+   * مع تتبع بيانات الاتصال والموقع الجغرافي.
+   */
   // موردي الديزل - Diesel Suppliers
   // ============================================
   
   suppliers: router({
+    /**
+     * استرجاع قائمة موردي الديزل
+     * 
+     * @procedure list
+     * @description يسترجع قائمة موردي الديزل مع إمكانية الفلترة حسب حالة النشاط.
+     * 
+     * @param {object} [input] - معاملات البحث
+     * @param {number} [input.businessId] - معرف الشركة
+     * @param {boolean} [input.isActive] - حالة النشاط للفلترة
+     * 
+     * @returns {Promise<DieselSupplier[]>} قائمة الموردين
+     */
     list: protectedProcedure
       .input(z.object({
         businessId: z.number().optional(),
@@ -85,10 +119,27 @@ export const dieselRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace tankers
+   * @description إدارة الوايتات (صهاريج الديزل) - يتيح تسجيل الصهاريج
+   * مع تحديد السعة والمقصورات وبيانات السائق.
+   */
   // الوايتات (صهاريج الديزل) - Diesel Tankers
   // ============================================
   
   tankers: router({
+    /**
+     * استرجاع قائمة الوايتات (الصهاريج)
+     * 
+     * @procedure list
+     * @description يسترجع قائمة صهاريج الديزل مع بيانات السعة والسائقين.
+     * 
+     * @param {object} [input] - معاملات البحث
+     * @param {number} [input.businessId] - معرف الشركة
+     * @param {boolean} [input.isActive] - حالة النشاط للفلترة
+     * 
+     * @returns {Promise<DieselTanker[]>} قائمة الصهاريج
+     */
     list: protectedProcedure
       .input(z.object({
         businessId: z.number().optional(),
@@ -160,10 +211,29 @@ export const dieselRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace tanks
+   * @description إدارة خزانات المحطة - يتيح تسجيل خزانات الاستقبال والرئيسية
+   * والروكت والمولدات مع تتبع المستويات والسعات.
+   */
   // خزانات المحطة - Station Tanks
   // ============================================
   
   tanks: router({
+    /**
+     * استرجاع قائمة خزانات المحطة
+     * 
+     * @procedure list
+     * @description يسترجع قائمة خزانات الديزل في المحطات مع مستوياتها الحالية.
+     * 
+     * @param {object} [input] - معاملات البحث
+     * @param {number} [input.businessId] - معرف الشركة
+     * @param {number} [input.stationId] - معرف المحطة للفلترة
+     * @param {string} [input.type] - نوع الخزان (receiving|main|rocket|generator)
+     * @param {boolean} [input.isActive] - حالة النشاط للفلترة
+     * 
+     * @returns {Promise<DieselTank[]>} قائمة الخزانات
+     */
     list: protectedProcedure
       .input(z.object({
         businessId: z.number().optional(),
@@ -249,10 +319,30 @@ export const dieselRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace pumpMeters
+   * @description إدارة طرمبات العدادات - يتيح تسجيل عدادات الموردين
+   * وعدادات الدخول والخروج مع تتبع القراءات.
+   */
   // طرمبات العدادات - Pump Meters
   // ============================================
   
   pumpMeters: router({
+    /**
+     * استرجاع قائمة طرمبات العدادات
+     * 
+     * @procedure list
+     * @description يسترجع قائمة عدادات الطرمبات مع قراءاتها الحالية.
+     * 
+     * @param {object} [input] - معاملات البحث
+     * @param {number} [input.businessId] - معرف الشركة
+     * @param {number} [input.stationId] - معرف المحطة للفلترة
+     * @param {number} [input.supplierId] - معرف المورد للفلترة
+     * @param {string} [input.type] - نوع العداد (supplier|intake|output)
+     * @param {boolean} [input.isActive] - حالة النشاط للفلترة
+     * 
+     * @returns {Promise<DieselPumpMeter[]>} قائمة العدادات
+     */
     list: protectedProcedure
       .input(z.object({
         businessId: z.number().optional(),
@@ -323,10 +413,32 @@ export const dieselRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace receivingTasks
+   * @description إدارة مهام استلام الديزل - يتيح إنشاء وتتبع مهام
+   * استلام الديزل من الموردين مع تسجيل جميع المراحل والقراءات.
+   */
   // مهام استلام الديزل - Diesel Receiving Tasks
   // ============================================
   
   receivingTasks: router({
+    /**
+     * استرجاع قائمة مهام استلام الديزل
+     * 
+     * @procedure list
+     * @description يسترجع قائمة مهام استلام الديزل مع إمكانية الفلترة
+     * حسب المحطة أو الموظف أو الحالة أو الفترة الزمنية.
+     * 
+     * @param {object} [input] - معاملات البحث
+     * @param {number} [input.businessId] - معرف الشركة
+     * @param {number} [input.stationId] - معرف المحطة للفلترة
+     * @param {number} [input.employeeId] - معرف الموظف للفلترة
+     * @param {string} [input.status] - حالة المهمة للفلترة
+     * @param {string} [input.fromDate] - تاريخ البداية
+     * @param {string} [input.toDate] - تاريخ النهاية
+     * 
+     * @returns {Promise<DieselReceivingTask[]>} قائمة المهام
+     */
     list: protectedProcedure
       .input(z.object({
         businessId: z.number().optional(),

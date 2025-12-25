@@ -2,6 +2,22 @@ import { z } from "zod";
 import { publicProcedure, router } from "./_core/trpc";
 import * as db from "./db";
 
+/**
+ * @fileoverview Router لنظام إدارة المشاريع
+ * @module projectsRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بنظام المشاريع
+ * بما في ذلك إدارة المشاريع، المهام، الموارد، الميزانيات،
+ * المراحل، والتقارير.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires @trpc/server - لإنشاء الـ API endpoints
+ * @requires ./db - للتعامل مع قاعدة البيانات
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 export const projectsRouter = router({
   // قائمة المشاريع
   list: publicProcedure

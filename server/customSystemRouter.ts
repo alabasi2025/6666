@@ -1,4 +1,20 @@
 // @ts-nocheck
+/**
+ * @fileoverview Router للنظام المخصص والحسابات الخاصة
+ * @module customSystemRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بالنظام المخصص
+ * بما في ذلك إدارة الحسابات المخصصة، الحركات المالية، الملاحظات، المذكرات،
+ * الأطراف، الفئات، حركات الخزينة، والإعدادات.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires @trpc/server - لإنشاء الـ API endpoints
+ * @requires drizzle-orm - للتعامل مع قاعدة البيانات
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import { protectedProcedure, router } from "./_core/trpc";
@@ -13,10 +29,25 @@ import {
 import { eq, and, desc, asc, like, sql } from "drizzle-orm";
 
 // ============================================
+/**
+ * @namespace customAccountsRouter
+ * @description Router لإدارة الحسابات المخصصة - يتيح إنشاء وتعديل وحذف
+ * الحسابات المالية المخصصة مع تتبع الأرصدة والحركات.
+ */
 // Custom Accounts Router
 // ============================================
 export const customAccountsRouter = router({
-  // قائمة الحسابات
+  /**
+   * استرجاع قائمة الحسابات المخصصة
+   * 
+   * @procedure list
+   * @description يسترجع قائمة الحسابات المخصصة للشركة مرتبة حسب رقم الحساب.
+   * 
+   * @param {object} input - معاملات البحث
+   * @param {number} input.businessId - معرف الشركة
+   * 
+   * @returns {Promise<CustomAccount[]>} قائمة الحسابات
+   */
   list: protectedProcedure
     .input(z.object({ businessId: z.number() }))
     .query(async ({ input }) => {
@@ -41,7 +72,17 @@ export const customAccountsRouter = router({
         .orderBy(asc(customAccounts.accountNumber));
     }),
 
-  // الحصول على حساب بالمعرف
+  /**
+   * استرجاع حساب بواسطة المعرف
+   * 
+   * @procedure getById
+   * @description يسترجع بيانات حساب مخصص محدد.
+   * 
+   * @param {object} input - معاملات البحث
+   * @param {number} input.id - معرف الحساب
+   * 
+   * @returns {Promise<CustomAccount|null>} بيانات الحساب
+   */
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
@@ -67,7 +108,23 @@ export const customAccountsRouter = router({
       return result[0] || null;
     }),
 
-  // إنشاء حساب جديد
+  /**
+   * إنشاء حساب مخصص جديد
+   * 
+   * @procedure create
+   * @description ينشئ حساب مخصص جديد مع تحديد نوعه وعملته.
+   * 
+   * @param {object} input - بيانات الحساب
+   * @param {number} input.businessId - معرف الشركة
+   * @param {string} input.accountNumber - رقم الحساب
+   * @param {string} input.accountName - اسم الحساب
+   * @param {string} input.accountType - نوع الحساب (asset|liability|equity|revenue|expense)
+   * @param {number} [input.parentId] - معرف الحساب الأب
+   * @param {string} [input.currency] - العملة (افتراضي: SAR)
+   * @param {string} [input.description] - وصف الحساب
+   * 
+   * @returns {Promise<{id: number, success: boolean}>} نتيجة العملية
+   */
   create: protectedProcedure
     .input(z.object({
       businessId: z.number(),
@@ -90,7 +147,22 @@ export const customAccountsRouter = router({
       return { id: result[0].insertId, success: true };
     }),
 
-  // تحديث حساب
+  /**
+   * تحديث حساب مخصص
+   * 
+   * @procedure update
+   * @description يحدث بيانات حساب مخصص موجود.
+   * 
+   * @param {object} input - بيانات التحديث
+   * @param {number} input.id - معرف الحساب
+   * @param {string} [input.accountNumber] - رقم الحساب الجديد
+   * @param {string} [input.accountName] - اسم الحساب الجديد
+   * @param {string} [input.accountType] - نوع الحساب الجديد
+   * @param {string} [input.description] - الوصف الجديد
+   * @param {boolean} [input.isActive] - حالة النشاط
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   update: protectedProcedure
     .input(z.object({
       id: z.number(),
@@ -110,7 +182,17 @@ export const customAccountsRouter = router({
       return { success: true };
     }),
 
-  // حذف حساب
+  /**
+   * حذف حساب مخصص
+   * 
+   * @procedure delete
+   * @description يحذف حساب مخصص من النظام.
+   * 
+   * @param {object} input - معاملات الحذف
+   * @param {number} input.id - معرف الحساب
+   * 
+   * @returns {Promise<{success: boolean}>} نتيجة العملية
+   */
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
@@ -124,10 +206,27 @@ export const customAccountsRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customTransactionsRouter
+ * @description Router لإدارة الحركات المالية المخصصة - يتيح تسجيل
+ * الحركات المدينة والدائنة وتحديث أرصدة الحسابات تلقائياً.
+ */
 // Custom Transactions Router
 // ============================================
 export const customTransactionsRouter = router({
-  // قائمة الحركات
+  /**
+   * استرجاع قائمة الحركات المالية
+   * 
+   * @procedure list
+   * @description يسترجع قائمة الحركات المالية مع إمكانية الفلترة حسب الحساب.
+   * 
+   * @param {object} input - معاملات البحث
+   * @param {number} input.businessId - معرف الشركة
+   * @param {number} [input.accountId] - معرف الحساب للفلترة
+   * @param {number} [input.limit] - الحد الأقصى للنتائج (افتراضي: 50)
+   * 
+   * @returns {Promise<CustomTransaction[]>} قائمة الحركات
+   */
   list: protectedProcedure
     .input(z.object({ 
       businessId: z.number(),
@@ -170,7 +269,23 @@ export const customTransactionsRouter = router({
       return await query;
     }),
 
-  // إنشاء حركة جديدة
+  /**
+   * تسجيل حركة مالية جديدة
+   * 
+   * @procedure create
+   * @description يسجل حركة مالية جديدة ويحدث رصيد الحساب تلقائياً.
+   * 
+   * @param {object} input - بيانات الحركة
+   * @param {number} input.businessId - معرف الشركة
+   * @param {string} input.transactionNumber - رقم الحركة
+   * @param {string} input.transactionDate - تاريخ الحركة
+   * @param {number} input.accountId - معرف الحساب
+   * @param {string} input.transactionType - نوع الحركة (debit|credit)
+   * @param {string} input.amount - المبلغ
+   * @param {string} [input.description] - وصف الحركة
+   * 
+   * @returns {Promise<{id: number, success: boolean}>} نتيجة العملية
+   */
   create: protectedProcedure
     .input(z.object({
       businessId: z.number(),
@@ -213,10 +328,27 @@ export const customTransactionsRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customNotesRouter
+ * @description Router لإدارة الملاحظات - يتيح إنشاء وتنظيم الملاحظات
+ * مع دعم التصنيفات والأولويات والألوان والأرشفة.
+ */
 // Custom Notes Router
 // ============================================
 export const customNotesRouter = router({
-  // قائمة الملاحظات
+  /**
+   * استرجاع قائمة الملاحظات
+   * 
+   * @procedure list
+   * @description يسترجع قائمة الملاحظات مع إمكانية الفلترة حسب الفئة والأرشفة.
+   * 
+   * @param {object} input - معاملات البحث
+   * @param {number} input.businessId - معرف الشركة
+   * @param {string} [input.category] - فئة الملاحظة للفلترة
+   * @param {boolean} [input.isArchived] - حالة الأرشفة (افتراضي: false)
+   * 
+   * @returns {Promise<CustomNote[]>} قائمة الملاحظات
+   */
   list: protectedProcedure
     .input(z.object({ 
       businessId: z.number(),
@@ -334,10 +466,26 @@ export const customNotesRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customMemosRouter
+ * @description Router لإدارة المذكرات الداخلية والخارجية - يتيح إنشاء
+ * وإرسال واستقبال المذكرات بين الأقسام مع تتبع الحالة.
+ */
 // Custom Memos Router
 // ============================================
 export const customMemosRouter = router({
-  // قائمة المذكرات
+  /**
+   * استرجاع قائمة المذكرات
+   * 
+   * @procedure list
+   * @description يسترجع قائمة المذكرات مع إمكانية الفلترة حسب الحالة.
+   * 
+   * @param {object} input - معاملات البحث
+   * @param {number} input.businessId - معرف الشركة
+   * @param {string} [input.status] - حالة المذكرة (draft|sent|received|archived)
+   * 
+   * @returns {Promise<CustomMemo[]>} قائمة المذكرات
+   */
   list: protectedProcedure
     .input(z.object({ 
       businessId: z.number(),
@@ -1655,10 +1803,26 @@ export const customReconciliationsRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customPartiesRouter
+ * @description Router لإدارة الأطراف (العملاء/الموردين) المخصصة -
+ * يتيح تسجيل الأطراف وتتبع أرصدتهم وحركاتهم المالية.
+ */
 // Custom Parties Router (إدارة الأطراف)
 // ============================================
 export const customPartiesRouter = router({
-  // قائمة الأطراف
+  /**
+   * استرجاع قائمة الأطراف
+   * 
+   * @procedure list
+   * @description يسترجع قائمة الأطراف (العملاء/الموردين) مع إمكانية الفلترة.
+   * 
+   * @param {object} input - معاملات البحث
+   * @param {number} input.businessId - معرف الشركة
+   * @param {string} [input.partyType] - نوع الطرف (customer|supplier|both)
+   * 
+   * @returns {Promise<CustomParty[]>} قائمة الأطراف
+   */
   list: protectedProcedure
     .input(z.object({ 
       businessId: z.number(),
@@ -1889,6 +2053,11 @@ export const customPartiesRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customCategoriesRouter
+ * @description Router لإدارة الفئات المخصصة - يتيح إنشاء فئات
+ * هرمية لتصنيف العناصر المختلفة في النظام.
+ */
 // Custom Categories Router (إدارة التصنيفات)
 // ============================================
 export const customCategoriesRouter = router({
@@ -2060,6 +2229,11 @@ export const customCategoriesRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customTreasuryMovementsRouter
+ * @description Router لإدارة حركات الخزينة - يتيح تسجيل المقبوضات
+ * والمدفوعات النقدية وتتبع رصيد الخزينة.
+ */
 // Custom Treasury Movements Router (حركات الخزينة)
 // ============================================
 export const customTreasuryMovementsRouter = router({
@@ -2184,6 +2358,11 @@ export const customTreasuryMovementsRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customPartyTransactionsRouter
+ * @description Router لإدارة حركات الأطراف - يتيح تسجيل الحركات
+ * المالية مع الأطراف وتحديث أرصدتهم تلقائياً.
+ */
 // Custom Party Transactions Router (حركات الأطراف)
 // ============================================
 export const customPartyTransactionsRouter = router({
@@ -2248,6 +2427,11 @@ export const customPartyTransactionsRouter = router({
 });
 
 // ============================================
+/**
+ * @namespace customSettingsRouter
+ * @description Router لإدارة الإعدادات المخصصة - يتيح حفظ واسترجاع
+ * إعدادات النظام المخصصة لكل شركة.
+ */
 // Custom Settings Router (إعدادات النظام)
 // ============================================
 export const customSettingsRouter = router({

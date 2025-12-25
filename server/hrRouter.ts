@@ -2,15 +2,47 @@ import { z } from "zod";
 import { router, publicProcedure, protectedProcedure } from "./_core/trpc";
 import * as db from "./db";
 
+/**
+ * @fileoverview Router لنظام الموارد البشرية
+ * @module hrRouter
+ * @description يوفر هذا الـ Router جميع العمليات المتعلقة بنظام الموارد البشرية
+ * بما في ذلك إدارة الأقسام، المسميات الوظيفية، سلم الرواتب، الموظفين،
+ * الرواتب، الحضور، الإجازات، العقود، والتقييمات.
+ * 
+ * @requires zod - للتحقق من صحة البيانات المدخلة
+ * @requires @trpc/server - لإنشاء الـ API endpoints
+ * @requires ./db - للتعامل مع قاعدة البيانات
+ * 
+ * @author فريق التطوير
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 // ============================================
 // HR Router - نظام الموارد البشرية
 // ============================================
 
 export const hrRouter = router({
   // ============================================
+  /**
+   * @namespace departments
+   * @description إدارة الأقسام - يتيح إنشاء وتعديل وحذف الأقسام
+   * مع دعم الهيكل الهرمي ومراكز التكلفة.
+   */
   // الأقسام - Departments
   // ============================================
   departments: router({
+    /**
+     * استرجاع قائمة الأقسام
+     * 
+     * @procedure list
+     * @description يسترجع قائمة أقسام الشركة مع الهيكل الهرمي.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * 
+     * @returns {Promise<Department[]>} قائمة الأقسام
+     */
     list: publicProcedure
       .input(z.object({ businessId: z.number() }))
       .query(async ({ input }) => {
@@ -58,9 +90,25 @@ export const hrRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace jobTitles
+   * @description إدارة المسميات الوظيفية - يتيح تعريف الوظائف
+   * مع المتطلبات والمسؤوليات والدرجات الوظيفية.
+   */
   // المسميات الوظيفية - Job Titles
   // ============================================
   jobTitles: router({
+    /**
+     * استرجاع قائمة المسميات الوظيفية
+     * 
+     * @procedure list
+     * @description يسترجع قائمة المسميات الوظيفية للشركة.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * 
+     * @returns {Promise<JobTitle[]>} قائمة المسميات الوظيفية
+     */
     list: publicProcedure
       .input(z.object({ businessId: z.number() }))
       .query(async ({ input }) => {
@@ -113,9 +161,25 @@ export const hrRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace salaryGrades
+   * @description إدارة سلم الرواتب - يتيح تعريف الدرجات الوظيفية
+   * مع نطاقات الرواتب والبدلات.
+   */
   // سلم الرواتب - Salary Grades
   // ============================================
   salaryGrades: router({
+    /**
+     * استرجاع قائمة درجات الرواتب
+     * 
+     * @procedure list
+     * @description يسترجع قائمة درجات سلم الرواتب للشركة.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * 
+     * @returns {Promise<SalaryGrade[]>} قائمة درجات الرواتب
+     */
     list: publicProcedure
       .input(z.object({ businessId: z.number() }))
       .query(async ({ input }) => {
@@ -139,9 +203,29 @@ export const hrRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace employees
+   * @description إدارة الموظفين - يتيح تسجيل وتعديل بيانات الموظفين
+   * الشخصية والوظيفية مع ربطهم بالأقسام والعمال الميدانيين.
+   */
   // الموظفين - Employees
   // ============================================
   employees: router({
+    /**
+     * استرجاع قائمة الموظفين
+     * 
+     * @procedure list
+     * @description يسترجع قائمة موظفي الشركة مع إمكانية الفلترة
+     * حسب القسم أو الحالة أو البحث النصي.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * @param {number} [input.departmentId] - معرف القسم للفلترة
+     * @param {string} [input.status] - حالة الموظف للفلترة
+     * @param {string} [input.search] - نص البحث
+     * 
+     * @returns {Promise<Employee[]>} قائمة الموظفين
+     */
     list: publicProcedure
       .input(z.object({
         businessId: z.number(),
@@ -336,6 +420,19 @@ export const hrRouter = router({
   // مسيرات الرواتب - Payroll
   // ============================================
   payroll: router({
+    /**
+     * استرجاع قائمة مسيرات الرواتب
+     * 
+     * @procedure list
+     * @description يسترجع قائمة مسيرات الرواتب الشهرية.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * @param {number} [input.year] - السنة للفلترة
+     * @param {number} [input.month] - الشهر للفلترة
+     * 
+     * @returns {Promise<PayrollRun[]>} قائمة مسيرات الرواتب
+     */
     list: publicProcedure
       .input(z.object({
         businessId: z.number(),
@@ -428,9 +525,29 @@ export const hrRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace attendance
+   * @description إدارة الحضور والانصراف - يتيح تسجيل وتتبع
+   * أوقات حضور وانصراف الموظفين.
+   */
   // الحضور والانصراف - Attendance
   // ============================================
   attendance: router({
+    /**
+     * استرجاع سجلات الحضور
+     * 
+     * @procedure list
+     * @description يسترجع سجلات حضور الموظفين مع إمكانية الفلترة
+     * حسب الموظف أو الفترة الزمنية.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * @param {number} [input.employeeId] - معرف الموظف للفلترة
+     * @param {string} [input.fromDate] - تاريخ البداية
+     * @param {string} [input.toDate] - تاريخ النهاية
+     * 
+     * @returns {Promise<AttendanceRecord[]>} سجلات الحضور
+     */
     list: publicProcedure
       .input(z.object({
         businessId: z.number(),
@@ -519,9 +636,25 @@ export const hrRouter = router({
   }),
 
   // ============================================
+  /**
+   * @namespace leaves
+   * @description إدارة الإجازات - يتيح تقديم واعتماد طلبات الإجازات
+   * مع تتبع الرصيد المتبقي.
+   */
   // الإجازات - Leaves
   // ============================================
   leaveTypes: router({
+    /**
+     * استرجاع قائمة أنواع الإجازات
+     * 
+     * @procedure list
+     * @description يسترجع قائمة أنواع الإجازات المعرفة للشركة.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * 
+     * @returns {Promise<LeaveType[]>} قائمة أنواع الإجازات
+     */
     list: publicProcedure
       .input(z.object({ businessId: z.number() }))
       .query(async ({ input }) => {
@@ -627,6 +760,18 @@ export const hrRouter = router({
   // تقييمات الأداء - Performance Evaluations
   // ============================================
   evaluations: router({
+    /**
+     * استرجاع قائمة التقييمات
+     * 
+     * @procedure list
+     * @description يسترجع قائمة تقييمات أداء الموظفين.
+     * 
+     * @param {object} input - معاملات البحث
+     * @param {number} input.businessId - معرف الشركة
+     * @param {number} [input.employeeId] - معرف الموظف للفلترة
+     * 
+     * @returns {Promise<EmployeeEvaluation[]>} قائمة التقييمات
+     */
     list: publicProcedure
       .input(z.object({
         businessId: z.number(),
