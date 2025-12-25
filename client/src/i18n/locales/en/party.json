@@ -1,0 +1,115 @@
+{
+  "titles": {
+    "list": "Parties List",
+    "create": "Add New Party",
+    "edit": "Edit Party",
+    "view": "View Party",
+    "customers": "Customers",
+    "suppliers": "Suppliers",
+    "employees": "Employees",
+    "others": "Other Parties"
+  },
+  "fields": {
+    "name": "Party Name",
+    "code": "Party Code",
+    "type": "Party Type",
+    "phone": "Phone Number",
+    "mobile": "Mobile Number",
+    "email": "Email",
+    "address": "Address",
+    "city": "City",
+    "country": "Country",
+    "postalCode": "Postal Code",
+    "balance": "Balance",
+    "creditLimit": "Credit Limit",
+    "notes": "Notes",
+    "status": "Status",
+    "taxNumber": "Tax Number",
+    "commercialRegister": "Commercial Register",
+    "contactPerson": "Contact Person",
+    "website": "Website",
+    "category": "Category",
+    "paymentTerms": "Payment Terms",
+    "currency": "Currency",
+    "openingBalance": "Opening Balance",
+    "currentBalance": "Current Balance",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At"
+  },
+  "types": {
+    "customer": "Customer",
+    "supplier": "Supplier",
+    "both": "Customer & Supplier",
+    "employee": "Employee",
+    "other": "Other"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "blocked": "Blocked",
+    "pending": "Pending Review"
+  },
+  "categories": {
+    "individual": "Individual",
+    "company": "Company",
+    "government": "Government Entity",
+    "nonprofit": "Non-profit Organization"
+  },
+  "actions": {
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "block": "Block",
+    "unblock": "Unblock",
+    "viewStatement": "View Statement",
+    "sendEmail": "Send Email",
+    "call": "Call"
+  },
+  "messages": {
+    "created": "Party added successfully",
+    "updated": "Party updated successfully",
+    "deleted": "Party deleted successfully",
+    "activated": "Party activated",
+    "deactivated": "Party deactivated",
+    "blocked": "Party blocked",
+    "unblocked": "Party unblocked"
+  },
+  "errors": {
+    "notFound": "Party not found",
+    "codeExists": "Party code already exists",
+    "emailExists": "Email already in use",
+    "hasTransactions": "Cannot delete party with transactions",
+    "creditLimitExceeded": "Credit limit exceeded",
+    "invalidPhone": "Invalid phone number",
+    "invalidEmail": "Invalid email address"
+  },
+  "filters": {
+    "all": "All",
+    "active": "Active",
+    "inactive": "Inactive",
+    "blocked": "Blocked",
+    "withBalance": "With Balance",
+    "withCredit": "With Credit",
+    "overdue": "Overdue"
+  },
+  "statement": {
+    "title": "Account Statement",
+    "period": "Period",
+    "openingBalance": "Opening Balance",
+    "closingBalance": "Closing Balance",
+    "totalDebit": "Total Debit",
+    "totalCredit": "Total Credit",
+    "date": "Date",
+    "description": "Description",
+    "debit": "Debit",
+    "credit": "Credit",
+    "balance": "Balance"
+  },
+  "summary": {
+    "totalParties": "Total Parties",
+    "totalCustomers": "Total Customers",
+    "totalSuppliers": "Total Suppliers",
+    "totalReceivables": "Total Receivables",
+    "totalPayables": "Total Payables",
+    "activeParties": "Active Parties"
+  }
+}

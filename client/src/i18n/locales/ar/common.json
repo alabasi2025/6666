@@ -1,0 +1,127 @@
+{
+  "app": {
+    "name": "نظام إدارة الطاقة",
+    "welcome": "مرحباً بك",
+    "description": "نظام متكامل لإدارة عمليات الطاقة والمحاسبة"
+  },
+  "actions": {
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "delete": "حذف",
+    "edit": "تعديل",
+    "add": "إضافة",
+    "search": "بحث",
+    "filter": "تصفية",
+    "export": "تصدير",
+    "print": "طباعة",
+    "refresh": "تحديث",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "back": "رجوع",
+    "next": "التالي",
+    "submit": "إرسال",
+    "reset": "إعادة تعيين",
+    "view": "عرض",
+    "download": "تنزيل",
+    "upload": "رفع"
+  },
+  "messages": {
+    "success": "تمت العملية بنجاح",
+    "error": "حدث خطأ",
+    "confirm": "هل أنت متأكد؟",
+    "loading": "جاري التحميل...",
+    "noData": "لا توجد بيانات",
+    "noResults": "لا توجد نتائج",
+    "required": "هذا الحقل مطلوب",
+    "invalid": "قيمة غير صالحة",
+    "saved": "تم الحفظ بنجاح",
+    "deleted": "تم الحذف بنجاح",
+    "updated": "تم التحديث بنجاح",
+    "created": "تم الإنشاء بنجاح"
+  },
+  "labels": {
+    "name": "الاسم",
+    "description": "الوصف",
+    "date": "التاريخ",
+    "time": "الوقت",
+    "status": "الحالة",
+    "type": "النوع",
+    "amount": "المبلغ",
+    "total": "الإجمالي",
+    "notes": "ملاحظات",
+    "actions": "الإجراءات",
+    "details": "التفاصيل",
+    "settings": "الإعدادات",
+    "profile": "الملف الشخصي",
+    "logout": "تسجيل الخروج"
+  },
+  "pagination": {
+    "previous": "السابق",
+    "next": "التالي",
+    "first": "الأول",
+    "last": "الأخير",
+    "page": "صفحة",
+    "of": "من",
+    "showing": "عرض",
+    "entries": "سجل",
+    "perPage": "لكل صفحة"
+  },
+  "table": {
+    "noData": "لا توجد بيانات للعرض",
+    "loading": "جاري تحميل البيانات...",
+    "error": "حدث خطأ في تحميل البيانات",
+    "empty": "الجدول فارغ",
+    "selectAll": "تحديد الكل",
+    "selected": "محدد"
+  },
+  "form": {
+    "required": "مطلوب",
+    "optional": "اختياري",
+    "invalid": "غير صالح",
+    "minLength": "الحد الأدنى {{min}} حرف",
+    "maxLength": "الحد الأقصى {{max}} حرف",
+    "min": "الحد الأدنى {{min}}",
+    "max": "الحد الأقصى {{max}}",
+    "email": "البريد الإلكتروني",
+    "phone": "رقم الهاتف",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور"
+  },
+  "time": {
+    "today": "اليوم",
+    "yesterday": "أمس",
+    "tomorrow": "غداً",
+    "now": "الآن",
+    "ago": "منذ",
+    "in": "خلال",
+    "seconds": "ثواني",
+    "minutes": "دقائق",
+    "hours": "ساعات",
+    "days": "أيام",
+    "weeks": "أسابيع",
+    "months": "أشهر",
+    "years": "سنوات"
+  },
+  "navigation": {
+    "home": "الرئيسية",
+    "dashboard": "لوحة التحكم",
+    "reports": "التقارير",
+    "settings": "الإعدادات",
+    "help": "المساعدة",
+    "about": "حول"
+  },
+  "currency": {
+    "sar": "ريال سعودي",
+    "usd": "دولار أمريكي",
+    "eur": "يورو"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "pending": "قيد الانتظار",
+    "approved": "موافق عليه",
+    "rejected": "مرفوض",
+    "completed": "مكتمل",
+    "cancelled": "ملغي"
+  }
+}

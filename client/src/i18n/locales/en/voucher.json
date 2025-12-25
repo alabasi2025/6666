@@ -1,0 +1,116 @@
+{
+  "titles": {
+    "list": "Vouchers List",
+    "create": "Create New Voucher",
+    "edit": "Edit Voucher",
+    "view": "View Voucher",
+    "receipt": "Receipt Voucher",
+    "payment": "Payment Voucher",
+    "transfer": "Transfer Voucher",
+    "journal": "Journal Entry"
+  },
+  "fields": {
+    "voucherNumber": "Voucher Number",
+    "voucherType": "Voucher Type",
+    "date": "Date",
+    "amount": "Amount",
+    "party": "Party",
+    "treasury": "Treasury",
+    "description": "Description",
+    "reference": "Reference",
+    "status": "Status",
+    "createdBy": "Created By",
+    "createdAt": "Created At",
+    "updatedAt": "Updated At",
+    "approvedBy": "Approved By",
+    "approvedAt": "Approved At",
+    "notes": "Notes",
+    "attachments": "Attachments",
+    "currency": "Currency",
+    "exchangeRate": "Exchange Rate",
+    "localAmount": "Local Amount"
+  },
+  "types": {
+    "receipt": "Receipt",
+    "payment": "Payment",
+    "transfer": "Transfer",
+    "adjustment": "Adjustment",
+    "opening": "Opening",
+    "closing": "Closing"
+  },
+  "status": {
+    "draft": "Draft",
+    "pending": "Pending Review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "cancelled": "Cancelled",
+    "posted": "Posted"
+  },
+  "actions": {
+    "approve": "Approve",
+    "reject": "Reject",
+    "print": "Print",
+    "export": "Export",
+    "duplicate": "Duplicate",
+    "void": "Void",
+    "post": "Post",
+    "unpost": "Unpost"
+  },
+  "messages": {
+    "created": "Voucher created successfully",
+    "updated": "Voucher updated successfully",
+    "deleted": "Voucher deleted successfully",
+    "approved": "Voucher approved successfully",
+    "rejected": "Voucher rejected",
+    "printed": "Voucher printed",
+    "exported": "Voucher exported",
+    "posted": "Voucher posted",
+    "voided": "Voucher voided",
+    "duplicated": "Voucher duplicated"
+  },
+  "errors": {
+    "notFound": "Voucher not found",
+    "alreadyApproved": "Voucher is already approved",
+    "alreadyPosted": "Voucher is already posted",
+    "cannotEdit": "Cannot edit approved voucher",
+    "cannotDelete": "Cannot delete approved voucher",
+    "insufficientBalance": "Insufficient balance",
+    "invalidAmount": "Invalid amount",
+    "invalidDate": "Invalid date"
+  },
+  "filters": {
+    "all": "All",
+    "today": "Today",
+    "thisWeek": "This Week",
+    "thisMonth": "This Month",
+    "thisYear": "This Year",
+    "custom": "Custom",
+    "dateFrom": "From Date",
+    "dateTo": "To Date",
+    "amountFrom": "From Amount",
+    "amountTo": "To Amount"
+  },
+  "print": {
+    "title": "{{type}} Voucher",
+    "number": "Voucher Number",
+    "date": "Date",
+    "amount": "Amount",
+    "amountInWords": "Amount in Words",
+    "receivedFrom": "Received From",
+    "paidTo": "Paid To",
+    "purpose": "Purpose",
+    "signature": "Signature",
+    "stamp": "Stamp",
+    "preparedBy": "Prepared By",
+    "approvedBy": "Approved By",
+    "receivedBy": "Received By"
+  },
+  "summary": {
+    "totalReceipts": "Total Receipts",
+    "totalPayments": "Total Payments",
+    "netAmount": "Net Amount",
+    "count": "Voucher Count",
+    "pending": "Pending",
+    "approved": "Approved"
+  }
+}
