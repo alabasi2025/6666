@@ -24,6 +24,9 @@ async function getDb() {
  * تشفير كلمة المرور باستخدام bcrypt
  */
 export async function hashPassword(password: string): Promise<string> {
+  if (!password || password.length === 0) {
+    throw new Error("Password cannot be empty");
+  }
   return bcrypt.hash(password, SALT_ROUNDS);
 }
 
@@ -31,6 +34,9 @@ export async function hashPassword(password: string): Promise<string> {
  * التحقق من كلمة المرور
  */
 export async function verifyPassword(password: string, hashedPassword: string): Promise<boolean> {
+  if (!password || !hashedPassword) {
+    return false;
+  }
   return bcrypt.compare(password, hashedPassword);
 }
 
@@ -130,6 +136,11 @@ export async function loginUser(phone: string, password: string): Promise<{
       return { success: false, error: "كلمة المرور غير معينة لهذا الحساب" };
     }
 
+    // التحقق من أن كلمة المرور المدخلة غير فارغة
+    if (!password || password.length === 0) {
+      return { success: false, error: "كلمة المرور مطلوبة" };
+    }
+
     const isValidPassword = await verifyPassword(password, user.password);
     if (!isValidPassword) {
       return { success: false, error: "كلمة المرور غير صحيحة" };
@@ -150,8 +161,13 @@ export async function loginUser(phone: string, password: string): Promise<{
       },
     };
   } catch (error: any) {
-    logger.error("[Auth] Login error", { error: error.message || error });
-    return { success: false, error: error.message || "حدث خطأ أثناء تسجيل الدخول" };
+    logger.error("[Auth] Login error", { error: error.message || error, phone });
+    // إذا كان الخطأ بسبب فشل الاستعلام، نعيد رسالة خاصة
+    const errorMessage = error.message || String(error);
+    if (errorMessage.includes("Failed query") || errorMessage.includes("database") || errorMessage.includes("Database")) {
+      return { success: false, error: "خطأ في الاتصال بقاعدة البيانات" };
+    }
+    return { success: false, error: errorMessage || "حدث خطأ أثناء تسجيل الدخول" };
   }
 }
 
@@ -250,7 +266,7 @@ export async function ensureDefaultAdmin(): Promise<void> {
     if (adminUsers.length === 0) {
       // استخدام متغيرات البيئة بدلاً من القيم الثابتة
       const adminPhone = process.env.DEFAULT_ADMIN_PHONE || "0500000000";
-      const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "admin123";
+      const adminPassword = process.env.DEFAULT_ADMIN_PASSWORD || "123456";
       const adminName = process.env.DEFAULT_ADMIN_NAME || "مدير النظام";
       
       logger.info("[Auth] No admin users found, creating default admin...");

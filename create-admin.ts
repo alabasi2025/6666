@@ -32,7 +32,7 @@ async function main() {
 
     // Create admin user
     logger.info("Creating admin user...");
-    const hashedPassword = await bcrypt.hash("admin123", SALT_ROUNDS);
+    const hashedPassword = await bcrypt.hash("123456", SALT_ROUNDS);
     const openId = `local_0500000000_${Date.now()}`;
 
     await db.insert(users).values({
@@ -46,7 +46,7 @@ async function main() {
     });
 
     logger.info("Admin user created successfully!");
-    logger.info("Admin credentials", { phone: "0500000000", password: "admin123" });
+    logger.info("Admin credentials", { phone: "0500000000", password: "123456" });
   } catch (error) {
     logger.error("Error", { error: error instanceof Error ? error.message : error });
     process.exit(1);

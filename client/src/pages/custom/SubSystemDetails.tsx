@@ -4,7 +4,6 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowRight,
   Wallet,
@@ -647,33 +646,79 @@ export default function SubSystemDetails() {
         </Card>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="bg-slate-900/50 border border-slate-800">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-primary">
-            <Wallet className="ml-2 h-4 w-4" />
-            نظرة عامة
-          </TabsTrigger>
-          <TabsTrigger value="treasuries" className="data-[state=active]:bg-primary">
-            <Building2 className="ml-2 h-4 w-4" />
-            الخزائن
-          </TabsTrigger>
-          <TabsTrigger value="vouchers" className="data-[state=active]:bg-primary">
-            <Receipt className="ml-2 h-4 w-4" />
-            السندات
-          </TabsTrigger>
-          <TabsTrigger value="transfers" className="data-[state=active]:bg-primary">
-            <ArrowLeftRight className="ml-2 h-4 w-4" />
-            التحويلات
-          </TabsTrigger>
-          <TabsTrigger value="reconciliation" className="data-[state=active]:bg-primary">
-            <FileCheck className="ml-2 h-4 w-4" />
-            المطابقة
-          </TabsTrigger>
-        </TabsList>
+      {/* Sidebar Navigation with Content */}
+      <div className="flex gap-6">
+        {/* Sidebar Navigation */}
+        <aside className="w-64 flex-shrink-0">
+          <nav className="bg-slate-900/50 border border-slate-800 rounded-lg p-2 space-y-1">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
+                activeTab === "overview"
+                  ? "bg-primary text-white"
+                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
+              )}
+            >
+              <Wallet className="h-5 w-5" />
+              <span className="font-medium">نظرة عامة</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("treasuries")}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
+                activeTab === "treasuries"
+                  ? "bg-primary text-white"
+                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
+              )}
+            >
+              <Building2 className="h-5 w-5" />
+              <span className="font-medium">الخزائن</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("vouchers")}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
+                activeTab === "vouchers"
+                  ? "bg-primary text-white"
+                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
+              )}
+            >
+              <Receipt className="h-5 w-5" />
+              <span className="font-medium">السندات</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("transfers")}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
+                activeTab === "transfers"
+                  ? "bg-primary text-white"
+                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
+              )}
+            >
+              <ArrowLeftRight className="h-5 w-5" />
+              <span className="font-medium">التحويلات</span>
+            </button>
+            <button
+              onClick={() => setActiveTab("reconciliation")}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
+                activeTab === "reconciliation"
+                  ? "bg-primary text-white"
+                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
+              )}
+            >
+              <FileCheck className="h-5 w-5" />
+              <span className="font-medium">المطابقة</span>
+            </button>
+          </nav>
+        </aside>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-4">
+        {/* Main Content */}
+        <div className="flex-1 min-w-0">
+          {/* Overview Tab */}
+          {activeTab === "overview" && (
+            <div className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Recent Receipts */}
             <Card className="bg-slate-900/50 border-slate-800">
@@ -755,20 +800,23 @@ export default function SubSystemDetails() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+            </div>
+          )}
 
-        {/* Treasuries Tab */}
-        <TabsContent value="treasuries" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">الخزائن</h2>
-            <Dialog open={isAddTreasuryOpen} onOpenChange={setIsAddTreasuryOpen}>
-              <DialogTrigger asChild>
-                <Button>
+          {/* Treasuries Tab */}
+          {activeTab === "treasuries" && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-white">الخزائن</h2>
+                <Button onClick={() => setIsAddTreasuryOpen(true)}>
                   <Plus className="ml-2 h-4 w-4" />
                   إضافة خزينة
                 </Button>
-              </DialogTrigger>
-              <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
+              </div>
+
+              {/* Add Treasury Dialog */}
+              <Dialog open={isAddTreasuryOpen} onOpenChange={setIsAddTreasuryOpen}>
+                <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>إضافة خزينة جديدة</DialogTitle>
                   <DialogDescription>أضف خزينة جديدة لهذا النظام الفرعي</DialogDescription>
@@ -920,43 +968,44 @@ export default function SubSystemDetails() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
 
-          {treasuriesLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            {treasuriesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              </div>
+            ) : treasuries && treasuries.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {treasuries.map((treasury: any) => (
+                  <TreasuryCard
+                    key={treasury.id}
+                    treasury={treasury}
+                    onEdit={() => {}}
+                    onDelete={handleDeleteTreasury}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Wallet className="h-12 w-12 text-slate-600 mb-4" />
+                  <p className="text-slate-400 text-lg mb-2">لا توجد خزائن</p>
+                  <p className="text-slate-500 text-sm mb-4">أضف خزينة جديدة للبدء</p>
+                  <Button onClick={() => setIsAddTreasuryOpen(true)}>
+                    <Plus className="ml-2 h-4 w-4" />
+                    إضافة خزينة
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
             </div>
-          ) : treasuries && treasuries.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {treasuries.map((treasury: any) => (
-                <TreasuryCard
-                  key={treasury.id}
-                  treasury={treasury}
-                  onEdit={() => {}}
-                  onDelete={handleDeleteTreasury}
-                />
-              ))}
-            </div>
-          ) : (
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardContent className="flex flex-col items-center justify-center py-12">
-                <Wallet className="h-12 w-12 text-slate-600 mb-4" />
-                <p className="text-slate-400 text-lg mb-2">لا توجد خزائن</p>
-                <p className="text-slate-500 text-sm mb-4">أضف خزينة جديدة للبدء</p>
-                <Button onClick={() => setIsAddTreasuryOpen(true)}>
-                  <Plus className="ml-2 h-4 w-4" />
-                  إضافة خزينة
-                </Button>
-              </CardContent>
-            </Card>
           )}
-        </TabsContent>
 
-        {/* Vouchers Tab */}
-        <TabsContent value="vouchers" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-bold text-white">السندات</h2>
-            <div className="flex gap-2">
+          {/* Vouchers Tab */}
+          {activeTab === "vouchers" && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-bold text-white">السندات</h2>
+                <div className="flex gap-2">
               <Button
                 variant="outline"
                 className="border-green-500/50 text-green-500 hover:bg-green-500/10"
@@ -979,10 +1028,10 @@ export default function SubSystemDetails() {
                 <Plus className="ml-2 h-4 w-4" />
                 سند صرف
               </Button>
-            </div>
-          </div>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Receipt Vouchers */}
             <Card className="bg-slate-900/50 border-slate-800">
               <CardHeader>
@@ -1190,12 +1239,14 @@ export default function SubSystemDetails() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
-        </TabsContent>
+            </div>
+          )}
 
-        {/* Transfers Tab */}
-        <TabsContent value="transfers" className="space-y-4">
-          {/* Transfer Actions */}
-          <div className="flex justify-between items-center">
+          {/* Transfers Tab */}
+          {activeTab === "transfers" && (
+            <div className="space-y-4">
+              {/* Transfer Actions */}
+              <div className="flex justify-between items-center">
             <div>
               <h3 className="text-lg font-semibold text-white">التحويلات بين الأنظمة</h3>
               <p className="text-sm text-slate-400">إدارة التحويلات المالية بين هذا النظام والأنظمة الفرعية الأخرى</p>
@@ -1415,12 +1466,14 @@ export default function SubSystemDetails() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
+            </div>
+          )}
 
-        {/* Reconciliation Tab */}
-        <TabsContent value="reconciliation" className="space-y-4">
-          {/* بطاقة المطابقة التلقائية */}
-          <Card className="bg-gradient-to-br from-purple-900/30 to-slate-900/50 border-purple-500/30">
+          {/* Reconciliation Tab */}
+          {activeTab === "reconciliation" && (
+            <div className="space-y-4">
+              {/* بطاقة المطابقة التلقائية */}
+              <Card className="bg-gradient-to-br from-purple-900/30 to-slate-900/50 border-purple-500/30">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -1471,10 +1524,10 @@ export default function SubSystemDetails() {
                 </div>
               </div>
             </CardContent>
-          </Card>
+              </Card>
 
-          {/* التحويلات بانتظار المطابقة */}
-          <Card className="bg-slate-900/50 border-slate-800">
+              {/* التحويلات بانتظار المطابقة */}
+              <Card className="bg-slate-900/50 border-slate-800">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-yellow-500/20 flex items-center justify-center">
@@ -1566,10 +1619,10 @@ export default function SubSystemDetails() {
                 </div>
               )}
             </CardContent>
-          </Card>
+              </Card>
 
-          {/* المطابقات المقترحة */}
-          <Card className="bg-slate-900/50 border-slate-800">
+              {/* المطابقات المقترحة */}
+              <Card className="bg-slate-900/50 border-slate-800">
             <CardHeader>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
@@ -1657,9 +1710,9 @@ export default function SubSystemDetails() {
             </CardContent>
           </Card>
 
-          {/* المطابقات المؤكدة */}
-          {reconciliations?.filter(r => r.status === "confirmed").length > 0 && (
-            <Card className="bg-slate-900/50 border-slate-800">
+              {/* المطابقات المؤكدة */}
+              {reconciliations?.filter(r => r.status === "confirmed").length > 0 && (
+                <Card className="bg-slate-900/50 border-slate-800">
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
@@ -1692,11 +1745,13 @@ export default function SubSystemDetails() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+              )}
+            </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
     </div>
   );
 }
