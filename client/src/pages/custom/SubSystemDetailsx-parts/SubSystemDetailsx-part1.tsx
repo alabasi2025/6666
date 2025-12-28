@@ -233,7 +233,7 @@ function VoucherRow({ voucher, type, onView }: any) {
 
 // Main Component
 export default function SubSystemDetails() {
-  const [, params] = useRoute("/custom/sub-systems/:id");
+  const [, params] = useRoute("/custom-system/sub-systems/:id");
   const id = (params as any)?.id;
   const [, setLocation] = useLocation();
   const [activeTab, setActiveTab] = useState("overview");

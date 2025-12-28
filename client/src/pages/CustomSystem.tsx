@@ -51,7 +51,7 @@ const customNavigationItems = [
     id: "custom-dashboard",
     title: "الرئيسية",
     icon: LayoutDashboard,
-    path: "/custom",
+    path: "/custom-system",
     color: "from-amber-500 to-orange-500",
     bgColor: "bg-amber-500/10",
     textColor: "text-amber-400",
@@ -61,7 +61,7 @@ const customNavigationItems = [
     id: "custom-sub-systems",
     title: "الأنظمة الفرعية",
     icon: FolderKanban,
-    path: "/custom/sub-systems",
+    path: "/custom-system/sub-systems",
     color: "from-violet-500 to-purple-500",
     bgColor: "bg-violet-500/10",
     textColor: "text-violet-400",
@@ -71,7 +71,7 @@ const customNavigationItems = [
     id: "custom-treasuries",
     title: "الخزائن",
     icon: Building2,
-    path: "/custom/treasuries",
+    path: "/custom-system/treasuries",
     color: "from-emerald-500 to-green-500",
     bgColor: "bg-emerald-500/10",
     textColor: "text-emerald-400",
@@ -81,7 +81,7 @@ const customNavigationItems = [
     id: "custom-vouchers",
     title: "السندات",
     icon: Receipt,
-    path: "/custom/vouchers",
+    path: "/custom-system/vouchers",
     color: "from-blue-500 to-cyan-500",
     bgColor: "bg-blue-500/10",
     textColor: "text-blue-400",
@@ -91,7 +91,7 @@ const customNavigationItems = [
     id: "custom-reconciliation",
     title: "التسويات",
     icon: GitBranch,
-    path: "/custom/reconciliation",
+    path: "/custom-system/reconciliation",
     color: "from-pink-500 to-rose-500",
     bgColor: "bg-pink-500/10",
     textColor: "text-pink-400",
@@ -101,7 +101,7 @@ const customNavigationItems = [
     id: "custom-accounts",
     title: "الحسابات",
     icon: Landmark,
-    path: "/custom/accounts",
+    path: "/custom-system/accounts",
     color: "from-teal-500 to-cyan-500",
     bgColor: "bg-teal-500/10",
     textColor: "text-teal-400",
@@ -111,7 +111,7 @@ const customNavigationItems = [
     id: "custom-notes",
     title: "الملاحظات",
     icon: FileText,
-    path: "/custom/notes",
+    path: "/custom-system/notes",
     color: "from-yellow-500 to-amber-500",
     bgColor: "bg-yellow-500/10",
     textColor: "text-yellow-400",
@@ -121,7 +121,7 @@ const customNavigationItems = [
     id: "custom-memos",
     title: "المذكرات",
     icon: Mail,
-    path: "/custom/memos",
+    path: "/custom-system/memos",
     color: "from-red-500 to-orange-500",
     bgColor: "bg-red-500/10",
     textColor: "text-red-400",
@@ -132,7 +132,7 @@ const customNavigationItems = [
     id: "custom-v2-operations",
     title: "شاشة العمليات",
     icon: Activity,
-    path: "/custom/v2/operations",
+    path: "/custom-system/v2/operations",
     color: "from-indigo-500 to-blue-500",
     bgColor: "bg-indigo-500/10",
     textColor: "text-indigo-400",
@@ -142,7 +142,7 @@ const customNavigationItems = [
     id: "custom-v2-journal-entries",
     title: "القيود اليومية",
     icon: FileText,
-    path: "/custom/v2/journal-entries",
+    path: "/custom-system/v2/journal-entries",
     color: "from-cyan-500 to-teal-500",
     bgColor: "bg-cyan-500/10",
     textColor: "text-cyan-400",
@@ -152,7 +152,7 @@ const customNavigationItems = [
     id: "custom-v2-accounts",
     title: "الحسابات v2",
     icon: Landmark,
-    path: "/custom/v2/accounts",
+    path: "/custom-system/v2/accounts",
     color: "from-emerald-500 to-green-500",
     bgColor: "bg-emerald-500/10",
     textColor: "text-emerald-400",
@@ -162,7 +162,7 @@ const customNavigationItems = [
     id: "custom-v2-currencies",
     title: "العملات",
     icon: Wallet,
-    path: "/custom/v2/currencies",
+    path: "/custom-system/v2/currencies",
     color: "from-yellow-500 to-amber-500",
     bgColor: "bg-yellow-500/10",
     textColor: "text-yellow-400",
@@ -172,7 +172,7 @@ const customNavigationItems = [
     id: "custom-v2-exchange-rates",
     title: "أسعار الصرف",
     icon: Calculator,
-    path: "/custom/v2/exchange-rates",
+    path: "/custom-system/v2/exchange-rates",
     color: "from-purple-500 to-pink-500",
     bgColor: "bg-purple-500/10",
     textColor: "text-purple-400",
@@ -191,23 +191,23 @@ export default function CustomSystem() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   
   // Route matching
-  const [matchCustom] = useRoute("/custom");
-  const [matchSubSystems] = useRoute("/custom/sub-systems");
-  const [matchTreasuries] = useRoute("/custom/treasuries");
-  const [matchVouchers] = useRoute("/custom/vouchers");
-  const [matchReconciliation] = useRoute("/custom/reconciliation");
-  const [matchAccounts] = useRoute("/custom/accounts");
-  const [matchNotes] = useRoute("/custom/notes");
-  const [matchMemos] = useRoute("/custom/memos");
-  const [matchSettings] = useRoute("/custom/settings");
-  const [matchSubSystemDetails] = useRoute("/custom/sub-systems/:id");
+  const [matchCustom] = useRoute("/custom-system");
+  const [matchSubSystems] = useRoute("/custom-system/sub-systems");
+  const [matchTreasuries] = useRoute("/custom-system/treasuries");
+  const [matchVouchers] = useRoute("/custom-system/vouchers");
+  const [matchReconciliation] = useRoute("/custom-system/reconciliation");
+  const [matchAccounts] = useRoute("/custom-system/accounts");
+  const [matchNotes] = useRoute("/custom-system/notes");
+  const [matchMemos] = useRoute("/custom-system/memos");
+  const [matchSettings] = useRoute("/custom-system/settings");
+  const [matchSubSystemDetails] = useRoute("/custom-system/sub-systems/:id");
   
   // Custom System v2.2.0 Routes
-  const [matchV2Operations] = useRoute("/custom/v2/operations");
-  const [matchV2JournalEntries] = useRoute("/custom/v2/journal-entries");
-  const [matchV2Accounts] = useRoute("/custom/v2/accounts");
-  const [matchV2Currencies] = useRoute("/custom/v2/currencies");
-  const [matchV2ExchangeRates] = useRoute("/custom/v2/exchange-rates");
+  const [matchV2Operations] = useRoute("/custom-system/v2/operations");
+  const [matchV2JournalEntries] = useRoute("/custom-system/v2/journal-entries");
+  const [matchV2Accounts] = useRoute("/custom-system/v2/accounts");
+  const [matchV2Currencies] = useRoute("/custom-system/v2/currencies");
+  const [matchV2ExchangeRates] = useRoute("/custom-system/v2/exchange-rates");
 
   // Fetch notifications count from API
   const { data: notesData } = trpc.customSystem.notes.list.useQuery(
@@ -237,7 +237,7 @@ export default function CustomSystem() {
 
   // Get current page title
   const currentItem = customNavigationItems.find(item => 
-    location === item.path || (item.path !== "/custom" && location.startsWith(item.path))
+    location === item.path || (item.path !== "/custom-system" && location.startsWith(item.path))
   );
 
   // Render content based on route
@@ -311,7 +311,7 @@ export default function CustomSystem() {
               <nav className="hidden lg:flex items-center gap-0.5 mr-4">
                 {customNavigationItems.map((item) => {
                   const isActive = location === item.path || 
-                    (item.path !== "/custom" && location.startsWith(item.path));
+                    (item.path !== "/custom-system" && location.startsWith(item.path));
                   
                   // Define color classes based on item id
                   const getColorClasses = () => {
@@ -441,7 +441,7 @@ export default function CustomSystem() {
                 variant="ghost" 
                 size="icon" 
                 className="text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl hidden sm:flex"
-                onClick={() => setLocation("/custom/settings")}
+                onClick={() => setLocation("/custom-system/settings")}
               >
                 <Settings className="h-5 w-5" />
               </Button>
@@ -502,7 +502,7 @@ export default function CustomSystem() {
               <nav className="p-4 grid grid-cols-2 gap-2">
                 {customNavigationItems.map((item) => {
                   const isActive = location === item.path || 
-                    (item.path !== "/custom" && location.startsWith(item.path));
+                    (item.path !== "/custom-system" && location.startsWith(item.path));
                   
                   return (
                     <button

@@ -93,7 +93,7 @@ export default function CustomDashboard() {
       title: "الأنظمة الفرعية",
       description: "إدارة الأنظمة الفرعية المرتبطة",
       icon: FolderKanban,
-      path: "/custom/sub-systems",
+      path: "/custom-system/sub-systems",
       color: "text-cyan-400",
       bgColor: "bg-cyan-500/10",
       borderColor: "border-cyan-500/20",
@@ -102,7 +102,7 @@ export default function CustomDashboard() {
       title: "الخزائن",
       description: "إدارة الخزائن والصناديق",
       icon: Building2,
-      path: "/custom/treasuries",
+      path: "/custom-system/treasuries",
       color: "text-emerald-400",
       bgColor: "bg-emerald-500/10",
       borderColor: "border-emerald-500/20",
@@ -111,7 +111,7 @@ export default function CustomDashboard() {
       title: "السندات",
       description: "سندات القبض والصرف",
       icon: Receipt,
-      path: "/custom/vouchers",
+      path: "/custom-system/vouchers",
       color: "text-orange-400",
       bgColor: "bg-orange-500/10",
       borderColor: "border-orange-500/20",
@@ -120,7 +120,7 @@ export default function CustomDashboard() {
       title: "التسويات",
       description: "الحسابات الوسيطة والتسويات",
       icon: GitBranch,
-      path: "/custom/reconciliation",
+      path: "/custom-system/reconciliation",
       color: "text-indigo-400",
       bgColor: "bg-indigo-500/10",
       borderColor: "border-indigo-500/20",
@@ -129,7 +129,7 @@ export default function CustomDashboard() {
       title: "الحسابات",
       description: "إدارة الحسابات القديمة",
       icon: Landmark,
-      path: "/custom/accounts",
+      path: "/custom-system/accounts",
       color: "text-amber-400",
       bgColor: "bg-amber-500/10",
       borderColor: "border-amber-500/20",
@@ -138,7 +138,7 @@ export default function CustomDashboard() {
       title: "الملاحظات",
       description: "تدوين وإدارة الملاحظات",
       icon: FileText,
-      path: "/custom/notes",
+      path: "/custom-system/notes",
       color: "text-blue-400",
       bgColor: "bg-blue-500/10",
       borderColor: "border-blue-500/20",
@@ -250,7 +250,7 @@ export default function CustomDashboard() {
               variant="ghost" 
               size="sm" 
               className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-              onClick={() => setLocation("/custom/notes")}
+              onClick={() => setLocation("/custom-system/notes")}
             >
               عرض الكل
             </Button>
@@ -264,7 +264,7 @@ export default function CustomDashboard() {
                   variant="outline" 
                   size="sm" 
                   className="mt-4 border-amber-500/30 text-amber-400 hover:bg-amber-500/10"
-                  onClick={() => setLocation("/custom/notes")}
+                  onClick={() => setLocation("/custom-system/notes")}
                 >
                   <Plus className="h-4 w-4 ml-2" />
                   إضافة ملاحظة
@@ -276,7 +276,7 @@ export default function CustomDashboard() {
                   <div 
                     key={note.id} 
                     className="flex items-start gap-3 p-3 rounded-xl bg-zinc-800/50 hover:bg-zinc-800 cursor-pointer transition-colors border border-transparent hover:border-amber-500/20"
-                    onClick={() => setLocation("/custom/notes")}
+                    onClick={() => setLocation("/custom-system/notes")}
                   >
                     <div 
                       className="w-3 h-3 rounded-full mt-1.5 ring-2 ring-offset-2 ring-offset-zinc-900" 
@@ -309,7 +309,7 @@ export default function CustomDashboard() {
               variant="ghost" 
               size="sm" 
               className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-              onClick={() => setLocation("/custom/memos")}
+              onClick={() => setLocation("/custom-system/memos")}
             >
               عرض الكل
             </Button>
@@ -327,7 +327,7 @@ export default function CustomDashboard() {
                   <div 
                     key={memo.id} 
                     className="flex items-start gap-3 p-3 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 cursor-pointer transition-colors"
-                    onClick={() => setLocation("/custom/memos")}
+                    onClick={() => setLocation("/custom-system/memos")}
                   >
                     <div className="w-8 h-8 rounded-lg bg-red-500/20 flex items-center justify-center">
                       <Mail className="h-4 w-4 text-red-400" />

@@ -119,7 +119,7 @@
     return (
       <div className="p-6 text-center">
         <p className="text-slate-400">النظام الفرعي غير موجود</p>
-        <Button onClick={() => setLocation("/custom/sub-systems")} className="mt-4">
+        <Button onClick={() => setLocation("/custom-system/sub-systems")} className="mt-4">
           <ArrowRight className="ml-2 h-4 w-4" />
           العودة للأنظمة الفرعية
         </Button>
@@ -132,7 +132,7 @@
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setLocation("/custom/sub-systems")}>
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/custom-system/sub-systems")}>
             <ArrowRight className="h-5 w-5" />
           </Button>
           <div>

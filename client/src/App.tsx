@@ -25,9 +25,9 @@ function Router() {
       <Route path="/dashboard/:a/:b/:c/:d" component={Dashboard} />
       <Route path="/dashboard/:a/:b/:c/:d/:e" component={Dashboard} />
       {/* Custom System - نظام مستقل */}
-      <Route path="/custom" component={CustomSystem} />
-      <Route path="/custom/:page" component={CustomSystem} />
-      <Route path="/custom/:page/:action" component={CustomSystem} />
+      <Route path="/custom-system" component={CustomSystem} />
+      <Route path="/custom-system/:page" component={CustomSystem} />
+      <Route path="/custom-system/:page/:action" component={CustomSystem} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
