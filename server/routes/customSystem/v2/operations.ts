@@ -4,7 +4,7 @@
  */
 
 import { Router } from "express";
-import { db } from "../../../db";
+import { getDb } from "../../../db";
 import {
   customJournalEntries,
   customJournalEntryLines,
@@ -27,8 +27,13 @@ const router = Router();
  */
 router.post("/receipt", async (req, res) => {
   try {
-    const businessId = req.user?.businessId;
-    const userId = req.user?.id;
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
+    }
+    
+    const businessId = (req as any).user?.businessId;
+    const userId = (req as any).user?.id;
 
     if (!businessId) {
       return res.status(400).json({ error: "معرف النشاط التجاري مطلوب" });
@@ -170,18 +175,17 @@ router.post("/receipt", async (req, res) => {
     const receipt: InsertCustomReceipt = {
       businessId,
       subSystemId: subSystemId || null,
-      receiptNumber,
-      receiptDate,
-      fromAccountId,
-      toAccountId,
+      voucherNumber: receiptNumber, // استخدام voucherNumber بدلاً من receiptNumber
+      voucherDate: receiptDate, // استخدام voucherDate بدلاً من receiptDate
       amount: String(amount),
       currencyId,
       exchangeRate: String(rate),
       amountInBaseCurrency: String(amountInBase),
       journalEntryId,
+      sourceIntermediaryId: fromAccountId, // استخدام sourceIntermediaryId بدلاً من fromAccountId
+      treasuryId: toAccountId, // استخدام treasuryId بدلاً من toAccountId
       description: description || null,
-      notes: notes || null,
-      attachments: attachments || null,
+      attachments: attachments || notes || null, // استخدام attachments بدلاً من notes
       status: "approved",
       createdBy: userId,
     };
@@ -214,8 +218,13 @@ router.post("/receipt", async (req, res) => {
  */
 router.post("/payment", async (req, res) => {
   try {
-    const businessId = req.user?.businessId;
-    const userId = req.user?.id;
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
+    }
+    
+    const businessId = (req as any).user?.businessId;
+    const userId = (req as any).user?.id;
 
     if (!businessId) {
       return res.status(400).json({ error: "معرف النشاط التجاري مطلوب" });
@@ -357,18 +366,17 @@ router.post("/payment", async (req, res) => {
     const payment: InsertCustomPayment = {
       businessId,
       subSystemId: subSystemId || null,
-      paymentNumber,
-      paymentDate,
-      fromAccountId,
-      toAccountId,
+      voucherNumber: paymentNumber, // استخدام voucherNumber بدلاً من paymentNumber
+      voucherDate: paymentDate, // استخدام voucherDate بدلاً من paymentDate
       amount: String(amount),
       currencyId,
       exchangeRate: String(rate),
       amountInBaseCurrency: String(amountInBase),
       journalEntryId,
+      treasuryId: fromAccountId, // استخدام treasuryId بدلاً من fromAccountId
+      destinationIntermediaryId: toAccountId, // استخدام destinationIntermediaryId بدلاً من toAccountId
       description: description || null,
-      notes: notes || null,
-      attachments: attachments || null,
+      attachments: attachments || notes || null, // استخدام attachments بدلاً من notes
       status: "approved",
       createdBy: userId,
     };
@@ -401,8 +409,13 @@ router.post("/payment", async (req, res) => {
  */
 router.post("/transfer", async (req, res) => {
   try {
-    const businessId = req.user?.businessId;
-    const userId = req.user?.id;
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
+    }
+    
+    const businessId = (req as any).user?.businessId;
+    const userId = (req as any).user?.id;
 
     if (!businessId) {
       return res.status(400).json({ error: "معرف النشاط التجاري مطلوب" });
@@ -565,7 +578,12 @@ router.post("/transfer", async (req, res) => {
  */
 router.get("/recent", async (req, res) => {
   try {
-    const businessId = req.user?.businessId;
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "قاعدة البيانات غير متاحة" });
+    }
+    
+    const businessId = (req as any).user?.businessId;
     if (!businessId) {
       return res.status(400).json({ error: "معرف النشاط التجاري مطلوب" });
     }

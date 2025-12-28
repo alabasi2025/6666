@@ -12,6 +12,8 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getHealthStatus, getLivenessStatus, getReadinessStatus, getMetrics } from "../utils/health";
 import { logger } from '../utils/logger';
+import customSystemV2Router from "../routes/customSystem/v2";
+import { authenticateRequest } from "../middleware/auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -23,7 +25,7 @@ function isPortAvailable(port: number): Promise<boolean> {
   });
 }
 
-async function findAvailablePort(startPort: number = 3000): Promise<number> {
+async function findAvailablePort(startPort: number = 8000): Promise<number> {
   for (let port = startPort; port < startPort + 20; port++) {
     if (await isPortAvailable(port)) {
       return port;
@@ -112,6 +114,10 @@ async function startServer() {
   
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+  
+  // Custom System v2.2.0 API Routes
+  app.use("/api/custom-system/v2", authenticateRequest, apiLimiter, customSystemV2Router);
+  
   // tRPC API
   app.use(
     "/api/trpc",
@@ -122,12 +128,14 @@ async function startServer() {
   );
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
+    logger.info("Setting up Vite development server...");
     await setupVite(app, server);
+    logger.info("Vite server setup complete");
   } else {
     serveStatic(app);
   }
 
-  const preferredPort = parseInt(process.env.PORT || "3000");
+  const preferredPort = parseInt(process.env.PORT || "8000");
   const port = await findAvailablePort(preferredPort);
 
   if (port !== preferredPort) {

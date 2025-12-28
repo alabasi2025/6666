@@ -36,6 +36,15 @@ import CustomVouchers from "./custom/CustomVouchers";
 import CustomReconciliation from "./custom/CustomReconciliation";
 import SubSystemDetails from "./custom/SubSystemDetails";
 
+// Custom System v2.2.0 Pages
+import {
+  OperationsPage,
+  JournalEntriesPage,
+  AccountsPage as AccountsPageV2,
+  CurrenciesPage,
+  ExchangeRatesPage,
+} from "./CustomSystem/v2";
+
 // Navigation Items for Custom System - Horizontal Layout with Colors
 const customNavigationItems = [
   {
@@ -118,6 +127,57 @@ const customNavigationItems = [
     textColor: "text-red-400",
     description: "المذكرات والتنبيهات",
   },
+  // Custom System v2.2.0 Pages
+  {
+    id: "custom-v2-operations",
+    title: "شاشة العمليات",
+    icon: Activity,
+    path: "/custom/v2/operations",
+    color: "from-indigo-500 to-blue-500",
+    bgColor: "bg-indigo-500/10",
+    textColor: "text-indigo-400",
+    description: "سندات القبض والصرف والتحويلات",
+  },
+  {
+    id: "custom-v2-journal-entries",
+    title: "القيود اليومية",
+    icon: FileText,
+    path: "/custom/v2/journal-entries",
+    color: "from-cyan-500 to-teal-500",
+    bgColor: "bg-cyan-500/10",
+    textColor: "text-cyan-400",
+    description: "إدارة القيود اليومية",
+  },
+  {
+    id: "custom-v2-accounts",
+    title: "الحسابات v2",
+    icon: Landmark,
+    path: "/custom/v2/accounts",
+    color: "from-emerald-500 to-green-500",
+    bgColor: "bg-emerald-500/10",
+    textColor: "text-emerald-400",
+    description: "إدارة الحسابات المحاسبية",
+  },
+  {
+    id: "custom-v2-currencies",
+    title: "العملات",
+    icon: Wallet,
+    path: "/custom/v2/currencies",
+    color: "from-yellow-500 to-amber-500",
+    bgColor: "bg-yellow-500/10",
+    textColor: "text-yellow-400",
+    description: "إدارة العملات",
+  },
+  {
+    id: "custom-v2-exchange-rates",
+    title: "أسعار الصرف",
+    icon: Calculator,
+    path: "/custom/v2/exchange-rates",
+    color: "from-purple-500 to-pink-500",
+    bgColor: "bg-purple-500/10",
+    textColor: "text-purple-400",
+    description: "إدارة أسعار الصرف",
+  },
 ];
 
 // Main Custom System Component with New Design
@@ -141,6 +201,13 @@ export default function CustomSystem() {
   const [matchMemos] = useRoute("/custom/memos");
   const [matchSettings] = useRoute("/custom/settings");
   const [matchSubSystemDetails] = useRoute("/custom/sub-systems/:id");
+  
+  // Custom System v2.2.0 Routes
+  const [matchV2Operations] = useRoute("/custom/v2/operations");
+  const [matchV2JournalEntries] = useRoute("/custom/v2/journal-entries");
+  const [matchV2Accounts] = useRoute("/custom/v2/accounts");
+  const [matchV2Currencies] = useRoute("/custom/v2/currencies");
+  const [matchV2ExchangeRates] = useRoute("/custom/v2/exchange-rates");
 
   // Fetch notifications count from API
   const { data: notesData } = trpc.customSystem.notes.list.useQuery(
@@ -175,6 +242,14 @@ export default function CustomSystem() {
 
   // Render content based on route
   const renderContent = () => {
+    // Custom System v2.2.0 Routes
+    if (matchV2Operations) return <OperationsPage />;
+    if (matchV2JournalEntries) return <JournalEntriesPage />;
+    if (matchV2Accounts) return <AccountsPageV2 />;
+    if (matchV2Currencies) return <CurrenciesPage />;
+    if (matchV2ExchangeRates) return <ExchangeRatesPage />;
+    
+    // Original Custom System Routes
     if (matchCustom) return <CustomDashboard />;
     if (matchSubSystemDetails) return <SubSystemDetails />;
     if (matchSubSystems) return <CustomSubSystems />;

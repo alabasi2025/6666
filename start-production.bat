@@ -28,7 +28,7 @@ echo.
 echo [3/3] Starting server...
 echo.
 echo ========================================================
-echo   Server running on: http://localhost:3000
+echo   Server running on: http://localhost:8000
 echo   Environment: Production
 echo   Path: D:\6666
 echo ========================================================

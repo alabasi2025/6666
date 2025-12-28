@@ -130,6 +130,16 @@ export async function getDb() {
   return _db;
 }
 
+// Export db instance for synchronous use in routes
+// Initialize it if DATABASE_URL is available
+export const db: ReturnType<typeof drizzle> = process.env.DATABASE_URL 
+  ? drizzle(process.env.DATABASE_URL)
+  : (() => {
+      logger.warn("[Database] DATABASE_URL not available, db instance may not work");
+      // Return a dummy instance that will fail on use
+      return drizzle("mysql://dummy:dummy@localhost:3306/dummy") as any;
+    })();
+
 export async function testDatabaseConnection(): Promise<boolean> {
   if (!process.env.DATABASE_URL) {
     logger.warn("[Database] DATABASE_URL not set, running in DEMO_MODE");
