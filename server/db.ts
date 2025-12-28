@@ -114,11 +114,19 @@ let _connectionTested = false;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      // إضافة charset=utf8mb4 إلى connection string إذا لم يكن موجوداً
+      let dbUrl = process.env.DATABASE_URL;
+      if (!dbUrl.includes('charset=')) {
+        const separator = dbUrl.includes('?') ? '&' : '?';
+        dbUrl = `${dbUrl}${separator}charset=utf8mb4`;
+      }
+      _db = drizzle(dbUrl);
       // Test connection
       if (!_connectionTested) {
         await _db.execute(sql`SELECT 1`);
-        logger.info("[Database] Connected successfully");
+        // ضبط charset بعد الاتصال
+        await _db.execute(sql`SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci`);
+        logger.info("[Database] Connected successfully with UTF-8 encoding");
         _connectionTested = true;
       }
     } catch (error) {
@@ -133,7 +141,15 @@ export async function getDb() {
 // Export db instance for synchronous use in routes
 // Initialize it if DATABASE_URL is available
 export const db: ReturnType<typeof drizzle> = process.env.DATABASE_URL 
-  ? drizzle(process.env.DATABASE_URL)
+  ? (() => {
+      // إضافة charset=utf8mb4 إلى connection string إذا لم يكن موجوداً
+      let dbUrl = process.env.DATABASE_URL;
+      if (!dbUrl.includes('charset=')) {
+        const separator = dbUrl.includes('?') ? '&' : '?';
+        dbUrl = `${dbUrl}${separator}charset=utf8mb4`;
+      }
+      return drizzle(dbUrl);
+    })()
   : (() => {
       logger.warn("[Database] DATABASE_URL not available, db instance may not work");
       // Return a dummy instance that will fail on use

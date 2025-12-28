@@ -155,6 +155,10 @@ class SDKServer {
 
   private getSessionSecret() {
     const secret = ENV.cookieSecret;
+    if (!secret || secret.length === 0) {
+      logger.error("[Auth] JWT_SECRET is not set! Please set JWT_SECRET environment variable.");
+      throw new Error("JWT_SECRET is required for session management");
+    }
     return new TextEncoder().encode(secret);
   }
 
@@ -272,35 +276,46 @@ class SDKServer {
     if (!user) {
       logger.debug("[Auth] User not found by openId", { openId: sessionUserId });
       
-      // إذا كان تسجيل دخول محلي (openId يبدأ بـ local_)
-      if (sessionUserId.startsWith('local_')) {
-        // استخراج رقم الهاتف من openId (local_PHONE_TIMESTAMP)
-        const parts = sessionUserId.split('_');
-        if (parts.length >= 2) {
-          const phone = parts[1];
-          // البحث عن المستخدم برقم الهاتف
-          user = await db.getUserByPhone(phone) as any;
-          if (user) {
-            logger.debug("[Auth] Found user by phone", { phone });
-            // تحديث openId ليتطابق مع الجلسة
-            await db.upsertUser({
-              openId: user.openId,
-              lastSignedIn: signedInAt,
-            });
-            return user as any;
+      // إذا كان تسجيل دخول محلي (openId يبدأ بـ local_) أو تجريبي (demo_)
+      if (sessionUserId.startsWith('local_') || sessionUserId.startsWith('demo_')) {
+        // إذا كان مستخدم تجريبي، أنشئه مباشرة
+        if (sessionUserId.startsWith('demo_')) {
+          await db.upsertUser({
+            openId: sessionUserId,
+            name: session.name || 'مستخدم تجريبي',
+            loginMethod: 'demo',
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(sessionUserId) as any;
+        } else {
+          // استخراج رقم الهاتف من openId (local_PHONE_TIMESTAMP)
+          const parts = sessionUserId.split('_');
+          if (parts.length >= 2) {
+            const phone = parts[1];
+            // البحث عن المستخدم برقم الهاتف
+            user = await db.getUserByPhone(phone) as any;
+            if (user) {
+              logger.debug("[Auth] Found user by phone", { phone });
+              // تحديث openId ليتطابق مع الجلسة
+              await db.upsertUser({
+                openId: user.openId,
+                lastSignedIn: signedInAt,
+              });
+              return user as any;
+            }
           }
+          
+          // إذا لم يتم العثور عليه، أنشئ مستخدم جديد
+          await db.upsertUser({
+            openId: sessionUserId,
+            name: session.name || null,
+            loginMethod: 'local',
+            lastSignedIn: signedInAt,
+          });
+          user = await db.getUserByOpenId(sessionUserId) as any;
         }
-        
-        // إذا لم يتم العثور عليه، أنشئ مستخدم جديد
-        await db.upsertUser({
-          openId: sessionUserId,
-          name: session.name || null,
-          loginMethod: 'local',
-          lastSignedIn: signedInAt,
-        });
-        user = await db.getUserByOpenId(sessionUserId) as any;
-      } else {
-        // تسجيل دخول OAuth - حاول المزامنة من السيرفر
+      } else if (ENV.oAuthServerUrl && ENV.oAuthServerUrl.length > 0) {
+        // تسجيل دخول OAuth - حاول المزامنة من السيرفر فقط إذا كان OAuth server معرّفاً
         try {
           const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
           await db.upsertUser({
@@ -315,6 +330,10 @@ class SDKServer {
           logger.error("[Auth] Failed to sync user from OAuth", { error: error instanceof Error ? error.message : error });
           throw ForbiddenError("Failed to sync user info");
         }
+      } else {
+        // OAuth server غير معرّف - لا يمكن المزامنة
+        logger.warn("[Auth] OAuth server not configured, cannot sync user", { openId: sessionUserId });
+        throw ForbiddenError("OAuth server not configured");
       }
     }
 

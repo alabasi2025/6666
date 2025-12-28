@@ -7,9 +7,9 @@ import { Router } from "express";
 import { db } from "../../../db";
 import {
   customSubSystems,
-  customAccounts,
   type InsertCustomSubSystem,
-} from "../../../../drizzle/schemas/customSystemV2";
+} from "../../../../drizzle/schema";
+import { customAccounts } from "../../../../drizzle/schemas/customSystemV2";
 import { eq, and, desc } from "drizzle-orm";
 
 const router = Router();
@@ -36,7 +36,7 @@ router.get("/", async (req, res) => {
       query = query.where(eq(customSubSystems.isActive, isActive === "true"));
     }
 
-    const subSystems = await query.orderBy(customSubSystems.systemNameAr);
+    const subSystems = await query.orderBy(customSubSystems.nameAr);
 
     res.json(subSystems);
   } catch (error) {
@@ -98,29 +98,32 @@ router.post("/", async (req, res) => {
     }
 
     const {
-      systemNameAr,
-      systemNameEn,
+      nameAr,
+      nameEn,
+      code,
       description,
-      defaultReceiptAccountId,
-      defaultPaymentAccountId,
-      defaultTransferAccountId,
+      color,
+      icon,
       isActive,
     } = req.body;
 
     // التحقق من الحقول المطلوبة
-    if (!systemNameAr) {
+    if (!nameAr) {
       return res.status(400).json({ error: "اسم النظام بالعربية مطلوب" });
+    }
+    if (!code) {
+      return res.status(400).json({ error: "كود النظام مطلوب" });
     }
 
     // إنشاء النظام الفرعي
     const newSubSystem: InsertCustomSubSystem = {
       businessId,
-      systemNameAr,
-      systemNameEn: systemNameEn || null,
+      code,
+      nameAr,
+      nameEn: nameEn || null,
       description: description || null,
-      defaultReceiptAccountId: defaultReceiptAccountId || null,
-      defaultPaymentAccountId: defaultPaymentAccountId || null,
-      defaultTransferAccountId: defaultTransferAccountId || null,
+      color: color || null,
+      icon: icon || null,
       isActive: isActive !== undefined ? isActive : true,
       createdBy: userId,
     };
@@ -176,29 +179,23 @@ router.put("/:id", async (req, res) => {
     }
 
     const {
-      systemNameAr,
-      systemNameEn,
+      nameAr,
+      nameEn,
+      code,
       description,
-      defaultReceiptAccountId,
-      defaultPaymentAccountId,
-      defaultTransferAccountId,
+      color,
+      icon,
       isActive,
     } = req.body;
 
     // تحديث بيانات النظام الفرعي
     const updateData: Partial<InsertCustomSubSystem> = {};
-    if (systemNameAr) updateData.systemNameAr = systemNameAr;
-    if (systemNameEn !== undefined) updateData.systemNameEn = systemNameEn || null;
+    if (nameAr) updateData.nameAr = nameAr;
+    if (nameEn !== undefined) updateData.nameEn = nameEn || null;
+    if (code) updateData.code = code;
     if (description !== undefined) updateData.description = description || null;
-    if (defaultReceiptAccountId !== undefined) {
-      updateData.defaultReceiptAccountId = defaultReceiptAccountId || null;
-    }
-    if (defaultPaymentAccountId !== undefined) {
-      updateData.defaultPaymentAccountId = defaultPaymentAccountId || null;
-    }
-    if (defaultTransferAccountId !== undefined) {
-      updateData.defaultTransferAccountId = defaultTransferAccountId || null;
-    }
+    if (color !== undefined) updateData.color = color || null;
+    if (icon !== undefined) updateData.icon = icon || null;
     if (isActive !== undefined) updateData.isActive = isActive;
 
     await db
@@ -390,18 +387,9 @@ router.post("/:id/set-default-account", async (req, res) => {
       return res.status(404).json({ error: "الحساب غير موجود" });
     }
 
-    // تحديث الحساب الافتراضي
-    const updateData: Partial<InsertCustomSubSystem> = {};
-
-    if (accountType === "receipt") {
-      updateData.defaultReceiptAccountId = accountId;
-    } else if (accountType === "payment") {
-      updateData.defaultPaymentAccountId = accountId;
-    } else if (accountType === "transfer") {
-      updateData.defaultTransferAccountId = accountId;
-    } else {
-      return res.status(400).json({ error: "نوع الحساب غير صحيح" });
-    }
+    // Note: This endpoint is deprecated as customSubSystems doesn't have default account fields
+    // Use customAccounts with subSystemId instead
+    return res.status(400).json({ error: "هذه الميزة غير مدعومة في الإصدار الحالي" });
 
     await db
       .update(customSubSystems)

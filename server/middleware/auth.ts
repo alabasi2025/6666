@@ -40,7 +40,7 @@ export async function authenticateRequest(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // DEMO_MODE فقط إذا كان DATABASE_URL غير موجود أو DEMO_MODE=true صراحة
   const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
   
   let user: User | null = null;
@@ -48,16 +48,16 @@ export async function authenticateRequest(
     user = await sdk.authenticateRequest(req);
   } catch (error) {
     // Authentication is optional for some routes.
-    // في الوضع التجريبي، نستخدم المستخدم التجريبي
-    if (isDevelopment || DEMO_MODE) {
+    // في الوضع التجريبي فقط، نستخدم المستخدم التجريبي
+    if (DEMO_MODE) {
       user = demoUser;
     } else {
       user = null;
     }
   }
   
-  // في الوضع التجريبي، إذا لم يكن هناك مستخدم، نستخدم المستخدم التجريبي
-  if (!user && (isDevelopment || DEMO_MODE)) {
+  // في الوضع التجريبي فقط، إذا لم يكن هناك مستخدم، نستخدم المستخدم التجريبي
+  if (!user && DEMO_MODE) {
     user = demoUser;
   }
   
@@ -66,4 +66,7 @@ export async function authenticateRequest(
   
   next();
 }
+
+
+
 

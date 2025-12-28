@@ -35,7 +35,8 @@ const demoUser: User = {
 export async function createContext(
   opts: CreateExpressContextOptions
 ): Promise<TrpcContext> {
-  const isDevelopment = process.env.NODE_ENV === 'development';
+  // DEMO_MODE فقط إذا كان DATABASE_URL غير موجود أو DEMO_MODE=true صراحة
+  // نفضل قاعدة البيانات الحقيقية حتى في development
   const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
   
   let user: User | null = null;
@@ -43,16 +44,16 @@ export async function createContext(
     user = await sdk.authenticateRequest(opts.req);
   } catch (error) {
     // Authentication is optional for public procedures.
-    // في الوضع التجريبي، نستخدم المستخدم التجريبي
-    if (isDevelopment || DEMO_MODE) {
+    // في الوضع التجريبي فقط، نستخدم المستخدم التجريبي
+    if (DEMO_MODE) {
       user = demoUser;
     } else {
       user = null;
     }
   }
   
-  // في الوضع التجريبي، إذا لم يكن هناك مستخدم، نستخدم المستخدم التجريبي
-  if (!user && (isDevelopment || DEMO_MODE)) {
+  // في الوضع التجريبي فقط، إذا لم يكن هناك مستخدم، نستخدم المستخدم التجريبي
+  if (!user && DEMO_MODE) {
     user = demoUser;
   }
   

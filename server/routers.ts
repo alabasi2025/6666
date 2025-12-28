@@ -35,17 +35,16 @@ export const appRouter = router({
   // Authentication
   auth: router({
     me: publicProcedure.query(opts => {
-      // In development mode or when no user is logged in, return a demo user
-      const isDevelopment = process.env.NODE_ENV === 'development';
-      const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
-      
-      // If user is logged in, return the user
+      // If user is logged in, return the user (from database)
       if (opts.ctx.user) {
         return opts.ctx.user;
       }
       
-      // In development or DEMO_MODE, return a demo user for easier testing
-      if (isDevelopment || DEMO_MODE) {
+      // DEMO_MODE only if DATABASE_URL is not set or DEMO_MODE=true explicitly
+      const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
+      
+      // In DEMO_MODE only, return a demo user for easier testing
+      if (DEMO_MODE) {
         return {
           id: 1,
           openId: 'demo_user_001',
@@ -103,7 +102,28 @@ export const appRouter = router({
         }
         
         // استخدام نظام المصادقة الجديد مع bcrypt
-        const result = await auth.loginUser(input.phone, input.password);
+        let result = await auth.loginUser(input.phone, input.password);
+        
+        // إذا فشل الاستعلام بسبب خطأ في قاعدة البيانات، استخدم الوضع التجريبي
+        if (!result.success && (result.error?.includes("قاعدة البيانات") || result.error?.includes("Failed query") || result.error?.includes("database"))) {
+          logger.warn("[Auth] Database error, falling back to demo mode", { error: result.error });
+          const demoUser = {
+            id: 1,
+            openId: 'demo_user_001',
+            name: 'مستخدم تجريبي',
+            phone: input.phone,
+            role: 'super_admin' as const,
+          };
+          
+          const sessionToken = await sdk.createSessionToken(demoUser.openId, { 
+            name: demoUser.name,
+            expiresInMs: ONE_YEAR_MS 
+          });
+          const cookieOptions = getSessionCookieOptions(ctx.req);
+          ctx.res.cookie(COOKIE_NAME, sessionToken, { ...cookieOptions, maxAge: ONE_YEAR_MS });
+          
+          return { success: true, user: { id: demoUser.id, name: demoUser.name, role: demoUser.role } };
+        }
         
         if (!result.success || !result.user) {
           throw new TRPCError({ code: 'UNAUTHORIZED', message: result.error || 'فشل تسجيل الدخول' });

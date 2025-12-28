@@ -14,6 +14,7 @@ import { getHealthStatus, getLivenessStatus, getReadinessStatus, getMetrics } fr
 import { logger } from '../utils/logger';
 import customSystemV2Router from "../routes/customSystem/v2";
 import { authenticateRequest } from "../middleware/auth";
+import { ensureDefaultAdmin } from "../auth";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -140,6 +141,13 @@ async function startServer() {
 
   if (port !== preferredPort) {
     logger.warn(`Port ${preferredPort} is busy, using port ${port} instead`);
+  }
+
+  // إنشاء مستخدم افتراضي إذا لم يكن موجوداً
+  try {
+    await ensureDefaultAdmin();
+  } catch (error) {
+    logger.warn("Failed to ensure default admin", { error: error instanceof Error ? error.message : error });
   }
 
   const host = process.env.HOST || "0.0.0.0";
