@@ -3495,3 +3495,38 @@ export type CustomPartyTransaction = typeof customPartyTransactions.$inferSelect
 export type InsertCustomPartyTransaction = typeof customPartyTransactions.$inferInsert;
 export type CustomSetting = typeof customSettings.$inferSelect;
 export type InsertCustomSetting = typeof customSettings.$inferInsert;
+
+// ============================================
+// النظام المخصص v2.2.0 - Custom System v2.2.0
+// ============================================
+
+// Re-export الجداول الجديدة من customSystemV2.ts
+export {
+  customCurrencies,
+  customExchangeRates,
+  customAccountSubTypes,
+  customAccountCurrencies,
+  customAccountBalances,
+  customJournalEntries,
+  customJournalEntryLines,
+  customReceipts,
+  customPayments,
+  type CustomCurrency,
+  type InsertCustomCurrency,
+  type CustomExchangeRate,
+  type InsertCustomExchangeRate,
+  type CustomAccountSubType,
+  type InsertCustomAccountSubType,
+  type CustomAccountCurrency,
+  type InsertCustomAccountCurrency,
+  type CustomAccountBalance,
+  type InsertCustomAccountBalance,
+  type CustomJournalEntry,
+  type InsertCustomJournalEntry,
+  type CustomJournalEntryLine,
+  type InsertCustomJournalEntryLine,
+  type CustomReceipt,
+  type InsertCustomReceipt,
+  type CustomPayment,
+  type InsertCustomPayment,
+} from "./schemas/customSystemV2";

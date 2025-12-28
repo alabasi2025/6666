@@ -33,7 +33,7 @@ import {
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
 } from "@mui/icons-material";
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../_core/hooks/useAuth";
 import axios from "axios";
 
 interface Currency {

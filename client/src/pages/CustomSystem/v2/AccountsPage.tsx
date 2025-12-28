@@ -41,7 +41,7 @@ import {
   Refresh as RefreshIcon,
   AccountBalance as AccountIcon,
 } from "@mui/icons-material";
-import { useAuth } from "../../../contexts/AuthContext";
+import { useAuth } from "../../../_core/hooks/useAuth";
 import axios from "axios";
 
 interface Account {

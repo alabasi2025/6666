@@ -348,3 +348,76 @@ export type InsertCustomJournalEntry = typeof customJournalEntries.$inferInsert;
 
 export type CustomJournalEntryLine = typeof customJournalEntryLines.$inferSelect;
 export type InsertCustomJournalEntryLine = typeof customJournalEntryLines.$inferInsert;
+
+// ============================================================================
+// جداول السندات (Receipts & Payments) - استخدام الجداول الموجودة مع الحقول الجديدة
+// ============================================================================
+
+/**
+ * جدول سندات القبض - Receipts
+ * ملاحظة: يستخدم جدول custom_receipt_vouchers الموجود مع الحقول الجديدة المضافة من migration
+ * يتم استخدام aliases في الكود للتوافق مع الأسماء الجديدة
+ */
+export const customReceipts = mysqlTable("custom_receipt_vouchers", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+  subSystemId: int("sub_system_id").notNull(),
+  voucherNumber: varchar("voucher_number", { length: 50 }).notNull(),
+  voucherDate: date("voucher_date").notNull(),
+  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  // الحقول الجديدة من v2.2.0 (تم إضافتها في migration)
+  currencyId: int("currency_id"),
+  exchangeRate: decimal("exchange_rate", { precision: 18, scale: 6 }).default("1.000000"),
+  amountInBaseCurrency: decimal("amount_in_base_currency", { precision: 18, scale: 2 }),
+  journalEntryId: int("journal_entry_id"),
+  // الحقول القديمة (للتوافق)
+  currency: varchar("currency", { length: 10 }).default("SAR"),
+  sourceType: mysqlEnum("source_type", ["person", "entity", "intermediary", "party", "other"]),
+  sourceName: varchar("source_name", { length: 255 }),
+  sourceIntermediaryId: int("source_intermediary_id"),
+  treasuryId: int("treasury_id").notNull(),
+  description: text("description"),
+  attachments: text("attachments"),
+  status: mysqlEnum("status", ["draft", "confirmed", "cancelled", "approved"]).default("draft"),
+  createdBy: int("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+/**
+ * جدول سندات الصرف - Payments
+ * ملاحظة: يستخدم جدول custom_payment_vouchers الموجود مع الحقول الجديدة المضافة من migration
+ */
+export const customPayments = mysqlTable("custom_payment_vouchers", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+  subSystemId: int("sub_system_id").notNull(),
+  voucherNumber: varchar("voucher_number", { length: 50 }).notNull(),
+  voucherDate: date("voucher_date").notNull(),
+  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  // الحقول الجديدة من v2.2.0 (تم إضافتها في migration)
+  currencyId: int("currency_id"),
+  exchangeRate: decimal("exchange_rate", { precision: 18, scale: 6 }).default("1.000000"),
+  amountInBaseCurrency: decimal("amount_in_base_currency", { precision: 18, scale: 2 }),
+  journalEntryId: int("journal_entry_id"),
+  // الحقول القديمة (للتوافق)
+  currency: varchar("currency", { length: 10 }).default("SAR"),
+  treasuryId: int("treasury_id").notNull(),
+  destinationType: mysqlEnum("destination_type", ["person", "entity", "intermediary", "party", "other"]),
+  destinationName: varchar("destination_name", { length: 255 }),
+  destinationIntermediaryId: int("destination_intermediary_id"),
+  description: text("description"),
+  attachments: text("attachments"),
+  status: mysqlEnum("status", ["draft", "confirmed", "cancelled", "approved"]).default("draft"),
+  createdBy: int("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+});
+
+export type CustomReceipt = typeof customReceipts.$inferSelect;
+export type InsertCustomReceipt = typeof customReceipts.$inferInsert;
+export type CustomPayment = typeof customPayments.$inferSelect;
+export type InsertCustomPayment = typeof customPayments.$inferInsert;
+
+// Re-export customAccounts from schema.ts for convenience
+export { customAccounts } from "../schema";

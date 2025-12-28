@@ -175,7 +175,7 @@ CREATE TABLE IF NOT EXISTS `custom_journal_entry_lines` (
 
 -- تعديل جدول customAccounts
 ALTER TABLE `custom_accounts`
-  ADD COLUMN `account_sub_type_id` int AFTER `accountType`,
+  ADD COLUMN `account_sub_type_id` int AFTER `account_type`,
   ADD COLUMN `allow_multiple_currencies` boolean NOT NULL DEFAULT false AFTER `account_sub_type_id`,
   ADD COLUMN `default_currency_id` int AFTER `allow_multiple_currencies`,
   ADD COLUMN `requires_party` boolean NOT NULL DEFAULT false AFTER `default_currency_id`,
@@ -194,23 +194,28 @@ ALTER TABLE `custom_sub_systems`
   ADD COLUMN `fiscal_year_end` date AFTER `fiscal_year_start`,
   ADD INDEX `css_default_currency_idx` (`default_currency_id`);
 
--- تعديل جدول customReceipts
-ALTER TABLE `custom_receipts`
-  ADD COLUMN `currency_id` int NOT NULL AFTER `amount`,
+-- تعديل جدول customReceiptVouchers
+-- ملاحظة: سيتم تجاهل الأخطاء إذا كانت الأعمدة موجودة مسبقاً
+ALTER TABLE `custom_receipt_vouchers`
+  ADD COLUMN `currency_id` int AFTER `amount`,
   ADD COLUMN `exchange_rate` decimal(18,6) NOT NULL DEFAULT 1.000000 AFTER `currency_id`,
   ADD COLUMN `amount_in_base_currency` decimal(18,2) NOT NULL AFTER `exchange_rate`,
-  ADD COLUMN `journal_entry_id` int AFTER `amount_in_base_currency`,
-  DROP COLUMN `currency`,
+  ADD COLUMN `journal_entry_id` int AFTER `amount_in_base_currency`;
+
+-- إضافة indexes
+ALTER TABLE `custom_receipt_vouchers`
   ADD INDEX `cr_currency_idx` (`currency_id`),
   ADD INDEX `cr_journal_entry_idx` (`journal_entry_id`);
 
--- تعديل جدول customPayments
-ALTER TABLE `custom_payments`
-  ADD COLUMN `currency_id` int NOT NULL AFTER `amount`,
+-- تعديل جدول customPaymentVouchers
+ALTER TABLE `custom_payment_vouchers`
+  ADD COLUMN `currency_id` int AFTER `amount`,
   ADD COLUMN `exchange_rate` decimal(18,6) NOT NULL DEFAULT 1.000000 AFTER `currency_id`,
   ADD COLUMN `amount_in_base_currency` decimal(18,2) NOT NULL AFTER `exchange_rate`,
-  ADD COLUMN `journal_entry_id` int AFTER `amount_in_base_currency`,
-  DROP COLUMN `currency`,
+  ADD COLUMN `journal_entry_id` int AFTER `amount_in_base_currency`;
+
+-- إضافة indexes
+ALTER TABLE `custom_payment_vouchers`
   ADD INDEX `cp_currency_idx` (`currency_id`),
   ADD INDEX `cp_journal_entry_idx` (`journal_entry_id`);
 
