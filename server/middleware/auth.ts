@@ -18,7 +18,7 @@ const demoUser: User = {
   password: null,
   avatar: null,
   loginMethod: null,
-  businessId: null,
+  businessId: 1, // تحديث businessId إلى 1
   branchId: null,
   stationId: null,
   departmentId: null,
@@ -42,27 +42,37 @@ export async function authenticateRequest(
 ): Promise<void> {
   // DEMO_MODE فقط إذا كان DATABASE_URL غير موجود أو DEMO_MODE=true صراحة
   const DEMO_MODE = process.env.DEMO_MODE === 'true' || !process.env.DATABASE_URL;
+  // في وضع التطوير، نستخدم demoUser كخيار احتياطي
+  const isDevelopment = process.env.NODE_ENV === 'development';
   
   let user: User | null = null;
-  try {
-    user = await sdk.authenticateRequest(req);
-  } catch (error) {
-    // Authentication is optional for some routes.
-    // في الوضع التجريبي فقط، نستخدم المستخدم التجريبي
-    if (DEMO_MODE) {
-      user = demoUser;
-    } else {
+  
+  // في وضع التطوير أو DEMO_MODE، نستخدم demoUser مباشرة
+  if (DEMO_MODE || isDevelopment) {
+    user = demoUser;
+  } else {
+    // في الإنتاج، نحاول المصادقة العادية
+    try {
+      user = await sdk.authenticateRequest(req);
+    } catch (error) {
+      // Authentication failed, user remains null
       user = null;
     }
   }
   
-  // في الوضع التجريبي فقط، إذا لم يكن هناك مستخدم، نستخدم المستخدم التجريبي
-  if (!user && DEMO_MODE) {
-    user = demoUser;
-  }
-  
   // تعيين المستخدم في req.user
   (req as any).user = user;
+  
+  // Logging للتشخيص (يمكن إزالته لاحقاً)
+  if (process.env.NODE_ENV === 'development' && req.path.includes('/currencies')) {
+    console.log('[Auth Middleware]', {
+      path: req.path,
+      hasUser: !!user,
+      businessId: user?.businessId,
+      isDevelopment,
+      DEMO_MODE
+    });
+  }
   
   next();
 }

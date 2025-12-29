@@ -10,6 +10,7 @@ import {
   customJournalEntryLines,
   customAccountBalances,
   customAccounts,
+  customCurrencies,
   customReceipts,
   customPayments,
   type InsertCustomJournalEntry,
@@ -20,6 +21,54 @@ import {
 import { eq, and, desc } from "drizzle-orm";
 
 const router = Router();
+
+async function resolveValidatedExchangeRate(params: {
+  db: any;
+  businessId: number;
+  currencyId: number;
+  exchangeRate?: unknown;
+}) {
+  const { db, businessId, currencyId, exchangeRate } = params;
+
+  const [currency] = await db
+    .select()
+    .from(customCurrencies)
+    .where(and(eq(customCurrencies.businessId, businessId), eq(customCurrencies.id, currencyId)))
+    .limit(1);
+
+  if (!currency) {
+    return { status: 404 as const, error: "العملة غير موجودة" };
+  }
+
+  // العملة الأساسية: السعر = 1 دائماً
+  if (currency.isBaseCurrency) {
+    return { rate: 1.0 };
+  }
+
+  const fallbackRate = currency.currentRate ?? null;
+  const raw = exchangeRate ?? fallbackRate;
+
+  if (raw === null || raw === undefined || raw === "") {
+    return { status: 400 as const, error: "سعر الصرف مطلوب لهذه العملة" };
+  }
+
+  const rateNum = typeof raw === "number" ? raw : parseFloat(String(raw));
+  if (!Number.isFinite(rateNum) || rateNum <= 0) {
+    return { status: 400 as const, error: "سعر الصرف غير صحيح" };
+  }
+
+  const min = currency.minRate ? parseFloat(String(currency.minRate)) : null;
+  const max = currency.maxRate ? parseFloat(String(currency.maxRate)) : null;
+
+  if (min !== null && rateNum < min) {
+    return { status: 400 as const, error: `سعر الصرف أقل من الحد الأدنى (${currency.minRate})` };
+  }
+  if (max !== null && rateNum > max) {
+    return { status: 400 as const, error: `سعر الصرف أعلى من الحد الأعلى (${currency.maxRate})` };
+  }
+
+  return { rate: rateNum };
+}
 
 /**
  * POST /api/custom-system/v2/operations/receipt
@@ -65,9 +114,25 @@ router.post("/receipt", async (req, res) => {
       return res.status(400).json({ error: "لا يمكن التحويل من وإلى نفس الحساب" });
     }
 
+    const currencyIdNum = parseInt(String(currencyId));
+    if (isNaN(currencyIdNum)) {
+      return res.status(400).json({ error: "معرف العملة غير صحيح" });
+    }
+
+    const resolvedRate = await resolveValidatedExchangeRate({
+      db,
+      businessId,
+      currencyId: currencyIdNum,
+      exchangeRate,
+    });
+
+    if ("error" in resolvedRate) {
+      return res.status(resolvedRate.status).json({ error: resolvedRate.error });
+    }
+
     // حساب المبلغ بالعملة الأساسية
-    const rate = exchangeRate || 1.0;
-    const amountInBase = parseFloat(amount) * parseFloat(String(rate));
+    const rate = resolvedRate.rate;
+    const amountInBase = parseFloat(amount) * rate;
 
     // إنشاء رقم قيد تلقائي
     const entryNumber = `REC-${receiptNumber}`;
@@ -100,7 +165,7 @@ router.post("/receipt", async (req, res) => {
         accountId: toAccountId, // الحساب المستلم (مدين)
         debitAmount: String(amount),
         creditAmount: "0.00",
-        currencyId,
+        currencyId: currencyIdNum,
         exchangeRate: String(rate),
         debitAmountBase: String(amountInBase),
         creditAmountBase: "0.00",
@@ -113,7 +178,7 @@ router.post("/receipt", async (req, res) => {
         accountId: fromAccountId, // الحساب الدافع (دائن)
         debitAmount: "0.00",
         creditAmount: String(amount),
-        currencyId,
+        currencyId: currencyIdNum,
         exchangeRate: String(rate),
         debitAmountBase: "0.00",
         creditAmountBase: String(amountInBase),
@@ -135,7 +200,7 @@ router.post("/receipt", async (req, res) => {
         .where(
           and(
             eq(customAccountBalances.accountId, line.accountId),
-            eq(customAccountBalances.currencyId, currencyId)
+            eq(customAccountBalances.currencyId, currencyIdNum)
           )
         )
         .limit(1);
@@ -161,7 +226,7 @@ router.post("/receipt", async (req, res) => {
         await db.insert(customAccountBalances).values({
           businessId,
           accountId: line.accountId,
-          currencyId,
+          currencyId: currencyIdNum,
           debitBalance: String(debitAmount),
           creditBalance: String(creditAmount),
           currentBalance: String(newCurrentBalance),
@@ -178,7 +243,7 @@ router.post("/receipt", async (req, res) => {
       voucherNumber: receiptNumber, // استخدام voucherNumber بدلاً من receiptNumber
       voucherDate: receiptDate, // استخدام voucherDate بدلاً من receiptDate
       amount: String(amount),
-      currencyId,
+      currencyId: currencyIdNum,
       exchangeRate: String(rate),
       amountInBaseCurrency: String(amountInBase),
       journalEntryId,
@@ -256,9 +321,25 @@ router.post("/payment", async (req, res) => {
       return res.status(400).json({ error: "لا يمكن التحويل من وإلى نفس الحساب" });
     }
 
+    const currencyIdNum = parseInt(String(currencyId));
+    if (isNaN(currencyIdNum)) {
+      return res.status(400).json({ error: "معرف العملة غير صحيح" });
+    }
+
+    const resolvedRate = await resolveValidatedExchangeRate({
+      db,
+      businessId,
+      currencyId: currencyIdNum,
+      exchangeRate,
+    });
+
+    if ("error" in resolvedRate) {
+      return res.status(resolvedRate.status).json({ error: resolvedRate.error });
+    }
+
     // حساب المبلغ بالعملة الأساسية
-    const rate = exchangeRate || 1.0;
-    const amountInBase = parseFloat(amount) * parseFloat(String(rate));
+    const rate = resolvedRate.rate;
+    const amountInBase = parseFloat(amount) * rate;
 
     // إنشاء رقم قيد تلقائي
     const entryNumber = `PAY-${paymentNumber}`;
@@ -291,7 +372,7 @@ router.post("/payment", async (req, res) => {
         accountId: toAccountId, // الحساب المستلم (مدين)
         debitAmount: String(amount),
         creditAmount: "0.00",
-        currencyId,
+        currencyId: currencyIdNum,
         exchangeRate: String(rate),
         debitAmountBase: String(amountInBase),
         creditAmountBase: "0.00",
@@ -304,7 +385,7 @@ router.post("/payment", async (req, res) => {
         accountId: fromAccountId, // الحساب الدافع (دائن)
         debitAmount: "0.00",
         creditAmount: String(amount),
-        currencyId,
+        currencyId: currencyIdNum,
         exchangeRate: String(rate),
         debitAmountBase: "0.00",
         creditAmountBase: String(amountInBase),
@@ -326,7 +407,7 @@ router.post("/payment", async (req, res) => {
         .where(
           and(
             eq(customAccountBalances.accountId, line.accountId),
-            eq(customAccountBalances.currencyId, currencyId)
+            eq(customAccountBalances.currencyId, currencyIdNum)
           )
         )
         .limit(1);
@@ -352,7 +433,7 @@ router.post("/payment", async (req, res) => {
         await db.insert(customAccountBalances).values({
           businessId,
           accountId: line.accountId,
-          currencyId,
+          currencyId: currencyIdNum,
           debitBalance: String(debitAmount),
           creditBalance: String(creditAmount),
           currentBalance: String(newCurrentBalance),
@@ -369,7 +450,7 @@ router.post("/payment", async (req, res) => {
       voucherNumber: paymentNumber, // استخدام voucherNumber بدلاً من paymentNumber
       voucherDate: paymentDate, // استخدام voucherDate بدلاً من paymentDate
       amount: String(amount),
-      currencyId,
+      currencyId: currencyIdNum,
       exchangeRate: String(rate),
       amountInBaseCurrency: String(amountInBase),
       journalEntryId,
@@ -446,9 +527,25 @@ router.post("/transfer", async (req, res) => {
       return res.status(400).json({ error: "لا يمكن التحويل من وإلى نفس الحساب" });
     }
 
+    const currencyIdNum = parseInt(String(currencyId));
+    if (isNaN(currencyIdNum)) {
+      return res.status(400).json({ error: "معرف العملة غير صحيح" });
+    }
+
+    const resolvedRate = await resolveValidatedExchangeRate({
+      db,
+      businessId,
+      currencyId: currencyIdNum,
+      exchangeRate,
+    });
+
+    if ("error" in resolvedRate) {
+      return res.status(resolvedRate.status).json({ error: resolvedRate.error });
+    }
+
     // حساب المبلغ بالعملة الأساسية
-    const rate = exchangeRate || 1.0;
-    const amountInBase = parseFloat(amount) * parseFloat(String(rate));
+    const rate = resolvedRate.rate;
+    const amountInBase = parseFloat(amount) * rate;
 
     // إنشاء رقم قيد تلقائي
     const entryNumber = `TRF-${transferNumber}`;
@@ -481,7 +578,7 @@ router.post("/transfer", async (req, res) => {
         accountId: toAccountId, // الحساب الهدف (مدين)
         debitAmount: String(amount),
         creditAmount: "0.00",
-        currencyId,
+        currencyId: currencyIdNum,
         exchangeRate: String(rate),
         debitAmountBase: String(amountInBase),
         creditAmountBase: "0.00",
@@ -494,7 +591,7 @@ router.post("/transfer", async (req, res) => {
         accountId: fromAccountId, // الحساب المصدر (دائن)
         debitAmount: "0.00",
         creditAmount: String(amount),
-        currencyId,
+        currencyId: currencyIdNum,
         exchangeRate: String(rate),
         debitAmountBase: "0.00",
         creditAmountBase: String(amountInBase),
@@ -516,7 +613,7 @@ router.post("/transfer", async (req, res) => {
         .where(
           and(
             eq(customAccountBalances.accountId, line.accountId),
-            eq(customAccountBalances.currencyId, currencyId)
+            eq(customAccountBalances.currencyId, currencyIdNum)
           )
         )
         .limit(1);
@@ -542,7 +639,7 @@ router.post("/transfer", async (req, res) => {
         await db.insert(customAccountBalances).values({
           businessId,
           accountId: line.accountId,
-          currencyId,
+          currencyId: currencyIdNum,
           debitBalance: String(debitAmount),
           creditBalance: String(creditAmount),
           currentBalance: String(newCurrentBalance),

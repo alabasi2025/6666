@@ -33,7 +33,11 @@ import {
   Link2,
   Unlink,
   Zap,
+  Package,
+  Users,
+  ShoppingCart,
 } from "lucide-react";
+import { AccountsPage as AccountsPageV2 } from "../CustomSystem/v2";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -231,12 +235,28 @@ function VoucherRow({ voucher, type, onView }: any) {
 }
 
 // Main Component
-export default function SubSystemDetails() {
+interface SubSystemDetailsProps {
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+}
+
+export default function SubSystemDetails({ activeTab: externalActiveTab, onTabChange }: SubSystemDetailsProps = {}) {
   const [, params] = useRoute("/custom-system/sub-systems/:id");
   const id = (params as any)?.id;
   const [, setLocation] = useLocation();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [internalActiveTab, setInternalActiveTab] = useState("overview");
+  
+  // Use external activeTab if provided, otherwise use internal state
+  const activeTab = externalActiveTab !== undefined ? externalActiveTab : internalActiveTab;
+  const setActiveTab = (tab: string) => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setInternalActiveTab(tab);
+    }
+  };
   const [isAddTreasuryOpen, setIsAddTreasuryOpen] = useState(false);
+  const [editingTreasury, setEditingTreasury] = useState<any>(null);
   const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
   const [voucherType, setVoucherType] = useState<"receipt" | "payment">("receipt");
   const [isAddTransferOpen, setIsAddTransferOpen] = useState(false);
@@ -252,7 +272,7 @@ export default function SubSystemDetails() {
     iban: "",
     walletProvider: "",
     walletNumber: "",
-    currency: "SAR",
+    currency: "YER",
     openingBalance: "0",
     description: "",
   });
@@ -340,6 +360,19 @@ export default function SubSystemDetails() {
     onSuccess: () => {
       toast.success("تم إنشاء الخزينة بنجاح");
       setIsAddTreasuryOpen(false);
+      resetTreasuryForm();
+      refetchTreasuries();
+    },
+    onError: (error) => {
+      toast.error("حدث خطأ: " + error.message);
+    },
+  });
+
+  const updateTreasuryMutation = trpc.customSystem.treasuries.update.useMutation({
+    onSuccess: () => {
+      toast.success("تم تحديث الخزينة بنجاح");
+      setIsAddTreasuryOpen(false);
+      setEditingTreasury(null);
       resetTreasuryForm();
       refetchTreasuries();
     },
@@ -448,7 +481,7 @@ export default function SubSystemDetails() {
       iban: "",
       walletProvider: "",
       walletNumber: "",
-      currency: "SAR",
+      currency: "YER",
       openingBalance: "0",
       description: "",
     });
@@ -496,12 +529,61 @@ export default function SubSystemDetails() {
   };
 
   // Handlers
+  const handleEditTreasury = (treasury: any) => {
+    setEditingTreasury(treasury);
+    setNewTreasury({
+      code: treasury.code || "",
+      nameAr: treasury.nameAr || "",
+      nameEn: treasury.nameEn || "",
+      treasuryType: treasury.treasuryType || "cash",
+      bankName: treasury.bankName || "",
+      accountNumber: treasury.accountNumber || "",
+      iban: treasury.iban || "",
+      walletProvider: treasury.walletProvider || "",
+      walletNumber: treasury.walletNumber || "",
+      currency: treasury.currency || "YER",
+      openingBalance: treasury.openingBalance || "0",
+      description: treasury.description || "",
+    });
+    setIsAddTreasuryOpen(true);
+  };
+
+  const handleSaveTreasury = () => {
+    if (!newTreasury.code || !newTreasury.nameAr) {
+      toast.error("يرجى ملء جميع الحقول المطلوبة");
+      return;
+    }
+
+    if (editingTreasury) {
+      // تحديث الصندوق
+      updateTreasuryMutation.mutate({
+        id: editingTreasury.id,
+        code: newTreasury.code,
+        nameAr: newTreasury.nameAr,
+        nameEn: newTreasury.nameEn,
+        treasuryType: newTreasury.treasuryType,
+        bankName: newTreasury.bankName || undefined,
+        accountNumber: newTreasury.accountNumber || undefined,
+        iban: newTreasury.iban || undefined,
+        walletProvider: newTreasury.walletProvider || undefined,
+        walletNumber: newTreasury.walletNumber || undefined,
+        currency: newTreasury.currency,
+        description: newTreasury.description || undefined,
+      } as any);
+    } else {
+      // إنشاء صندوق جديد
+      createTreasuryMutation.mutate({
+        businessId: 1,
+        subSystemId: parseInt(id || "0"),
+        ...newTreasury,
+        openingBalance: newTreasury.openingBalance || "0",
+        currentBalance: newTreasury.openingBalance || "0",
+      } as any);
+    }
+  };
+
   const handleCreateTreasury = () => {
-    createTreasuryMutation.mutate({
-      businessId: 1,
-      subSystemId: parseInt(id || "0"),
-      ...newTreasury,
-    } as any);
+    handleSaveTreasury();
   };
 
   const handleCreateVoucher = () => {
@@ -646,76 +728,8 @@ export default function SubSystemDetails() {
         </Card>
       </div>
 
-      {/* Sidebar Navigation with Content */}
-      <div className="flex gap-6">
-        {/* Sidebar Navigation */}
-        <aside className="w-64 flex-shrink-0">
-          <nav className="bg-slate-900/50 border border-slate-800 rounded-lg p-2 space-y-1">
-            <button
-              onClick={() => setActiveTab("overview")}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
-                activeTab === "overview"
-                  ? "bg-primary text-white"
-                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
-              )}
-            >
-              <Wallet className="h-5 w-5" />
-              <span className="font-medium">نظرة عامة</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("treasuries")}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
-                activeTab === "treasuries"
-                  ? "bg-primary text-white"
-                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
-              )}
-            >
-              <Building2 className="h-5 w-5" />
-              <span className="font-medium">الخزائن</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("vouchers")}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
-                activeTab === "vouchers"
-                  ? "bg-primary text-white"
-                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
-              )}
-            >
-              <Receipt className="h-5 w-5" />
-              <span className="font-medium">السندات</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("transfers")}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
-                activeTab === "transfers"
-                  ? "bg-primary text-white"
-                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
-              )}
-            >
-              <ArrowLeftRight className="h-5 w-5" />
-              <span className="font-medium">التحويلات</span>
-            </button>
-            <button
-              onClick={() => setActiveTab("reconciliation")}
-              className={cn(
-                "w-full flex items-center gap-3 px-4 py-3 rounded-lg text-right transition-all",
-                activeTab === "reconciliation"
-                  ? "bg-primary text-white"
-                  : "text-slate-300 hover:bg-slate-800/50 hover:text-white"
-              )}
-            >
-              <FileCheck className="h-5 w-5" />
-              <span className="font-medium">المطابقة</span>
-            </button>
-          </nav>
-        </aside>
-
-        {/* Main Content */}
-        <div className="flex-1 min-w-0">
+      {/* Main Content */}
+      <div className="w-full">
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div className="space-y-4">
@@ -814,12 +828,18 @@ export default function SubSystemDetails() {
                 </Button>
               </div>
 
-              {/* Add Treasury Dialog */}
-              <Dialog open={isAddTreasuryOpen} onOpenChange={setIsAddTreasuryOpen}>
+              {/* Add/Edit Treasury Dialog */}
+              <Dialog open={isAddTreasuryOpen} onOpenChange={(open) => {
+                setIsAddTreasuryOpen(open);
+                if (!open) {
+                  setEditingTreasury(null);
+                  resetTreasuryForm();
+                }
+              }}>
                 <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>إضافة خزينة جديدة</DialogTitle>
-                  <DialogDescription>أضف خزينة جديدة لهذا النظام الفرعي</DialogDescription>
+                  <DialogTitle>{editingTreasury ? "تعديل الخزينة" : "إضافة خزينة جديدة"}</DialogTitle>
+                  <DialogDescription>{editingTreasury ? "قم بتعديل بيانات الخزينة" : "أضف خزينة جديدة لهذا النظام الفرعي"}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -931,9 +951,9 @@ export default function SubSystemDetails() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
+                          <SelectItem value="YER">ريال يمني</SelectItem>
                           <SelectItem value="SAR">ريال سعودي</SelectItem>
                           <SelectItem value="USD">دولار أمريكي</SelectItem>
-                          <SelectItem value="EUR">يورو</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -958,12 +978,19 @@ export default function SubSystemDetails() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsAddTreasuryOpen(false)}>
+                  <Button variant="outline" onClick={() => {
+                    setIsAddTreasuryOpen(false);
+                    setEditingTreasury(null);
+                    resetTreasuryForm();
+                  }}>
                     إلغاء
                   </Button>
-                  <Button onClick={handleCreateTreasury} disabled={createTreasuryMutation.isPending}>
-                    {createTreasuryMutation.isPending && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
-                    إنشاء
+                  <Button 
+                    onClick={handleSaveTreasury} 
+                    disabled={createTreasuryMutation.isPending || updateTreasuryMutation.isPending}
+                  >
+                    {(createTreasuryMutation.isPending || updateTreasuryMutation.isPending) && <Loader2 className="ml-2 h-4 w-4 animate-spin" />}
+                    {editingTreasury ? "حفظ التعديلات" : "إنشاء"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -979,7 +1006,7 @@ export default function SubSystemDetails() {
                   <TreasuryCard
                     key={treasury.id}
                     treasury={treasury}
-                    onEdit={() => {}}
+                    onEdit={handleEditTreasury}
                     onDelete={handleDeleteTreasury}
                   />
                 ))}
@@ -1750,7 +1777,91 @@ export default function SubSystemDetails() {
               )}
             </div>
           )}
-        </div>
+
+          {/* Accounts Tab - دليل الحسابات */}
+          {activeTab === "accounts" && (
+            <div className="space-y-4">
+              <AccountsPageV2 subSystemId={parseInt(id || "0")} />
+            </div>
+          )}
+
+          {/* Inventory Tab - نظام المخزون */}
+          {activeTab === "inventory" && (
+            <div className="space-y-4">
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-500 to-gray-500 flex items-center justify-center">
+                      <Package className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-white">نظام المخزون</CardTitle>
+                      <CardDescription>إدارة المخزون والمنتجات</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <Package className="h-16 w-16 text-slate-400 mx-auto mb-4 opacity-50" />
+                    <p className="text-slate-400 text-lg">صفحة نظام المخزون قيد التطوير</p>
+                    <p className="text-slate-500 text-sm mt-2">سيتم إضافة ميزات إدارة المخزون قريباً</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Suppliers Tab - نظام الموردين */}
+          {activeTab === "suppliers" && (
+            <div className="space-y-4">
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-rose-500 to-pink-500 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-white">نظام الموردين</CardTitle>
+                      <CardDescription>إدارة الموردين والشركات</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <Users className="h-16 w-16 text-rose-400 mx-auto mb-4 opacity-50" />
+                    <p className="text-slate-400 text-lg">صفحة نظام الموردين قيد التطوير</p>
+                    <p className="text-slate-500 text-sm mt-2">سيتم إضافة ميزات إدارة الموردين قريباً</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Purchases Tab - نظام المشتريات */}
+          {activeTab === "purchases" && (
+            <div className="space-y-4">
+              <Card className="bg-slate-900/50 border-slate-800">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-lime-500 to-green-500 flex items-center justify-center">
+                      <ShoppingCart className="h-6 w-6 text-white" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-white">نظام المشتريات</CardTitle>
+                      <CardDescription>إدارة المشتريات والطلبات</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-12">
+                    <ShoppingCart className="h-16 w-16 text-lime-400 mx-auto mb-4 opacity-50" />
+                    <p className="text-slate-400 text-lg">صفحة نظام المشتريات قيد التطوير</p>
+                    <p className="text-slate-500 text-sm mt-2">سيتم إضافة ميزات إدارة المشتريات قريباً</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
       </div>
     </div>
   );

@@ -39,31 +39,50 @@ import axios from "axios";
 interface Currency {
   id: number;
   businessId: number;
-  currencyCode: string;
-  currencyNameAr: string;
-  currencyNameEn: string | null;
-  currencySymbol: string;
+  code: string;
+  nameAr: string;
+  nameEn: string | null;
+  symbol: string | null;
   isBaseCurrency: boolean;
   isActive: boolean;
+  decimalPlaces: number;
+  displayOrder: number | null;
+  notes: string | null;
+  currentRate: string | null;
+  minRate: string | null;
+  maxRate: string | null;
   createdAt: string;
+  updatedAt?: string;
 }
 
 interface CurrencyFormData {
-  currencyCode: string;
-  currencyNameAr: string;
-  currencyNameEn: string;
-  currencySymbol: string;
+  code: string;
+  nameAr: string;
+  nameEn: string;
+  symbol: string;
   isBaseCurrency: boolean;
   isActive: boolean;
+  decimalPlaces: number;
+  displayOrder: number;
+  notes: string;
+  currentRate: string;
+  minRate: string;
+  maxRate: string;
 }
 
 const initialFormData: CurrencyFormData = {
-  currencyCode: "",
-  currencyNameAr: "",
-  currencyNameEn: "",
-  currencySymbol: "",
+  code: "",
+  nameAr: "",
+  nameEn: "",
+  symbol: "",
   isBaseCurrency: false,
   isActive: true,
+  decimalPlaces: 2,
+  displayOrder: 0,
+  notes: "",
+  currentRate: "",
+  minRate: "",
+  maxRate: "",
 };
 
 export default function CurrenciesPage() {
@@ -81,6 +100,10 @@ export default function CurrenciesPage() {
   useEffect(() => {
     fetchCurrencies();
   }, []);
+
+  // حساب العملة الأساسية بعد تحميل العملات
+  const baseCurrency = currencies.find((c) => c.isBaseCurrency);
+  const baseCode = baseCurrency?.code || "YER";
 
   const fetchCurrencies = async () => {
     try {
@@ -100,12 +123,18 @@ export default function CurrenciesPage() {
       setEditMode(true);
       setCurrentCurrencyId(currency.id);
       setFormData({
-        currencyCode: currency.currencyCode,
-        currencyNameAr: currency.currencyNameAr,
-        currencyNameEn: currency.currencyNameEn || "",
-        currencySymbol: currency.currencySymbol,
+        code: currency.code,
+        nameAr: currency.nameAr,
+        nameEn: currency.nameEn || "",
+        symbol: currency.symbol || "",
         isBaseCurrency: currency.isBaseCurrency,
         isActive: currency.isActive,
+        decimalPlaces: currency.decimalPlaces ?? 2,
+        displayOrder: currency.displayOrder ?? 0,
+        notes: currency.notes || "",
+        currentRate: currency.currentRate || "",
+        minRate: currency.minRate || "",
+        maxRate: currency.maxRate || "",
       });
     } else {
       setEditMode(false);
@@ -164,7 +193,7 @@ export default function CurrenciesPage() {
     <Box sx={{ p: 3 }}>
       <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
         <Typography variant="h4" component="h1">
-          إدارة العملات
+          إدارة العملات وأسعار الصرف (مقابل {baseCode})
         </Typography>
         <Box>
           <Button
@@ -203,6 +232,9 @@ export default function CurrenciesPage() {
                   <TableCell>الاسم بالعربية</TableCell>
                   <TableCell>الاسم بالإنجليزية</TableCell>
                   <TableCell>الرمز المختصر</TableCell>
+                  <TableCell align="center">السعر الحالي مقابل {baseCode}</TableCell>
+                  <TableCell align="center">الحد الأدنى</TableCell>
+                  <TableCell align="center">الحد الأعلى</TableCell>
                   <TableCell align="center">عملة أساسية</TableCell>
                   <TableCell align="center">الحالة</TableCell>
                   <TableCell align="center">الإجراءات</TableCell>
@@ -211,23 +243,38 @@ export default function CurrenciesPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={10} align="center">
                       جاري التحميل...
                     </TableCell>
                   </TableRow>
                 ) : currencies.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={7} align="center">
+                    <TableCell colSpan={10} align="center">
                       لا توجد عملات
                     </TableCell>
                   </TableRow>
                 ) : (
                   currencies.map((currency) => (
                     <TableRow key={currency.id}>
-                      <TableCell>{currency.currencyCode}</TableCell>
-                      <TableCell>{currency.currencyNameAr}</TableCell>
-                      <TableCell>{currency.currencyNameEn || "-"}</TableCell>
-                      <TableCell>{currency.currencySymbol}</TableCell>
+                      <TableCell>{currency.code}</TableCell>
+                      <TableCell>{currency.nameAr}</TableCell>
+                      <TableCell>{currency.nameEn || "-"}</TableCell>
+                      <TableCell>{currency.symbol || "-"}</TableCell>
+                      <TableCell align="center">
+                        <Typography variant="body2" fontWeight="bold" color="primary">
+                          {currency.currentRate ? parseFloat(currency.currentRate).toFixed(6) : "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Typography variant="body2" color="error">
+                          {currency.minRate ? parseFloat(currency.minRate).toFixed(6) : "-"}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Typography variant="body2" color="success.main">
+                          {currency.maxRate ? parseFloat(currency.maxRate).toFixed(6) : "-"}
+                        </Typography>
+                      </TableCell>
                       <TableCell align="center">
                         {currency.isBaseCurrency ? (
                           <Chip label="نعم" color="primary" size="small" />
@@ -268,24 +315,24 @@ export default function CurrenciesPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
         <DialogTitle>{editMode ? "تعديل عملة" : "إضافة عملة جديدة"}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
             <TextField
               label="رمز العملة (ISO)"
-              name="currencyCode"
-              value={formData.currencyCode}
+              name="code"
+              value={formData.code}
               onChange={handleInputChange}
               required
               fullWidth
               disabled={editMode}
-              placeholder="SAR, USD, EUR"
+              placeholder="SAR, USD, YER"
             />
             <TextField
               label="الاسم بالعربية"
-              name="currencyNameAr"
-              value={formData.currencyNameAr}
+              name="nameAr"
+              value={formData.nameAr}
               onChange={handleInputChange}
               required
               fullWidth
@@ -293,20 +340,85 @@ export default function CurrenciesPage() {
             />
             <TextField
               label="الاسم بالإنجليزية"
-              name="currencyNameEn"
-              value={formData.currencyNameEn}
+              name="nameEn"
+              value={formData.nameEn}
               onChange={handleInputChange}
               fullWidth
               placeholder="Saudi Riyal"
             />
             <TextField
               label="الرمز المختصر"
-              name="currencySymbol"
-              value={formData.currencySymbol}
+              name="symbol"
+              value={formData.symbol}
               onChange={handleInputChange}
-              required
               fullWidth
-              placeholder="ر.س, $, €"
+              placeholder="ر.س, $, ر.ي"
+            />
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                label={`السعر الحالي مقابل ${baseCode}`}
+                name="currentRate"
+                type="number"
+                value={formData.currentRate}
+                onChange={handleInputChange}
+                fullWidth
+                inputProps={{ step: "0.000001", min: "0" }}
+                placeholder="0.000000"
+                disabled={formData.isBaseCurrency}
+                helperText={formData.isBaseCurrency ? "العملة الأساسية سعرها دائماً 1" : ""}
+              />
+            </Box>
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <TextField
+                label={`الحد الأدنى (سقف سفلي) مقابل ${baseCode}`}
+                name="minRate"
+                type="number"
+                value={formData.minRate}
+                onChange={handleInputChange}
+                fullWidth
+                inputProps={{ step: "0.000001", min: "0" }}
+                placeholder="0.000000"
+                disabled={formData.isBaseCurrency}
+                helperText={formData.isBaseCurrency ? "العملة الأساسية لا تحتاج حد أدنى" : "أدنى سعر صرف مسموح"}
+              />
+              <TextField
+                label={`الحد الأعلى (سقف علوي) مقابل ${baseCode}`}
+                name="maxRate"
+                type="number"
+                value={formData.maxRate}
+                onChange={handleInputChange}
+                fullWidth
+                inputProps={{ step: "0.000001", min: "0" }}
+                placeholder="0.000000"
+                disabled={formData.isBaseCurrency}
+                helperText={formData.isBaseCurrency ? "العملة الأساسية لا تحتاج حد أعلى" : "أعلى سعر صرف مسموح"}
+              />
+            </Box>
+            <TextField
+              label="عدد المنازل العشرية"
+              name="decimalPlaces"
+              type="number"
+              value={formData.decimalPlaces}
+              onChange={handleInputChange}
+              fullWidth
+              inputProps={{ min: 0, max: 6 }}
+            />
+            <TextField
+              label="ترتيب العرض"
+              name="displayOrder"
+              type="number"
+              value={formData.displayOrder}
+              onChange={handleInputChange}
+              fullWidth
+            />
+            <TextField
+              label="ملاحظات"
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              fullWidth
+              multiline
+              rows={2}
             />
             <FormControlLabel
               control={

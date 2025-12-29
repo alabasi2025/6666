@@ -33,6 +33,8 @@ import {
   FormControlLabel,
   Tabs,
   Tab,
+  Divider,
+  Stack,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -40,6 +42,13 @@ import {
   Delete as DeleteIcon,
   Refresh as RefreshIcon,
   AccountBalance as AccountIcon,
+  Code as CodeIcon,
+  Description as DescriptionIcon,
+  Category as CategoryIcon,
+  Layers as LayersIcon,
+  Settings as SettingsIcon,
+  CurrencyExchange as CurrencyIcon,
+  Info as InfoIcon,
 } from "@mui/icons-material";
 import { useAuth } from "../../../_core/hooks/useAuth";
 import axios from "axios";
@@ -50,6 +59,8 @@ interface Account {
   accountNameAr: string;
   accountNameEn: string | null;
   accountType: string;
+  accountLevel?: "main" | "sub";
+  parentAccountId?: number | null;
   level: number;
   isActive: boolean;
   allowManualEntry: boolean;
@@ -57,8 +68,17 @@ interface Account {
 
 interface Currency {
   id: number;
-  currencyCode: string;
-  currencyNameAr: string;
+  code: string;
+  nameAr: string;
+  nameEn?: string | null;
+  symbol?: string | null;
+  isBaseCurrency: boolean;
+  isActive: boolean;
+  decimalPlaces: number;
+  currentRate?: string | null;
+  maxRate?: string | null;
+  minRate?: string | null;
+  displayOrder?: number | null;
 }
 
 interface SubSystem {
@@ -72,6 +92,8 @@ interface AccountFormData {
   accountNameAr: string;
   accountNameEn: string;
   accountType: string;
+  accountLevel: "main" | "sub"; // رئيسي أو فرعي
+  accountSubTypeId: number; // نوع الحساب الفرعي (صندوق، بنك، محفظة، إلخ)
   parentAccountId: number;
   level: number;
   description: string;
@@ -82,12 +104,22 @@ interface AccountFormData {
   currencies: { currencyId: number; isDefault: boolean }[];
 }
 
+interface AccountSubType {
+  id: number;
+  code: string;
+  nameAr: string;
+  nameEn: string | null;
+  accountType: string;
+}
+
 const initialFormData: AccountFormData = {
   subSystemId: 0,
   accountCode: "",
   accountNameAr: "",
   accountNameEn: "",
   accountType: "asset",
+  accountLevel: "main", // افتراضياً رئيسي
+  accountSubTypeId: 0,
   parentAccountId: 0,
   level: 1,
   description: "",
@@ -98,11 +130,16 @@ const initialFormData: AccountFormData = {
   currencies: [],
 };
 
-export default function AccountsPage() {
+interface AccountsPageProps {
+  subSystemId?: number;
+}
+
+export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
   const { user } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [subSystems, setSubSystems] = useState<SubSystem[]>([]);
+  const [accountSubTypes, setAccountSubTypes] = useState<AccountSubType[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -116,13 +153,18 @@ export default function AccountsPage() {
   useEffect(() => {
     fetchCurrencies();
     fetchSubSystems();
+    fetchAccountSubTypes();
     fetchAccounts();
-  }, []);
+  }, [subSystemId]);
 
   const fetchAccounts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/custom-system/v2/accounts");
+      const params: any = {};
+      if (subSystemId) {
+        params.subSystemId = subSystemId;
+      }
+      const response = await axios.get("/api/custom-system/v2/accounts", { params });
       setAccounts(response.data);
       setError(null);
     } catch (err: any) {
@@ -134,12 +176,31 @@ export default function AccountsPage() {
 
   const fetchCurrencies = async () => {
     try {
+      console.log("[AccountsPage] جلب العملات...");
       const response = await axios.get("/api/custom-system/v2/currencies", {
         params: { isActive: true },
       });
-      setCurrencies(response.data);
+      console.log("[AccountsPage] استجابة API العملات:", response.data);
+      if (response.data && Array.isArray(response.data)) {
+        setCurrencies(response.data);
+        console.log(`[AccountsPage] تم تحميل ${response.data.length} عملة بنجاح`);
+        if (response.data.length === 0) {
+          console.warn("لا توجد عملات متاحة");
+        }
+      } else {
+        console.warn("استجابة غير صحيحة من API العملات:", response.data);
+        setCurrencies([]);
+      }
     } catch (err: any) {
-      setError(err.response?.data?.error || "فشل في تحميل العملات");
+      console.error("خطأ في تحميل العملات:", err);
+      console.error("تفاصيل الخطأ:", {
+        message: err.message,
+        status: err.response?.status,
+        data: err.response?.data,
+        url: err.config?.url
+      });
+      // لا نعرض خطأ للمستخدم لأن العملات اختيارية
+      setCurrencies([]);
     }
   };
 
@@ -154,6 +215,30 @@ export default function AccountsPage() {
     }
   };
 
+  const fetchAccountSubTypes = async () => {
+    try {
+      const response = await axios.get("/api/custom-system/v2/account-sub-types", {
+        params: { isActive: true },
+      });
+      setAccountSubTypes(response.data);
+    } catch (err: any) {
+      // إذا لم يكن API موجوداً، سنستخدم الأنواع الافتراضية
+      console.warn("فشل في تحميل الأنواع الفرعية:", err);
+      // الأنواع الافتراضية
+      const defaultSubTypes: AccountSubType[] = [
+        { id: 1, code: 'cash', nameAr: 'صندوق', nameEn: 'Cash', accountType: 'asset' },
+        { id: 2, code: 'bank', nameAr: 'بنك', nameEn: 'Bank', accountType: 'asset' },
+        { id: 3, code: 'wallet', nameAr: 'محفظة', nameEn: 'Wallet', accountType: 'asset' },
+        { id: 4, code: 'exchange', nameAr: 'صراف', nameEn: 'Exchange', accountType: 'asset' },
+        { id: 5, code: 'warehouse', nameAr: 'مخزن', nameEn: 'Warehouse', accountType: 'asset' },
+        { id: 6, code: 'supplier', nameAr: 'مورد', nameEn: 'Supplier', accountType: 'liability' },
+        { id: 7, code: 'customer', nameAr: 'عميل', nameEn: 'Customer', accountType: 'revenue' },
+        { id: 8, code: 'general', nameAr: 'عام', nameEn: 'General', accountType: 'asset' },
+      ];
+      setAccountSubTypes(defaultSubTypes);
+    }
+  };
+
   const handleOpenDialog = (account?: Account) => {
     if (account) {
       setEditMode(true);
@@ -162,7 +247,11 @@ export default function AccountsPage() {
     } else {
       setEditMode(false);
       setCurrentAccountId(null);
-      setFormData(initialFormData);
+      // تعيين subSystemId تلقائياً عند إضافة حساب جديد
+      setFormData({
+        ...initialFormData,
+        subSystemId: subSystemId || 0,
+      });
       setOpenDialog(true);
     }
   };
@@ -172,12 +261,17 @@ export default function AccountsPage() {
       const response = await axios.get(`/api/custom-system/v2/accounts/${accountId}`);
       const account = response.data;
 
+      // تحديد نوع الحساب (رئيسي أو فرعي) بناءً على parentAccountId
+      const accountLevel = account.parentAccountId && account.parentAccountId > 0 ? "sub" : "main";
+      
       setFormData({
         subSystemId: account.subSystemId || 0,
         accountCode: account.accountCode,
         accountNameAr: account.accountNameAr,
         accountNameEn: account.accountNameEn || "",
         accountType: account.accountType,
+        accountLevel: accountLevel,
+        accountSubTypeId: account.accountSubTypeId || 0,
         parentAccountId: account.parentAccountId || 0,
         level: account.level,
         description: account.description || "",
@@ -244,11 +338,23 @@ export default function AccountsPage() {
 
   const handleSubmit = async () => {
     try {
+      // إعداد البيانات للإرسال
+      const submitData: any = {
+        ...formData,
+        // إذا كان subSystemId محدداً كـ prop، نستخدمه
+        subSystemId: subSystemId || formData.subSystemId || null,
+        // إذا كان حساب رئيسي، لا نرسل accountSubTypeId
+        accountSubTypeId: formData.accountLevel === "sub" ? formData.accountSubTypeId : null,
+        // parentAccountId: اختياري لجميع أنواع الحسابات (رئيسية وفرعية)
+        // يستخدم فقط لترتيب الشجرة. الحسابات الرئيسية لا تتأثر بالعمليات المالية
+        parentAccountId: formData.parentAccountId > 0 ? formData.parentAccountId : null,
+      };
+
       if (editMode && currentAccountId) {
-        await axios.put(`/api/custom-system/v2/accounts/${currentAccountId}`, formData);
+        await axios.put(`/api/custom-system/v2/accounts/${currentAccountId}`, submitData);
         setSuccess("تم تحديث الحساب بنجاح");
       } else {
-        await axios.post("/api/custom-system/v2/accounts", formData);
+        await axios.post("/api/custom-system/v2/accounts", submitData);
         setSuccess("تم إضافة الحساب بنجاح");
       }
       handleCloseDialog();
@@ -303,40 +409,155 @@ export default function AccountsPage() {
         });
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          إدارة الحسابات
-        </Typography>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchAccounts}
-            sx={{ mr: 2 }}
-          >
-            تحديث
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
-            إضافة حساب
-          </Button>
-        </Box>
-      </Box>
+    <Box 
+      sx={{ 
+        p: { xs: 2, md: 4 },
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        minHeight: '100vh',
+        backgroundAttachment: 'fixed'
+      }}
+    >
+      {/* Header Section with Gradient */}
+      <Card 
+        sx={{ 
+          mb: 3,
+          background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.98) 100%)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          borderRadius: 3,
+          border: '1px solid rgba(255,255,255,0.2)'
+        }}
+      >
+        <CardContent>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: 'wrap', gap: 2 }}>
+            <Box>
+              <Typography 
+                variant="h4" 
+                component="h1"
+                sx={{
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  mb: 0.5
+                }}
+              >
+                إدارة الحسابات
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                دليل الحسابات المحاسبي الشامل
+              </Typography>
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1.5 }}>
+              <Button
+                variant="outlined"
+                startIcon={<RefreshIcon />}
+                onClick={fetchAccounts}
+                sx={{ 
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 3,
+                  borderColor: 'rgba(102, 126, 234, 0.5)',
+                  color: '#667eea',
+                  '&:hover': {
+                    borderColor: '#667eea',
+                    background: 'rgba(102, 126, 234, 0.05)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                تحديث
+              </Button>
+              <Button 
+                variant="contained" 
+                startIcon={<AddIcon />} 
+                onClick={() => handleOpenDialog()}
+                sx={{
+                  borderRadius: 2,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  px: 3,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                  '&:hover': {
+                    background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                    transform: 'translateY(-2px)',
+                    boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
+                  },
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                إضافة حساب
+              </Button>
+            </Box>
+          </Box>
+        </CardContent>
+      </Card>
 
+      {/* Alerts */}
       {error && (
-        <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
+        <Alert 
+          severity="error" 
+          onClose={() => setError(null)} 
+          sx={{ 
+            mb: 2,
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(211, 47, 47, 0.2)'
+          }}
+        >
           {error}
         </Alert>
       )}
 
       {success && (
-        <Alert severity="success" onClose={() => setSuccess(null)} sx={{ mb: 2 }}>
+        <Alert 
+          severity="success" 
+          onClose={() => setSuccess(null)} 
+          sx={{ 
+            mb: 2,
+            borderRadius: 2,
+            boxShadow: '0 4px 12px rgba(46, 125, 50, 0.2)'
+          }}
+        >
           {success}
         </Alert>
       )}
 
-      <Card sx={{ mb: 2 }}>
-        <Tabs value={currentTab} onChange={(e, v) => setCurrentTab(v)}>
+      {/* Tabs Card */}
+      <Card 
+        sx={{ 
+          mb: 3,
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          borderRadius: 3,
+          border: '1px solid rgba(255,255,255,0.2)',
+          overflow: 'hidden'
+        }}
+      >
+        <Tabs 
+          value={currentTab} 
+          onChange={(e, v) => setCurrentTab(v)}
+          sx={{
+            '& .MuiTab-root': {
+              textTransform: 'none',
+              fontWeight: 600,
+              fontSize: '0.95rem',
+              minHeight: 64,
+              '&.Mui-selected': {
+                color: '#667eea',
+              }
+            },
+            '& .MuiTabs-indicator': {
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              height: 3,
+              borderRadius: '3px 3px 0 0'
+            }
+          }}
+        >
           <Tab label="الكل" />
           <Tab label="أصول" />
           <Tab label="التزامات" />
@@ -346,12 +567,33 @@ export default function AccountsPage() {
         </Tabs>
       </Card>
 
-      <Card>
-        <CardContent>
-          <TableContainer component={Paper}>
+      {/* Table Card */}
+      <Card
+        sx={{
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(10px)',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.1)',
+          borderRadius: 3,
+          border: '1px solid rgba(255,255,255,0.2)',
+          overflow: 'hidden'
+        }}
+      >
+        <CardContent sx={{ p: 0 }}>
+          <TableContainer>
             <Table>
               <TableHead>
-                <TableRow>
+                <TableRow
+                  sx={{
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    '& .MuiTableCell-head': {
+                      color: 'white',
+                      fontWeight: 700,
+                      fontSize: '0.95rem',
+                      borderBottom: 'none',
+                      py: 2
+                    }
+                  }}
+                >
                   <TableCell>الرمز</TableCell>
                   <TableCell>اسم الحساب</TableCell>
                   <TableCell>النوع</TableCell>
@@ -363,24 +605,79 @@ export default function AccountsPage() {
               <TableBody>
                 {loading ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      جاري التحميل...
+                    <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <Box
+                          sx={{
+                            width: 50,
+                            height: 50,
+                            border: '4px solid #f3f4f6',
+                            borderTop: '4px solid #667eea',
+                            borderRadius: '50%',
+                            animation: 'spin 1s linear infinite',
+                            '@keyframes spin': {
+                              '0%': { transform: 'rotate(0deg)' },
+                              '100%': { transform: 'rotate(360deg)' }
+                            }
+                          }}
+                        />
+                        <Typography color="text.secondary">جاري التحميل...</Typography>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ) : filteredAccounts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      لا توجد حسابات
+                    <TableCell colSpan={6} align="center" sx={{ py: 8 }}>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                        <AccountIcon sx={{ fontSize: 64, color: 'text.disabled', opacity: 0.5 }} />
+                        <Typography variant="h6" color="text.secondary">
+                          لا توجد حسابات
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          ابدأ بإضافة حساب جديد
+                        </Typography>
+                      </Box>
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredAccounts.map((account) => (
-                    <TableRow key={account.id}>
-                      <TableCell>{account.accountCode}</TableCell>
+                  filteredAccounts.map((account, index) => (
+                    <TableRow 
+                      key={account.id}
+                      sx={{
+                        '&:hover': {
+                          background: 'rgba(102, 126, 234, 0.05)',
+                          transform: 'scale(1.01)',
+                          transition: 'all 0.2s ease'
+                        },
+                        transition: 'all 0.2s ease',
+                        '& .MuiTableCell-root': {
+                          borderBottom: '1px solid rgba(0,0,0,0.05)',
+                          py: 2
+                        }
+                      }}
+                    >
                       <TableCell>
-                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                          <AccountIcon fontSize="small" />
-                          {account.accountNameAr}
+                        <Typography fontWeight={600} color="primary">
+                          {account.accountCode}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+                          <Box
+                            sx={{
+                              p: 1,
+                              borderRadius: 2,
+                              background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <AccountIcon sx={{ fontSize: 20, color: '#667eea' }} />
+                          </Box>
+                          <Typography fontWeight={500}>
+                            {account.accountNameAr}
+                          </Typography>
                         </Box>
                       </TableCell>
                       <TableCell>
@@ -388,31 +685,77 @@ export default function AccountsPage() {
                           label={getAccountTypeLabel(account.accountType)}
                           color={getAccountTypeColor(account.accountType)}
                           size="small"
+                          sx={{
+                            fontWeight: 600,
+                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                          }}
                         />
                       </TableCell>
-                      <TableCell align="center">{account.level}</TableCell>
+                      <TableCell align="center">
+                        <Chip
+                          label={account.level}
+                          size="small"
+                          sx={{
+                            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                            color: '#667eea',
+                            fontWeight: 600
+                          }}
+                        />
+                      </TableCell>
                       <TableCell align="center">
                         {account.isActive ? (
-                          <Chip label="نشط" color="success" size="small" />
+                          <Chip 
+                            label="نشط" 
+                            color="success" 
+                            size="small"
+                            sx={{
+                              fontWeight: 600,
+                              boxShadow: '0 2px 8px rgba(46, 125, 50, 0.2)'
+                            }}
+                          />
                         ) : (
-                          <Chip label="غير نشط" color="error" size="small" />
+                          <Chip 
+                            label="غير نشط" 
+                            color="error" 
+                            size="small"
+                            sx={{
+                              fontWeight: 600,
+                              boxShadow: '0 2px 8px rgba(211, 47, 47, 0.2)'
+                            }}
+                          />
                         )}
                       </TableCell>
                       <TableCell align="center">
-                        <IconButton
-                          size="small"
-                          color="primary"
-                          onClick={() => handleOpenDialog(account)}
-                        >
-                          <EditIcon />
-                        </IconButton>
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleDelete(account.id)}
-                        >
-                          <DeleteIcon />
-                        </IconButton>
+                        <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'center' }}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleOpenDialog(account)}
+                            sx={{
+                              color: '#667eea',
+                              '&:hover': {
+                                background: 'rgba(102, 126, 234, 0.1)',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDelete(account.id)}
+                            sx={{
+                              color: '#f44336',
+                              '&:hover': {
+                                background: 'rgba(244, 67, 54, 0.1)',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -423,171 +766,803 @@ export default function AccountsPage() {
         </CardContent>
       </Card>
 
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{editMode ? "تعديل حساب" : "إضافة حساب جديد"}</DialogTitle>
-        <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="رمز الحساب"
-                  name="accountCode"
-                  value={formData.accountCode}
-                  onChange={handleInputChange}
-                  required
-                  fullWidth
-                  disabled={editMode}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth>
-                  <InputLabel>النظام الفرعي</InputLabel>
-                  <Select
-                    name="subSystemId"
-                    value={formData.subSystemId}
-                    onChange={(e) => handleSelectChange("subSystemId", e.target.value)}
-                    label="النظام الفرعي"
-                  >
-                    <MenuItem value={0}>بدون نظام فرعي</MenuItem>
-                    {subSystems.map((sys) => (
-                      <MenuItem key={sys.id} value={sys.id}>
-                        {sys.systemNameAr}
-                      </MenuItem>
-                    ))}
-                  </Select>
-                </FormControl>
-              </Grid>
-            </Grid>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="اسم الحساب بالعربية"
-                  name="accountNameAr"
-                  value={formData.accountNameAr}
-                  onChange={handleInputChange}
-                  required
-                  fullWidth
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="اسم الحساب بالإنجليزية"
-                  name="accountNameEn"
-                  value={formData.accountNameEn}
-                  onChange={handleInputChange}
-                  fullWidth
-                />
-              </Grid>
-            </Grid>
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <FormControl fullWidth required>
-                  <InputLabel>نوع الحساب</InputLabel>
-                  <Select
-                    name="accountType"
-                    value={formData.accountType}
-                    onChange={(e) => handleSelectChange("accountType", e.target.value)}
-                    label="نوع الحساب"
-                  >
-                    <MenuItem value="asset">أصول</MenuItem>
-                    <MenuItem value="liability">التزامات</MenuItem>
-                    <MenuItem value="equity">حقوق ملكية</MenuItem>
-                    <MenuItem value="revenue">إيرادات</MenuItem>
-                    <MenuItem value="expense">مصروفات</MenuItem>
-                  </Select>
-                </FormControl>
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="المستوى"
-                  name="level"
-                  type="number"
-                  value={formData.level}
-                  onChange={handleInputChange}
-                  fullWidth
-                  inputProps={{ min: 1 }}
-                />
-              </Grid>
-            </Grid>
-
-            <TextField
-              label="الوصف"
-              name="description"
-              value={formData.description}
-              onChange={handleInputChange}
-              fullWidth
-              multiline
-              rows={2}
-            />
-
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      name="isActive"
-                      checked={formData.isActive}
-                      onChange={handleInputChange}
-                    />
-                  }
-                  label="نشط"
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      name="allowManualEntry"
-                      checked={formData.allowManualEntry}
-                      onChange={handleInputChange}
-                    />
-                  }
-                  label="يسمح بالقيد اليدوي"
-                />
-              </Grid>
-            </Grid>
-
-            <Typography variant="h6" sx={{ mt: 2 }}>
-              العملات المدعومة
-            </Typography>
-
-            {formData.currencies.map((curr, index) => (
-              <Grid container spacing={2} key={index}>
-                <Grid item xs={10}>
+      <Dialog 
+        open={openDialog} 
+        onClose={handleCloseDialog} 
+        maxWidth="md" 
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            background: 'rgba(255,255,255,0.98)',
+            backdropFilter: 'blur(20px)'
+          }
+        }}
+      >
+        <DialogTitle
+          sx={{
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            color: 'white',
+            fontWeight: 700,
+            fontSize: '1.5rem',
+            py: 3,
+            px: 4,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 2
+          }}
+        >
+          <Box
+            sx={{
+              p: 1.5,
+              borderRadius: 2,
+              background: 'rgba(255,255,255,0.2)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <AccountIcon />
+          </Box>
+          {editMode ? "تعديل حساب" : "إضافة حساب جديد"}
+        </DialogTitle>
+        <DialogContent sx={{ p: 0, background: 'rgba(249,250,251,0.5)' }}>
+          <Box sx={{ display: "flex", flexDirection: "column" }}>
+            {/* معلومات أساسية */}
+            <Box sx={{ p: 4, pb: 3 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    p: 1,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <InfoIcon sx={{ color: '#667eea', fontSize: 20 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#667eea' }}>
+                  المعلومات الأساسية
+                </Typography>
+              </Stack>
+              
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="رمز الحساب"
+                    name="accountCode"
+                    value={formData.accountCode}
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    disabled={editMode}
+                    InputProps={{
+                      startAdornment: (
+                        <CodeIcon sx={{ mr: 1, color: '#667eea', fontSize: 20 }} />
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        }
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#667eea'
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#667eea',
+                        borderWidth: 2
+                      }
+                    }}
+                  />
+                </Grid>
+                {/* حقل اختيار الحساب الأب - للترتيب في الشجرة (اختياري لجميع أنواع الحسابات) */}
+                <Grid item xs={12} md={6}>
                   <FormControl fullWidth>
-                    <InputLabel>العملة</InputLabel>
+                    <InputLabel>الحساب الأب (للترتيب - اختياري)</InputLabel>
                     <Select
-                      value={curr.currencyId}
-                      onChange={(e) => handleCurrencyChange(index, "currencyId", e.target.value)}
-                      label="العملة"
+                      name="parentAccountId"
+                      value={formData.parentAccountId}
+                      onChange={(e) => handleSelectChange("parentAccountId", parseInt(e.target.value))}
+                      label="الحساب الأب (للترتيب - اختياري)"
+                      sx={{
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(102, 126, 234, 0.3)'
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#667eea',
+                          borderWidth: 2
+                        }
+                      }}
                     >
-                      <MenuItem value={0}>اختر العملة</MenuItem>
-                      {currencies.map((currency) => (
-                        <MenuItem key={currency.id} value={currency.id}>
-                          {currency.currencyNameAr} ({currency.currencyCode})
-                        </MenuItem>
-                      ))}
+                      <MenuItem value={0}>بدون حساب أب</MenuItem>
+                      {accounts
+                        .filter((acc) => acc.id !== currentAccountId) // استثناء الحساب الحالي عند التعديل
+                        .map((acc) => {
+                          // تحديد نوع الحساب بناءً على parentAccountId
+                          const isMain = !acc.parentAccountId || acc.parentAccountId === 0;
+                          return (
+                            <MenuItem key={acc.id} value={acc.id}>
+                              {acc.accountCode} - {acc.accountNameAr}
+                              {isMain && " (رئيسي)"}
+                            </MenuItem>
+                          );
+                        })}
+                    </Select>
+                    <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
+                      اختياري: يستخدم فقط لترتيب الشجرة
+                    </Typography>
+                  </FormControl>
+                </Grid>
+              </Grid>
+
+              {/* إخفاء حقل النظام الفرعي إذا كان محدداً مسبقاً (من داخل نظام فرعي) */}
+              {!subSystemId && (
+                <Grid container spacing={3} sx={{ mt: 0.5 }}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>النظام الفرعي</InputLabel>
+                      <Select
+                        name="subSystemId"
+                        value={formData.subSystemId}
+                        onChange={(e) => handleSelectChange("subSystemId", e.target.value)}
+                        label="النظام الفرعي"
+                        sx={{
+                          borderRadius: 2,
+                          transition: 'all 0.3s ease',
+                          background: 'white',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(102, 126, 234, 0.3)'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#667eea',
+                            borderWidth: 2
+                          }
+                        }}
+                      >
+                        <MenuItem value={0}>بدون نظام فرعي</MenuItem>
+                        {subSystems.map((sys) => (
+                          <MenuItem key={sys.id} value={sys.id}>
+                            {sys.systemNameAr}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              )}
+
+              <Grid container spacing={3} sx={{ mt: 0.5 }}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="اسم الحساب بالعربية"
+                    name="accountNameAr"
+                    value={formData.accountNameAr}
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <AccountIcon sx={{ mr: 1, color: '#667eea', fontSize: 20 }} />
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        }
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#667eea'
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#667eea',
+                        borderWidth: 2
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="اسم الحساب بالإنجليزية"
+                    name="accountNameEn"
+                    value={formData.accountNameEn}
+                    onChange={handleInputChange}
+                    fullWidth
+                    InputProps={{
+                      startAdornment: (
+                        <AccountIcon sx={{ mr: 1, color: '#667eea', fontSize: 20 }} />
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        }
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#667eea'
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#667eea',
+                        borderWidth: 2
+                      }
+                    }}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Divider sx={{ mx: 4, my: 1 }} />
+
+            {/* تصنيف الحساب */}
+            <Box sx={{ p: 4, pt: 3 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    p: 1,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <CategoryIcon sx={{ color: '#667eea', fontSize: 20 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#667eea' }}>
+                  تصنيف الحساب
+                </Typography>
+              </Stack>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel>نوع الحساب</InputLabel>
+                    <Select
+                      name="accountType"
+                      value={formData.accountType}
+                      onChange={(e) => {
+                        handleSelectChange("accountType", e.target.value);
+                        handleSelectChange("accountSubTypeId", 0);
+                      }}
+                      label="نوع الحساب"
+                      sx={{
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(102, 126, 234, 0.3)'
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#667eea',
+                          borderWidth: 2
+                        }
+                      }}
+                    >
+                      <MenuItem value="asset">أصول</MenuItem>
+                      <MenuItem value="liability">التزامات</MenuItem>
+                      <MenuItem value="equity">حقوق ملكية</MenuItem>
+                      <MenuItem value="revenue">إيرادات</MenuItem>
+                      <MenuItem value="expense">مصروفات</MenuItem>
                     </Select>
                   </FormControl>
                 </Grid>
-                <Grid item xs={2}>
-                  <IconButton color="error" onClick={() => handleRemoveCurrency(index)}>
-                    <DeleteIcon />
-                  </IconButton>
+                <Grid item xs={12} md={6}>
+                  <FormControl fullWidth required>
+                    <InputLabel>نوع الحساب (رئيسي/فرعي)</InputLabel>
+                    <Select
+                      name="accountLevel"
+                      value={formData.accountLevel}
+                      onChange={(e) => {
+                        handleSelectChange("accountLevel", e.target.value);
+                        // عند اختيار حساب رئيسي، نزيل فقط نوع الحساب الفرعي
+                        // لكن نترك parentAccountId كما هو (يمكن أن يكون له حساب أب للترتيب)
+                        if (e.target.value === "main") {
+                          handleSelectChange("accountSubTypeId", 0);
+                        }
+                      }}
+                      label="نوع الحساب (رئيسي/فرعي)"
+                      sx={{
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        },
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: 'rgba(102, 126, 234, 0.3)'
+                        },
+                        '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                          borderColor: '#667eea',
+                          borderWidth: 2
+                        }
+                      }}
+                    >
+                      <MenuItem value="main">حساب رئيسي</MenuItem>
+                      <MenuItem value="sub">حساب فرعي</MenuItem>
+                    </Select>
+                  </FormControl>
                 </Grid>
               </Grid>
-            ))}
 
-            <Button variant="outlined" startIcon={<AddIcon />} onClick={handleAddCurrency}>
-              إضافة عملة
-            </Button>
+              {/* حقل نوع الحساب الفرعي - يظهر فقط إذا كان الحساب فرعي */}
+              {formData.accountLevel === "sub" && (
+                <Grid container spacing={3} sx={{ mt: 0.5 }}>
+                  <Grid item xs={12} md={6}>
+                    <FormControl fullWidth required>
+                      <InputLabel>نوع الحساب الفرعي</InputLabel>
+                      <Select
+                        name="accountSubTypeId"
+                        value={formData.accountSubTypeId}
+                        onChange={(e) => handleSelectChange("accountSubTypeId", parseInt(e.target.value))}
+                        label="نوع الحساب الفرعي"
+                        sx={{
+                          borderRadius: 2,
+                          transition: 'all 0.3s ease',
+                          background: 'white',
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                          },
+                          '&.Mui-focused': {
+                            boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                          },
+                          '& .MuiOutlinedInput-notchedOutline': {
+                            borderColor: 'rgba(102, 126, 234, 0.3)'
+                          },
+                          '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                            borderColor: '#667eea',
+                            borderWidth: 2
+                          }
+                        }}
+                      >
+                        <MenuItem value={0}>اختر النوع الفرعي</MenuItem>
+                        {accountSubTypes
+                          .filter((subType) => subType.accountType === formData.accountType)
+                          .map((subType) => (
+                            <MenuItem key={subType.id} value={subType.id}>
+                              {subType.nameAr}
+                            </MenuItem>
+                          ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                </Grid>
+              )}
+
+            </Box>
+
+            <Divider sx={{ mx: 4, my: 1 }} />
+
+            {/* إعدادات إضافية */}
+            <Box sx={{ p: 4, pt: 3 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    p: 1,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <SettingsIcon sx={{ color: '#667eea', fontSize: 20 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#667eea' }}>
+                  الإعدادات الإضافية
+                </Typography>
+              </Stack>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="المستوى"
+                    name="level"
+                    type="number"
+                    value={formData.level}
+                    onChange={handleInputChange}
+                    fullWidth
+                    inputProps={{ min: 1 }}
+                    InputProps={{
+                      startAdornment: (
+                        <LayersIcon sx={{ mr: 1, color: '#667eea', fontSize: 20 }} />
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        }
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#667eea'
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#667eea',
+                        borderWidth: 2
+                      }
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="الوصف"
+                    name="description"
+                    value={formData.description}
+                    onChange={handleInputChange}
+                    fullWidth
+                    multiline
+                    rows={2}
+                    InputProps={{
+                      startAdornment: (
+                        <DescriptionIcon sx={{ mr: 1, color: '#667eea', fontSize: 20, alignSelf: 'flex-start', mt: 1.5 }} />
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: 'white',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                        },
+                        '&.Mui-focused': {
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.25)'
+                        }
+                      },
+                      '& .MuiInputLabel-root.Mui-focused': {
+                        color: '#667eea'
+                      },
+                      '& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                        borderColor: '#667eea',
+                        borderWidth: 2
+                      }
+                    }}
+                  />
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={3} sx={{ mt: 1 }}>
+                <Grid item xs={12} md={6}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      background: formData.isActive 
+                        ? 'linear-gradient(135deg, rgba(46, 125, 50, 0.1) 0%, rgba(76, 175, 80, 0.1) 100%)'
+                        : 'rgba(0,0,0,0.02)',
+                      border: formData.isActive ? '2px solid rgba(46, 125, 50, 0.3)' : '2px solid rgba(0,0,0,0.1)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }
+                    }}
+                  >
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="isActive"
+                          checked={formData.isActive}
+                          onChange={handleInputChange}
+                          sx={{
+                            '& .MuiSwitch-switchBase.Mui-checked': {
+                              color: '#4caf50',
+                            },
+                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                              backgroundColor: '#4caf50',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                          نشط
+                        </Typography>
+                      }
+                    />
+                  </Card>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <Card
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      background: formData.allowManualEntry 
+                        ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)'
+                        : 'rgba(0,0,0,0.02)',
+                      border: formData.allowManualEntry ? '2px solid rgba(102, 126, 234, 0.3)' : '2px solid rgba(0,0,0,0.1)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }
+                    }}
+                  >
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="allowManualEntry"
+                          checked={formData.allowManualEntry}
+                          onChange={handleInputChange}
+                          sx={{
+                            '& .MuiSwitch-switchBase.Mui-checked': {
+                              color: '#667eea',
+                            },
+                            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+                              backgroundColor: '#667eea',
+                            },
+                          }}
+                        />
+                      }
+                      label={
+                        <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                          يسمح بالقيد اليدوي
+                        </Typography>
+                      }
+                    />
+                  </Card>
+                </Grid>
+              </Grid>
+            </Box>
+
+            <Divider sx={{ mx: 4, my: 1 }} />
+
+            {/* العملات المدعومة */}
+            <Box sx={{ p: 4, pt: 3 }}>
+              <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 3 }}>
+                <Box
+                  sx={{
+                    p: 1,
+                    borderRadius: 2,
+                    background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
+                >
+                  <CurrencyIcon sx={{ color: '#667eea', fontSize: 20 }} />
+                </Box>
+                <Typography variant="h6" sx={{ fontWeight: 700, color: '#667eea' }}>
+                  العملات المدعومة
+                </Typography>
+              </Stack>
+
+              {currencies.length === 0 ? (
+                <Alert 
+                  severity="warning" 
+                  sx={{ 
+                    borderRadius: 2,
+                    '& .MuiAlert-icon': {
+                      fontSize: 28
+                    }
+                  }}
+                >
+                  <Typography variant="body1" sx={{ fontWeight: 600, mb: 0.5 }}>
+                    لا توجد عملات متاحة
+                  </Typography>
+                  <Typography variant="body2">
+                    يرجى إضافة عملات من صفحة إدارة العملات أولاً
+                  </Typography>
+                </Alert>
+              ) : formData.currencies.length === 0 ? (
+                <Box
+                  sx={{
+                    p: 4,
+                    textAlign: 'center',
+                    borderRadius: 2,
+                    background: 'rgba(0,0,0,0.02)',
+                    border: '2px dashed rgba(102, 126, 234, 0.3)'
+                  }}
+                >
+                  <CurrencyIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1, opacity: 0.5 }} />
+                  <Typography variant="body1" color="text.secondary" sx={{ mb: 1, fontWeight: 600 }}>
+                    لا توجد عملات محددة لهذا الحساب
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    اضغط على "إضافة عملة" لإضافة عملة جديدة
+                  </Typography>
+                </Box>
+              ) : (
+                <Stack spacing={2}>
+                  {formData.currencies.map((curr, index) => (
+                    <Card
+                      key={index}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        background: 'white',
+                        border: '1px solid rgba(102, 126, 234, 0.2)',
+                        transition: 'all 0.3s ease',
+                        '&:hover': {
+                          transform: 'translateY(-2px)',
+                          boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)',
+                          borderColor: '#667eea'
+                        }
+                      }}
+                    >
+                      <Grid container spacing={2} alignItems="center">
+                        <Grid item xs={10}>
+                          <FormControl fullWidth>
+                            <InputLabel>العملة</InputLabel>
+                            <Select
+                              value={curr.currencyId}
+                              onChange={(e) => handleCurrencyChange(index, "currencyId", parseInt(e.target.value))}
+                              label="العملة"
+                              sx={{
+                                borderRadius: 2,
+                                '& .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: 'rgba(102, 126, 234, 0.3)'
+                                },
+                                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                                  borderColor: '#667eea',
+                                  borderWidth: 2
+                                }
+                              }}
+                            >
+                              <MenuItem value={0}>اختر العملة</MenuItem>
+                              {currencies.map((currency) => (
+                                <MenuItem key={currency.id} value={currency.id}>
+                                  {currency.nameAr} ({currency.code})
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        </Grid>
+                        <Grid item xs={2}>
+                          <IconButton 
+                            color="error" 
+                            onClick={() => handleRemoveCurrency(index)}
+                            sx={{
+                              '&:hover': {
+                                background: 'rgba(244, 67, 54, 0.1)',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Grid>
+                      </Grid>
+                    </Card>
+                  ))}
+                </Stack>
+              )}
+
+              {currencies.length > 0 && (
+                <Button 
+                  variant="outlined" 
+                  startIcon={<AddIcon />} 
+                  onClick={handleAddCurrency}
+                  sx={{
+                    mt: 2,
+                    borderRadius: 2,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    px: 3,
+                    py: 1.5,
+                    borderColor: 'rgba(102, 126, 234, 0.5)',
+                    color: '#667eea',
+                    '&:hover': {
+                      borderColor: '#667eea',
+                      background: 'rgba(102, 126, 234, 0.05)',
+                      transform: 'translateY(-2px)',
+                      boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+                    },
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  إضافة عملة
+                </Button>
+              )}
+            </Box>
           </Box>
         </DialogContent>
-        <DialogActions>
-          <Button onClick={handleCloseDialog}>إلغاء</Button>
-          <Button onClick={handleSubmit} variant="contained">
+        <DialogActions sx={{ p: 3, pt: 2, gap: 2, background: 'rgba(249,250,251,0.5)' }}>
+          <Button 
+            onClick={handleCloseDialog}
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 4,
+              py: 1.5,
+              borderColor: 'rgba(102, 126, 234, 0.5)',
+              color: '#667eea',
+              '&:hover': {
+                borderColor: '#667eea',
+                background: 'rgba(102, 126, 234, 0.05)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
+            إلغاء
+          </Button>
+          <Button 
+            onClick={handleSubmit} 
+            variant="contained"
+            sx={{
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 4,
+              py: 1.5,
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+              '&:hover': {
+                background: 'linear-gradient(135deg, #764ba2 0%, #667eea 100%)',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px rgba(102, 126, 234, 0.5)'
+              },
+              transition: 'all 0.3s ease'
+            }}
+          >
             {editMode ? "تحديث" : "إضافة"}
           </Button>
         </DialogActions>

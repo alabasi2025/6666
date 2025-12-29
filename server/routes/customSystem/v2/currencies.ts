@@ -15,6 +15,46 @@ import { eq, and, desc, sql } from "drizzle-orm";
 
 const router = Router();
 
+const parsePositiveDecimalOrNull = (value: unknown) => {
+  // undefined => not provided (useful for PUT)
+  if (value === undefined) return undefined;
+  // null/"" => explicit null
+  if (value === null || value === "") return null;
+
+  const num = typeof value === "number" ? value : Number(String(value));
+  if (!Number.isFinite(num)) return { error: "قيمة غير صحيحة" } as const;
+  if (num <= 0) return { error: "يجب أن تكون القيمة أكبر من صفر" } as const;
+
+  return String(num);
+};
+
+const validateRateRange = ({
+  currentRate,
+  minRate,
+  maxRate,
+}: {
+  currentRate: string | null;
+  minRate: string | null;
+  maxRate: string | null;
+}) => {
+  const toNum = (v: string | null) => (v === null ? null : Number(v));
+
+  const c = toNum(currentRate);
+  const min = toNum(minRate);
+  const max = toNum(maxRate);
+
+  if (min !== null && max !== null && min > max) {
+    return "الحد الأدنى لا يمكن أن يكون أكبر من الحد الأعلى";
+  }
+  if (c !== null && min !== null && c < min) {
+    return "السعر الحالي أقل من الحد الأدنى";
+  }
+  if (c !== null && max !== null && c > max) {
+    return "السعر الحالي أعلى من الحد الأعلى";
+  }
+  return null;
+};
+
 /**
  * GET /api/custom-system/v2/currencies
  * الحصول على جميع العملات
@@ -163,11 +203,29 @@ router.post("/", async (req, res) => {
       decimalPlaces,
       displayOrder,
       notes,
+      currentRate,
+      minRate,
+      maxRate,
     } = req.body;
 
     // التحقق من الحقول المطلوبة
     if (!code || !nameAr) {
       return res.status(400).json({ error: "الكود والاسم بالعربية مطلوبان" });
+    }
+
+    // Normalize & validate rates (مقابل العملة الأساسية)
+    const normalizedCurrentRate = parsePositiveDecimalOrNull(currentRate);
+    const normalizedMinRate = parsePositiveDecimalOrNull(minRate);
+    const normalizedMaxRate = parsePositiveDecimalOrNull(maxRate);
+
+    if ((normalizedCurrentRate as any)?.error) {
+      return res.status(400).json({ error: `السعر الحالي: ${(normalizedCurrentRate as any).error}` });
+    }
+    if ((normalizedMinRate as any)?.error) {
+      return res.status(400).json({ error: `الحد الأدنى: ${(normalizedMinRate as any).error}` });
+    }
+    if ((normalizedMaxRate as any)?.error) {
+      return res.status(400).json({ error: `الحد الأعلى: ${(normalizedMaxRate as any).error}` });
     }
 
     // التحقق من عدم تكرار الكود
@@ -199,6 +257,20 @@ router.post("/", async (req, res) => {
         );
     }
 
+    const willBeBaseCurrency = Boolean(isBaseCurrency);
+    const finalCurrentRate = willBeBaseCurrency ? "1.000000" : (normalizedCurrentRate ?? null);
+    const finalMinRate = willBeBaseCurrency ? "1.000000" : (normalizedMinRate ?? null);
+    const finalMaxRate = willBeBaseCurrency ? "1.000000" : (normalizedMaxRate ?? null);
+
+    const rangeError = validateRateRange({
+      currentRate: finalCurrentRate,
+      minRate: finalMinRate,
+      maxRate: finalMaxRate,
+    });
+    if (rangeError) {
+      return res.status(400).json({ error: rangeError });
+    }
+
     const newCurrency: InsertCustomCurrency = {
       businessId,
       code: code.toUpperCase(),
@@ -210,6 +282,9 @@ router.post("/", async (req, res) => {
       decimalPlaces: decimalPlaces || 2,
       displayOrder: displayOrder || 0,
       notes: notes || null,
+      currentRate: finalCurrentRate,
+      minRate: finalMinRate,
+      maxRate: finalMaxRate,
       createdBy: userId,
     };
 
@@ -271,6 +346,9 @@ router.put("/:id", async (req, res) => {
       decimalPlaces,
       displayOrder,
       notes,
+      currentRate,
+      minRate,
+      maxRate,
     } = req.body;
 
     // التحقق من عدم تكرار الكود
@@ -314,6 +392,48 @@ router.put("/:id", async (req, res) => {
     if (decimalPlaces !== undefined) updateData.decimalPlaces = decimalPlaces;
     if (displayOrder !== undefined) updateData.displayOrder = displayOrder;
     if (notes !== undefined) updateData.notes = notes || null;
+
+    const normalizedCurrentRate = parsePositiveDecimalOrNull(currentRate);
+    const normalizedMinRate = parsePositiveDecimalOrNull(minRate);
+    const normalizedMaxRate = parsePositiveDecimalOrNull(maxRate);
+
+    if ((normalizedCurrentRate as any)?.error) {
+      return res.status(400).json({ error: `السعر الحالي: ${(normalizedCurrentRate as any).error}` });
+    }
+    if ((normalizedMinRate as any)?.error) {
+      return res.status(400).json({ error: `الحد الأدنى: ${(normalizedMinRate as any).error}` });
+    }
+    if ((normalizedMaxRate as any)?.error) {
+      return res.status(400).json({ error: `الحد الأعلى: ${(normalizedMaxRate as any).error}` });
+    }
+
+    if (normalizedCurrentRate !== undefined) updateData.currentRate = normalizedCurrentRate;
+    if (normalizedMinRate !== undefined) updateData.minRate = normalizedMinRate;
+    if (normalizedMaxRate !== undefined) updateData.maxRate = normalizedMaxRate;
+
+    // Validate final state (existing + updates)
+    const finalIsBase = isBaseCurrency !== undefined ? Boolean(isBaseCurrency) : Boolean(existing.isBaseCurrency);
+    const finalCurrentRate =
+      finalIsBase ? "1.000000" : (updateData.currentRate ?? existing.currentRate ?? null);
+    const finalMinRate =
+      finalIsBase ? "1.000000" : (updateData.minRate ?? existing.minRate ?? null);
+    const finalMaxRate =
+      finalIsBase ? "1.000000" : (updateData.maxRate ?? existing.maxRate ?? null);
+
+    if (finalIsBase) {
+      updateData.currentRate = "1.000000";
+      updateData.minRate = "1.000000";
+      updateData.maxRate = "1.000000";
+    }
+
+    const rangeError = validateRateRange({
+      currentRate: finalCurrentRate,
+      minRate: finalMinRate,
+      maxRate: finalMaxRate,
+    });
+    if (rangeError) {
+      return res.status(400).json({ error: rangeError });
+    }
 
     await db
       .update(customCurrencies)

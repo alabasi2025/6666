@@ -112,15 +112,18 @@ let _db: ReturnType<typeof drizzle> | null = null;
 let _connectionTested = false;
 
 export async function getDb() {
-  if (!_db && process.env.DATABASE_URL) {
+  // استخدام DATABASE_URL من process.env أو fallback افتراضي
+  const dbUrl = process.env.DATABASE_URL || "mysql://root@localhost:3306/energy_management";
+  
+  if (!_db) {
     try {
       // إضافة charset=utf8mb4 إلى connection string إذا لم يكن موجوداً
-      let dbUrl = process.env.DATABASE_URL;
-      if (!dbUrl.includes('charset=')) {
-        const separator = dbUrl.includes('?') ? '&' : '?';
-        dbUrl = `${dbUrl}${separator}charset=utf8mb4`;
+      let finalDbUrl = dbUrl;
+      if (!finalDbUrl.includes('charset=')) {
+        const separator = finalDbUrl.includes('?') ? '&' : '?';
+        finalDbUrl = `${finalDbUrl}${separator}charset=utf8mb4`;
       }
-      _db = drizzle(dbUrl);
+      _db = drizzle(finalDbUrl);
       // Test connection
       if (!_connectionTested) {
         await _db.execute(sql`SELECT 1`);
@@ -139,22 +142,19 @@ export async function getDb() {
 }
 
 // Export db instance for synchronous use in routes
-// Initialize it if DATABASE_URL is available
-export const db: ReturnType<typeof drizzle> = process.env.DATABASE_URL 
-  ? (() => {
-      // إضافة charset=utf8mb4 إلى connection string إذا لم يكن موجوداً
-      let dbUrl = process.env.DATABASE_URL;
-      if (!dbUrl.includes('charset=')) {
-        const separator = dbUrl.includes('?') ? '&' : '?';
-        dbUrl = `${dbUrl}${separator}charset=utf8mb4`;
-      }
-      return drizzle(dbUrl);
-    })()
-  : (() => {
-      logger.warn("[Database] DATABASE_URL not available, db instance may not work");
-      // Return a dummy instance that will fail on use
-      return drizzle("mysql://dummy:dummy@localhost:3306/dummy") as any;
-    })();
+// Initialize it with fallback to default connection
+const defaultDbUrl = "mysql://root@localhost:3306/energy_management";
+const dbUrl = process.env.DATABASE_URL || defaultDbUrl;
+
+export const db: ReturnType<typeof drizzle> = (() => {
+  // إضافة charset=utf8mb4 إلى connection string إذا لم يكن موجوداً
+  let finalDbUrl = dbUrl;
+  if (!finalDbUrl.includes('charset=')) {
+    const separator = finalDbUrl.includes('?') ? '&' : '?';
+    finalDbUrl = `${finalDbUrl}${separator}charset=utf8mb4`;
+  }
+  return drizzle(finalDbUrl);
+})();
 
 export async function testDatabaseConnection(): Promise<boolean> {
   if (!process.env.DATABASE_URL) {
