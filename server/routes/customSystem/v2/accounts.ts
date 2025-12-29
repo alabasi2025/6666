@@ -4,17 +4,17 @@
  */
 
 import { Router } from "express";
-import { db } from "../../../db";
+import { getDb } from "../../../db";
 import {
-  customAccounts,
+  customAccounts as customAccountsOld,
   customAccountSubTypes,
   customAccountCurrencies,
   customAccountBalances,
   customCurrencies,
-  type InsertCustomAccount,
   type InsertCustomAccountCurrency,
 } from "../../../../drizzle/schemas/customSystemV2";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { customAccounts } from "../../../../drizzle/schemas/custom-system";
+import { eq, and, desc, sql, isNull, or } from "drizzle-orm";
 
 const router = Router();
 
@@ -23,6 +23,9 @@ const router = Router();
  * الحصول على جميع الحسابات
  */
 router.get("/", async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:25',message:'GET /accounts - Entry',data:{businessId:req.user?.businessId,queryParams:req.query},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   try {
     const businessId = req.user?.businessId;
     if (!businessId) {
@@ -31,29 +34,85 @@ router.get("/", async (req, res) => {
 
     const { subSystemId, accountType, isActive } = req.query;
 
-    let query = db
-      .select()
-      .from(customAccounts)
-      .where(eq(customAccounts.businessId, businessId));
+    // بناء شروط البحث
+    const conditions = [eq(customAccounts.businessId, businessId)];
 
-    if (subSystemId) {
-      query = query.where(eq(customAccounts.subSystemId, parseInt(String(subSystemId))));
-    }
+    // ملاحظة: subSystemId غير موجود في الجدول الفعلي حالياً
+    // سيتم تفعيله بعد تطبيق migration 0016
+    // if (subSystemId) {
+    //   const subSystemIdValue = parseInt(String(subSystemId));
+    //   // #region agent log
+    //   fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:39',message:'GET /accounts - Adding subSystemId filter',data:{subSystemIdValue},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    //   // #endregion
+    //   conditions.push(eq(customAccounts.subSystemId, subSystemIdValue));
+    // }
 
     if (accountType) {
-      query = query.where(eq(customAccounts.accountType, String(accountType)));
+      const accountTypeValue = String(accountType) as "asset" | "liability" | "equity" | "revenue" | "expense";
+      conditions.push(eq(customAccounts.accountType, accountTypeValue));
     }
 
     if (isActive !== undefined) {
-      query = query.where(eq(customAccounts.isActive, isActive === "true"));
+      conditions.push(eq(customAccounts.isActive, isActive === "true"));
     }
 
-    const accounts = await query.orderBy(customAccounts.accountCode);
+    console.log("[Accounts API] جلب الحسابات:", {
+      businessId,
+      subSystemId,
+      accountType,
+      isActive,
+      conditionsCount: conditions.length
+    });
+    
+    // استخدام getDb() بدلاً من db للتأكد من الاتصال
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ 
+        error: "فشل في الاتصال بقاعدة البيانات",
+        details: "DATABASE_URL غير موجود أو الاتصال فشل"
+      });
+    }
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:68',message:'GET /accounts - Before select query',data:{conditionsCount:conditions.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
+    // ملاحظة: accountCode غير موجود في الجدول الفعلي، استخدم accountNumber بدلاً منه
+    // سيتم تفعيله بعد تطبيق migration 0016
+    const accounts = await db
+      .select()
+      .from(customAccounts)
+      .where(and(...conditions))
+      .orderBy(customAccounts.accountNumber); // accountNumber موجود في schema من custom-system.ts
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:72',message:'GET /accounts - After select query',data:{accountsCount:accounts.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
 
+    console.log("[Accounts API] تم جلب", accounts.length, "حساب");
     res.json(accounts);
-  } catch (error) {
+  } catch (error: any) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:76',message:'GET /accounts - Error caught',data:{errorMessage:error.message,errorCode:error.code,sql:error.sql},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     console.error("خطأ في جلب الحسابات:", error);
-    res.status(500).json({ error: "فشل في جلب الحسابات" });
+    console.error("تفاصيل الخطأ:", {
+      message: error.message,
+      code: error.code,
+      sql: error.sql,
+      stack: error.stack,
+      cause: error.cause,
+      databaseUrl: process.env.DATABASE_URL ? "موجود" : "غير موجود"
+    });
+    
+    // إرجاع رسالة خطأ واضحة
+    const errorMessage = error.message || "خطأ غير معروف";
+    const errorDetails = error.sql || errorMessage;
+    
+    res.status(500).json({ 
+      error: "فشل في جلب الحسابات", 
+      details: errorMessage,
+      query: errorDetails
+    });
   }
 });
 
@@ -72,6 +131,11 @@ router.get("/:id", async (req, res) => {
 
     if (isNaN(accountId)) {
       return res.status(400).json({ error: "معرف الحساب غير صحيح" });
+    }
+
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
     }
 
     // جلب الحساب
@@ -114,7 +178,15 @@ router.get("/:id", async (req, res) => {
  * إنشاء حساب جديد
  */
 router.post("/", async (req, res) => {
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:160',message:'POST /accounts - Entry',data:{businessId:req.user?.businessId,userId:req.user?.id,bodyKeys:Object.keys(req.body)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   try {
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+    
     const businessId = req.user?.businessId;
     const userId = req.user?.id;
 
@@ -124,20 +196,24 @@ router.post("/", async (req, res) => {
 
     const {
       subSystemId,
-      accountCode,
-      accountNameAr,
+      accountCode, // سيتم تحويله إلى accountNumber
+      accountNameAr, // سيتم تحويله إلى accountName
       accountNameEn,
       accountType,
-      accountSubTypeId,
-      parentAccountId,
+      // accountSubTypeId, // غير موجود في قاعدة البيانات حالياً
+      parentAccountId, // سيتم تحويله إلى parentId
       level,
       description,
       isActive,
       allowManualEntry,
       requiresCostCenter,
-      requiresParty,
+      // requiresParty, // غير موجود في قاعدة البيانات حالياً
       currencies,
     } = req.body;
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:189',message:'POST /accounts - Parsed body data',data:{subSystemId,accountCode,accountNameAr,accountType,parentAccountId,level,hasCurrencies:!!currencies},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     // التحقق من الحقول المطلوبة
     if (!accountCode || !accountNameAr || !accountType) {
@@ -147,52 +223,110 @@ router.post("/", async (req, res) => {
     }
 
     // التحقق من عدم تكرار رمز الحساب
+    // ملاحظة: استخدام accountNumber بدلاً من accountCode حتى يتم تطبيق migration 0016
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:198',message:'POST /accounts - Before duplicate check',data:{businessId,accountCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
     const [existing] = await db
       .select()
       .from(customAccounts)
       .where(
         and(
           eq(customAccounts.businessId, businessId),
-          eq(customAccounts.accountCode, accountCode)
+          eq(customAccounts.accountNumber, accountCode) // accountNumber موجود في schema من custom-system.ts
         )
       )
       .limit(1);
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:208',message:'POST /accounts - After duplicate check',data:{existingFound:!!existing},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+    // #endregion
 
     if (existing) {
       return res.status(400).json({ error: "رمز الحساب موجود مسبقاً" });
     }
 
     // إنشاء الحساب
-    const newAccount: InsertCustomAccount = {
+    // ملاحظة: استخدام الأعمدة الموجودة في الجدول الفعلي حتى يتم تطبيق migration 0016
+    // بعد تطبيق migration، يمكن استخدام InsertCustomAccount مباشرة
+    const newAccount: any = {
       businessId,
-      subSystemId: subSystemId || null,
-      accountCode,
-      accountNameAr,
-      accountNameEn: accountNameEn || null,
+      // subSystemId: subSystemId || null, // غير موجود في الجدول الفعلي حالياً
+      accountNumber: accountCode, // استخدام accountNumber بدلاً من accountCode
+      accountName: accountNameAr, // استخدام accountName بدلاً من accountNameAr
       accountType,
-      accountSubTypeId: accountSubTypeId || null,
-      parentAccountId: parentAccountId || null,
-      level: level || 1,
+      parentId: parentAccountId || null, // استخدام parentId بدلاً من parentAccountId
+      // level: level || 1, // غير موجود في الجدول الفعلي حالياً
       description: description || null,
       isActive: isActive !== undefined ? isActive : true,
-      allowManualEntry: allowManualEntry !== undefined ? allowManualEntry : true,
-      requiresCostCenter: requiresCostCenter || false,
-      requiresParty: requiresParty || false,
+      // allowManualEntry: allowManualEntry !== undefined ? allowManualEntry : true, // غير موجود في الجدول الفعلي حالياً
+      // requiresCostCenter: requiresCostCenter || false, // غير موجود في الجدول الفعلي حالياً
       createdBy: userId,
     };
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:231',message:'POST /accounts - Before insert',data:{newAccountKeys:Object.keys(newAccount),accountNumber:newAccount.accountNumber,accountName:newAccount.accountName},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
-    const [result] = await db.insert(customAccounts).values(newAccount);
-    const accountId = result.insertId;
+    const result = await db.insert(customAccounts).values(newAccount);
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:233',message:'POST /accounts - After insert',data:{resultType:typeof result,isArray:Array.isArray(result),resultKeys:result?Object.keys(result):[],insertId:Array.isArray(result)?result[0]?.insertId:(result as any)?.insertId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D'})}).catch(()=>{});
+    // #endregion
+    
+    // في Drizzle مع MySQL، insertId موجود في result[0].insertId
+    let accountId: number | undefined;
+    if (Array.isArray(result) && result.length > 0) {
+      accountId = (result[0] as any)?.insertId;
+    } else if ((result as any)?.insertId) {
+      accountId = (result as any).insertId;
+    }
 
-    // إضافة العملات إذا تم تحديدها
-    if (currencies && currencies.length > 0) {
+    if (!accountId) {
+      // إذا لم يكن insertId متاحاً، نجلب آخر حساب تم إضافته بنفس الرمز
+      const [created] = await db
+        .select()
+        .from(customAccounts)
+        .where(
+          and(
+            eq(customAccounts.businessId, businessId),
+            eq(customAccounts.accountNumber, accountCode) // accountNumber موجود في schema من custom-system.ts
+          )
+        )
+        .orderBy(desc(customAccounts.id))
+        .limit(1);
+      
+      if (!created) {
+        console.error("فشل في الحصول على معرف الحساب المُنشأ. Result:", result);
+        throw new Error("فشل في الحصول على معرف الحساب المُنشأ");
+      }
+      
+      accountId = created.id;
+
+      // إضافة العملات إذا تم تحديدها
+      if (currencies && currencies.length > 0) {
+        const currencyValues: InsertCustomAccountCurrency[] = currencies.map((curr: any) => ({
+          businessId,
+          accountId: created.id,
+          currencyId: curr.currencyId,
+          isDefault: curr.isDefault || false,
+        }));
+
+        await db.insert(customAccountCurrencies).values(currencyValues);
+      }
+
+      return res.status(201).json(created);
+    }
+
+    // إضافة العملات إذا تم تحديدها (مرة واحدة فقط)
+    if (currencies && currencies.length > 0 && accountId) {
       const currencyValues: InsertCustomAccountCurrency[] = currencies.map((curr: any) => ({
         businessId,
-        accountId,
+        accountId: accountId,
         currencyId: curr.currencyId,
         isDefault: curr.isDefault || false,
       }));
-
+      
       await db.insert(customAccountCurrencies).values(currencyValues);
     }
 
@@ -200,13 +334,27 @@ router.post("/", async (req, res) => {
     const [created] = await db
       .select()
       .from(customAccounts)
-      .where(eq(customAccounts.id, accountId))
+      .where(eq(customAccounts.id, accountId!))
       .limit(1);
 
+    if (!created) {
+      console.error("فشل في جلب الحساب المُنشأ. accountId:", accountId);
+      throw new Error("فشل في جلب الحساب المُنشأ");
+    }
+
     res.status(201).json(created);
-  } catch (error) {
+  } catch (error: any) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:316',message:'POST /accounts - Error caught',data:{errorMessage:error.message,errorCode:error.code,sql:error.sql,errorName:error.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     console.error("خطأ في إنشاء الحساب:", error);
-    res.status(500).json({ error: "فشل في إنشاء الحساب" });
+    console.error("تفاصيل الخطأ:", {
+      message: error.message,
+      code: error.code,
+      sql: error.sql,
+      stack: error.stack
+    });
+    res.status(500).json({ error: "فشل في إنشاء الحساب", details: error.message });
   }
 });
 
@@ -216,6 +364,11 @@ router.post("/", async (req, res) => {
  */
 router.put("/:id", async (req, res) => {
   try {
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+    
     const businessId = req.user?.businessId;
     const accountId = parseInt(req.params.id);
 
@@ -248,31 +401,32 @@ router.put("/:id", async (req, res) => {
       accountNameAr,
       accountNameEn,
       accountType,
-      accountSubTypeId,
+      // accountSubTypeId, // غير موجود في قاعدة البيانات حالياً
       parentAccountId,
       level,
       description,
       isActive,
       allowManualEntry,
       requiresCostCenter,
-      requiresParty,
+      // requiresParty, // غير موجود في قاعدة البيانات حالياً
       currencies,
     } = req.body;
 
     // تحديث بيانات الحساب
-    const updateData: Partial<InsertCustomAccount> = {};
-    if (subSystemId !== undefined) updateData.subSystemId = subSystemId || null;
-    if (accountNameAr) updateData.accountNameAr = accountNameAr;
-    if (accountNameEn !== undefined) updateData.accountNameEn = accountNameEn || null;
+    // ملاحظة: استخدام الأعمدة الموجودة في الجدول الفعلي حتى يتم تطبيق migration 0016
+    const updateData: any = {};
+    // if (subSystemId !== undefined) updateData.subSystemId = subSystemId || null; // غير موجود في الجدول الفعلي حالياً
+    if (accountNameAr) updateData.accountName = accountNameAr; // استخدام accountName بدلاً من accountNameAr
+    // if (accountNameEn !== undefined) updateData.accountNameEn = accountNameEn || null; // غير موجود في الجدول الفعلي حالياً
     if (accountType) updateData.accountType = accountType;
-    if (accountSubTypeId !== undefined) updateData.accountSubTypeId = accountSubTypeId || null;
-    if (parentAccountId !== undefined) updateData.parentAccountId = parentAccountId || null;
-    if (level !== undefined) updateData.level = level;
+    // if (accountSubTypeId !== undefined) updateData.accountSubTypeId = accountSubTypeId || null; // غير موجود في قاعدة البيانات حالياً
+    if (parentAccountId !== undefined) updateData.parentId = parentAccountId || null; // استخدام parentId بدلاً من parentAccountId
+    // if (level !== undefined) updateData.level = level; // غير موجود في الجدول الفعلي حالياً
     if (description !== undefined) updateData.description = description || null;
     if (isActive !== undefined) updateData.isActive = isActive;
-    if (allowManualEntry !== undefined) updateData.allowManualEntry = allowManualEntry;
-    if (requiresCostCenter !== undefined) updateData.requiresCostCenter = requiresCostCenter;
-    if (requiresParty !== undefined) updateData.requiresParty = requiresParty;
+    // if (allowManualEntry !== undefined) updateData.allowManualEntry = allowManualEntry; // غير موجود في الجدول الفعلي حالياً
+    // if (requiresCostCenter !== undefined) updateData.requiresCostCenter = requiresCostCenter; // غير موجود في الجدول الفعلي حالياً
+    // if (requiresParty !== undefined) updateData.requiresParty = requiresParty; // غير موجود في قاعدة البيانات حالياً
 
     await db
       .update(customAccounts)
@@ -324,6 +478,11 @@ router.put("/:id", async (req, res) => {
  */
 router.delete("/:id", async (req, res) => {
   try {
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+    
     const businessId = req.user?.businessId;
     const accountId = parseInt(req.params.id);
 
@@ -352,10 +511,11 @@ router.delete("/:id", async (req, res) => {
     }
 
     // التحقق من عدم وجود حسابات فرعية
+    // ملاحظة: استخدام parentId بدلاً من parentAccountId حتى يتم تطبيق migration 0016
     const [hasChildren] = await db
       .select()
       .from(customAccounts)
-      .where(eq(customAccounts.parentAccountId, accountId))
+      .where(eq(customAccounts.parentId, accountId)) // parentId موجود في schema من custom-system.ts
       .limit(1);
 
     if (hasChildren) {
@@ -401,6 +561,11 @@ router.delete("/:id", async (req, res) => {
  */
 router.get("/:id/balances", async (req, res) => {
   try {
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+    
     const businessId = req.user?.businessId;
     const accountId = parseInt(req.params.id);
 
@@ -447,6 +612,11 @@ router.get("/:id/balances", async (req, res) => {
  */
 router.post("/:id/currencies", async (req, res) => {
   try {
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+    
     const businessId = req.user?.businessId;
     const accountId = parseInt(req.params.id);
 
@@ -527,6 +697,11 @@ router.post("/:id/currencies", async (req, res) => {
  */
 router.delete("/:id/currencies/:currencyId", async (req, res) => {
   try {
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+    
     const businessId = req.user?.businessId;
     const accountId = parseInt(req.params.id);
     const currencyId = parseInt(req.params.currencyId);
@@ -578,6 +753,11 @@ router.delete("/:id/currencies/:currencyId", async (req, res) => {
  */
 router.get("/sub-types", async (req, res) => {
   try {
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+    
     const businessId = req.user?.businessId;
     if (!businessId) {
       return res.status(400).json({ error: "معرف النشاط التجاري مطلوب" });
@@ -587,7 +767,7 @@ router.get("/sub-types", async (req, res) => {
       .select()
       .from(customAccountSubTypes)
       .where(eq(customAccountSubTypes.businessId, businessId))
-      .orderBy(customAccountSubTypes.accountType, customAccountSubTypes.subTypeNameAr);
+      .orderBy(customAccountSubTypes.accountType, customAccountSubTypes.nameAr);
 
     res.json(subTypes);
   } catch (error) {

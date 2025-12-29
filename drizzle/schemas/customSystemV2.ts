@@ -424,5 +424,51 @@ export type InsertCustomReceipt = typeof customReceipts.$inferInsert;
 export type CustomPayment = typeof customPayments.$inferSelect;
 export type InsertCustomPayment = typeof customPayments.$inferInsert;
 
-// Re-export customAccounts from schema.ts for convenience
-export { customAccounts } from "../schema";
+/**
+ * جدول الحسابات v2 - Accounts v2
+ * نسخة محدثة من customAccounts مع الحقول الجديدة
+ */
+export const customAccounts = mysqlTable("custom_accounts", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+  
+  // الحقول الأساسية
+  subSystemId: int("sub_system_id"), // النظام الفرعي
+  accountCode: varchar("account_code", { length: 50 }).notNull(), // رمز الحساب
+  accountNameAr: varchar("account_name_ar", { length: 255 }).notNull(), // الاسم بالعربية
+  accountNameEn: varchar("account_name_en", { length: 255 }), // الاسم بالإنجليزية
+  accountType: mysqlEnum("account_type", [
+    "asset",      // أصول
+    "liability",  // التزامات
+    "equity",     // حقوق ملكية
+    "revenue",    // إيرادات
+    "expense",    // مصروفات
+  ]).notNull(),
+  
+  // التصنيف والترتيب
+  parentAccountId: int("parent_account_id"), // الحساب الأب
+  level: int("level").default(1).notNull(), // المستوى في الشجرة
+  
+  // الوصف والإعدادات
+  description: text("description"),
+  isActive: boolean("is_active").default(true).notNull(),
+  allowManualEntry: boolean("allow_manual_entry").default(true).notNull(), // يسمح بالقيد اليدوي
+  requiresCostCenter: boolean("requires_cost_center").default(false).notNull(), // يتطلب مركز تكلفة
+  
+  // التتبع
+  createdBy: int("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  businessIdx: index("ca_business_idx").on(table.businessId),
+  accountCodeIdx: index("ca_account_code_idx").on(table.accountCode),
+  subSystemIdx: index("ca_sub_system_idx").on(table.subSystemId),
+  parentAccountIdx: index("ca_parent_account_idx").on(table.parentAccountId),
+  levelIdx: index("ca_level_idx").on(table.level),
+  accountTypeIdx: index("ca_account_type_idx").on(table.accountType),
+  isActiveIdx: index("ca_is_active_idx").on(table.isActive),
+  businessCodeUnique: uniqueIndex("ca_business_code_unique").on(table.businessId, table.accountCode),
+}));
+
+export type CustomAccount = typeof customAccounts.$inferSelect;
+export type InsertCustomAccount = typeof customAccounts.$inferInsert;
