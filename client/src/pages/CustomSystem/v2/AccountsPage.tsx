@@ -96,6 +96,7 @@ interface AccountFormData {
   accountSubTypeId: number; // نوع الحساب الفرعي (صندوق، بنك، محفظة، إلخ)
   parentAccountId: number;
   level: number;
+  displayOrder: number; // رقم الترتيب
   description: string;
   isActive: boolean;
   allowManualEntry: boolean;
@@ -122,6 +123,7 @@ const initialFormData: AccountFormData = {
   accountSubTypeId: 0,
   parentAccountId: 0,
   level: 1,
+  displayOrder: 0, // رقم الترتيب - يتم توليده تلقائياً
   description: "",
   isActive: true,
   allowManualEntry: true,
@@ -248,12 +250,30 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
       setEditMode(false);
       setCurrentAccountId(null);
       // تعيين subSystemId تلقائياً عند إضافة حساب جديد
+      // رقم الحساب فارغ ليدخله المستخدم
       setFormData({
         ...initialFormData,
         subSystemId: subSystemId || 0,
+        accountCode: "",
+        displayOrder: accounts.length + 1,
       });
       setOpenDialog(true);
     }
+  };
+
+  // دالة توليد رقم الحساب التلقائي
+  const generateNextAccountCode = () => {
+    if (accounts.length === 0) {
+      return "1000"; // أول حساب
+    }
+    // الحصول على أعلى رقم حساب موجود
+    const maxCode = Math.max(
+      ...accounts.map((acc) => {
+        const num = parseInt(acc.accountCode || "0", 10);
+        return isNaN(num) ? 0 : num;
+      })
+    );
+    return String(maxCode + 1);
   };
 
   const fetchAccountDetails = async (accountId: number) => {
@@ -274,6 +294,7 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
         accountSubTypeId: account.accountSubTypeId || 0,
         parentAccountId: account.parentAccountId || 0,
         level: account.level,
+        displayOrder: account.displayOrder || 0,
         description: account.description || "",
         isActive: account.isActive,
         allowManualEntry: account.allowManualEntry,
@@ -348,6 +369,8 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
         // parentAccountId: اختياري لجميع أنواع الحسابات (رئيسية وفرعية)
         // يستخدم فقط لترتيب الشجرة. الحسابات الرئيسية لا تتأثر بالعمليات المالية
         parentAccountId: formData.parentAccountId > 0 ? formData.parentAccountId : null,
+        // رقم الترتيب
+        displayOrder: formData.displayOrder || 0,
       };
 
       if (editMode && currentAccountId) {
@@ -365,16 +388,21 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("هل أنت متأكد من حذف هذا الحساب؟")) {
+    // البحث عن الحساب لعرض اسمه في رسالة التأكيد
+    const account = accounts.find(acc => acc.id === id);
+    const accountName = account?.accountNameAr || account?.accountCode || 'هذا الحساب';
+    
+    if (!window.confirm(`هل أنت متأكد من حذف الحساب "${accountName}"؟\n\nملاحظة: لا يمكن حذف الحساب إذا كانت هناك حركات مالية عليه أو حسابات فرعية تابعة له.`)) {
       return;
     }
 
     try {
       await axios.delete(`/api/custom-system/v2/accounts/${id}`);
-      setSuccess("تم حذف الحساب بنجاح");
+      setSuccess(`تم حذف الحساب "${accountName}" بنجاح`);
       fetchAccounts();
     } catch (err: any) {
-      setError(err.response?.data?.error || "فشل في حذف الحساب");
+      const errorMessage = err.response?.data?.error || "فشل في حذف الحساب";
+      setError(errorMessage);
     }
   };
 
@@ -830,20 +858,58 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
               </Stack>
               
               <Grid container spacing={3}>
-                <Grid item xs={12} md={6}>
+                {/* رقم الحساب - قابل للتعديل عند الإنشاء فقط، معطّل عند التعديل */}
+                <Grid item xs={12} md={4}>
                   <TextField
-                    label="رمز الحساب"
+                    label={editMode ? "رقم الحساب (لا يمكن التعديل)" : "رقم الحساب *"}
                     name="accountCode"
                     value={formData.accountCode}
-                    onChange={handleInputChange}
-                    required
+                    onChange={(e) => setFormData({ ...formData, accountCode: e.target.value })}
                     fullWidth
                     disabled={editMode}
+                    required={!editMode}
                     InputProps={{
+                      readOnly: editMode,
                       startAdornment: (
-                        <CodeIcon sx={{ mr: 1, color: '#667eea', fontSize: 20 }} />
+                        <CodeIcon sx={{ mr: 1, color: editMode ? '#999' : '#667eea', fontSize: 20 }} />
                       ),
                     }}
+                    helperText={editMode ? "لا يمكن تعديل رقم الحساب بعد الحفظ" : "أدخل رقم الحساب (مطلوب)"}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        transition: 'all 0.3s ease',
+                        background: editMode ? 'rgba(102, 126, 234, 0.08)' : 'rgba(102, 126, 234, 0.05)',
+                        '&.Mui-disabled': {
+                          background: 'rgba(102, 126, 234, 0.08)',
+                        }
+                      },
+                      '& .MuiInputLabel-root': {
+                        color: editMode ? '#999' : '#667eea'
+                      },
+                      '& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline': {
+                        borderColor: editMode ? 'rgba(102, 126, 234, 0.2)' : 'rgba(102, 126, 234, 0.5)',
+                        borderStyle: editMode ? 'dashed' : 'solid'
+                      }
+                    }}
+                  />
+                </Grid>
+                {/* رقم الترتيب */}
+                <Grid item xs={12} md={4}>
+                  <TextField
+                    label="رقم الترتيب"
+                    name="displayOrder"
+                    type="number"
+                    value={formData.displayOrder}
+                    onChange={handleInputChange}
+                    fullWidth
+                    inputProps={{ min: 1 }}
+                    InputProps={{
+                      startAdornment: (
+                        <LayersIcon sx={{ mr: 1, color: '#667eea', fontSize: 20 }} />
+                      ),
+                    }}
+                    helperText="لترتيب عرض الحسابات"
                     sx={{
                       '& .MuiOutlinedInput-root': {
                         borderRadius: 2,
@@ -868,7 +934,7 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
                   />
                 </Grid>
                 {/* حقل اختيار الحساب الأب - للترتيب في الشجرة (اختياري لجميع أنواع الحسابات) */}
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12} md={4}>
                   <FormControl fullWidth>
                     <InputLabel>الحساب الأب (للترتيب - اختياري)</InputLabel>
                     <Select
