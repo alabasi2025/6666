@@ -5,7 +5,7 @@
 
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { trpc } from "@/utils/trpc";
+import { trpc } from "@/lib/trpc";
 import {
   Card,
   CardContent,

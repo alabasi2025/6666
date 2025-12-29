@@ -1,4 +1,6 @@
 import { ENV } from "./env";
+import { invokeGemini } from "./gemini";
+import { invokeManus } from "./manus";
 
 export type Role = "system" | "user" | "assistant" | "tool" | "function";
 
@@ -66,6 +68,8 @@ export type InvokeParams = {
   output_schema?: OutputSchema;
   responseFormat?: ResponseFormat;
   response_format?: ResponseFormat;
+  provider?: "forge" | "gemini" | "manus";
+  model?: string;
 };
 
 export type ToolCall = {
@@ -266,8 +270,6 @@ const normalizeResponseFormat = ({
 };
 
 export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
-  assertApiKey();
-
   const {
     messages,
     tools,
@@ -277,10 +279,47 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     output_schema,
     responseFormat,
     response_format,
+    provider,
+    model,
   } = params;
 
+  // Determine which provider to use
+  const useProvider = provider || 
+    (ENV.geminiApiKey ? "gemini" : 
+     ENV.forgeApiKey ? "manus" : 
+     "forge");
+
+  // Use Gemini directly if requested or if Gemini API key is available
+  if (useProvider === "gemini") {
+    return invokeGemini({
+      messages,
+      tools,
+      toolChoice: toolChoice || tool_choice,
+      maxTokens: params.maxTokens || params.max_tokens,
+      outputSchema: outputSchema || output_schema,
+      responseFormat: responseFormat || response_format,
+      model: model || "gemini-2.0-flash-exp",
+    });
+  }
+
+  // Use Manus directly if requested or if Manus API key is available
+  if (useProvider === "manus") {
+    return invokeManus({
+      messages,
+      tools,
+      toolChoice: toolChoice || tool_choice,
+      maxTokens: params.maxTokens || params.max_tokens,
+      outputSchema: outputSchema || output_schema,
+      responseFormat: responseFormat || response_format,
+      model: model || "gemini-2.5-flash",
+    });
+  }
+
+  // Otherwise use Forge API (default/legacy)
+  assertApiKey();
+
   const payload: Record<string, unknown> = {
-    model: "gemini-2.5-flash",
+    model: model || "gemini-2.5-flash",
     messages: messages.map(normalizeMessage),
   };
 
@@ -296,7 +335,7 @@ export async function invokeLLM(params: InvokeParams): Promise<InvokeResult> {
     payload.tool_choice = normalizedToolChoice;
   }
 
-  payload.max_tokens = 32768
+  payload.max_tokens = params.maxTokens || params.max_tokens || 32768;
   payload.thinking = {
     "budget_tokens": 128
   }

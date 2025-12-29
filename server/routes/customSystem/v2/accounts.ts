@@ -6,14 +6,13 @@
 import { Router } from "express";
 import { getDb } from "../../../db";
 import {
-  customAccounts as customAccountsOld,
+  customAccounts,
   customAccountSubTypes,
   customAccountCurrencies,
   customAccountBalances,
   customCurrencies,
   type InsertCustomAccountCurrency,
 } from "../../../../drizzle/schemas/customSystemV2";
-import { customAccounts } from "../../../../drizzle/schemas/custom-system";
 import { eq, and, desc, sql, isNull, or } from "drizzle-orm";
 
 const router = Router();
@@ -76,13 +75,11 @@ router.get("/", async (req, res) => {
     // #region agent log
     fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:68',message:'GET /accounts - Before select query',data:{conditionsCount:conditions.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
-    // ملاحظة: accountCode غير موجود في الجدول الفعلي، استخدم accountNumber بدلاً منه
-    // سيتم تفعيله بعد تطبيق migration 0016
     const accounts = await db
       .select()
       .from(customAccounts)
       .where(and(...conditions))
-      .orderBy(customAccounts.accountNumber); // accountNumber موجود في schema من custom-system.ts
+      .orderBy(customAccounts.accountCode);
     
     // #region agent log
     fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:72',message:'GET /accounts - After select query',data:{accountsCount:accounts.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
@@ -196,18 +193,16 @@ router.post("/", async (req, res) => {
 
     const {
       subSystemId,
-      accountCode, // سيتم تحويله إلى accountNumber
-      accountNameAr, // سيتم تحويله إلى accountName
+      accountCode,
+      accountNameAr,
       accountNameEn,
       accountType,
-      // accountSubTypeId, // غير موجود في قاعدة البيانات حالياً
-      parentAccountId, // سيتم تحويله إلى parentId
+      parentAccountId,
       level,
       description,
       isActive,
       allowManualEntry,
       requiresCostCenter,
-      // requiresParty, // غير موجود في قاعدة البيانات حالياً
       currencies,
     } = req.body;
     
@@ -223,7 +218,6 @@ router.post("/", async (req, res) => {
     }
 
     // التحقق من عدم تكرار رمز الحساب
-    // ملاحظة: استخدام accountNumber بدلاً من accountCode حتى يتم تطبيق migration 0016
     // #region agent log
     fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:198',message:'POST /accounts - Before duplicate check',data:{businessId,accountCode},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
     // #endregion
@@ -233,7 +227,7 @@ router.post("/", async (req, res) => {
       .where(
         and(
           eq(customAccounts.businessId, businessId),
-          eq(customAccounts.accountNumber, accountCode) // accountNumber موجود في schema من custom-system.ts
+          eq(customAccounts.accountCode, accountCode)
         )
       )
       .limit(1);
@@ -247,20 +241,19 @@ router.post("/", async (req, res) => {
     }
 
     // إنشاء الحساب
-    // ملاحظة: استخدام الأعمدة الموجودة في الجدول الفعلي حتى يتم تطبيق migration 0016
-    // بعد تطبيق migration، يمكن استخدام InsertCustomAccount مباشرة
     const newAccount: any = {
       businessId,
-      // subSystemId: subSystemId || null, // غير موجود في الجدول الفعلي حالياً
-      accountNumber: accountCode, // استخدام accountNumber بدلاً من accountCode
-      accountName: accountNameAr, // استخدام accountName بدلاً من accountNameAr
+      subSystemId: subSystemId || null,
+      accountCode,
+      accountNameAr,
+      accountNameEn: accountNameEn || null,
       accountType,
-      parentId: parentAccountId || null, // استخدام parentId بدلاً من parentAccountId
-      // level: level || 1, // غير موجود في الجدول الفعلي حالياً
+      parentAccountId: parentAccountId || null,
+      level: level || 1,
       description: description || null,
       isActive: isActive !== undefined ? isActive : true,
-      // allowManualEntry: allowManualEntry !== undefined ? allowManualEntry : true, // غير موجود في الجدول الفعلي حالياً
-      // requiresCostCenter: requiresCostCenter || false, // غير موجود في الجدول الفعلي حالياً
+      allowManualEntry: allowManualEntry !== undefined ? allowManualEntry : true,
+      requiresCostCenter: requiresCostCenter || false,
       createdBy: userId,
     };
     
@@ -290,7 +283,7 @@ router.post("/", async (req, res) => {
         .where(
           and(
             eq(customAccounts.businessId, businessId),
-            eq(customAccounts.accountNumber, accountCode) // accountNumber موجود في schema من custom-system.ts
+            eq(customAccounts.accountCode, accountCode)
           )
         )
         .orderBy(desc(customAccounts.id))
@@ -302,27 +295,13 @@ router.post("/", async (req, res) => {
       }
       
       accountId = created.id;
-
-      // إضافة العملات إذا تم تحديدها
-      if (currencies && currencies.length > 0) {
-        const currencyValues: InsertCustomAccountCurrency[] = currencies.map((curr: any) => ({
-          businessId,
-          accountId: created.id,
-          currencyId: curr.currencyId,
-          isDefault: curr.isDefault || false,
-        }));
-
-        await db.insert(customAccountCurrencies).values(currencyValues);
-      }
-
-      return res.status(201).json(created);
     }
 
-    // إضافة العملات إذا تم تحديدها (مرة واحدة فقط)
+    // إضافة العملات إذا تم تحديدها
     if (currencies && currencies.length > 0 && accountId) {
       const currencyValues: InsertCustomAccountCurrency[] = currencies.map((curr: any) => ({
         businessId,
-        accountId: accountId,
+        accountId: accountId!,
         currencyId: curr.currencyId,
         isDefault: curr.isDefault || false,
       }));
@@ -331,18 +310,18 @@ router.post("/", async (req, res) => {
     }
 
     // جلب الحساب المُنشأ
-    const [created] = await db
+    const [createdAccount] = await db
       .select()
       .from(customAccounts)
       .where(eq(customAccounts.id, accountId!))
       .limit(1);
 
-    if (!created) {
+    if (!createdAccount) {
       console.error("فشل في جلب الحساب المُنشأ. accountId:", accountId);
       throw new Error("فشل في جلب الحساب المُنشأ");
     }
 
-    res.status(201).json(created);
+    res.status(201).json(createdAccount);
   } catch (error: any) {
     // #region agent log
     fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:316',message:'POST /accounts - Error caught',data:{errorMessage:error.message,errorCode:error.code,sql:error.sql,errorName:error.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
@@ -398,35 +377,32 @@ router.put("/:id", async (req, res) => {
 
     const {
       subSystemId,
+      accountCode,
       accountNameAr,
       accountNameEn,
       accountType,
-      // accountSubTypeId, // غير موجود في قاعدة البيانات حالياً
       parentAccountId,
       level,
       description,
       isActive,
       allowManualEntry,
       requiresCostCenter,
-      // requiresParty, // غير موجود في قاعدة البيانات حالياً
       currencies,
     } = req.body;
 
     // تحديث بيانات الحساب
-    // ملاحظة: استخدام الأعمدة الموجودة في الجدول الفعلي حتى يتم تطبيق migration 0016
     const updateData: any = {};
-    // if (subSystemId !== undefined) updateData.subSystemId = subSystemId || null; // غير موجود في الجدول الفعلي حالياً
-    if (accountNameAr) updateData.accountName = accountNameAr; // استخدام accountName بدلاً من accountNameAr
-    // if (accountNameEn !== undefined) updateData.accountNameEn = accountNameEn || null; // غير موجود في الجدول الفعلي حالياً
+    if (subSystemId !== undefined) updateData.subSystemId = subSystemId || null;
+    if (accountCode !== undefined) updateData.accountCode = accountCode;
+    if (accountNameAr) updateData.accountNameAr = accountNameAr;
+    if (accountNameEn !== undefined) updateData.accountNameEn = accountNameEn || null;
     if (accountType) updateData.accountType = accountType;
-    // if (accountSubTypeId !== undefined) updateData.accountSubTypeId = accountSubTypeId || null; // غير موجود في قاعدة البيانات حالياً
-    if (parentAccountId !== undefined) updateData.parentId = parentAccountId || null; // استخدام parentId بدلاً من parentAccountId
-    // if (level !== undefined) updateData.level = level; // غير موجود في الجدول الفعلي حالياً
+    if (parentAccountId !== undefined) updateData.parentAccountId = parentAccountId || null;
+    if (level !== undefined) updateData.level = level;
     if (description !== undefined) updateData.description = description || null;
     if (isActive !== undefined) updateData.isActive = isActive;
-    // if (allowManualEntry !== undefined) updateData.allowManualEntry = allowManualEntry; // غير موجود في الجدول الفعلي حالياً
-    // if (requiresCostCenter !== undefined) updateData.requiresCostCenter = requiresCostCenter; // غير موجود في الجدول الفعلي حالياً
-    // if (requiresParty !== undefined) updateData.requiresParty = requiresParty; // غير موجود في قاعدة البيانات حالياً
+    if (allowManualEntry !== undefined) updateData.allowManualEntry = allowManualEntry;
+    if (requiresCostCenter !== undefined) updateData.requiresCostCenter = requiresCostCenter;
 
     await db
       .update(customAccounts)
@@ -511,11 +487,10 @@ router.delete("/:id", async (req, res) => {
     }
 
     // التحقق من عدم وجود حسابات فرعية
-    // ملاحظة: استخدام parentId بدلاً من parentAccountId حتى يتم تطبيق migration 0016
     const [hasChildren] = await db
       .select()
       .from(customAccounts)
-      .where(eq(customAccounts.parentId, accountId)) // parentId موجود في schema من custom-system.ts
+      .where(eq(customAccounts.parentAccountId, accountId))
       .limit(1);
 
     if (hasChildren) {

@@ -91,9 +91,13 @@ export default function AiModels() {
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="internal">داخلي</SelectItem>
+                      <SelectItem value="gemini">Gemini (Google)</SelectItem>
+                      <SelectItem value="manus">Manus</SelectItem>
                       <SelectItem value="openai">OpenAI</SelectItem>
                       <SelectItem value="azure">Azure</SelectItem>
                       <SelectItem value="google">Google</SelectItem>
+                      <SelectItem value="aws">AWS</SelectItem>
+                      <SelectItem value="custom">مخصص</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -140,7 +144,17 @@ export default function AiModels() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">المزود:</span>
-                        <span>{model.provider}</span>
+                        <span>
+                          {model.provider === "gemini" ? "Gemini (Google)" :
+                           model.provider === "manus" ? "Manus" :
+                           model.provider === "openai" ? "OpenAI" :
+                           model.provider === "azure" ? "Azure" :
+                           model.provider === "google" ? "Google" :
+                           model.provider === "aws" ? "AWS" :
+                           model.provider === "custom" ? "مخصص" :
+                           model.provider === "internal" ? "داخلي" :
+                           model.provider}
+                        </span>
                       </div>
                       {model.accuracy && (
                         <div className="flex justify-between">

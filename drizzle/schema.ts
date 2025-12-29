@@ -1128,7 +1128,7 @@ export const aiModels = mysqlTable("ai_models", {
     "anomaly_detection", "demand_prediction", "maintenance_prediction",
     "customer_churn", "fraud_detection", "price_optimization", "other"
   ]).notNull(),
-  provider: mysqlEnum("provider", ["internal", "openai", "azure", "google", "aws", "custom"]).default("internal"),
+  provider: mysqlEnum("provider", ["internal", "openai", "azure", "google", "aws", "custom", "manus", "gemini"]).default("internal"),
   modelVersion: varchar("model_version", { length: 50 }),
   endpoint: varchar("endpoint", { length: 500 }),
   inputSchema: json("input_schema"),

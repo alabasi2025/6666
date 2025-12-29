@@ -1255,7 +1255,7 @@ export const appRouter = router({
             nameEn: z.string().optional(),
             description: z.string().optional(),
             modelType: z.enum(["consumption_forecast", "fault_detection", "load_optimization", "anomaly_detection", "demand_prediction", "maintenance_prediction", "customer_churn", "fraud_detection", "price_optimization", "other"]),
-            provider: z.enum(["internal", "openai", "azure", "google", "aws", "custom"]).default("internal"),
+            provider: z.enum(["internal", "openai", "azure", "google", "aws", "custom", "manus", "gemini"]).default("internal"),
             modelVersion: z.string().optional(),
             endpoint: z.string().optional(),
             inputSchema: z.any().optional(),
