@@ -51,7 +51,7 @@ const customNavigationItems = [
     id: "custom-dashboard",
     title: "الرئيسية",
     icon: LayoutDashboard,
-    path: "/custom-system",
+    path: "/custom",
     color: "from-amber-500 to-orange-500",
     bgColor: "bg-amber-500/10",
     textColor: "text-amber-400",
@@ -61,7 +61,7 @@ const customNavigationItems = [
     id: "custom-sub-systems",
     title: "الأنظمة الفرعية",
     icon: FolderKanban,
-    path: "/custom-system/sub-systems",
+    path: "/custom/sub-systems",
     color: "from-violet-500 to-purple-500",
     bgColor: "bg-violet-500/10",
     textColor: "text-violet-400",
@@ -71,7 +71,7 @@ const customNavigationItems = [
     id: "custom-treasuries",
     title: "الخزائن",
     icon: Building2,
-    path: "/custom-system/treasuries",
+    path: "/custom/treasuries",
     color: "from-emerald-500 to-green-500",
     bgColor: "bg-emerald-500/10",
     textColor: "text-emerald-400",
@@ -81,7 +81,7 @@ const customNavigationItems = [
     id: "custom-vouchers",
     title: "السندات",
     icon: Receipt,
-    path: "/custom-system/vouchers",
+    path: "/custom/vouchers",
     color: "from-blue-500 to-cyan-500",
     bgColor: "bg-blue-500/10",
     textColor: "text-blue-400",
@@ -91,7 +91,7 @@ const customNavigationItems = [
     id: "custom-reconciliation",
     title: "التسويات",
     icon: GitBranch,
-    path: "/custom-system/reconciliation",
+    path: "/custom/reconciliation",
     color: "from-pink-500 to-rose-500",
     bgColor: "bg-pink-500/10",
     textColor: "text-pink-400",
@@ -101,7 +101,7 @@ const customNavigationItems = [
     id: "custom-accounts",
     title: "الحسابات",
     icon: Landmark,
-    path: "/custom-system/accounts",
+    path: "/custom/accounts",
     color: "from-teal-500 to-cyan-500",
     bgColor: "bg-teal-500/10",
     textColor: "text-teal-400",
@@ -111,7 +111,7 @@ const customNavigationItems = [
     id: "custom-notes",
     title: "الملاحظات",
     icon: FileText,
-    path: "/custom-system/notes",
+    path: "/custom/notes",
     color: "from-yellow-500 to-amber-500",
     bgColor: "bg-yellow-500/10",
     textColor: "text-yellow-400",
@@ -121,7 +121,7 @@ const customNavigationItems = [
     id: "custom-memos",
     title: "المذكرات",
     icon: Mail,
-    path: "/custom-system/memos",
+    path: "/custom/memos",
     color: "from-red-500 to-orange-500",
     bgColor: "bg-red-500/10",
     textColor: "text-red-400",
@@ -132,7 +132,7 @@ const customNavigationItems = [
     id: "custom-v2-operations",
     title: "شاشة العمليات",
     icon: Activity,
-    path: "/custom-system/v2/operations",
+    path: "/custom/v2/operations",
     color: "from-indigo-500 to-blue-500",
     bgColor: "bg-indigo-500/10",
     textColor: "text-indigo-400",
@@ -142,7 +142,7 @@ const customNavigationItems = [
     id: "custom-v2-journal-entries",
     title: "القيود اليومية",
     icon: FileText,
-    path: "/custom-system/v2/journal-entries",
+    path: "/custom/v2/journal-entries",
     color: "from-cyan-500 to-teal-500",
     bgColor: "bg-cyan-500/10",
     textColor: "text-cyan-400",
@@ -152,7 +152,7 @@ const customNavigationItems = [
     id: "custom-v2-accounts",
     title: "الحسابات v2",
     icon: Landmark,
-    path: "/custom-system/v2/accounts",
+    path: "/custom/v2/accounts",
     color: "from-emerald-500 to-green-500",
     bgColor: "bg-emerald-500/10",
     textColor: "text-emerald-400",
@@ -162,7 +162,7 @@ const customNavigationItems = [
     id: "custom-v2-currencies",
     title: "العملات وأسعار الصرف",
     icon: Wallet,
-    path: "/custom-system/v2/currencies",
+    path: "/custom/v2/currencies",
     color: "from-yellow-500 to-amber-500",
     bgColor: "bg-yellow-500/10",
     textColor: "text-yellow-400",
@@ -172,7 +172,7 @@ const customNavigationItems = [
     id: "custom-inventory",
     title: "نظام المخزون",
     icon: Package,
-    path: "/custom-system/inventory",
+    path: "/custom/inventory",
     color: "from-slate-500 to-gray-500",
     bgColor: "bg-slate-500/10",
     textColor: "text-slate-400",
@@ -182,7 +182,7 @@ const customNavigationItems = [
     id: "custom-suppliers",
     title: "نظام الموردين",
     icon: Users,
-    path: "/custom-system/suppliers",
+    path: "/custom/suppliers",
     color: "from-rose-500 to-pink-500",
     bgColor: "bg-rose-500/10",
     textColor: "text-rose-400",
@@ -192,7 +192,7 @@ const customNavigationItems = [
     id: "custom-purchases",
     title: "نظام المشتريات",
     icon: ShoppingCart,
-    path: "/custom-system/purchases",
+    path: "/custom/purchases",
     color: "from-lime-500 to-green-500",
     bgColor: "bg-lime-500/10",
     textColor: "text-lime-400",
@@ -295,28 +295,28 @@ export default function CustomSystem() {
   }, [sidebarOpen]);
   
   // Route matching
-  const [matchCustom] = useRoute("/custom-system");
-  const [matchSubSystems] = useRoute("/custom-system/sub-systems");
-  const [matchTreasuries] = useRoute("/custom-system/treasuries");
-  const [matchVouchers] = useRoute("/custom-system/vouchers");
-  const [matchReconciliation] = useRoute("/custom-system/reconciliation");
-  const [matchAccounts] = useRoute("/custom-system/accounts");
-  const [matchNotes] = useRoute("/custom-system/notes");
-  const [matchMemos] = useRoute("/custom-system/memos");
-  const [matchSettings] = useRoute("/custom-system/settings");
-  const [matchSubSystemDetails] = useRoute("/custom-system/sub-systems/:id");
+  const [matchCustom] = useRoute("/custom");
+  const [matchSubSystems] = useRoute("/custom/sub-systems");
+  const [matchTreasuries] = useRoute("/custom/treasuries");
+  const [matchVouchers] = useRoute("/custom/vouchers");
+  const [matchReconciliation] = useRoute("/custom/reconciliation");
+  const [matchAccounts] = useRoute("/custom/accounts");
+  const [matchNotes] = useRoute("/custom/notes");
+  const [matchMemos] = useRoute("/custom/memos");
+  const [matchSettings] = useRoute("/custom/settings");
+  const [matchSubSystemDetails] = useRoute("/custom/sub-systems/:id");
   
   // Custom System v2.2.0 Routes
-  const [matchV2Operations] = useRoute("/custom-system/v2/operations");
-  const [matchV2JournalEntries] = useRoute("/custom-system/v2/journal-entries");
-  const [matchV2Accounts] = useRoute("/custom-system/v2/accounts");
-  const [matchV2Currencies] = useRoute("/custom-system/v2/currencies");
-  const [matchV2ExchangeRates] = useRoute("/custom-system/v2/exchange-rates"); // إعادة توجيه إلى العملات
+  const [matchV2Operations] = useRoute("/custom/v2/operations");
+  const [matchV2JournalEntries] = useRoute("/custom/v2/journal-entries");
+  const [matchV2Accounts] = useRoute("/custom/v2/accounts");
+  const [matchV2Currencies] = useRoute("/custom/v2/currencies");
+  const [matchV2ExchangeRates] = useRoute("/custom/v2/exchange-rates"); // إعادة توجيه إلى العملات
   
   // New Systems Routes
-  const [matchInventory] = useRoute("/custom-system/inventory");
-  const [matchSuppliers] = useRoute("/custom-system/suppliers");
-  const [matchPurchases] = useRoute("/custom-system/purchases");
+  const [matchInventory] = useRoute("/custom/inventory");
+  const [matchSuppliers] = useRoute("/custom/suppliers");
+  const [matchPurchases] = useRoute("/custom/purchases");
 
   // Fetch notifications count from API
   const { data: notesData } = trpc.customSystem.notes.list.useQuery(
@@ -346,7 +346,7 @@ export default function CustomSystem() {
 
   // Get current page title
   const currentItem = customNavigationItems.find(item => 
-    location === item.path || (item.path !== "/custom-system" && location.startsWith(item.path))
+    location === item.path || (item.path !== "/custom" && location.startsWith(item.path))
   );
 
   // Render content based on route
@@ -358,7 +358,7 @@ export default function CustomSystem() {
     if (matchV2Currencies) return <CurrenciesPage />;
     if (matchV2ExchangeRates) {
       // إعادة توجيه إلى صفحة العملات (تم دمجها)
-      setLocation("/custom-system/v2/currencies");
+      setLocation("/custom/v2/currencies");
       return null;
     }
     
@@ -500,7 +500,7 @@ export default function CustomSystem() {
                 variant="ghost" 
                 size="icon" 
                 className="text-zinc-400 hover:text-amber-300 hover:bg-amber-500/10 rounded-xl hidden sm:flex"
-                onClick={() => setLocation("/custom-system/settings")}
+                onClick={() => setLocation("/custom/settings")}
               >
                 <Settings className="h-5 w-5" />
               </Button>
@@ -571,7 +571,7 @@ export default function CustomSystem() {
               <nav className="p-4 grid grid-cols-2 gap-2">
                 {customNavigationItems.map((item) => {
                   const isActive = location === item.path || 
-                    (item.path !== "/custom-system" && location.startsWith(item.path));
+                    (item.path !== "/custom" && location.startsWith(item.path));
                   
                   return (
                     <button
@@ -621,7 +621,7 @@ export default function CustomSystem() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => setLocation("/custom-system/sub-systems")}
+                  onClick={() => setLocation("/custom/sub-systems")}
                   className="w-8 h-8 rounded-lg hover:bg-violet-500/20 text-violet-400 hover:text-white"
                 >
                   <ArrowLeft className="h-4 w-4" />
@@ -821,7 +821,7 @@ export default function CustomSystem() {
               <nav className="p-4 space-y-2">
                 {customNavigationItems.map((item) => {
                   const isActive = location === item.path || 
-                    (item.path !== "/custom-system" && location.startsWith(item.path));
+                    (item.path !== "/custom" && location.startsWith(item.path));
                   
                   // Define color classes based on item id
                   const getColorClasses = () => {

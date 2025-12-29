@@ -241,7 +241,7 @@ interface SubSystemDetailsProps {
 }
 
 export default function SubSystemDetails({ activeTab: externalActiveTab, onTabChange }: SubSystemDetailsProps = {}) {
-  const [, params] = useRoute("/custom-system/sub-systems/:id");
+  const [, params] = useRoute("/custom/sub-systems/:id");
   const id = (params as any)?.id;
   const [, setLocation] = useLocation();
   const [internalActiveTab, setInternalActiveTab] = useState("overview");
@@ -640,7 +640,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     return (
       <div className="p-6 text-center">
         <p className="text-slate-400">النظام الفرعي غير موجود</p>
-        <Button onClick={() => setLocation("/custom-system/sub-systems")} className="mt-4">
+        <Button onClick={() => setLocation("/custom/sub-systems")} className="mt-4">
           <ArrowRight className="ml-2 h-4 w-4" />
           العودة للأنظمة الفرعية
         </Button>
@@ -653,7 +653,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => setLocation("/custom-system/sub-systems")}>
+          <Button variant="ghost" size="icon" onClick={() => setLocation("/custom/sub-systems")}>
             <ArrowRight className="h-5 w-5" />
           </Button>
           <div>
