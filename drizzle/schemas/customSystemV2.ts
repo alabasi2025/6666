@@ -49,6 +49,11 @@ export const customCurrencies = mysqlTable("custom_currencies", {
   isActive: boolean("is_active").default(true).notNull(),
   decimalPlaces: int("decimal_places").default(2).notNull(), // عدد المنازل العشرية
   
+  // أسعار الصرف مقابل الريال اليمني (YER)
+  currentRate: decimal("current_rate", { precision: 18, scale: 6 }), // السعر الحالي مقابل YER
+  maxRate: decimal("max_rate", { precision: 18, scale: 6 }), // أعلى سعر صرف (سقف علوي)
+  minRate: decimal("min_rate", { precision: 18, scale: 6 }), // أدنى سعر صرف (سقف سفلي)
+  
   // الترتيب والعرض
   displayOrder: int("display_order").default(0),
   notes: text("notes"),
