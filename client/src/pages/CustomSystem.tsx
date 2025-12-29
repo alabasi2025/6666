@@ -43,6 +43,7 @@ import {
   JournalEntriesPage,
   AccountsPage as AccountsPageV2,
   CurrenciesPage,
+  IntermediarySystemPage,
 } from "./CustomSystem/v2";
 
 // Navigation Items for Custom System - Horizontal Layout with Colors
@@ -96,6 +97,16 @@ const customNavigationItems = [
     bgColor: "bg-pink-500/10",
     textColor: "text-pink-400",
     description: "التسويات المالية",
+  },
+  {
+    id: "custom-intermediary",
+    title: "نظام الوسيط",
+    icon: ArrowLeftRight,
+    path: "/custom/intermediary",
+    color: "from-indigo-500 to-purple-500",
+    bgColor: "bg-indigo-500/10",
+    textColor: "text-indigo-400",
+    description: "الحسابات الوسيطة بين الأنظمة",
   },
   {
     id: "custom-accounts",
@@ -317,6 +328,7 @@ export default function CustomSystem() {
   const [matchInventory] = useRoute("/custom/inventory");
   const [matchSuppliers] = useRoute("/custom/suppliers");
   const [matchPurchases] = useRoute("/custom/purchases");
+  const [matchIntermediary] = useRoute("/custom/intermediary");
 
   // Fetch notifications count from API
   const { data: notesData } = trpc.customSystem.notes.list.useQuery(
@@ -369,6 +381,7 @@ export default function CustomSystem() {
     if (matchTreasuries) return <CustomTreasuries />;
     if (matchVouchers) return <CustomVouchers />;
     if (matchReconciliation) return <CustomReconciliation />;
+    if (matchIntermediary) return <IntermediarySystemPage businessId={1} />;
     if (matchAccounts) return <CustomAccounts />;
     if (matchNotes) return <CustomNotes />;
     if (matchMemos) return <CustomMemos />;

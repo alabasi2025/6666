@@ -19,6 +19,7 @@ import { maintenanceRouter } from "./maintenanceRouter";
 import { projectsRouter } from "./projectsRouter";
 import { scadaRouter } from "./scadaRouter";
 import { dieselRouter } from "./dieselRouter";
+import { intermediarySystemRouter } from "./intermediarySystemRouter";
 import { logger } from './utils/logger';
 
 // Admin procedure - requires admin role
@@ -1489,6 +1490,8 @@ export const appRouter = router({
   scada: scadaRouter,
   // Diesel System - نظام استهلاك الديزل
   diesel: dieselRouter,
+  // Intermediary System - نظام الوسيط
+  intermediarySystem: intermediarySystemRouter,
 });
 
 export type AppRouter = typeof appRouter;

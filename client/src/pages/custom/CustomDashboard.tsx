@@ -23,7 +23,8 @@ import {
   BarChart3,
   PieChart,
   Target,
-  Zap
+  Zap,
+  ArrowLeftRight
 } from "lucide-react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -115,6 +116,15 @@ export default function CustomDashboard() {
       color: "text-orange-400",
       bgColor: "bg-orange-500/10",
       borderColor: "border-orange-500/20",
+    },
+    {
+      title: "نظام الوسيط",
+      description: "إدارة الحسابات الوسيطة بين الأنظمة",
+      icon: ArrowLeftRight,
+      path: "/custom/intermediary",
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/10",
+      borderColor: "border-purple-500/20",
     },
     {
       title: "التسويات",

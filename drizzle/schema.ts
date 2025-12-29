@@ -3530,3 +3530,22 @@ export {
   type CustomPayment,
   type InsertCustomPayment,
 } from "./schemas/customSystemV2";
+
+// Re-export نظام الوسيط - Intermediary System
+export {
+  intermediaryAccounts,
+  intermediaryAccountSubSystems,
+  intermediaryAccountMovements,
+  intermediaryReconciliations,
+  intermediaryDailySummary,
+  type IntermediaryAccount,
+  type InsertIntermediaryAccount,
+  type IntermediaryAccountSubSystem,
+  type InsertIntermediaryAccountSubSystem,
+  type IntermediaryAccountMovement,
+  type InsertIntermediaryAccountMovement,
+  type IntermediaryReconciliation,
+  type InsertIntermediaryReconciliation,
+  type IntermediaryDailySummary,
+  type InsertIntermediaryDailySummary,
+} from "./schemas/intermediarySystem";

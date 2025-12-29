@@ -8,3 +8,4 @@ export { default as AccountsPage } from "./AccountsPagePro"; // الإصدار �
 export { default as AccountsPageLegacy } from "./AccountsPage"; // الإصدار القديم للرجوع إليه
 export { default as JournalEntriesPage } from "./JournalEntriesPage";
 export { default as OperationsPage } from "./OperationsPage";
+export { default as IntermediarySystemPage } from "./IntermediarySystemPage";
