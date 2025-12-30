@@ -29,6 +29,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from "@/components/ui/form";
 import {
   Select,
@@ -250,6 +251,7 @@ export default function CustomTreasuries() {
       currency: "SAR",
       openingBalance: "0",
       description: "",
+      accountId: null,
     },
   });
 
@@ -262,6 +264,10 @@ export default function CustomTreasuries() {
   );
 
   const { data: subSystems } = trpc.customSystem.subSystems.list.useQuery(
+    { businessId: 1 },
+    { enabled: true }
+  );
+  const { data: accounts } = trpc.customSystem.getAccounts.useQuery(
     { businessId: 1 },
     { enabled: true }
   );
@@ -320,6 +326,7 @@ export default function CustomTreasuries() {
       currency: (treasury as any).currency,
       openingBalance: (treasury as any).openingBalance || "0",
       description: (treasury as any).description || "",
+      accountId: (treasury as any).accountId || null,
     });
     setIsDialogOpen(true);
   };
@@ -532,6 +539,43 @@ export default function CustomTreasuries() {
                         <FormMessage />
                       </FormItem>
                     )}
+
+                  {/* Account Selection Field */}
+                  <FormField
+                    control={form.control as any}
+                    name="accountId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-slate-300">الحساب المحاسبي (اختياري)</FormLabel>
+                        <Select 
+                          onValueChange={(v) => field.onChange(v === "0" ? null : parseInt(v))} 
+                          value={field.value?.toString() || "0"}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="bg-slate-800 border-slate-700">
+                              <SelectValue placeholder="اختر حساباً من الدليل" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="bg-slate-900 border-slate-800 max-h-[300px]">
+                            <SelectItem value="0">
+                              <span className="text-slate-400">بدون حساب محاسبي</span>
+                            </SelectItem>
+                            {accounts?.map((acc: any) => (
+                              <SelectItem key={acc.id} value={acc.id.toString()}>
+                                <span className="font-mono text-blue-400">{acc.accountCode}</span>
+                                {" - "}
+                                <span>{acc.accountNameAr}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormDescription className="text-xs text-slate-400">
+                          اربط هذا الصندوق بحساب محاسبي من دليل الحسابات
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                   />
 
                   {/* Bank Fields */}
@@ -771,3 +815,4 @@ export default function CustomTreasuries() {
     </div>
   );
 }
+

@@ -43,6 +43,7 @@ export const treasuryTypeSchema = z.enum(treasuryTypes, {
 export const createTreasurySchema = z.object({
   businessId: businessIdSchema,
   subSystemId: idSchema.optional().nullable(),
+  accountId: idSchema.optional().nullable(),
   code: codeSchema,
   nameAr: nameArSchema,
   nameEn: nameEnSchema,
