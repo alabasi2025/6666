@@ -20,6 +20,7 @@ import { projectsRouter } from "./projectsRouter";
 import { scadaRouter } from "./scadaRouter";
 import { dieselRouter } from "./dieselRouter";
 import { intermediarySystemRouter } from "./intermediarySystemRouter";
+import { customAccountTypesRouter } from "./customAccountTypesRouter";
 import { logger } from './utils/logger';
 
 // Admin procedure - requires admin role
@@ -1492,6 +1493,8 @@ export const appRouter = router({
   diesel: dieselRouter,
   // Intermediary System - نظام الوسيط
   intermediarySystem: intermediarySystemRouter,
+  // Custom Account Types - أنواع الحسابات المخصصة
+  customAccountTypes: customAccountTypesRouter,
 });
 
 export type AppRouter = typeof appRouter;

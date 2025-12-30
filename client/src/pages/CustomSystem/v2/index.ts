@@ -9,3 +9,4 @@ export { default as AccountsPageLegacy } from "./AccountsPage"; // الإصدا�
 export { default as JournalEntriesPage } from "./JournalEntriesPage";
 export { default as OperationsPage } from "./OperationsPage";
 export { default as IntermediarySystemPage } from "./IntermediarySystemPage";
+export { default as AccountTypesPage } from "./AccountTypesPage";

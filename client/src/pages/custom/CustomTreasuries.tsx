@@ -539,6 +539,7 @@ export default function CustomTreasuries() {
                         <FormMessage />
                       </FormItem>
                     )}
+                  />
 
                   {/* Account Selection Field */}
                   <FormField
@@ -575,7 +576,6 @@ export default function CustomTreasuries() {
                         <FormMessage />
                       </FormItem>
                     )}
-                  />
                   />
 
                   {/* Bank Fields */}

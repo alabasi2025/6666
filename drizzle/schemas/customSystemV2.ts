@@ -117,13 +117,8 @@ export const customAccountSubTypes = mysqlTable("custom_account_sub_types", {
   businessId: int("business_id").notNull(),
   
   // النوع الرئيسي والفرعي
-  accountType: mysqlEnum("account_type", [
-    "asset",      // أصول
-    "liability",  // التزامات
-    "equity",     // حقوق ملكية
-    "revenue",    // إيرادات
-    "expense",    // مصروفات
-  ]).notNull(),
+  accountType: varchar("account_type", { length: 50 }), // نوع الحساب (مرجع لجدول الأنواع)
+  accountTypeId: int("account_type_id"), // معرف نوع الحساب المخصص
   
   // معلومات النوع الفرعي
   code: varchar("code", { length: 50 }).notNull(), // كود فريد
@@ -437,13 +432,8 @@ export const customAccounts = mysqlTable("custom_accounts", {
   accountCode: varchar("account_code", { length: 50 }).notNull(), // رمز الحساب
   accountNameAr: varchar("account_name_ar", { length: 255 }).notNull(), // الاسم بالعربية
   accountNameEn: varchar("account_name_en", { length: 255 }), // الاسم بالإنجليزية
-  accountType: mysqlEnum("account_type", [
-    "asset",      // أصول
-    "liability",  // التزامات
-    "equity",     // حقوق ملكية
-    "revenue",    // إيرادات
-    "expense",    // مصروفات
-  ]).notNull(),
+  accountType: varchar("account_type", { length: 50 }), // نوع الحساب (مرجع لجدول الأنواع)
+  accountTypeId: int("account_type_id"), // معرف نوع الحساب المخصص
   
   // التصنيف والترتيب
   parentAccountId: int("parent_account_id"), // الحساب الأب
@@ -472,3 +462,41 @@ export const customAccounts = mysqlTable("custom_accounts", {
 
 export type CustomAccount = typeof customAccounts.$inferSelect;
 export type InsertCustomAccount = typeof customAccounts.$inferInsert;
+
+/**
+ * جدول أنواع الحسابات المخصصة - Custom Account Types
+ * يسمح بإنشاء أنواع حسابات مخصصة بدلاً من الأنواع الثابتة
+ */
+export const customAccountTypes = mysqlTable("custom_account_types", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+  
+  // معلومات النوع
+  typeCode: varchar("type_code", { length: 50 }).notNull(), // مثل: "iron_works", "personal"
+  typeNameAr: varchar("type_name_ar", { length: 100 }).notNull(), // مثل: "أعمال الحديدة"
+  typeNameEn: varchar("type_name_en", { length: 100 }), // مثل: "Iron Works"
+  
+  // الوصف والتنسيق
+  description: text("description"),
+  color: varchar("color", { length: 20 }), // لون مميز للنوع
+  icon: varchar("icon", { length: 50 }), // أيقونة مميزة
+  
+  // الترتيب والإعدادات
+  displayOrder: int("display_order").default(0).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  isSystemType: boolean("is_system_type").default(false).notNull(), // للأنواع الافتراضية (لا يمكن حذفها)
+  
+  // التتبع
+  createdBy: int("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  businessIdx: index("cat_business_idx").on(table.businessId),
+  typeCodeIdx: index("cat_type_code_idx").on(table.typeCode),
+  businessCodeUnique: uniqueIndex("cat_business_code_unique").on(table.businessId, table.typeCode),
+  isActiveIdx: index("cat_is_active_idx").on(table.isActive),
+  displayOrderIdx: index("cat_display_order_idx").on(table.displayOrder),
+}));
+
+export type CustomAccountType = typeof customAccountTypes.$inferSelect;
+export type InsertCustomAccountType = typeof customAccountTypes.$inferInsert;

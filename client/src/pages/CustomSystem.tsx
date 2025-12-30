@@ -19,7 +19,7 @@ import {
   LayoutDashboard, Wallet, ClipboardList, Loader2, Zap, ChevronDown,
   FolderKanban, Receipt, GitBranch, Landmark, Building2, Sparkles,
   ArrowRight, MoreHorizontal, Plus, Filter, RefreshCw, ChevronUp, ChevronDown as ChevronDownIcon,
-  ArrowLeft, ArrowLeftRight, FileCheck, BookOpen, Package, Users, ShoppingCart
+  ArrowLeft, ArrowLeftRight, FileCheck, BookOpen, Package, Users, ShoppingCart, Tags
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -44,6 +44,7 @@ import {
   AccountsPage as AccountsPageV2,
   CurrenciesPage,
   IntermediarySystemPage,
+  AccountTypesPage,
 } from "./CustomSystem/v2";
 
 // Navigation Items for Custom System - Horizontal Layout with Colors
@@ -178,6 +179,16 @@ const customNavigationItems = [
     bgColor: "bg-yellow-500/10",
     textColor: "text-yellow-400",
     description: "إدارة العملات وأسعار الصرف",
+  },
+  {
+    id: "custom-v2-account-types",
+    title: "أنواع الحسابات",
+    icon: Tags,
+    path: "/custom/v2/account-types",
+    color: "from-purple-500 to-pink-500",
+    bgColor: "bg-purple-500/10",
+    textColor: "text-purple-400",
+    description: "إدارة أنواع الحسابات المخصصة",
   },
   {
     id: "custom-inventory",
@@ -323,6 +334,7 @@ export default function CustomSystem() {
   const [matchV2Accounts] = useRoute("/custom/v2/accounts");
   const [matchV2Currencies] = useRoute("/custom/v2/currencies");
   const [matchV2ExchangeRates] = useRoute("/custom/v2/exchange-rates"); // إعادة توجيه إلى العملات
+  const [matchV2AccountTypes] = useRoute("/custom/v2/account-types");
   
   // New Systems Routes
   const [matchInventory] = useRoute("/custom/inventory");
@@ -368,6 +380,7 @@ export default function CustomSystem() {
     if (matchV2JournalEntries) return <JournalEntriesPage />;
     if (matchV2Accounts) return <AccountsPageV2 />;
     if (matchV2Currencies) return <CurrenciesPage />;
+    if (matchV2AccountTypes) return <AccountTypesPage />;
     if (matchV2ExchangeRates) {
       // إعادة توجيه إلى صفحة العملات (تم دمجها)
       setLocation("/custom/v2/currencies");

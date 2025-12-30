@@ -3529,6 +3529,9 @@ export {
   type InsertCustomReceipt,
   type CustomPayment,
   type InsertCustomPayment,
+  customAccountTypes,
+  type CustomAccountType,
+  type InsertCustomAccountType,
 } from "./schemas/customSystemV2";
 
 // Re-export نظام الوسيط - Intermediary System
