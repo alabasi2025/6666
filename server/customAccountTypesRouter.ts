@@ -51,19 +51,25 @@ export const customAccountTypesRouter = router({
       
       const conditions = [eq(customAccountTypes.businessId, businessId)];
       
+      console.log("[DEBUG] conditions:", conditions);
+      
       if (input?.subSystemId) {
         conditions.push(eq(customAccountTypes.subSystemId, input.subSystemId));
       }
       
-      if (!input?.includeInactive) {
-        conditions.push(eq(customAccountTypes.isActive, true));
-      }
+      // Temporarily disabled to test
+      // if (!input?.includeInactive) {
+      //   conditions.push(eq(customAccountTypes.isActive, true));
+      // }
       
       const types = await db
         .select()
         .from(customAccountTypes)
         .where(and(...conditions))
         .orderBy(customAccountTypes.displayOrder, customAccountTypes.typeNameAr);
+      
+      console.log("[DEBUG] types count:", types.length);
+      console.log("[DEBUG] types:", JSON.stringify(types));
       
       return types;
     }),
