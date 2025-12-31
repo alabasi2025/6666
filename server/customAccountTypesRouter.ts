@@ -62,11 +62,10 @@ export const customAccountTypesRouter = router({
       //   conditions.push(eq(customAccountTypes.isActive, true));
       // }
       
+      // Test: Get ALL types without any conditions
       const types = await db
         .select()
-        .from(customAccountTypes)
-        .where(and(...conditions))
-        .orderBy(customAccountTypes.displayOrder, customAccountTypes.typeNameAr);
+        .from(customAccountTypes);
       
       console.log("[DEBUG] types count:", types.length);
       console.log("[DEBUG] types:", JSON.stringify(types));
