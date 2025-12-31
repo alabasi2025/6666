@@ -728,6 +728,101 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
         </Card>
       </div>
 
+      {/* Navigation Tabs */}
+      <div className="bg-slate-900/50 border border-slate-800 rounded-lg p-2">
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant={activeTab === "overview" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("overview")}
+            className={activeTab === "overview" ? "" : "text-slate-400 hover:text-white"}
+          >
+            نظرة عامة
+          </Button>
+          <Button
+            variant={activeTab === "treasuries" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("treasuries")}
+            className={activeTab === "treasuries" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <Wallet className="ml-2 h-4 w-4" />
+            الخزائن
+          </Button>
+          <Button
+            variant={activeTab === "vouchers" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("vouchers")}
+            className={activeTab === "vouchers" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <Receipt className="ml-2 h-4 w-4" />
+            السندات
+          </Button>
+          <Button
+            variant={activeTab === "transfers" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("transfers")}
+            className={activeTab === "transfers" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <ArrowLeftRight className="ml-2 h-4 w-4" />
+            التحويلات
+          </Button>
+          <Button
+            variant={activeTab === "reconciliation" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("reconciliation")}
+            className={activeTab === "reconciliation" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <FileCheck className="ml-2 h-4 w-4" />
+            المطابقة
+          </Button>
+          <Button
+            variant={activeTab === "accounts" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("accounts")}
+            className={activeTab === "accounts" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <CreditCard className="ml-2 h-4 w-4" />
+            دليل الحسابات
+          </Button>
+          <Button
+            variant={activeTab === "account-types" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("account-types")}
+            className={activeTab === "account-types" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <Settings className="ml-2 h-4 w-4" />
+            أنواع الحسابات
+          </Button>
+          <Button
+            variant={activeTab === "inventory" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("inventory")}
+            className={activeTab === "inventory" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <Package className="ml-2 h-4 w-4" />
+            المخزون
+          </Button>
+          <Button
+            variant={activeTab === "suppliers" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("suppliers")}
+            className={activeTab === "suppliers" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <Users className="ml-2 h-4 w-4" />
+            الموردين
+          </Button>
+          <Button
+            variant={activeTab === "purchases" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("purchases")}
+            className={activeTab === "purchases" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <ShoppingCart className="ml-2 h-4 w-4" />
+            المشتريات
+          </Button>
+        </div>
+      </div>
+
       {/* Main Content */}
       <div className="w-full">
           {/* Overview Tab */}
