@@ -12,6 +12,7 @@ import subSystemsRouter from "./subSystems";
 import journalEntriesRouter from "./journalEntries";
 import operationsRouter from "./operations";
 import receiptsPaymentsRouter from "./receiptsPayments";
+import accountTypesRouter from "./accountTypes";
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.use("/currencies", currenciesRouter);
 router.use("/exchange-rates", exchangeRatesRouter);
 router.use("/accounts", accountsRouter);
 router.use("/account-sub-types", accountSubTypesRouter);
+router.use("/account-types", accountTypesRouter);
 router.use("/sub-systems", subSystemsRouter);
 router.use("/journal-entries", journalEntriesRouter);
 router.use("/operations", operationsRouter);
