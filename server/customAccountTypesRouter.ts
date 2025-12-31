@@ -10,7 +10,7 @@ import {
   customAccountTypes,
   type CustomAccountType,
   type InsertCustomAccountType,
-} from "../drizzle/schema";
+} from "../drizzle/schemas/customSystemV2";
 import { router, protectedProcedure } from "./_core/trpc";
 
 // Schema للتحقق من البيانات
