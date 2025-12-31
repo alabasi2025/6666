@@ -46,7 +46,7 @@ export const customAccountTypesRouter = router({
       if (!db) throw new Error("Database connection failed");
       
       console.log("[DEBUG] ctx.user:", JSON.stringify(ctx.user));
-      const businessId = ctx.user.businessId;
+      const businessId = ctx.user.businessId || 1; // Fallback to 1 for testing
       console.log("[DEBUG] businessId:", businessId);
       
       const conditions = [eq(customAccountTypes.businessId, businessId)];
