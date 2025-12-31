@@ -45,30 +45,23 @@ export const customAccountTypesRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database connection failed");
       
-      console.log("[DEBUG] ctx.user:", JSON.stringify(ctx.user));
-      const businessId = ctx.user.businessId || 1; // Fallback to 1 for testing
-      console.log("[DEBUG] businessId:", businessId);
+      const businessId = ctx.user.businessId;
       
       const conditions = [eq(customAccountTypes.businessId, businessId)];
-      
-      console.log("[DEBUG] conditions:", conditions);
       
       if (input?.subSystemId) {
         conditions.push(eq(customAccountTypes.subSystemId, input.subSystemId));
       }
       
-      // Temporarily disabled to test
-      // if (!input?.includeInactive) {
-      //   conditions.push(eq(customAccountTypes.isActive, true));
-      // }
+      if (!input?.includeInactive) {
+        conditions.push(eq(customAccountTypes.isActive, true));
+      }
       
-      // Test: Get ALL types without any conditions
       const types = await db
         .select()
-        .from(customAccountTypes);
-      
-      console.log("[DEBUG] types count:", types.length);
-      console.log("[DEBUG] types:", JSON.stringify(types));
+        .from(customAccountTypes)
+        .where(and(...conditions))
+        .orderBy(customAccountTypes.displayOrder, customAccountTypes.typeNameAr);
       
       return types;
     }),
