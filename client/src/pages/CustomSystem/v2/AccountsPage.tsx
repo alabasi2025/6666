@@ -142,6 +142,7 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [subSystems, setSubSystems] = useState<SubSystem[]>([]);
   const [accountSubTypes, setAccountSubTypes] = useState<AccountSubType[]>([]);
+  const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -156,6 +157,7 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
     fetchCurrencies();
     fetchSubSystems();
     fetchAccountSubTypes();
+    fetchAccountTypes();
     fetchAccounts();
   }, [subSystemId]);
 
@@ -214,6 +216,26 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
       setSubSystems(response.data);
     } catch (err: any) {
       setError(err.response?.data?.error || "فشل في تحميل الأنظمة الفرعية");
+    }
+  };
+
+  const fetchAccountTypes = async () => {
+    try {
+      const response = await axios.get("/api/custom-system/v2/account-types", {
+        params: { subSystemId },
+      });
+      setAccountTypes(response.data);
+    } catch (err: any) {
+      console.warn("فشل في تحميل أنواع الحسابات:", err);
+      // الأنواع الافتراضية
+      const defaultTypes = [
+        { typeCode: 'asset', typeNameAr: 'أصول', typeNameEn: 'Assets' },
+        { typeCode: 'liability', typeNameAr: 'التزامات', typeNameEn: 'Liabilities' },
+        { typeCode: 'equity', typeNameAr: 'حقوق ملكية', typeNameEn: 'Equity' },
+        { typeCode: 'revenue', typeNameAr: 'إيرادات', typeNameEn: 'Revenue' },
+        { typeCode: 'expense', typeNameAr: 'مصروفات', typeNameEn: 'Expenses' },
+      ];
+      setAccountTypes(defaultTypes);
     }
   };
 
@@ -1155,11 +1177,11 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
                         }
                       }}
                     >
-                      <MenuItem value="asset">أصول</MenuItem>
-                      <MenuItem value="liability">التزامات</MenuItem>
-                      <MenuItem value="equity">حقوق ملكية</MenuItem>
-                      <MenuItem value="revenue">إيرادات</MenuItem>
-                      <MenuItem value="expense">مصروفات</MenuItem>
+                      {accountTypes.map((type: any) => (
+                        <MenuItem key={type.typeCode} value={type.typeCode}>
+                          {type.typeNameAr}
+                        </MenuItem>
+                      ))}
                     </Select>
                   </FormControl>
                 </Grid>
