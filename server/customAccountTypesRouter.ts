@@ -66,7 +66,7 @@ export const customAccountTypesRouter = router({
       const types = await db
         .select()
         .from(customAccountTypes)
-        .where(and(...conditions))
+        .where(conditions.length > 1 ? and(...conditions) : conditions[0])
         .orderBy(customAccountTypes.displayOrder, customAccountTypes.typeNameAr);
       
       return types;
