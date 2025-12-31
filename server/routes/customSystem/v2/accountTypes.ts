@@ -1,8 +1,8 @@
 import express from "express";
 import { eq, and } from "drizzle-orm";
 import { getDb } from "../../../db";
-import { customAccountTypes } from "../../../db/schema";
-import type { InsertCustomAccountType } from "../../../db/schema";
+import { customAccountTypes } from "../../../../drizzle/schemas/customSystemV2";
+import type { InsertCustomAccountType } from "../../../../drizzle/schemas/customSystemV2";
 
 const router = express.Router();
 
