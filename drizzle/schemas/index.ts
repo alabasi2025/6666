@@ -17,6 +17,7 @@ export * from "./developer";
 export * from "./field-ops";
 export * from "./settings";
 export * from "./custom-system";
+export * from "./customSystemV2";
 export * from "./hr";
 export * from "./billing-enhanced";
 export * from "./diesel";
