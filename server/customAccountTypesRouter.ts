@@ -4,7 +4,7 @@
  */
 
 import { z } from "zod";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { getDb } from "./db";
 import {
   customAccountTypes,
@@ -50,7 +50,13 @@ export const customAccountTypesRouter = router({
       const conditions = [eq(customAccountTypes.businessId, businessId)];
       
       if (input?.subSystemId) {
-        conditions.push(eq(customAccountTypes.subSystemId, input.subSystemId));
+        // عرض الأنواع المرتبطة بالنظام الفرعي أو الأنواع العامة (NULL)
+        conditions.push(
+          or(
+            eq(customAccountTypes.subSystemId, input.subSystemId),
+            isNull(customAccountTypes.subSystemId)
+          )
+        );
       }
       
       if (!input?.includeInactive) {
