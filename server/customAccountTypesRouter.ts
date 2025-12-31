@@ -4,8 +4,8 @@
  */
 
 import { z } from "zod";
-import { eq, and, desc } from "drizzle-orm";
-import { db } from "./db";
+import { eq, and } from "drizzle-orm";
+import { getDb } from "./db";
 import {
   customAccountTypes,
   type CustomAccountType,
@@ -15,7 +15,7 @@ import { router, protectedProcedure } from "./_core/trpc";
 
 // Schema للتحقق من البيانات
 const createAccountTypeSchema = z.object({
-  subSystemId: z.number().int().positive().optional(), // النظام الفرعي
+  subSystemId: z.number().int().positive().optional(),
   typeCode: z.string().min(1).max(50),
   typeNameAr: z.string().min(1).max(100),
   typeNameEn: z.string().max(100).optional(),
@@ -37,16 +37,18 @@ export const customAccountTypesRouter = router({
   list: protectedProcedure
     .input(
       z.object({
-        subSystemId: z.number().int().positive().optional(), // فلتر بالنظام الفرعي
+        subSystemId: z.number().int().positive().optional(),
         includeInactive: z.boolean().default(false),
       }).optional()
     )
     .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      
       const businessId = ctx.user.businessId;
       
       const conditions = [eq(customAccountTypes.businessId, businessId)];
       
-      // فلتر بالنظام الفرعي
       if (input?.subSystemId) {
         conditions.push(eq(customAccountTypes.subSystemId, input.subSystemId));
       }
@@ -70,6 +72,9 @@ export const customAccountTypesRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      
       const businessId = ctx.user.businessId;
       
       const [accountType] = await db
@@ -96,10 +101,12 @@ export const customAccountTypesRouter = router({
   create: protectedProcedure
     .input(createAccountTypeSchema)
     .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      
       const businessId = ctx.user.businessId;
       const userId = ctx.user.id;
       
-      // التحقق من عدم وجود نوع بنفس الكود
       const [existing] = await db
         .select()
         .from(customAccountTypes)
@@ -119,7 +126,7 @@ export const customAccountTypesRouter = router({
         .insert(customAccountTypes)
         .values({
           businessId,
-          subSystemId: input.subSystemId, // حفظ النظام الفرعي
+          subSystemId: input.subSystemId,
           typeCode: input.typeCode,
           typeNameAr: input.typeNameAr,
           typeNameEn: input.typeNameEn,
@@ -128,7 +135,7 @@ export const customAccountTypesRouter = router({
           icon: input.icon,
           displayOrder: input.displayOrder,
           isActive: input.isActive,
-          isSystemType: false, // الأنواع المخصصة ليست نظامية
+          isSystemType: false,
           createdBy: userId,
         })
         .$returningId();
@@ -142,10 +149,12 @@ export const customAccountTypesRouter = router({
   update: protectedProcedure
     .input(updateAccountTypeSchema)
     .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      
       const businessId = ctx.user.businessId;
       const { id, ...updateData } = input;
       
-      // التحقق من وجود النوع
       const [existing] = await db
         .select()
         .from(customAccountTypes)
@@ -161,30 +170,8 @@ export const customAccountTypesRouter = router({
         throw new Error("نوع الحساب غير موجود");
       }
       
-      // منع تعديل الأنواع النظامية (الافتراضية)
       if (existing.isSystemType) {
         throw new Error("لا يمكن تعديل الأنواع النظامية الافتراضية");
-      }
-      
-      // التحقق من عدم تكرار الكود
-      if (updateData.typeCode) {
-        const [duplicate] = await db
-          .select()
-          .from(customAccountTypes)
-          .where(
-            and(
-              eq(customAccountTypes.businessId, businessId),
-              eq(customAccountTypes.typeCode, updateData.typeCode),
-              // استثناء النوع الحالي
-              // @ts-ignore
-              db.sql`id != ${id}`
-            )
-          )
-          .limit(1);
-        
-        if (duplicate) {
-          throw new Error("يوجد نوع حساب آخر بنفس الكود");
-        }
       }
       
       await db
@@ -201,14 +188,16 @@ export const customAccountTypesRouter = router({
     }),
 
   /**
-   * حذف نوع حساب (فقط الأنواع غير النظامية)
+   * حذف نوع حساب
    */
   delete: protectedProcedure
     .input(z.object({ id: z.number().int().positive() }))
     .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      
       const businessId = ctx.user.businessId;
       
-      // التحقق من وجود النوع
       const [existing] = await db
         .select()
         .from(customAccountTypes)
@@ -224,12 +213,9 @@ export const customAccountTypesRouter = router({
         throw new Error("نوع الحساب غير موجود");
       }
       
-      // منع حذف الأنواع النظامية
       if (existing.isSystemType) {
         throw new Error("لا يمكن حذف الأنواع النظامية الافتراضية");
       }
-      
-      // TODO: التحقق من عدم وجود حسابات مرتبطة بهذا النوع
       
       await db
         .delete(customAccountTypes)
@@ -254,6 +240,9 @@ export const customAccountTypesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database connection failed");
+      
       const businessId = ctx.user.businessId;
       
       await db
@@ -271,38 +260,5 @@ export const customAccountTypesRouter = router({
           ? "تم تفعيل نوع الحساب بنجاح"
           : "تم تعطيل نوع الحساب بنجاح",
       };
-    }),
-
-  /**
-   * إعادة ترتيب الأنواع
-   */
-  reorder: protectedProcedure
-    .input(
-      z.object({
-        types: z.array(
-          z.object({
-            id: z.number().int().positive(),
-            displayOrder: z.number().int(),
-          })
-        ),
-      })
-    )
-    .mutation(async ({ ctx, input }) => {
-      const businessId = ctx.user.businessId;
-      
-      // تحديث ترتيب كل نوع
-      for (const type of input.types) {
-        await db
-          .update(customAccountTypes)
-          .set({ displayOrder: type.displayOrder })
-          .where(
-            and(
-              eq(customAccountTypes.id, type.id),
-              eq(customAccountTypes.businessId, businessId)
-            )
-          );
-      }
-      
-      return { message: "تم إعادة ترتيب الأنواع بنجاح" };
     }),
 });
