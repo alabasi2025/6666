@@ -470,6 +470,7 @@ export type InsertCustomAccount = typeof customAccounts.$inferInsert;
 export const customAccountTypes = mysqlTable("custom_account_types", {
   id: int("id").autoincrement().primaryKey(),
   businessId: int("business_id").notNull(),
+  subSystemId: int("sub_system_id"), // النظام الفرعي التابع له (إذا كان null = عام للجميع)
   
   // معلومات النوع
   typeCode: varchar("type_code", { length: 50 }).notNull(), // مثل: "iron_works", "personal"

@@ -59,7 +59,11 @@ const defaultFormData: AccountTypeFormData = {
   isActive: true,
 };
 
-export default function AccountTypesPage() {
+interface AccountTypesPageProps {
+  subSystemId?: number;
+}
+
+export default function AccountTypesPage({ subSystemId }: AccountTypesPageProps = {}) {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -67,6 +71,7 @@ export default function AccountTypesPage() {
 
   // Queries
   const { data: accountTypes, isLoading, refetch } = trpc.customAccountTypes.list.useQuery({
+    subSystemId,
     includeInactive: true,
   });
 
@@ -173,7 +178,10 @@ export default function AccountTypesPage() {
         ...formData,
       });
     } else {
-      createMutation.mutate(formData);
+      createMutation.mutate({
+        ...formData,
+        subSystemId, // إضافة subSystemId عند الإنشاء
+      });
     }
   };
 

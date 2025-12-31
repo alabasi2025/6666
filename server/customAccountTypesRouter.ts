@@ -15,6 +15,7 @@ import { router, protectedProcedure } from "./_core/trpc";
 
 // Schema للتحقق من البيانات
 const createAccountTypeSchema = z.object({
+  subSystemId: z.number().int().positive().optional(), // النظام الفرعي
   typeCode: z.string().min(1).max(50),
   typeNameAr: z.string().min(1).max(100),
   typeNameEn: z.string().max(100).optional(),
@@ -36,6 +37,7 @@ export const customAccountTypesRouter = router({
   list: protectedProcedure
     .input(
       z.object({
+        subSystemId: z.number().int().positive().optional(), // فلتر بالنظام الفرعي
         includeInactive: z.boolean().default(false),
       }).optional()
     )
@@ -43,6 +45,11 @@ export const customAccountTypesRouter = router({
       const businessId = ctx.user.businessId;
       
       const conditions = [eq(customAccountTypes.businessId, businessId)];
+      
+      // فلتر بالنظام الفرعي
+      if (input?.subSystemId) {
+        conditions.push(eq(customAccountTypes.subSystemId, input.subSystemId));
+      }
       
       if (!input?.includeInactive) {
         conditions.push(eq(customAccountTypes.isActive, true));
@@ -112,6 +119,7 @@ export const customAccountTypesRouter = router({
         .insert(customAccountTypes)
         .values({
           businessId,
+          subSystemId: input.subSystemId, // حفظ النظام الفرعي
           typeCode: input.typeCode,
           typeNameAr: input.typeNameAr,
           typeNameEn: input.typeNameEn,

@@ -37,7 +37,7 @@ import {
   Users,
   ShoppingCart,
 } from "lucide-react";
-import { AccountsPage as AccountsPageV2 } from "../CustomSystem/v2";
+import { AccountsPage as AccountsPageV2, AccountTypesPage } from "../CustomSystem/v2";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -1782,6 +1782,13 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           {activeTab === "accounts" && (
             <div className="space-y-4">
               <AccountsPageV2 subSystemId={parseInt(id || "0")} />
+            </div>
+          )}
+
+          {/* Account Types Tab - أنواع الحسابات */}
+          {activeTab === "account-types" && (
+            <div className="space-y-4">
+              <AccountTypesPage subSystemId={parseInt(id || "0")} />
             </div>
           )}
 
