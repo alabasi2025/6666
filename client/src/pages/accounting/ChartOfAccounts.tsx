@@ -46,6 +46,9 @@ export default function ChartOfAccounts() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedAccount, setSelectedAccount] = useState<any>(null);
 
+  // Fetch account types
+  const { data: accountTypes } = trpc.customAccountTypes.list.useQuery({});
+
   // Form state
   const [formData, setFormData] = useState({
     code: "",
@@ -319,11 +322,11 @@ export default function ChartOfAccounts() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="asset">أصول</SelectItem>
-                      <SelectItem value="liability">خصوم</SelectItem>
-                      <SelectItem value="equity">حقوق ملكية</SelectItem>
-                      <SelectItem value="revenue">إيرادات</SelectItem>
-                      <SelectItem value="expense">مصروفات</SelectItem>
+                      {accountTypes?.map((type: any) => (
+                        <SelectItem key={type.typeCode} value={type.typeCode}>
+                          {type.typeNameAr}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
