@@ -432,8 +432,14 @@ export default function CustomTreasuries() {
 
     // عرض الحسابات التي تطابق نوع الحساب الفرعي فقط
     if (!subTypeId) return [];
-    return accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
-  }, [accounts, accountSubTypes, watchTreasuryType]);
+    const base = accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
+    const selectedId = watch("accountId");
+    const selected = accounts.find((acc: any) => acc.id === selectedId);
+    if (selected && !base.some((acc: any) => acc.id === selected.id)) {
+      return [selected, ...base];
+    }
+    return base;
+  }, [accounts, accountSubTypes, watchTreasuryType, watch("accountId")]);
 
   // جلب عملات الحساب المختار
   useEffect(() => {

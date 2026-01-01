@@ -458,8 +458,14 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
 
     // عرض الحسابات التي تطابق نوع الحساب الفرعي فقط
     if (!subTypeId) return [];
-    return accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
-  }, [accounts, accountSubTypes, newTreasury.treasuryType]);
+    const base = accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
+    const selected = accounts.find((acc: any) => acc.id === newTreasury.accountId);
+    // إذا كان الحساب المحدد غير موجود في الفلترة الحالية، أضفه لكي لا يختفي من القائمة عند التعديل
+    if (selected && !base.some((acc: any) => acc.id === selected.id)) {
+      return [selected, ...base];
+    }
+    return base;
+  }, [accounts, accountSubTypes, newTreasury.treasuryType, newTreasury.accountId]);
 
   // جلب عملات الحساب المختار
   useEffect(() => {
