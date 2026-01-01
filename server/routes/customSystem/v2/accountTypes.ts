@@ -1,5 +1,5 @@
 import express from "express";
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, isNull } from "drizzle-orm";
 import { getDb } from "../../../db";
 import { customAccountTypes } from "../../../../drizzle/schemas/customSystemV2";
 import type { InsertCustomAccountType } from "../../../../drizzle/schemas/customSystemV2";
@@ -22,10 +22,34 @@ router.get("/", async (req, res) => {
       return res.status(400).json({ error: "معرف النشاط التجاري مطلوب" });
     }
 
+    const { subSystemId, includeInactive } = req.query;
+
+    // بناء شروط البحث
+    const conditions = [eq(customAccountTypes.businessId, businessId)];
+
+    // فلترة حسب النظام الفرعي
+    if (subSystemId) {
+      const subSystemIdValue = parseInt(String(subSystemId));
+      if (!isNaN(subSystemIdValue)) {
+        // عرض الأنواع المرتبطة بالنظام الفرعي أو الأنواع العامة (NULL)
+        conditions.push(
+          or(
+            eq(customAccountTypes.subSystemId, subSystemIdValue),
+            isNull(customAccountTypes.subSystemId)
+          )
+        );
+      }
+    }
+
+    // فلترة حسب الحالة النشطة
+    if (!includeInactive || includeInactive === "false") {
+      conditions.push(eq(customAccountTypes.isActive, true));
+    }
+
     const accountTypes = await db
       .select()
       .from(customAccountTypes)
-      .where(eq(customAccountTypes.businessId, businessId))
+      .where(conditions.length > 1 ? and(...conditions) : conditions[0])
       .orderBy(customAccountTypes.displayOrder, customAccountTypes.typeNameAr);
 
     res.json(accountTypes);

@@ -434,6 +434,7 @@ export const customAccounts = mysqlTable("custom_accounts", {
   accountNameEn: varchar("account_name_en", { length: 255 }), // الاسم بالإنجليزية
   accountType: varchar("account_type", { length: 50 }), // نوع الحساب (مرجع لجدول الأنواع)
   accountTypeId: int("account_type_id"), // معرف نوع الحساب المخصص
+  accountSubTypeId: int("account_sub_type_id"), // النوع الفرعي للحساب (صندوق/بنك/محفظة/صراف)
   
   // التصنيف والترتيب
   parentAccountId: int("parent_account_id"), // الحساب الأب

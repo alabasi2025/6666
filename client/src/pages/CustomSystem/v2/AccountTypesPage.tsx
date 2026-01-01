@@ -69,11 +69,17 @@ export default function AccountTypesPage({ subSystemId }: AccountTypesPageProps 
   const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AccountTypeFormData>(defaultFormData);
 
+  // Debug: Log subSystemId
+  console.log("[AccountTypesPage] subSystemId:", subSystemId);
+
   // Queries
   const { data: accountTypes, isLoading, refetch } = trpc.customAccountTypes.list.useQuery({
-    subSystemId,
+    subSystemId: subSystemId && subSystemId > 0 ? subSystemId : undefined,
     includeInactive: true,
   });
+
+  // Debug: Log accountTypes
+  console.log("[AccountTypesPage] accountTypes:", accountTypes);
 
   // Mutations
   const createMutation = trpc.customAccountTypes.create.useMutation({

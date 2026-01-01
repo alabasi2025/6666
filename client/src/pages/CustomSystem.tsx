@@ -19,7 +19,7 @@ import {
   LayoutDashboard, Wallet, ClipboardList, Loader2, Zap, ChevronDown,
   FolderKanban, Receipt, GitBranch, Landmark, Building2, Sparkles,
   ArrowRight, MoreHorizontal, Plus, Filter, RefreshCw, ChevronUp, ChevronDown as ChevronDownIcon,
-  ArrowLeft, ArrowLeftRight, FileCheck, BookOpen, Package, Users, ShoppingCart, Tags
+  ArrowLeft, ArrowLeftRight, FileCheck, BookOpen, Package, Users, ShoppingCart, Tags, Coins
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
@@ -260,11 +260,46 @@ const subSystemNavigationItems = [
     color: "from-indigo-500 to-blue-500",
   },
   {
+    id: "operations",
+    title: "شاشة العمليات",
+    icon: Activity,
+    description: "سندات القبض والصرف والتحويلات الموحدة",
+    color: "from-emerald-500 to-teal-500",
+  },
+  {
+    id: "journal-entries",
+    title: "القيود اليومية",
+    icon: BookOpen,
+    description: "إدارة القيود اليومية",
+    color: "from-blue-500 to-indigo-500",
+  },
+  {
     id: "accounts",
     title: "دليل الحسابات",
     icon: BookOpen,
     description: "الدليل المحاسبي للحسابات",
     color: "from-teal-500 to-cyan-500",
+  },
+  {
+    id: "account-types",
+    title: "أنواع الحسابات",
+    icon: Settings,
+    description: "إدارة أنواع الحسابات",
+    color: "from-purple-500 to-pink-500",
+  },
+  {
+    id: "currencies",
+    title: "العملات",
+    icon: Coins,
+    description: "إدارة العملات",
+    color: "from-amber-500 to-orange-500",
+  },
+  {
+    id: "exchange-rates",
+    title: "أسعار الصرف",
+    icon: RefreshCw,
+    description: "إدارة أسعار الصرف",
+    color: "from-cyan-500 to-sky-500",
   },
   {
     id: "inventory",
@@ -286,6 +321,20 @@ const subSystemNavigationItems = [
     icon: ShoppingCart,
     description: "إدارة المشتريات والطلبات",
     color: "from-lime-500 to-green-500",
+  },
+  {
+    id: "notes",
+    title: "الملاحظات",
+    icon: FileText,
+    description: "تدوين الملاحظات",
+    color: "from-yellow-500 to-amber-500",
+  },
+  {
+    id: "memos",
+    title: "المذكرات",
+    icon: Mail,
+    description: "المذكرات والتنبيهات",
+    color: "from-indigo-500 to-purple-500",
   },
 ];
 
@@ -326,7 +375,7 @@ export default function CustomSystem() {
   const [matchNotes] = useRoute("/custom/notes");
   const [matchMemos] = useRoute("/custom/memos");
   const [matchSettings] = useRoute("/custom/settings");
-  const [matchSubSystemDetails] = useRoute("/custom/sub-systems/:id");
+  const [matchSubSystemDetails, subSystemParams] = useRoute("/custom/sub-systems/:id");
   
   // Custom System v2.2.0 Routes
   const [matchV2Operations] = useRoute("/custom/v2/operations");
@@ -347,6 +396,54 @@ export default function CustomSystem() {
     { businessId: 1 },
     { enabled: !!user }
   );
+  const { data: subSystems } = trpc.customSystem.subSystems.list.useQuery(
+    { businessId: 1 },
+    { enabled: true, staleTime: 30000 }
+  );
+  const currentSubSystemId = subSystemParams?.id ? parseInt(subSystemParams.id) : undefined;
+  const currentSubSystem = subSystems?.find((s: any) => s.id === currentSubSystemId);
+
+  // منع استخدام ميزات النظام الفرعي من الشاشة الرئيسية: إعادة توجيه لأي مسار غير تفاصيل نظام فرعي إلى قائمة الأنظمة الفرعية
+  useEffect(() => {
+    const needsSubSystemContext =
+      matchTreasuries ||
+      matchVouchers ||
+      matchReconciliation ||
+      matchAccounts ||
+      matchNotes ||
+      matchMemos ||
+      matchInventory ||
+      matchSuppliers ||
+      matchPurchases ||
+      matchV2Operations ||
+      matchV2JournalEntries ||
+      matchV2Accounts ||
+      matchV2Currencies ||
+      matchV2ExchangeRates ||
+      matchV2AccountTypes;
+
+    if (needsSubSystemContext && !matchSubSystemDetails) {
+      setLocation("/custom/sub-systems");
+    }
+  }, [
+    matchTreasuries,
+    matchVouchers,
+    matchReconciliation,
+    matchAccounts,
+    matchNotes,
+    matchMemos,
+    matchInventory,
+    matchSuppliers,
+    matchPurchases,
+    matchV2Operations,
+    matchV2JournalEntries,
+    matchV2Accounts,
+    matchV2Currencies,
+    matchV2ExchangeRates,
+    matchV2AccountTypes,
+    matchSubSystemDetails,
+    setLocation,
+  ]);
   
   const unreadNotifications = notesData?.filter((n: any) => !n.isRead)?.length || 0;
 
@@ -368,36 +465,43 @@ export default function CustomSystem() {
   // إذا لم يكن المستخدم مسجل دخوله، سيتم التعامل معه كزائر عادي
   // وسيرى النظام بدون بيانات شخصية
 
+  // Main custom-system navigation should only manage sub-systems + intermediary system
+  const mainNavigationItems = customNavigationItems.filter(
+    (item) => item.id === "custom-sub-systems" || item.id === "custom-intermediary"
+  );
+
   // Get current page title
-  const currentItem = customNavigationItems.find(item => 
-    location === item.path || (item.path !== "/custom" && location.startsWith(item.path))
+  const currentItem = mainNavigationItems.find(
+    (item) => location === item.path || (item.path !== "/custom" && location.startsWith(item.path))
   );
 
   // Render content based on route
   const renderContent = () => {
     // Custom System v2.2.0 Routes
-    if (matchV2Operations) return <OperationsPage />;
-    if (matchV2JournalEntries) return <JournalEntriesPage />;
-    if (matchV2Accounts) return <AccountsPageV2 />;
-    if (matchV2Currencies) return <CurrenciesPage />;
-    if (matchV2AccountTypes) return <AccountTypesPage />;
-    if (matchV2ExchangeRates) {
+    if (matchV2Operations && matchSubSystemDetails) return <OperationsPage />;
+    if (matchV2JournalEntries && matchSubSystemDetails) return <JournalEntriesPage />;
+    if (matchV2Accounts && matchSubSystemDetails) return <AccountsPageV2 />;
+    if (matchV2Currencies && matchSubSystemDetails) return <CurrenciesPage />;
+    if (matchV2AccountTypes && matchSubSystemDetails) return <AccountTypesPage />;
+    if (matchV2ExchangeRates && matchSubSystemDetails) {
       // إعادة توجيه إلى صفحة العملات (تم دمجها)
       setLocation("/custom/v2/currencies");
       return null;
     }
     
     // Original Custom System Routes
-    if (matchCustom) return <CustomDashboard />;
+    if (matchCustom) return <CustomSubSystems />; // الرئيسية تعرض إدارة الأنظمة الفرعية فقط
     if (matchSubSystemDetails) return <SubSystemDetails activeTab={subSystemActiveTab} onTabChange={setSubSystemActiveTab} />;
     if (matchSubSystems) return <CustomSubSystems />;
-    if (matchTreasuries) return <CustomTreasuries />;
-    if (matchVouchers) return <CustomVouchers />;
-    if (matchReconciliation) return <CustomReconciliation />;
+    if (matchTreasuries && matchSubSystemDetails) return <CustomTreasuries />;
+    if (matchVouchers && matchSubSystemDetails) return <CustomVouchers />;
+    if (matchReconciliation && matchSubSystemDetails) return <CustomReconciliation />;
+    if (matchAccounts && matchSubSystemDetails) return <CustomAccounts />;
+    if (matchNotes && matchSubSystemDetails) return <CustomNotes />;
+    if (matchMemos && matchSubSystemDetails) return <CustomMemos />;
+
+    // النظام الوسيط يبقى في الواجهة الرئيسية (خارج الأنظمة الفرعية)
     if (matchIntermediary) return <IntermediarySystemPage businessId={1} />;
-    if (matchAccounts) return <CustomAccounts />;
-    if (matchNotes) return <CustomNotes />;
-    if (matchMemos) return <CustomMemos />;
     if (matchSettings) return (
       <div className="p-6">
         <h1 className="text-2xl font-bold text-white mb-4">الإعدادات</h1>
@@ -502,6 +606,53 @@ export default function CustomSystem() {
 
             {/* Right Section */}
             <div className="flex items-center gap-2">
+              {/* Sub-system Switcher */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="hidden md:flex items-center gap-2 border-amber-500/30 text-amber-100 bg-amber-500/5 hover:bg-amber-500/10"
+                  >
+                    <FolderKanban className="h-4 w-4 text-amber-300" />
+                    <span className="text-sm">
+                      {currentSubSystem?.nameAr || "اختر نظام فرعي"}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-amber-300" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="bottom" align="end" sideOffset={8} className="w-72 bg-zinc-900 border-amber-500/20">
+                  <DropdownMenuLabel className="text-amber-400">الأنظمة الفرعية</DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-amber-500/20" />
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer hover:bg-amber-500/10 focus:bg-amber-500/10"
+                    onClick={() => setLocation("/custom/sub-systems")}
+                  >
+                    <FolderKanban className="h-4 w-4 text-amber-300" />
+                    <span className="text-white">إدارة الأنظمة الفرعية</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-amber-500/20" />
+                  {subSystems && subSystems.length > 0 ? (
+                    subSystems.map((sys: any) => (
+                      <DropdownMenuItem
+                        key={sys.id}
+                        className="gap-2 cursor-pointer hover:bg-amber-500/10 focus:bg-amber-500/10"
+                        onClick={() => setLocation(`/custom/sub-systems/${sys.id}`)}
+                      >
+                        <span className="text-white">{sys.nameAr}</span>
+                        <span className="text-xs text-amber-300 mr-auto">{sys.code || ""}</span>
+                        {currentSubSystemId === sys.id && (
+                          <span className="text-[11px] text-amber-400">الحالي</span>
+                        )}
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem disabled className="text-zinc-500">
+                      لا توجد أنظمة فرعية
+                    </DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
               {/* Search */}
               <div className="hidden md:flex items-center gap-2 bg-zinc-800/50 border border-amber-500/10 rounded-xl px-3 py-2 w-64 focus-within:border-amber-500/30 transition-colors">
                 <Search className="h-4 w-4 text-amber-400/50" />
@@ -595,7 +746,7 @@ export default function CustomSystem() {
           {mobileMenuOpen && (
             <div className="lg:hidden border-t border-amber-500/10 bg-zinc-900/95 backdrop-blur-xl">
               <nav className="p-4 grid grid-cols-2 gap-2">
-                {customNavigationItems.map((item) => {
+                {mainNavigationItems.map((item) => {
                   const isActive = location === item.path || 
                     (item.path !== "/custom" && location.startsWith(item.path));
                   
@@ -638,7 +789,7 @@ export default function CustomSystem() {
         {matchSubSystemDetails ? (
           /* Sub System Sidebar */
           <aside className={cn(
-            "hidden lg:flex flex-col w-72 bg-gradient-to-b from-violet-900/95 to-purple-900/80 backdrop-blur-xl border-r border-violet-500/20 shadow-2xl transition-all duration-300 relative",
+            "hidden lg:flex flex-col w-72 min-w-[260px] max-w-[300px] h-full lg:sticky lg:top-16 bg-gradient-to-b from-violet-900/95 to-purple-900/80 backdrop-blur-xl border-r border-violet-500/20 shadow-2xl transition-all duration-300 relative",
             sidebarOpen ? "translate-x-0" : "translate-x-full"
           )}>
             {/* Sub System Sidebar Header */}
@@ -664,7 +815,10 @@ export default function CustomSystem() {
 
             {/* Sub System Navigation */}
             <div className="flex-1 relative overflow-hidden">
-              <ScrollArea className="h-full">
+              <ScrollArea
+                type="always"
+                className="h-full [&_[data-slot=scroll-area-scrollbar]]:border-l-violet-500/20 [&_[data-slot=scroll-area-scrollbar]]:bg-violet-500/5 [&_[data-slot=scroll-area-thumb]]:bg-violet-200/40"
+              >
                 <nav className="p-4 space-y-2">
                   {subSystemNavigationItems.map((item) => {
                     const isActive = subSystemActiveTab === item.id;
@@ -788,13 +942,13 @@ export default function CustomSystem() {
                             isActive ? "text-white" : colors.text
                           )} />
                         </div>
-                        <div className="flex-1 text-right min-w-0">
+                        <div className="flex-1 text-right">
                           <span className={cn(
-                            "block transition-colors font-semibold truncate",
+                            "block transition-colors font-semibold whitespace-normal leading-tight",
                             isActive ? "text-white" : `${colors.text} group-hover:text-white`
                           )}>{item.title}</span>
                           <span className={cn(
-                            "block text-xs mt-0.5 transition-colors truncate",
+                            "block text-xs mt-0.5 transition-colors whitespace-normal leading-tight",
                             isActive ? "text-white/80" : "text-zinc-500 group-hover:text-zinc-400"
                           )}>{item.description}</span>
                         </div>
@@ -842,10 +996,10 @@ export default function CustomSystem() {
             </div>
 
           {/* Scrollable Navigation Area */}
-          <div className="flex-1 relative overflow-hidden">
-            <ScrollArea className="h-full">
+            <div className="flex-1 relative overflow-hidden">
+              <ScrollArea className="h-full pr-1">
               <nav className="p-4 space-y-2">
-                {customNavigationItems.map((item) => {
+                {mainNavigationItems.map((item) => {
                   const isActive = location === item.path || 
                     (item.path !== "/custom" && location.startsWith(item.path));
                   
@@ -1024,6 +1178,19 @@ export default function CustomSystem() {
             </button>
           </div>
         </aside>
+        )}
+
+        {/* Quick open handle for sub-system sidebar when collapsed */}
+        {matchSubSystemDetails && !sidebarOpen && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hidden lg:flex fixed right-4 top-32 z-40 h-10 w-10 rounded-full bg-violet-500/20 border border-violet-500/40 text-violet-200 hover:text-white hover:bg-violet-500/30 shadow-lg"
+            onClick={() => setSidebarOpen(true)}
+            title="إظهار القائمة"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Button>
         )}
 
         {/* Main Content Area */}

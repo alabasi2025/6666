@@ -258,6 +258,9 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
         { id: 6, code: 'supplier', nameAr: 'مورد', nameEn: 'Supplier', accountType: 'liability' },
         { id: 7, code: 'customer', nameAr: 'عميل', nameEn: 'Customer', accountType: 'revenue' },
         { id: 8, code: 'general', nameAr: 'عام', nameEn: 'General', accountType: 'asset' },
+        { id: 9, code: 'employee_business', nameAr: 'أعمال الموظفين', nameEn: 'Employee Business', accountType: 'expense' },
+        { id: 10, code: 'employee_advance', nameAr: 'سلف الموظفين', nameEn: 'Employee Advances', accountType: 'asset' },
+        { id: 11, code: 'employee_salary', nameAr: 'رواتب الموظفين', nameEn: 'Employee Salaries', accountType: 'expense' },
       ];
       setAccountSubTypes(defaultSubTypes);
     }

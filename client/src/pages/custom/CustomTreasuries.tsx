@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -123,13 +124,14 @@ const treasuryFormSchema = z.object({
   nameEn: z.string().optional(),
   treasuryType: z.enum(["cash", "bank", "wallet", "exchange"]),
   subSystemId: z.number().optional(),
+  accountId: z.number({ required_error: "يجب اختيار الحساب من الدليل" }),
   bankName: z.string().optional(),
   accountNumber: z.string().optional(),
   iban: z.string().optional(),
   swiftCode: z.string().optional(),
   walletProvider: z.string().optional(),
   walletNumber: z.string().optional(),
-  currency: z.string().default("SAR"),
+  currency: z.string().default(""),
   openingBalance: z.string().default("0"),
   description: z.string().optional(),
 });
@@ -239,6 +241,11 @@ export default function CustomTreasuries() {
   const [editingTreasury, setEditingTreasury] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [accountSubTypes, setAccountSubTypes] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+  const [accountCurrencies, setAccountCurrencies] = useState<string[]>([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(false);
 
   // Form
   const form = useForm<TreasuryFormValues>({
@@ -248,14 +255,15 @@ export default function CustomTreasuries() {
       nameAr: "",
       nameEn: "",
       treasuryType: "cash",
-      currency: "SAR",
+      currency: "",
       openingBalance: "0",
       description: "",
-      accountId: null,
+      accountId: undefined,
     },
   });
 
   const watchTreasuryType = form.watch("treasuryType");
+  const watchSubSystemId = form.watch("subSystemId");
 
   // API Queries
   const { data: treasuries, isLoading, refetch } = trpc.customSystem.treasuries.list.useQuery(
@@ -264,10 +272,6 @@ export default function CustomTreasuries() {
   );
 
   const { data: subSystems } = trpc.customSystem.subSystems.list.useQuery(
-    { businessId: 1 },
-    { enabled: true }
-  );
-  const { data: accounts } = trpc.customSystem.getAccounts.useQuery(
     { businessId: 1 },
     { enabled: true }
   );
@@ -323,11 +327,38 @@ export default function CustomTreasuries() {
       swiftCode: (treasury as any).swiftCode || "",
       walletProvider: (treasury as any).walletProvider || "",
       walletNumber: (treasury as any).walletNumber || "",
-      currency: (treasury as any).currency,
+      currency: (treasury as any).currency || "",
       openingBalance: (treasury as any).openingBalance || "0",
       description: (treasury as any).description || "",
       accountId: (treasury as any).accountId || null,
     });
+    // جلب عملات الحساب المرتبط أثناء التعديل
+    if ((treasury as any).accountId) {
+      setCurrenciesLoading(true);
+      axios
+        .get(`/api/custom-system/v2/accounts/${(treasury as any).accountId}`)
+        .then((res) => {
+          const currs = (res.data?.currencies || [])
+            .filter((c: any) => c.code)
+            .map((c: any) => c.code);
+          setAccountCurrencies(currs);
+          if (currs.length > 0 && currs.includes((treasury as any).currency)) {
+            form.setValue("currency", (treasury as any).currency);
+          } else if (currs.length > 0) {
+            form.setValue("currency", currs[0]);
+          } else {
+            form.setValue("currency", "");
+          }
+        })
+        .catch(() => {
+          setAccountCurrencies([]);
+          form.setValue("currency", "");
+        })
+        .finally(() => setCurrenciesLoading(false));
+    } else {
+      setAccountCurrencies([]);
+      form.setValue("currency", "");
+    }
     setIsDialogOpen(true);
   };
 
@@ -336,6 +367,41 @@ export default function CustomTreasuries() {
       deleteMutation.mutate({ id } as any);
     }
   };
+
+  // تحميل الأنواع الفرعية للحسابات (صندوق/بنك/محفظة/صراف)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get("/api/custom-system/v2/account-sub-types", {
+          params: { isActive: true },
+        });
+        setAccountSubTypes(res.data || []);
+      } catch {
+        setAccountSubTypes([]);
+      }
+    })();
+  }, []);
+
+  // تحميل الحسابات بحسب النظام الفرعي
+  useEffect(() => {
+    (async () => {
+      setAccountsLoading(true);
+      try {
+        const subSystemParam = watchSubSystemId && watchSubSystemId > 0 ? watchSubSystemId : undefined;
+        const res = await axios.get("/api/custom-system/v2/accounts", {
+          params: {
+            subSystemId: subSystemParam,
+            includeInactive: true,
+          },
+        });
+        setAccounts(res.data || []);
+      } catch {
+        setAccounts([]);
+      } finally {
+        setAccountsLoading(false);
+      }
+    })();
+  }, [watchSubSystemId]);
 
   const onSubmit = (data: TreasuryFormValues) => {
     const payload = {
@@ -351,6 +417,58 @@ export default function CustomTreasuries() {
       createMutation.mutate(payload);
     }
   };
+
+  // ربط نوع الخزينة بنوع الحساب الفرعي
+  const treasuryToSubTypeCode: Record<string, string> = {
+    cash: "cash",
+    bank: "bank",
+    wallet: "wallet",
+    exchange: "exchange",
+  };
+
+  const filteredAccounts = useMemo(() => {
+    const code = treasuryToSubTypeCode[watchTreasuryType] || "";
+    const subTypeId = accountSubTypes.find((s) => s.code === code)?.id;
+
+    // عرض الحسابات التي تطابق نوع الحساب الفرعي فقط
+    if (!subTypeId) return [];
+    return accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
+  }, [accounts, accountSubTypes, watchTreasuryType]);
+
+  // جلب عملات الحساب المختار
+  useEffect(() => {
+    const accId = watch("accountId");
+    const currentCurrency = watch("currency");
+    if (!accId) {
+      setAccountCurrencies([]);
+      setValue("currency", "");
+      return;
+    }
+    setCurrenciesLoading(true);
+    axios
+      .get(`/api/custom-system/v2/accounts/${accId}`)
+      .then((res) => {
+        const currs = (res.data?.currencies || [])
+          .filter((c: any) => c.code)
+          .map((c: any) => c.code);
+        setAccountCurrencies(currs);
+        if (currs.length > 0) {
+          // إذا كانت العملة الحالية ضمن العملات المتاحة، احتفظ بها
+          if (currentCurrency && currs.includes(currentCurrency)) {
+            setValue("currency", currentCurrency);
+          } else {
+            setValue("currency", currs[0]);
+          }
+        } else {
+          setValue("currency", "");
+        }
+      })
+      .catch(() => {
+        setAccountCurrencies([]);
+        setValue("currency", "");
+      })
+      .finally(() => setCurrenciesLoading(false));
+  }, [watchTreasuryType, watch("accountId"), watch("currency")]);
 
   // Filter treasuries
   const filteredTreasuries = treasuries?.filter((t: any) => {
@@ -463,17 +581,35 @@ export default function CustomTreasuries() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-slate-300">العملة</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={currenciesLoading || accountCurrencies.length === 0}
+                          >
                             <FormControl>
                               <SelectTrigger className="bg-slate-800 border-slate-700">
-                                <SelectValue placeholder="اختر العملة" />
+                                <SelectValue
+                                  placeholder={
+                                    currenciesLoading
+                                      ? "جاري التحميل..."
+                                      : accountCurrencies.length === 0
+                                        ? "لا توجد عملات مرتبطة بالحساب"
+                                        : "اختر العملة"
+                                  }
+                                />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-slate-900 border-slate-800">
-                              <SelectItem value="SAR">ريال سعودي (SAR)</SelectItem>
-                              <SelectItem value="USD">دولار أمريكي (USD)</SelectItem>
-                              <SelectItem value="EUR">يورو (EUR)</SelectItem>
-                              <SelectItem value="YER">ريال يمني (YER)</SelectItem>
+                              {accountCurrencies.length === 0 && (
+                                <SelectItem value="__none" disabled>
+                                  {currenciesLoading ? "جاري التحميل..." : "لا توجد عملات مرتبطة بالحساب"}
+                                </SelectItem>
+                              )}
+                              {accountCurrencies.map((code) => (
+                                <SelectItem key={code} value={code}>
+                                  {code}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -667,6 +803,44 @@ export default function CustomTreasuries() {
                       />
                     </div>
                   )}
+
+              {/* ربط الخزينة بالحساب (يُفلتر حسب النوع الفرعي) */}
+              <FormField
+                control={form.control as any}
+                name="accountId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-slate-300">الحساب في دليل الحسابات</FormLabel>
+                    <FormDescription className="text-slate-400">
+                      تظهر الحسابات التي نوعها الفرعي يطابق نوع الخزينة (صندوق/بنك/محفظة/صراف).
+                    </FormDescription>
+                    <Select
+                      onValueChange={(val) => field.onChange(parseInt(val))}
+                      value={field.value ? String(field.value) : undefined}
+                      disabled={accountsLoading}
+                    >
+                      <FormControl>
+                        <SelectTrigger className="bg-slate-800 border-slate-700">
+                          <SelectValue placeholder={accountsLoading ? "جاري التحميل..." : "اختر الحساب"} />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="bg-slate-900 border-slate-800 max-h-72">
+                        {filteredAccounts.length === 0 && (
+                          <SelectItem value="-1" disabled>
+                            {accountsLoading ? "جاري التحميل..." : "لا توجد حسابات مطابقة"}
+                          </SelectItem>
+                        )}
+                        {filteredAccounts.map((acc: any) => (
+                          <SelectItem key={acc.id} value={String(acc.id)}>
+                            {acc.accountCode} - {acc.accountNameAr}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
                   {/* Opening Balance */}
                   <FormField

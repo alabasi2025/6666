@@ -170,7 +170,7 @@ const initialFormData: AccountFormData = {
   currencies: [],
 };
 
-const accountTypes = [
+const defaultAccountTypes = [
   { value: "asset", label: "أصول", color: "bg-emerald-500", icon: PiggyBank },
   { value: "liability", label: "التزامات", color: "bg-red-500", icon: CreditCard },
   { value: "equity", label: "حقوق ملكية", color: "bg-purple-500", icon: Building },
@@ -203,6 +203,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [subSystems, setSubSystems] = useState<SubSystem[]>([]);
   const [accountSubTypes, setAccountSubTypes] = useState<AccountSubType[]>([]);
+  const [accountTypes, setAccountTypes] = useState<any[]>(defaultAccountTypes);
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -216,6 +217,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
   const [editMode, setEditMode] = useState(false);
   const [currentAccountId, setCurrentAccountId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AccountFormData>(initialFormData);
+  const [hasTransactions, setHasTransactions] = useState(false);
   
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<Account | null>(null);
@@ -226,6 +228,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
     fetchCurrencies();
     fetchSubSystems();
     fetchAccountSubTypes();
+    fetchAccountTypes();
     fetchAccounts();
   }, [subSystemId]);
 
@@ -271,6 +274,22 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
     }
   };
 
+  const fetchAccountTypes = async () => {
+    try {
+      const response = await axios.get("/api/custom-system/v2/account-types", {
+        params: { subSystemId, includeInactive: true },
+      });
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        setAccountTypes(response.data);
+      } else {
+        setAccountTypes(defaultAccountTypes);
+      }
+    } catch (err) {
+      console.warn("فشل في تحميل أنواع الحسابات:", err);
+      setAccountTypes(defaultAccountTypes);
+    }
+  };
+
   const fetchAccountSubTypes = async () => {
     try {
       const response = await axios.get("/api/custom-system/v2/account-sub-types", {
@@ -303,6 +322,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
     } else {
       setEditMode(false);
       setCurrentAccountId(null);
+      setHasTransactions(false);
       setFormData({
         ...initialFormData,
         subSystemId: subSystemId || 0,
@@ -317,7 +337,13 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
     try {
       const response = await axios.get(`/api/custom-system/v2/accounts/${accountId}`);
       const account = response.data;
-      const accountLevel = account.parentAccountId && account.parentAccountId > 0 ? "sub" : "main";
+      // اعتمد على الحقل level أولاً (2 = فرعي)، ثم احتياطياً على وجود parentAccountId
+      const accountLevel = account.level && account.level > 1
+        ? "sub"
+        : account.parentAccountId && account.parentAccountId > 0
+          ? "sub"
+          : "main";
+      setHasTransactions(!!(account.hasTransactions || (account.balances && account.balances.length > 0)));
       
       setFormData({
         subSystemId: account.subSystemId || 0,
@@ -328,7 +354,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
         accountLevel: accountLevel,
         accountSubTypeId: account.accountSubTypeId || 0,
         parentAccountId: account.parentAccountId || 0,
-        level: account.level,
+        level: account.level || (accountLevel === "sub" ? 2 : 1),
         displayOrder: account.displayOrder || 0,
         description: account.description || "",
         isActive: account.isActive,
@@ -443,7 +469,33 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
   // ==================== الدوال المساعدة ====================
 
   const getAccountTypeInfo = (type: string) => {
-    return accountTypes.find(t => t.value === type) || accountTypes[0];
+    const found = accountTypes.find(
+      (t: any) => t.typeCode === type || t.value === type
+    );
+
+    if (found) {
+      return {
+        label: found.typeNameAr || found.label || type,
+        color: found.color || "bg-slate-500",
+        icon:
+          found.icon ||
+          (found.typeCode === "asset" ? PiggyBank :
+            found.typeCode === "liability" ? CreditCard :
+            found.typeCode === "equity" ? Building :
+            found.typeCode === "revenue" ? Coins :
+            found.typeCode === "expense" ? Wallet :
+            PiggyBank),
+        value: found.typeCode || found.value || type,
+      };
+    }
+
+    const fallback = defaultAccountTypes.find((t) => t.value === type) || defaultAccountTypes[0];
+    return {
+      label: fallback.label,
+      color: fallback.color,
+      icon: fallback.icon,
+      value: fallback.value,
+    };
   };
 
   const filteredAccounts = useMemo(() => {
@@ -470,6 +522,8 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
   const mainAccounts = useMemo(() => {
     return accounts.filter(acc => !acc.parentAccountId || acc.parentAccountId === 0);
   }, [accounts]);
+
+  const isLocked = editMode && formData.accountLevel === "sub" && hasTransactions;
 
   // ==================== العرض ====================
 
@@ -549,16 +603,18 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                   <Badge variant="secondary" className="mr-2 bg-slate-100">{accounts.length}</Badge>
                 </TabsTrigger>
                 {accountTypes.map((type) => {
-                  const count = accounts.filter(a => a.accountType === type.value).length;
-                  const Icon = type.icon;
+                  const info = getAccountTypeInfo(type.typeCode || type.value);
+                  const typeValue = info.value || type.value;
+                  const count = accounts.filter(a => a.accountType === typeValue).length;
+                  const Icon = info.icon || PiggyBank;
                   return (
                     <TabsTrigger 
-                      key={type.value} 
-                      value={type.value}
+                      key={typeValue} 
+                      value={typeValue}
                       className="h-14 px-4 rounded-none border-b-2 border-transparent data-[state=active]:border-violet-500 data-[state=active]:bg-violet-50/50 data-[state=active]:text-violet-700 transition-all"
                     >
                       <Icon className="h-4 w-4 ml-2" />
-                      {type.label}
+                      {info.label}
                       {count > 0 && <Badge variant="secondary" className="mr-2 bg-slate-100">{count}</Badge>}
                     </TabsTrigger>
                   );
@@ -630,7 +686,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                 ) : (
                   filteredAccounts.map((account) => {
                     const typeInfo = getAccountTypeInfo(account.accountType);
-                    const isMain = !account.parentAccountId || account.parentAccountId === 0;
+                    const isMain = account.level && account.level > 1 ? false : (!account.parentAccountId || account.parentAccountId === 0);
                     return (
                       <TableRow 
                         key={account.id}
@@ -760,6 +816,15 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
             </div>
           </DialogHeader>
 
+          {isLocked && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5" />
+              <div className="text-sm">
+                هذا حساب فرعي لديه معاملات سابقة؛ تم قفل الحقول لتجنب مشاكل بالبيانات.
+              </div>
+            </div>
+          )}
+
           <ScrollArea className="max-h-[calc(90vh-180px)]">
             <div className="p-6 space-y-6">
               {/* القسم الأول: المعلومات الأساسية */}
@@ -776,24 +841,22 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                     <Label htmlFor="accountCode" className="flex items-center gap-2">
                       <Hash className="h-4 w-4 text-violet-500" />
                       رقم الحساب
-                      {!editMode && <span className="text-red-500">*</span>}
-                      {editMode && <Lock className="h-3 w-3 text-slate-400" />}
+                      <span className="text-red-500">*</span>
                     </Label>
                     <Input
                       id="accountCode"
                       value={formData.accountCode}
                       onChange={(e) => handleInputChange("accountCode", e.target.value)}
-                      disabled={editMode}
+                      disabled={isLocked}
                       placeholder="مثال: 1001"
                       className={cn(
                         "font-mono",
-                        editMode 
-                          ? "bg-slate-50 border-dashed border-slate-300 text-slate-500" 
-                          : "border-violet-200 focus:border-violet-400 focus:ring-violet-200"
+                        "border-violet-200 focus:border-violet-400 focus:ring-violet-200",
+                        isLocked && "bg-slate-50 text-slate-500"
                       )}
                     />
                     <p className="text-xs text-slate-500">
-                      {editMode ? "لا يمكن تعديل رقم الحساب" : "رقم فريد للحساب"}
+                      رقم فريد للحساب
                     </p>
                   </div>
 
@@ -809,6 +872,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                       min={1}
                       value={formData.displayOrder}
                       onChange={(e) => handleInputChange("displayOrder", parseInt(e.target.value) || 0)}
+                      disabled={isLocked}
                       placeholder="1"
                       className="border-violet-200 focus:border-violet-400 focus:ring-violet-200"
                     />
@@ -824,6 +888,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                     <Select
                       value={formData.parentAccountId.toString()}
                       onValueChange={(value) => handleInputChange("parentAccountId", parseInt(value))}
+                      disabled={isLocked}
                     >
                       <SelectTrigger className="border-violet-200 focus:border-violet-400 focus:ring-violet-200">
                         <SelectValue placeholder="بدون حساب أب" />
@@ -833,7 +898,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                         {accounts
                           .filter((acc) => acc.id !== currentAccountId)
                           .map((acc) => {
-                            const isMain = !acc.parentAccountId || acc.parentAccountId === 0;
+                            const isMain = acc.level && acc.level > 1 ? false : (!acc.parentAccountId || acc.parentAccountId === 0);
                             return (
                               <SelectItem key={acc.id} value={acc.id.toString()}>
                                 {acc.accountCode} - {acc.accountNameAr}
@@ -859,6 +924,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                       id="accountNameAr"
                       value={formData.accountNameAr}
                       onChange={(e) => handleInputChange("accountNameAr", e.target.value)}
+                      disabled={isLocked}
                       placeholder="مثال: صندوق التحصيل"
                       className="border-violet-200 focus:border-violet-400 focus:ring-violet-200"
                       dir="rtl"
@@ -875,6 +941,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                       id="accountNameEn"
                       value={formData.accountNameEn}
                       onChange={(e) => handleInputChange("accountNameEn", e.target.value)}
+                      disabled={isLocked}
                       placeholder="Example: Cash Box"
                       className="border-violet-200 focus:border-violet-400 focus:ring-violet-200"
                       dir="ltr"
@@ -905,20 +972,22 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                         handleInputChange("accountType", value);
                         handleInputChange("accountSubTypeId", 0);
                       }}
+                      disabled={isLocked}
                     >
                       <SelectTrigger className="border-violet-200 focus:border-violet-400 focus:ring-violet-200">
                         <SelectValue placeholder="اختر نوع الحساب" />
                       </SelectTrigger>
                       <SelectContent>
                         {accountTypes.map((type) => {
-                          const Icon = type.icon;
+                          const info = getAccountTypeInfo(type.typeCode || type.value);
+                          const Icon = info.icon || PiggyBank;
                           return (
-                            <SelectItem key={type.value} value={type.value}>
+                            <SelectItem key={info.value} value={info.value}>
                               <div className="flex items-center gap-2">
-                                <div className={cn("p-1 rounded", type.color)}>
+                                <div className={cn("p-1 rounded", info.color)}>
                                   <Icon className="h-3 w-3 text-white" />
                                 </div>
-                                {type.label}
+                                {info.label}
                               </div>
                             </SelectItem>
                           );
@@ -938,10 +1007,13 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                       value={formData.accountLevel}
                       onValueChange={(value: "main" | "sub") => {
                         handleInputChange("accountLevel", value);
+                        // حدث قيمة level المخزنة لتتطابق مع المستوى
+                        handleInputChange("level", value === "sub" ? 2 : 1);
                         if (value === "main") {
                           handleInputChange("accountSubTypeId", 0);
                         }
                       }}
+                      disabled={isLocked}
                     >
                       <SelectTrigger className="border-violet-200 focus:border-violet-400 focus:ring-violet-200">
                         <SelectValue placeholder="اختر مستوى الحساب" />
@@ -975,25 +1047,24 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                     <Select
                       value={formData.accountSubTypeId.toString()}
                       onValueChange={(value) => handleInputChange("accountSubTypeId", parseInt(value))}
+                      disabled={isLocked}
                     >
                       <SelectTrigger className="border-violet-200 focus:border-violet-400 focus:ring-violet-200">
                         <SelectValue placeholder="اختر النوع الفرعي" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="0">اختر النوع الفرعي</SelectItem>
-                        {accountSubTypes
-                          .filter((subType) => subType.accountType === formData.accountType)
-                          .map((subType) => {
-                            const Icon = accountSubTypeIcons[subType.code] || FileText;
-                            return (
-                              <SelectItem key={subType.id} value={subType.id.toString()}>
-                                <div className="flex items-center gap-2">
-                                  <Icon className="h-4 w-4 text-violet-500" />
-                                  {subType.nameAr}
-                                </div>
-                              </SelectItem>
-                            );
-                          })}
+                        {accountSubTypes.map((subType) => {
+                          const Icon = accountSubTypeIcons[subType.code] || FileText;
+                          return (
+                            <SelectItem key={subType.id} value={subType.id.toString()}>
+                              <div className="flex items-center gap-2">
+                                <Icon className="h-4 w-4 text-violet-500" />
+                                {subType.nameAr}
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   </div>
@@ -1035,6 +1106,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
                       id="description"
                       value={formData.description}
                       onChange={(e) => handleInputChange("description", e.target.value)}
+                      disabled={isLocked}
                       placeholder="وصف اختياري للحساب..."
                       className="border-violet-200 focus:border-violet-400 focus:ring-violet-200 min-h-[80px]"
                     />
@@ -1200,7 +1272,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={saving}
+              disabled={saving || isLocked}
               className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-lg shadow-purple-500/30"
             >
               {saving ? (
@@ -1211,7 +1283,7 @@ export default function AccountsPagePro({ subSystemId }: AccountsPageProProps = 
               ) : (
                 <>
                   <Save className="h-4 w-4 ml-2" />
-                  {editMode ? "تحديث" : "إضافة"}
+                  {isLocked ? "مقفل لوجود معاملات" : editMode ? "تحديث" : "إضافة"}
                 </>
               )}
             </Button>

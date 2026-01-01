@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import axios from "axios";
 import { useLocation, useRoute } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -36,8 +37,22 @@ import {
   Package,
   Users,
   ShoppingCart,
+  FileText,
+  BookOpen,
+  Store,
+  Activity,
+  Coins,
 } from "lucide-react";
-import { AccountsPage as AccountsPageV2, AccountTypesPage } from "../CustomSystem/v2";
+import {
+  AccountsPage as AccountsPageV2,
+  AccountTypesPage,
+  OperationsPage,
+  JournalEntriesPage,
+  CurrenciesPage,
+  ExchangeRatesPage,
+} from "../CustomSystem/v2";
+import CustomNotes from "./CustomNotes";
+import CustomMemos from "./CustomMemos";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -79,6 +94,38 @@ const treasuryTypeLabels = {
   bank: "حساب بنكي",
   wallet: "محفظة إلكترونية",
   exchange: "صراف",
+};
+
+// تصميم البطاقات لاختيار نوع الخزينة (نفس الواجهة المحسنة في الشاشة الرئيسية)
+const treasuryTypesUI = {
+  cash: {
+    label: "صندوق",
+    icon: Wallet,
+    color: "text-green-500",
+    bgColor: "bg-green-500/10",
+    borderColor: "border-green-500/30",
+  },
+  bank: {
+    label: "بنك",
+    icon: Building2,
+    color: "text-blue-500",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/30",
+  },
+  wallet: {
+    label: "محفظة إلكترونية",
+    icon: Smartphone,
+    color: "text-purple-500",
+    bgColor: "bg-purple-500/10",
+    borderColor: "border-purple-500/30",
+  },
+  exchange: {
+    label: "صراف",
+    icon: Store,
+    color: "text-orange-500",
+    bgColor: "bg-orange-500/10",
+    borderColor: "border-orange-500/30",
+  },
 };
 
 const treasuryTypeColors = {
@@ -272,10 +319,17 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     iban: "",
     walletProvider: "",
     walletNumber: "",
-    currency: "YER",
+    currency: "",
     openingBalance: "0",
     description: "",
+    accountId: null as number | null,
   });
+
+  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accountSubTypes, setAccountSubTypes] = useState<any[]>([]);
+  const [accountsLoading, setAccountsLoading] = useState(false);
+  const [accountCurrencies, setAccountCurrencies] = useState<any[]>([]);
+  const [currenciesLoading, setCurrenciesLoading] = useState(false);
 
   // New Transfer Form State
   const [newTransfer, setNewTransfer] = useState({
@@ -354,6 +408,86 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     { businessId: 1, subSystemId: parseInt(id || "0") },
     { enabled: !!id && activeTab === "reconciliation", staleTime: 30000 }
   );
+
+  // تحميل الأنواع الفرعية للحسابات (صندوق/بنك/محفظة/صراف)
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get("/api/custom-system/v2/account-sub-types", {
+          params: { isActive: true },
+        });
+        setAccountSubTypes(res.data || []);
+      } catch {
+        setAccountSubTypes([]);
+      }
+    })();
+  }, []);
+
+  // تحميل الحسابات الخاصة بالنظام الفرعي + الحسابات المشتركة (subSystemId IS NULL)
+  useEffect(() => {
+    (async () => {
+      setAccountsLoading(true);
+      try {
+        const subSystemId = parseInt(id || "0");
+        const res = await axios.get("/api/custom-system/v2/accounts", {
+          params: {
+            subSystemId: subSystemId > 0 ? subSystemId : undefined,
+            includeInactive: true,
+          },
+        });
+        setAccounts(res.data || []);
+      } catch {
+        setAccounts([]);
+      } finally {
+        setAccountsLoading(false);
+      }
+    })();
+  }, [id]);
+
+  // ربط نوع الخزينة بنوع الحساب الفرعي
+  const treasuryToSubTypeCode: Record<string, string> = {
+    cash: "cash",
+    bank: "bank",
+    wallet: "wallet",
+    exchange: "exchange",
+  };
+
+  const filteredAccounts = useMemo(() => {
+    const code = treasuryToSubTypeCode[newTreasury.treasuryType] || "";
+    const subTypeId = accountSubTypes.find((s: any) => s.code === code)?.id;
+
+    // عرض الحسابات التي تطابق نوع الحساب الفرعي فقط
+    if (!subTypeId) return [];
+    return accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
+  }, [accounts, accountSubTypes, newTreasury.treasuryType]);
+
+  // جلب عملات الحساب المختار
+  useEffect(() => {
+    if (!newTreasury.accountId) {
+      setAccountCurrencies([]);
+      setNewTreasury((prev) => ({ ...prev, currency: "" }));
+      return;
+    }
+    setCurrenciesLoading(true);
+    axios
+      .get(`/api/custom-system/v2/accounts/${newTreasury.accountId}`)
+      .then((res) => {
+        const currs = (res.data?.currencies || [])
+          .filter((c: any) => c.code)
+          .map((c: any) => c.code);
+        setAccountCurrencies(currs);
+        if (currs.length > 0) {
+          setNewTreasury((prev) => ({ ...prev, currency: currs[0] }));
+        } else {
+          setNewTreasury((prev) => ({ ...prev, currency: "" }));
+        }
+      })
+      .catch(() => {
+        setAccountCurrencies([]);
+        setNewTreasury((prev) => ({ ...prev, currency: "" }));
+      })
+      .finally(() => setCurrenciesLoading(false));
+  }, [newTreasury.accountId]);
 
   // Mutations
   const createTreasuryMutation = trpc.customSystem.treasuries.create.useMutation({
@@ -484,6 +618,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
       currency: "YER",
       openingBalance: "0",
       description: "",
+      accountId: null,
     });
   };
 
@@ -541,10 +676,36 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
       iban: treasury.iban || "",
       walletProvider: treasury.walletProvider || "",
       walletNumber: treasury.walletNumber || "",
-      currency: treasury.currency || "YER",
+      currency: treasury.currency || "",
       openingBalance: treasury.openingBalance || "0",
       description: treasury.description || "",
+      accountId: treasury.accountId || null,
     });
+    // عند التعديل، اجلب العملات للحساب المرتبط (إن وجد)
+    if (treasury.accountId) {
+      setCurrenciesLoading(true);
+      axios
+        .get(`/api/custom-system/v2/accounts/${treasury.accountId}`)
+        .then((res) => {
+          const currs = (res.data?.currencies || [])
+            .filter((c: any) => c.code)
+            .map((c: any) => c.code);
+          setAccountCurrencies(currs);
+          if (currs.length > 0 && currs.includes(treasury.currency)) {
+            setNewTreasury((prev) => ({ ...prev, currency: treasury.currency }));
+          } else if (currs.length > 0) {
+            setNewTreasury((prev) => ({ ...prev, currency: currs[0] }));
+          } else {
+            setNewTreasury((prev) => ({ ...prev, currency: "" }));
+          }
+        })
+        .catch(() => {
+          setAccountCurrencies([]);
+        })
+        .finally(() => setCurrenciesLoading(false));
+    } else {
+      setAccountCurrencies([]);
+    }
     setIsAddTreasuryOpen(true);
   };
 
@@ -569,6 +730,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
         walletNumber: newTreasury.walletNumber || undefined,
         currency: newTreasury.currency,
         description: newTreasury.description || undefined,
+        accountId: newTreasury.accountId || null,
       } as any);
     } else {
       // إنشاء صندوق جديد
@@ -578,6 +740,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
         ...newTreasury,
         openingBalance: newTreasury.openingBalance || "0",
         currentBalance: newTreasury.openingBalance || "0",
+        accountId: newTreasury.accountId || null,
       } as any);
     }
   };
@@ -776,6 +939,24 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             المطابقة
           </Button>
           <Button
+            variant={activeTab === "operations" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("operations")}
+            className={activeTab === "operations" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <Activity className="ml-2 h-4 w-4" />
+            شاشة العمليات
+          </Button>
+          <Button
+            variant={activeTab === "journal-entries" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("journal-entries")}
+            className={activeTab === "journal-entries" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <BookOpen className="ml-2 h-4 w-4" />
+            القيود اليومية
+          </Button>
+          <Button
             variant={activeTab === "accounts" ? "default" : "ghost"}
             size="sm"
             onClick={() => setActiveTab("accounts")}
@@ -792,6 +973,24 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           >
             <Settings className="ml-2 h-4 w-4" />
             أنواع الحسابات
+          </Button>
+          <Button
+            variant={activeTab === "currencies" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("currencies")}
+            className={activeTab === "currencies" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <Coins className="ml-2 h-4 w-4" />
+            العملات
+          </Button>
+          <Button
+            variant={activeTab === "exchange-rates" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("exchange-rates")}
+            className={activeTab === "exchange-rates" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <RefreshCw className="ml-2 h-4 w-4" />
+            أسعار الصرف
           </Button>
           <Button
             variant={activeTab === "inventory" ? "default" : "ghost"}
@@ -819,6 +1018,24 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           >
             <ShoppingCart className="ml-2 h-4 w-4" />
             المشتريات
+          </Button>
+          <Button
+            variant={activeTab === "notes" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("notes")}
+            className={activeTab === "notes" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <FileText className="ml-2 h-4 w-4" />
+            الملاحظات
+          </Button>
+          <Button
+            variant={activeTab === "memos" ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setActiveTab("memos")}
+            className={activeTab === "memos" ? "" : "text-slate-400 hover:text-white"}
+          >
+            <BookOpen className="ml-2 h-4 w-4" />
+            المذكرات
           </Button>
         </div>
       </div>
@@ -937,6 +1154,34 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
                   <DialogDescription>{editingTreasury ? "قم بتعديل بيانات الخزينة" : "أضف خزينة جديدة لهذا النظام الفرعي"}</DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>نوع الخزينة</Label>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {Object.entries(treasuryTypesUI).map(([key, config]) => {
+                        const Icon = (config as any).icon;
+                        const isActive = newTreasury.treasuryType === key;
+                        return (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => setNewTreasury({ ...newTreasury, treasuryType: key as any })}
+                            className={cn(
+                              "p-3 rounded-lg border-2 transition-all flex flex-col items-center gap-2 bg-slate-800/60",
+                              isActive
+                                ? `${(config as any).borderColor} ${(config as any).bgColor}`
+                                : "border-slate-700 hover:border-slate-600"
+                            )}
+                          >
+                            <Icon className={cn("h-6 w-6", isActive ? (config as any).color : "text-slate-400")} />
+                            <span className={cn("text-xs", isActive ? "text-white" : "text-slate-400")}>
+                              {(config as any).label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label>الكود</Label>
@@ -945,23 +1190,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
                         onChange={(e) => setNewTreasury({ ...newTreasury, code: e.target.value })}
                         placeholder="CASH-001"
                       />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>نوع الخزينة</Label>
-                      <Select
-                        value={newTreasury.treasuryType}
-                        onValueChange={(v: any) => setNewTreasury({ ...newTreasury, treasuryType: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="cash">صندوق نقدي</SelectItem>
-                          <SelectItem value="bank">حساب بنكي</SelectItem>
-                          <SelectItem value="wallet">محفظة إلكترونية</SelectItem>
-                          <SelectItem value="exchange">صراف</SelectItem>
-                        </SelectContent>
-                      </Select>
                     </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
@@ -1037,18 +1265,26 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>العملة</Label>
+                    <Label>العملة</Label>
                       <Select
-                        value={newTreasury.currency}
-                        onValueChange={(v) => setNewTreasury({ ...newTreasury, currency: v })}
+                      value={newTreasury.currency}
+                      onValueChange={(v) => setNewTreasury({ ...newTreasury, currency: v })}
+                      disabled={currenciesLoading || accountCurrencies.length === 0}
                       >
                         <SelectTrigger>
-                          <SelectValue />
+                        <SelectValue placeholder={currenciesLoading ? "جاري التحميل..." : accountCurrencies.length === 0 ? "لا توجد عملات مرتبطة بالحساب" : "اختر العملة"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="YER">ريال يمني</SelectItem>
-                          <SelectItem value="SAR">ريال سعودي</SelectItem>
-                          <SelectItem value="USD">دولار أمريكي</SelectItem>
+                        {accountCurrencies.length === 0 && (
+                          <SelectItem value="__none" disabled>
+                            {currenciesLoading ? "جاري التحميل..." : "لا توجد عملات مرتبطة بالحساب"}
+                          </SelectItem>
+                        )}
+                        {accountCurrencies.map((code) => (
+                          <SelectItem key={code} value={code}>
+                            {code}
+                          </SelectItem>
+                        ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -1061,6 +1297,36 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
                         placeholder="0"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>الحساب في دليل الحسابات</Label>
+                    <Select
+                      value={newTreasury.accountId ? newTreasury.accountId.toString() : ""}
+                      onValueChange={(v) => setNewTreasury({ ...newTreasury, accountId: v ? parseInt(v) : null })}
+                      disabled={accountsLoading}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={accountsLoading ? "جاري التحميل..." : "اختر الحساب"} />
+                      </SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {filteredAccounts.length === 0 && (
+                          <SelectItem value="__none" disabled>
+                            {accountsLoading ? "جاري التحميل..." : "لا توجد حسابات متاحة"}
+                          </SelectItem>
+                        )}
+                        {filteredAccounts.map((acc: any) => (
+                          <SelectItem key={acc.id} value={acc.id.toString()}>
+                            <span className="font-mono text-blue-400">{acc.accountCode}</span>
+                            {" - "}
+                            <span>{acc.accountNameAr}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-slate-400">
+                      تظهر الحسابات التي نوعها الفرعي يطابق نوع الخزينة. في حال عدم وجود مطابق، تظهر كل الحسابات كخيار احتياطي.
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -1887,6 +2153,35 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             </div>
           )}
 
+          {/* Operations Tab - شاشة العمليات */}
+          {activeTab === "operations" && (
+            <div className="space-y-4">
+              <OperationsPage />
+            </div>
+          )}
+
+          {/* Journal Entries Tab - القيود اليومية */}
+          {activeTab === "journal-entries" && (
+            <div className="space-y-4">
+              <JournalEntriesPage />
+            </div>
+          )}
+
+          {/* Currencies Tab - العملات */}
+          {activeTab === "currencies" && (
+            <div className="space-y-4">
+              <CurrenciesPage />
+            </div>
+          )}
+
+          {/* Exchange Rates Tab - أسعار الصرف */}
+          {activeTab === "exchange-rates" && (
+            <div className="space-y-4">
+              <ExchangeRatesPage />
+            </div>
+          )}
+
+
           {/* Inventory Tab - نظام المخزون */}
           {activeTab === "inventory" && (
             <div className="space-y-4">
@@ -1962,6 +2257,20 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
                   </div>
                 </CardContent>
               </Card>
+            </div>
+          )}
+
+          {/* Notes Tab */}
+          {activeTab === "notes" && (
+            <div className="space-y-4">
+              <CustomNotes />
+            </div>
+          )}
+
+          {/* Memos Tab */}
+          {activeTab === "memos" && (
+            <div className="space-y-4">
+              <CustomMemos />
             </div>
           )}
       </div>

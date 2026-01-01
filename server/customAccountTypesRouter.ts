@@ -47,11 +47,13 @@ export const customAccountTypesRouter = router({
       
       const businessId = ctx.user.businessId;
       
-      const conditions = [eq(customAccountTypes.businessId, businessId)];
+      // بناء الشروط بشكل صحيح
+      let whereClause = eq(customAccountTypes.businessId, businessId);
       
       if (input?.subSystemId) {
         // عرض الأنواع المرتبطة بالنظام الفرعي أو الأنواع العامة (NULL)
-        conditions.push(
+        whereClause = and(
+          whereClause,
           or(
             eq(customAccountTypes.subSystemId, input.subSystemId),
             isNull(customAccountTypes.subSystemId)
@@ -60,13 +62,13 @@ export const customAccountTypesRouter = router({
       }
       
       if (!input?.includeInactive) {
-        conditions.push(eq(customAccountTypes.isActive, true));
+        whereClause = and(whereClause, eq(customAccountTypes.isActive, true));
       }
       
       const types = await db
         .select()
         .from(customAccountTypes)
-        .where(conditions.length > 1 ? and(...conditions) : conditions[0])
+        .where(whereClause)
         .orderBy(customAccountTypes.displayOrder, customAccountTypes.typeNameAr);
       
       return types;

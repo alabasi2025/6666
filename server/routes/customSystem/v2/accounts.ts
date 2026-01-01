@@ -7,10 +7,12 @@ import { Router } from "express";
 import { getDb } from "../../../db";
 import {
   customAccounts,
+  customAccountTypes,
   customAccountSubTypes,
   customAccountCurrencies,
   customAccountBalances,
   customCurrencies,
+  type InsertCustomAccount,
   type InsertCustomAccountCurrency,
 } from "../../../../drizzle/schemas/customSystemV2";
 import { eq, and, desc, sql, isNull, or } from "drizzle-orm";
@@ -36,19 +38,16 @@ router.get("/", async (req, res) => {
     // بناء شروط البحث
     const conditions = [eq(customAccounts.businessId, businessId)];
 
-    // ملاحظة: subSystemId غير موجود في الجدول الفعلي حالياً
-    // سيتم تفعيله بعد تطبيق migration 0016
-    // if (subSystemId) {
-    //   const subSystemIdValue = parseInt(String(subSystemId));
-    //   // #region agent log
-    //   fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:39',message:'GET /accounts - Adding subSystemId filter',data:{subSystemIdValue},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-    //   // #endregion
-    //   conditions.push(eq(customAccounts.subSystemId, subSystemIdValue));
-    // }
+    // فلترة حسب النظام الفرعي إن تم تمريره (حصر الحسابات على هذا النظام فقط)
+    if (subSystemId) {
+      const subSystemIdValue = parseInt(String(subSystemId));
+      if (!isNaN(subSystemIdValue)) {
+        conditions.push(eq(customAccounts.subSystemId, subSystemIdValue));
+      }
+    }
 
     if (accountType) {
-      const accountTypeValue = String(accountType) as "asset" | "liability" | "equity" | "revenue" | "expense";
-      conditions.push(eq(customAccounts.accountType, accountTypeValue));
+      conditions.push(eq(customAccounts.accountType, String(accountType)));
     }
 
     if (isActive !== undefined) {
@@ -153,8 +152,17 @@ router.get("/:id", async (req, res) => {
 
     // جلب العملات المرتبطة
     const currencies = await db
-      .select()
+      .select({
+        id: customAccountCurrencies.id,
+        currencyId: customAccountCurrencies.currencyId,
+        code: customCurrencies.code,
+        nameAr: customCurrencies.nameAr,
+        nameEn: customCurrencies.nameEn,
+        isDefault: customAccountCurrencies.isDefault,
+        isActive: customAccountCurrencies.isActive,
+      })
       .from(customAccountCurrencies)
+      .leftJoin(customCurrencies, eq(customAccountCurrencies.currencyId, customCurrencies.id))
       .where(eq(customAccountCurrencies.accountId, accountId));
 
     // جلب الأرصدة
@@ -163,7 +171,9 @@ router.get("/:id", async (req, res) => {
       .from(customAccountBalances)
       .where(eq(customAccountBalances.accountId, accountId));
 
-    res.json({ ...account, currencies, balances });
+    const hasTransactions = balances.length > 0;
+
+    res.json({ ...account, currencies, balances, hasTransactions });
   } catch (error) {
     console.error("خطأ في جلب الحساب:", error);
     res.status(500).json({ error: "فشل في جلب الحساب" });
@@ -175,9 +185,9 @@ router.get("/:id", async (req, res) => {
  * إنشاء حساب جديد
  */
 router.post("/", async (req, res) => {
-  // #region agent log
-  fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:160',message:'POST /accounts - Entry',data:{businessId:req.user?.businessId,userId:req.user?.id,bodyKeys:Object.keys(req.body)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
-  // #endregion
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:160',message:'POST /accounts - Entry',data:{businessId:req.user?.businessId,userId:req.user?.id,bodyKeys:Object.keys(req.body)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
   try {
     const db = await getDb();
     if (!db) {
@@ -193,16 +203,19 @@ router.post("/", async (req, res) => {
 
     const {
       subSystemId,
-      accountCode,
-      accountNameAr,
+      accountCode, // سيتم تحويله إلى accountNumber
+      accountNameAr, // سيتم تحويله إلى accountName
       accountNameEn,
       accountType,
-      parentAccountId,
+      accountSubTypeId,
+      parentAccountId, // سيتم تحويله إلى parentId
       level,
+      accountLevel, // قادم من الواجهة (main/sub)
       description,
       isActive,
       allowManualEntry,
       requiresCostCenter,
+      // requiresParty, // غير موجود في قاعدة البيانات حالياً
       currencies,
     } = req.body;
     
@@ -215,6 +228,22 @@ router.post("/", async (req, res) => {
       return res.status(400).json({
         error: "رمز الحساب، الاسم بالعربية، ونوع الحساب مطلوبة",
       });
+    }
+
+    // جلب نوع الحساب المخصص (إن وجد) لربط accountTypeId
+    let accountTypeId: number | null = null;
+    if (accountType) {
+      const [typeRow] = await db
+        .select()
+        .from(customAccountTypes)
+        .where(
+          and(
+            eq(customAccountTypes.businessId, businessId),
+            eq(customAccountTypes.typeCode, accountType)
+          )
+        )
+        .limit(1);
+      accountTypeId = typeRow?.id || null;
     }
 
     // التحقق من عدم تكرار رمز الحساب
@@ -240,7 +269,9 @@ router.post("/", async (req, res) => {
       return res.status(400).json({ error: "رمز الحساب موجود مسبقاً" });
     }
 
-    // إنشاء الحساب
+    // إنشاء الحساب باستخدام الأعمدة الفعلية
+    const resolvedLevel = accountLevel === "sub" ? 2 : accountLevel === "main" ? 1 : level || 1;
+
     const newAccount: any = {
       businessId,
       subSystemId: subSystemId || null,
@@ -248,12 +279,12 @@ router.post("/", async (req, res) => {
       accountNameAr,
       accountNameEn: accountNameEn || null,
       accountType,
+      accountTypeId,
+      accountSubTypeId: accountSubTypeId || null,
       parentAccountId: parentAccountId || null,
-      level: level || 1,
+      level: resolvedLevel,
       description: description || null,
       isActive: isActive !== undefined ? isActive : true,
-      allowManualEntry: allowManualEntry !== undefined ? allowManualEntry : true,
-      requiresCostCenter: requiresCostCenter || false,
       createdBy: userId,
     };
     
@@ -295,13 +326,27 @@ router.post("/", async (req, res) => {
       }
       
       accountId = created.id;
+
+      // إضافة العملات إذا تم تحديدها
+      if (currencies && currencies.length > 0) {
+        const currencyValues: InsertCustomAccountCurrency[] = currencies.map((curr: any) => ({
+          businessId,
+          accountId: created.id,
+          currencyId: curr.currencyId,
+          isDefault: curr.isDefault || false,
+        }));
+
+        await db.insert(customAccountCurrencies).values(currencyValues);
+      }
+
+      return res.status(201).json(created);
     }
 
-    // إضافة العملات إذا تم تحديدها
+    // إضافة العملات إذا تم تحديدها (مرة واحدة فقط)
     if (currencies && currencies.length > 0 && accountId) {
       const currencyValues: InsertCustomAccountCurrency[] = currencies.map((curr: any) => ({
         businessId,
-        accountId: accountId!,
+        accountId: accountId,
         currencyId: curr.currencyId,
         isDefault: curr.isDefault || false,
       }));
@@ -310,18 +355,18 @@ router.post("/", async (req, res) => {
     }
 
     // جلب الحساب المُنشأ
-    const [createdAccount] = await db
+    const [created] = await db
       .select()
       .from(customAccounts)
       .where(eq(customAccounts.id, accountId!))
       .limit(1);
 
-    if (!createdAccount) {
+    if (!created) {
       console.error("فشل في جلب الحساب المُنشأ. accountId:", accountId);
       throw new Error("فشل في جلب الحساب المُنشأ");
     }
 
-    res.status(201).json(createdAccount);
+    res.status(201).json(created);
   } catch (error: any) {
     // #region agent log
     fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:316',message:'POST /accounts - Error caught',data:{errorMessage:error.message,errorCode:error.code,sql:error.sql,errorName:error.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
@@ -377,32 +422,54 @@ router.put("/:id", async (req, res) => {
 
     const {
       subSystemId,
-      accountCode,
       accountNameAr,
       accountNameEn,
       accountType,
       parentAccountId,
       level,
+      accountLevel, // قادم من الواجهة (main/sub)
+      accountSubTypeId,
       description,
       isActive,
-      allowManualEntry,
-      requiresCostCenter,
       currencies,
     } = req.body;
 
     // تحديث بيانات الحساب
+    // ملاحظة: استخدام الأعمدة الموجودة في الجدول الفعلي حتى يتم تطبيق migration 0016
     const updateData: any = {};
     if (subSystemId !== undefined) updateData.subSystemId = subSystemId || null;
-    if (accountCode !== undefined) updateData.accountCode = accountCode;
     if (accountNameAr) updateData.accountNameAr = accountNameAr;
     if (accountNameEn !== undefined) updateData.accountNameEn = accountNameEn || null;
-    if (accountType) updateData.accountType = accountType;
+    if (accountType) {
+      updateData.accountType = accountType;
+
+      // تحديث accountTypeId ليتوافق مع النوع المخصص
+      const [typeRow] = await db
+        .select()
+        .from(customAccountTypes)
+        .where(
+          and(
+            eq(customAccountTypes.businessId, businessId),
+            eq(customAccountTypes.typeCode, accountType)
+          )
+        )
+        .limit(1);
+      updateData.accountTypeId = typeRow?.id || null;
+    }
+    if (accountSubTypeId !== undefined) updateData.accountSubTypeId = accountSubTypeId || null;
     if (parentAccountId !== undefined) updateData.parentAccountId = parentAccountId || null;
-    if (level !== undefined) updateData.level = level;
+    if (accountSubTypeId !== undefined) updateData.accountSubTypeId = accountSubTypeId || null;
+
+    if (accountLevel !== undefined) {
+      updateData.level = accountLevel === "sub" ? 2 : 1;
+    } else if (level !== undefined) {
+      updateData.level = level;
+    }
     if (description !== undefined) updateData.description = description || null;
     if (isActive !== undefined) updateData.isActive = isActive;
-    if (allowManualEntry !== undefined) updateData.allowManualEntry = allowManualEntry;
-    if (requiresCostCenter !== undefined) updateData.requiresCostCenter = requiresCostCenter;
+    // if (allowManualEntry !== undefined) updateData.allowManualEntry = allowManualEntry; // غير موجود في الجدول الفعلي حالياً
+    // if (requiresCostCenter !== undefined) updateData.requiresCostCenter = requiresCostCenter; // غير موجود في الجدول الفعلي حالياً
+    // if (requiresParty !== undefined) updateData.requiresParty = requiresParty; // غير موجود في قاعدة البيانات حالياً
 
     await db
       .update(customAccounts)

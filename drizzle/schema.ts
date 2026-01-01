@@ -3155,6 +3155,7 @@ export const customTreasuries = mysqlTable("custom_treasuries", {
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   treasuryType: mysqlEnum("treasury_type", ["cash", "bank", "wallet", "exchange"]).notNull(),
+  accountId: int("account_id"),
   // cash = صندوق، bank = بنك، wallet = محفظة إلكترونية، exchange = صراف
   bankName: varchar("bank_name", { length: 255 }),
   accountNumber: varchar("account_number", { length: 100 }),
