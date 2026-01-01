@@ -3178,6 +3178,26 @@ export const customTreasuries = mysqlTable("custom_treasuries", {
   codeIdx: uniqueIndex("ct_code_idx").on(table.businessId, table.code),
 }));
 
+// عملات الخزائن - Treasury Currencies (علاقة many-to-many)
+export const customTreasuryCurrencies = mysqlTable("custom_treasury_currencies", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+  treasuryId: int("treasury_id").notNull(),
+  currencyId: int("currency_id").notNull(),
+  isDefault: boolean("is_default").default(false),
+  isActive: boolean("is_active").default(true),
+  openingBalance: decimal("opening_balance", { precision: 15, scale: 2 }).default("0"),
+  currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).default("0"),
+  createdBy: int("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").onUpdateNow(),
+}, (table) => ({
+  treasuryIdx: index("idx_treasury_id").on(table.treasuryId),
+  currencyIdx: index("idx_currency_id").on(table.currencyId),
+  businessIdx: index("idx_business_id").on(table.businessId),
+  uniqueTreasuryCurrency: uniqueIndex("unique_treasury_currency").on(table.treasuryId, table.currencyId),
+}));
+
 // الحسابات الوسيطة - Intermediary Accounts
 export const customIntermediaryAccounts = mysqlTable("custom_intermediary_accounts", {
   id: int("id").autoincrement().primaryKey(),

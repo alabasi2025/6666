@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { trpc } from "@/lib/trpc";
@@ -62,6 +62,7 @@ import {
   MoreVertical,
   RefreshCw,
   Loader2,
+  Coins,
   DollarSign,
   TrendingUp,
   TrendingDown,
@@ -75,6 +76,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useRoute } from "wouter";
 
 // Treasury Types Configuration
 const treasuryTypes = {
@@ -131,7 +133,8 @@ const treasuryFormSchema = z.object({
   swiftCode: z.string().optional(),
   walletProvider: z.string().optional(),
   walletNumber: z.string().optional(),
-  currency: z.string().default(""),
+  currencies: z.array(z.string()).min(1, "يجب اختيار عملة واحدة على الأقل"),
+  defaultCurrency: z.string().optional(),
   openingBalance: z.string().default("0"),
   description: z.string().optional(),
 });
@@ -200,10 +203,46 @@ function TreasuryCard({ treasury, onEdit, onDelete }: any) {
                 "text-lg font-bold",
                 isPositive ? "text-green-500" : "text-red-500"
               )}>
-                {balance.toLocaleString("ar-SA")} {(treasury as any).currency}
+                {balance.toLocaleString("ar-SA")} {(treasury as any).defaultCurrency || (treasury as any).currency}
               </span>
             </div>
           </div>
+
+          {/* Currency Balances */}
+          {(treasury as any).currencyBalances && (treasury as any).currencyBalances.length > 0 && (
+            <div className="space-y-2">
+              <span className="text-slate-500 text-xs">أرصدة العملات:</span>
+              <div className="grid gap-2">
+                {(treasury as any).currencyBalances.map((cb: any) => {
+                  const bal = parseFloat(cb.currentBalance || "0");
+                  const isPos = bal >= 0;
+                  return (
+                    <div 
+                      key={cb.code}
+                      className={cn(
+                        "flex items-center justify-between p-2 rounded-md text-sm",
+                        cb.isDefault ? "bg-emerald-900/30 border border-emerald-700/50" : "bg-slate-800/30"
+                      )}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Coins className="h-3 w-3 text-slate-400" />
+                        <span className={cb.isDefault ? "text-emerald-400 font-medium" : "text-slate-300"}>
+                          {cb.code}
+                          {cb.isDefault && " (افتراضي)"}
+                        </span>
+                      </div>
+                      <span className={cn(
+                        "font-bold",
+                        isPos ? "text-green-400" : "text-red-400"
+                      )}>
+                        {bal.toLocaleString("ar-SA")}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Additional Info based on type */}
           {(treasury as any).treasuryType === "bank" && (treasury as any).bankName && (
@@ -235,8 +274,20 @@ function TreasuryCard({ treasury, onEdit, onDelete }: any) {
   );
 }
 
+// Props interface
+interface CustomTreasuriesProps {
+  subSystemId?: number;
+}
+
 // Main Component
-export default function CustomTreasuries() {
+export default function CustomTreasuries({ subSystemId: propSubSystemId }: CustomTreasuriesProps) {
+  // Get subSystemId from URL if available (fallback)
+  const [matchSubSystemTreasuries, params] = useRoute("/custom/sub-systems/:id/treasuries");
+  const urlSubSystemId = propSubSystemId || (params?.id ? parseInt(params.id) : undefined);
+  
+  // Debug logging
+  console.log("[CustomTreasuries] propSubSystemId:", propSubSystemId, "urlSubSystemId:", urlSubSystemId);
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingTreasury, setEditingTreasury] = useState<any>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
@@ -247,7 +298,7 @@ export default function CustomTreasuries() {
   const [accountCurrencies, setAccountCurrencies] = useState<string[]>([]);
   const [currenciesLoading, setCurrenciesLoading] = useState(false);
 
-  // Form
+  // Form - تعيين subSystemId من URL إذا كان متاحاً
   const form = useForm<TreasuryFormValues>({
     resolver: zodResolver(treasuryFormSchema) as any as any as any,
     defaultValues: {
@@ -255,19 +306,21 @@ export default function CustomTreasuries() {
       nameAr: "",
       nameEn: "",
       treasuryType: "cash",
-      currency: "",
+      currencies: [],
+      defaultCurrency: undefined,
       openingBalance: "0",
       description: "",
       accountId: undefined,
+      subSystemId: urlSubSystemId,
     },
   });
 
   const watchTreasuryType = form.watch("treasuryType");
   const watchSubSystemId = form.watch("subSystemId");
 
-  // API Queries
+  // API Queries - استخدام subSystemId من URL إذا كان متاحاً
   const { data: treasuries, isLoading, refetch } = trpc.customSystem.treasuries.list.useQuery(
-    { businessId: 1 },
+    { businessId: 1, subSystemId: urlSubSystemId },
     { enabled: true }
   );
 
@@ -327,7 +380,8 @@ export default function CustomTreasuries() {
       swiftCode: (treasury as any).swiftCode || "",
       walletProvider: (treasury as any).walletProvider || "",
       walletNumber: (treasury as any).walletNumber || "",
-      currency: (treasury as any).currency || "",
+      currencies: (treasury as any).currencies || [],
+      defaultCurrency: (treasury as any).defaultCurrency || undefined,
       openingBalance: (treasury as any).openingBalance || "0",
       description: (treasury as any).description || "",
       accountId: (treasury as any).accountId || null,
@@ -342,22 +396,36 @@ export default function CustomTreasuries() {
             .filter((c: any) => c.code)
             .map((c: any) => c.code);
           setAccountCurrencies(currs);
-          if (currs.length > 0 && currs.includes((treasury as any).currency)) {
-            form.setValue("currency", (treasury as any).currency);
+          // تعيين العملات المحفوظة إذا كانت موجودة
+          const savedCurrencies = (treasury as any).currencies || [];
+          if (savedCurrencies.length > 0) {
+            form.setValue("currencies", savedCurrencies);
+            form.setValue("defaultCurrency", (treasury as any).defaultCurrency || savedCurrencies[0]);
           } else if (currs.length > 0) {
-            form.setValue("currency", currs[0]);
+            // إذا لم تكن هناك عملات محفوظة، نضع العملة القديمة إن وجدت
+            const oldCurrency = (treasury as any).currency;
+            if (oldCurrency && currs.includes(oldCurrency)) {
+              form.setValue("currencies", [oldCurrency]);
+              form.setValue("defaultCurrency", oldCurrency);
+            } else {
+              form.setValue("currencies", []);
+              form.setValue("defaultCurrency", undefined);
+            }
           } else {
-            form.setValue("currency", "");
+            form.setValue("currencies", []);
+            form.setValue("defaultCurrency", undefined);
           }
         })
         .catch(() => {
           setAccountCurrencies([]);
-          form.setValue("currency", "");
+          form.setValue("currencies", []);
+          form.setValue("defaultCurrency", undefined);
         })
         .finally(() => setCurrenciesLoading(false));
     } else {
       setAccountCurrencies([]);
-      form.setValue("currency", "");
+      form.setValue("currencies", []);
+      form.setValue("defaultCurrency", undefined);
     }
     setIsDialogOpen(true);
   };
@@ -382,15 +450,16 @@ export default function CustomTreasuries() {
     })();
   }, []);
 
-  // تحميل الحسابات بحسب النظام الفرعي
+  // تحميل الحسابات بحسب النظام الفرعي - استخدام urlSubSystemId أو watchSubSystemId
+  const effectiveSubSystemId = urlSubSystemId || (watchSubSystemId && watchSubSystemId > 0 ? watchSubSystemId : undefined);
+  
   useEffect(() => {
     (async () => {
       setAccountsLoading(true);
       try {
-        const subSystemParam = watchSubSystemId && watchSubSystemId > 0 ? watchSubSystemId : undefined;
         const res = await axios.get("/api/custom-system/v2/accounts", {
           params: {
-            subSystemId: subSystemParam,
+            subSystemId: effectiveSubSystemId,
             includeInactive: true,
           },
         });
@@ -401,7 +470,7 @@ export default function CustomTreasuries() {
         setAccountsLoading(false);
       }
     })();
-  }, [watchSubSystemId]);
+  }, [effectiveSubSystemId]);
 
   const onSubmit = (data: TreasuryFormValues) => {
     const payload = {
@@ -409,6 +478,8 @@ export default function CustomTreasuries() {
       businessId: 1,
       openingBalance: data.openingBalance || "0",
       currentBalance: data.openingBalance || "0",
+      // استخدام urlSubSystemId إذا كان متاحاً
+      subSystemId: urlSubSystemId || data.subSystemId,
     };
 
     if (editingTreasury) {
@@ -433,21 +504,22 @@ export default function CustomTreasuries() {
     // عرض الحسابات التي تطابق نوع الحساب الفرعي فقط
     if (!subTypeId) return [];
     const base = accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
-    const selectedId = watch("accountId");
+    const selectedId = form.watch("accountId");
     const selected = accounts.find((acc: any) => acc.id === selectedId);
     if (selected && !base.some((acc: any) => acc.id === selected.id)) {
       return [selected, ...base];
     }
     return base;
-  }, [accounts, accountSubTypes, watchTreasuryType, watch("accountId")]);
+  }, [accounts, accountSubTypes, watchTreasuryType, form.watch("accountId")]);
 
   // جلب عملات الحساب المختار
   useEffect(() => {
-    const accId = watch("accountId");
-    const currentCurrency = watch("currency");
+    const accId = form.watch("accountId");
+    const currentCurrencies = form.watch("currencies") || [];
     if (!accId) {
       setAccountCurrencies([]);
-      setValue("currency", "");
+      form.setValue("currencies", []);
+      form.setValue("defaultCurrency", undefined);
       return;
     }
     setCurrenciesLoading(true);
@@ -458,23 +530,20 @@ export default function CustomTreasuries() {
           .filter((c: any) => c.code)
           .map((c: any) => c.code);
         setAccountCurrencies(currs);
-        if (currs.length > 0) {
-          // إذا كانت العملة الحالية ضمن العملات المتاحة، احتفظ بها
-          if (currentCurrency && currs.includes(currentCurrency)) {
-            setValue("currency", currentCurrency);
-          } else {
-            setValue("currency", currs[0]);
-          }
-        } else {
-          setValue("currency", "");
+        // لا نغير العملات المحددة إذا كانت موجودة بالفعل
+        if (currentCurrencies.length === 0 && currs.length > 0) {
+          // فقط إذا لم يكن هناك عملات محددة
+          form.setValue("currencies", []);
+          form.setValue("defaultCurrency", undefined);
         }
       })
       .catch(() => {
         setAccountCurrencies([]);
-        setValue("currency", "");
+        form.setValue("currencies", []);
+        form.setValue("defaultCurrency", undefined);
       })
       .finally(() => setCurrenciesLoading(false));
-  }, [watchTreasuryType, watch("accountId"), watch("currency")]);
+  }, [watchTreasuryType, form.watch("accountId")]);
 
   // Filter treasuries
   const filteredTreasuries = treasuries?.filter((t: any) => {
@@ -498,7 +567,14 @@ export default function CustomTreasuries() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-white">إدارة الخزائن</h1>
+          <h1 className="text-2xl font-bold text-white">
+            إدارة الخزائن
+            {urlSubSystemId && subSystems && (
+              <span className="text-emerald-400 mr-2">
+                - {subSystems.find((s: any) => s.id === urlSubSystemId)?.nameAr}
+              </span>
+            )}
+          </h1>
           <p className="text-slate-400">إدارة الصناديق والبنوك والمحافظ الإلكترونية والصرافين</p>
         </div>
         <div className="flex items-center gap-3">
@@ -580,44 +656,175 @@ export default function CustomTreasuries() {
                       )}
                     />
 
-                    {/* Currency */}
+                    {/* Currencies - Multi Select with Checkboxes */}
                     <FormField
                       control={form.control as any}
-                      name="currency"
+                      name="currencies"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-300">العملة</FormLabel>
+                          <div className="flex items-center justify-between">
+                            <FormLabel className="text-slate-300">العملات المسموحة</FormLabel>
+                            {accountCurrencies.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-blue-400 hover:text-blue-300 h-6 px-2"
+                                onClick={() => {
+                                  if (field.value?.length === accountCurrencies.length) {
+                                    // إلغاء تحديد الكل
+                                    field.onChange([]);
+                                    form.setValue("defaultCurrency", undefined);
+                                  } else {
+                                    // تحديد الكل
+                                    field.onChange([...accountCurrencies]);
+                                    if (!form.watch("defaultCurrency")) {
+                                      form.setValue("defaultCurrency", accountCurrencies[0]);
+                                    }
+                                  }
+                                }}
+                              >
+                                {field.value?.length === accountCurrencies.length ? "إلغاء الكل" : "تحديد الكل"}
+                              </Button>
+                            )}
+                          </div>
+                          <FormControl>
+                            <div className="space-y-3">
+                              {/* عرض العملات المختارة */}
+                              {field.value && field.value.length > 0 && (
+                                <div className="flex flex-wrap gap-2 p-3 bg-emerald-900/20 border border-emerald-700/30 rounded-lg">
+                                  <span className="text-emerald-400 text-xs font-medium w-full mb-1">العملات المختارة ({field.value.length}):</span>
+                                  {field.value.map((curr: string) => (
+                                    <Badge
+                                      key={curr}
+                                      variant="secondary"
+                                      className="bg-emerald-600 text-white hover:bg-emerald-700 cursor-pointer flex items-center gap-1 px-3 py-1"
+                                      onClick={() => {
+                                        const newValue = field.value.filter((c: string) => c !== curr);
+                                        field.onChange(newValue);
+                                        if (form.watch("defaultCurrency") === curr) {
+                                          form.setValue("defaultCurrency", newValue[0] || undefined);
+                                        }
+                                      }}
+                                    >
+                                      <Coins className="h-3 w-3" />
+                                      {curr}
+                                      <span className="ml-1 text-emerald-200 hover:text-white">×</span>
+                                    </Badge>
+                                  ))}
+                                </div>
+                              )}
+                              
+                              {/* عرض العملات المتاحة كمربعات اختيار */}
+                              <div className="p-3 bg-slate-800 border border-slate-700 rounded-lg">
+                                {currenciesLoading ? (
+                                  <div className="flex items-center justify-center py-4">
+                                    <Loader2 className="h-5 w-5 animate-spin text-blue-400 mr-2" />
+                                    <span className="text-slate-400 text-sm">جاري تحميل العملات...</span>
+                                  </div>
+                                ) : accountCurrencies.length === 0 ? (
+                                  <div className="text-center py-4">
+                                    <Coins className="h-8 w-8 text-slate-600 mx-auto mb-2" />
+                                    <span className="text-slate-500 text-sm block">
+                                      {form.watch("accountId") 
+                                        ? "لا توجد عملات مرتبطة بهذا الحساب"
+                                        : "اختر حساباً أولاً لعرض العملات المتاحة"}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-2">
+                                    <span className="text-slate-400 text-xs font-medium block mb-2">
+                                      العملات المتاحة للحساب ({accountCurrencies.length}):
+                                    </span>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                      {accountCurrencies.map((code) => {
+                                        const isSelected = field.value?.includes(code);
+                                        return (
+                                          <div
+                                            key={code}
+                                            onClick={() => {
+                                              if (isSelected) {
+                                                const newValue = field.value.filter((c: string) => c !== code);
+                                                field.onChange(newValue);
+                                                if (form.watch("defaultCurrency") === code) {
+                                                  form.setValue("defaultCurrency", newValue[0] || undefined);
+                                                }
+                                              } else {
+                                                const newValue = [...(field.value || []), code];
+                                                field.onChange(newValue);
+                                                if (!form.watch("defaultCurrency")) {
+                                                  form.setValue("defaultCurrency", code);
+                                                }
+                                              }
+                                            }}
+                                            className={`
+                                              flex items-center gap-2 p-2 rounded-md cursor-pointer transition-all duration-200
+                                              ${isSelected 
+                                                ? "bg-blue-600/20 border-2 border-blue-500 text-blue-300" 
+                                                : "bg-slate-700/50 border-2 border-transparent hover:border-slate-600 text-slate-300 hover:text-white"
+                                              }
+                                            `}
+                                          >
+                                            <div className={`
+                                              w-5 h-5 rounded border-2 flex items-center justify-center transition-all
+                                              ${isSelected 
+                                                ? "bg-blue-500 border-blue-500" 
+                                                : "border-slate-500 bg-transparent"
+                                              }
+                                            `}>
+                                              {isSelected && (
+                                                <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                              )}
+                                            </div>
+                                            <Coins className={`h-4 w-4 ${isSelected ? "text-blue-400" : "text-slate-500"}`} />
+                                            <span className="font-medium">{code}</span>
+                                          </div>
+                                        );
+                                      })}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </FormControl>
+                          <FormDescription className="text-slate-400 text-xs">
+                            انقر على العملة لتحديدها أو إلغاء تحديدها. يمكنك اختيار عملة واحدة أو أكثر.
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Default Currency */}
+                    <FormField
+                      control={form.control as any}
+                      name="defaultCurrency"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">العملة الافتراضية</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
-                            disabled={currenciesLoading || accountCurrencies.length === 0}
+                            disabled={!form.watch("currencies") || form.watch("currencies").length === 0}
                           >
                             <FormControl>
                               <SelectTrigger className="bg-slate-800 border-slate-700">
-                                <SelectValue
-                                  placeholder={
-                                    currenciesLoading
-                                      ? "جاري التحميل..."
-                                      : accountCurrencies.length === 0
-                                        ? "لا توجد عملات مرتبطة بالحساب"
-                                        : "اختر العملة"
-                                  }
-                                />
+                                <SelectValue placeholder="اختر العملة الافتراضية" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent className="bg-slate-900 border-slate-800">
-                              {accountCurrencies.length === 0 && (
-                                <SelectItem value="__none" disabled>
-                                  {currenciesLoading ? "جاري التحميل..." : "لا توجد عملات مرتبطة بالحساب"}
-                                </SelectItem>
-                              )}
-                              {accountCurrencies.map((code) => (
+                              {(form.watch("currencies") || []).map((code: string) => (
                                 <SelectItem key={code} value={code}>
                                   {code}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
+                          <FormDescription className="text-slate-400 text-xs">
+                            العملة التي ستستخدم بشكل افتراضي في العمليات
+                          </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -656,32 +863,44 @@ export default function CustomTreasuries() {
                     />
                   </div>
 
-                  {/* Sub System */}
-                  <FormField
-                    control={form.control as any}
-                    name="subSystemId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-slate-300">النظام الفرعي (اختياري)</FormLabel>
-                        <Select onValueChange={(v) => field.onChange(parseInt(v))} value={field.value?.toString()}>
-                          <FormControl>
-                            <SelectTrigger className="bg-slate-800 border-slate-700">
-                              <SelectValue placeholder="اختر النظام الفرعي" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-slate-900 border-slate-800">
-                            <SelectItem value="0">بدون نظام فرعي</SelectItem>
-                            {subSystems?.map((sys: any) => (
-                              <SelectItem key={sys.id} value={sys.id.toString()}>
-                                {sys.nameAr}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  {/* Sub System - مخفي إذا كان محدداً من URL */}
+                  {!urlSubSystemId && (
+                    <FormField
+                      control={form.control as any}
+                      name="subSystemId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-slate-300">النظام الفرعي (اختياري)</FormLabel>
+                          <Select onValueChange={(v) => field.onChange(parseInt(v))} value={field.value?.toString()}>
+                            <FormControl>
+                              <SelectTrigger className="bg-slate-800 border-slate-700">
+                                <SelectValue placeholder="اختر النظام الفرعي" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent className="bg-slate-900 border-slate-800">
+                              <SelectItem value="0">بدون نظام فرعي</SelectItem>
+                              {subSystems?.map((sys: any) => (
+                                <SelectItem key={sys.id} value={sys.id.toString()}>
+                                  {sys.nameAr}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+                  
+                  {/* عرض اسم النظام الفرعي إذا كان محدداً من URL */}
+                  {urlSubSystemId && (
+                    <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
+                      <span className="text-slate-400 text-sm">النظام الفرعي: </span>
+                      <span className="text-emerald-400 font-medium">
+                        {subSystems?.find((s: any) => s.id === urlSubSystemId)?.nameAr || `نظام #${urlSubSystemId}`}
+                      </span>
+                    </div>
+                  )}
 
                   {/* Account Selection Field */}
                   <FormField

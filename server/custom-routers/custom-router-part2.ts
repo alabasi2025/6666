@@ -436,3 +436,27 @@ export const customTreasuriesRouter = router({
       return await db.select({
         id: customTreasuries.id,
         businessId: customTreasuries.businessId,
+        subSystemId: customTreasuries.subSystemId,
+        code: customTreasuries.code,
+        nameAr: customTreasuries.nameAr,
+        nameEn: customTreasuries.nameEn,
+        treasuryType: customTreasuries.treasuryType,
+        accountId: customTreasuries.accountId,
+        currency: customTreasuries.currency,
+        openingBalance: customTreasuries.openingBalance,
+        currentBalance: customTreasuries.currentBalance,
+        bankName: customTreasuries.bankName,
+        accountNumber: customTreasuries.accountNumber,
+        iban: customTreasuries.iban,
+        swiftCode: customTreasuries.swiftCode,
+        walletProvider: customTreasuries.walletProvider,
+        walletNumber: customTreasuries.walletNumber,
+        description: customTreasuries.description,
+        status: customTreasuries.status,
+        createdAt: customTreasuries.createdAt,
+        updatedAt: customTreasuries.updatedAt,
+      }).from(customTreasuries)
+        .where(and(...conditions))
+        .orderBy(desc(customTreasuries.createdAt));
+    }),
+});

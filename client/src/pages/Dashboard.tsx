@@ -145,7 +145,7 @@ const CustomNotes = lazy(() => import("./custom/CustomNotes"));
 const CustomMemos = lazy(() => import("./custom/CustomMemos"));
 const CustomSubSystems = lazy(() => import("./custom/CustomSubSystems"));
 const CustomTreasuries = lazy(() => import("./custom/CustomTreasuries"));
-const CustomVouchers = lazy(() => import("./custom/CustomVouchers"));
+
 const CustomReconciliation = lazy(() => import("./custom/CustomReconciliation"));
 
 // Customer System Pages - Lazy Loaded
@@ -620,7 +620,7 @@ export default function Dashboard() {
         {path === "/dashboard/custom" && <CustomDashboard />}
         {path === "/dashboard/custom/sub-systems" && <CustomSubSystems />}
         {path === "/dashboard/custom/treasuries" && <CustomTreasuries />}
-        {path === "/dashboard/custom/vouchers" && <CustomVouchers />}
+
         {path === "/dashboard/custom/reconciliation" && <CustomReconciliation />}
         {path === "/dashboard/custom/accounts" && <CustomAccounts />}
         {path === "/dashboard/custom/notes" && <CustomNotes />}

@@ -23,7 +23,7 @@ import {
   customAccounts, customTransactions, customNotes, customMemos, noteCategories,
   InsertCustomAccount, InsertCustomTransaction, InsertCustomNote, InsertCustomMemo,
   // الجداول الجديدة
-  customParties, customCategories, customTreasuryMovements, customPartyTransactions, customSettings,
+  customParties, customCategories, customTreasuryMovements, customTreasuryCurrencies, customPartyTransactions, customSettings,
   InsertCustomParty, InsertCustomCategory, InsertCustomTreasuryMovement, InsertCustomPartyTransaction, InsertCustomSetting
 } from "../drizzle/schema";
 import { eq, and, desc, asc, like, sql } from "drizzle-orm";
@@ -833,6 +833,7 @@ export const customTreasuriesRouter = router({
       treasuryType: z.enum(["cash", "bank", "wallet", "exchange"]).optional(),
     }))
     .query(async ({ input }) => {
+      console.log("[Treasuries API] جلب الخزائن:", input);
       const db = await getDb();
     if (!db) throw new Error("Database not available");
       if (!db) return [];
@@ -844,8 +845,7 @@ export const customTreasuriesRouter = router({
       if (input.treasuryType) {
         conditions.push(eq(customTreasuries.treasuryType, input.treasuryType));
       }
-      
-      return await db.select({
+      const result = await db.select({
         id: customTreasuries.id,
         businessId: customTreasuries.businessId,
         subSystemId: customTreasuries.subSystemId,
@@ -858,13 +858,49 @@ export const customTreasuriesRouter = router({
         currency: customTreasuries.currency,
         openingBalance: customTreasuries.openingBalance,
         currentBalance: customTreasuries.currentBalance,
+        accountId: customTreasuries.accountId,
         isActive: customTreasuries.isActive,
         createdAt: customTreasuries.createdAt,
       }).from(customTreasuries)
         .where(and(...conditions))
         .orderBy(asc(customTreasuries.code));
+      
+      // جلب العملات لكل خزينة
+      const treasuriesWithCurrencies = await Promise.all(
+        result.map(async (treasury) => {
+          const currencies = await db.select({
+            code: sql<string>`c.code`,
+            isDefault: customTreasuryCurrencies.isDefault,
+            currentBalance: customTreasuryCurrencies.currentBalance,
+            openingBalance: customTreasuryCurrencies.openingBalance,
+          })
+            .from(customTreasuryCurrencies)
+            .leftJoin(
+              sql`custom_currencies c`,
+              sql`c.id = ${customTreasuryCurrencies.currencyId}`
+            )
+            .where(eq(customTreasuryCurrencies.treasuryId, treasury.id));
+          
+          const currencyBalances = currencies.map(c => ({
+            code: c.code,
+            isDefault: c.isDefault,
+            currentBalance: c.currentBalance || "0",
+            openingBalance: c.openingBalance || "0",
+          }));
+          const currencyCodes = currencies.map(c => c.code);
+          const defaultCurrency = currencies.find(c => c.isDefault)?.code || currencyCodes[0];
+          
+          return {
+            ...treasury,
+            currencies: currencyCodes,
+            currencyBalances: currencyBalances,
+            defaultCurrency: defaultCurrency,
+          };
+        })
+      );
+      
+      return treasuriesWithCurrencies;
     }),
-
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
@@ -889,13 +925,36 @@ export const customTreasuriesRouter = router({
         currency: customTreasuries.currency,
         openingBalance: customTreasuries.openingBalance,
         currentBalance: customTreasuries.currentBalance,
+        accountId: customTreasuries.accountId,
         description: customTreasuries.description,
         isActive: customTreasuries.isActive,
         createdAt: customTreasuries.createdAt,
       }).from(customTreasuries)
         .where(eq(customTreasuries.id, input.id))
         .limit(1);
-      return result[0] || null;
+      
+      if (!result[0]) return null;
+      
+      // جلب العملات
+      const currencies = await db.select({
+        code: sql<string>`c.code`,
+        isDefault: customTreasuryCurrencies.isDefault,
+      })
+        .from(customTreasuryCurrencies)
+        .leftJoin(
+          sql`custom_currencies c`,
+          sql`c.id = ${customTreasuryCurrencies.currencyId}`
+        )
+        .where(eq(customTreasuryCurrencies.treasuryId, input.id));
+      
+      const currencyCodes = currencies.map(c => c.code);
+      const defaultCurrency = currencies.find(c => c.isDefault)?.code || currencyCodes[0];
+      
+      return {
+        ...result[0],
+        currencies: currencyCodes,
+        defaultCurrency: defaultCurrency,
+      };
     }),
 
   create: protectedProcedure
@@ -913,9 +972,9 @@ export const customTreasuriesRouter = router({
       swiftCode: z.string().optional(),
       walletProvider: z.string().optional(),
       walletNumber: z.string().optional(),
-      currency: z.string().default("SAR"),
+      currencies: z.array(z.string()).min(1, "يجب اختيار عملة واحدة على الأقل"),
+      defaultCurrency: z.string().optional(),
       openingBalance: z.string().default("0"),
-      currentBalance: z.string().default("0"),
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -923,11 +982,48 @@ export const customTreasuriesRouter = router({
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
+      // إزالة currencies و defaultCurrency من input لأنهما ليسا في جدول customTreasuries
+      const { currencies, defaultCurrency, ...treasuryData } = input;
+      
+      // إنشاء الخزينة
       const result = await db.insert(customTreasuries).values({
-        ...input,
+        ...treasuryData,
+        currency: defaultCurrency || currencies[0], // للتوافق مع العمود القديم
+        currentBalance: input.openingBalance,
         createdBy: ctx.user?.id,
       });
-      return { id: result[0].insertId, success: true };
+      
+      const treasuryId = result[0].insertId;
+      
+      // إدراج العملات في جدول custom_treasury_currencies
+      if (currencies && currencies.length > 0) {
+        // جلب IDs العملات
+        const currencyRecords = await db.select({
+          id: sql<number>`id`,
+          code: sql<string>`code`,
+        }).from(sql`custom_currencies`)
+          .where(sql`business_id = ${input.businessId} AND code IN (${sql.join(currencies.map(c => sql`${c}`), sql`, `)})`);
+        
+        const currencyMap = new Map(currencyRecords.map(c => [c.code, c.id]));
+        
+        // إدراج سجل لكل عملة
+        for (const currCode of currencies) {
+          const currId = currencyMap.get(currCode);
+          if (currId) {
+            await db.insert(customTreasuryCurrencies).values({
+              businessId: input.businessId,
+              treasuryId: Number(treasuryId),
+              currencyId: currId,
+              isDefault: currCode === (defaultCurrency || currencies[0]),
+              openingBalance: input.openingBalance,
+              currentBalance: input.openingBalance,
+              createdBy: ctx.user?.id,
+            });
+          }
+        }
+      }
+      
+      return { id: treasuryId, success: true };
     }),
 
   update: protectedProcedure
@@ -944,17 +1040,70 @@ export const customTreasuriesRouter = router({
       swiftCode: z.string().optional(),
       walletProvider: z.string().optional(),
       walletNumber: z.string().optional(),
-      currency: z.string().optional(),
+      currencies: z.array(z.string()).optional(),
+      defaultCurrency: z.string().optional(),
       description: z.string().optional(),
       isActive: z.boolean().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const db = await getDb();
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
-      const { id, ...data } = input;
-      await db.update(customTreasuries).set(data).where(eq(customTreasuries.id, id));
+      const { id, currencies, defaultCurrency, ...data } = input;
+      
+      // تحديث بيانات الخزينة الأساسية
+      if (Object.keys(data).length > 0) {
+        const updateData: any = { ...data };
+        if (defaultCurrency) {
+          updateData.currency = defaultCurrency; // تحديث العمود القديم
+        }
+        await db.update(customTreasuries).set(updateData).where(eq(customTreasuries.id, id));
+      }
+      
+      // تحديث العملات إذا تم توفيرها
+      if (currencies && currencies.length > 0) {
+        // جلب businessId من الخزينة
+        const treasury = await db.select({
+          businessId: customTreasuries.businessId,
+        }).from(customTreasuries)
+          .where(eq(customTreasuries.id, id))
+          .limit(1);
+        
+        if (treasury[0]) {
+          const businessId = treasury[0].businessId;
+          
+          // حذف العملات القديمة
+          await db.delete(customTreasuryCurrencies)
+            .where(eq(customTreasuryCurrencies.treasuryId, id));
+          
+          // جلب IDs العملات الجديدة
+          const currencyRecords = await db.select({
+            id: sql<number>`id`,
+            code: sql<string>`code`,
+          }).from(sql`custom_currencies`)
+            .where(sql`business_id = ${businessId} AND code IN (${sql.join(currencies.map(c => sql`${c}`), sql`, `)})`);
+          
+          const currencyMap = new Map(currencyRecords.map(c => [c.code, c.id]));
+          
+          // إدراج العملات الجديدة
+          for (const currCode of currencies) {
+            const currId = currencyMap.get(currCode);
+            if (currId) {
+              await db.insert(customTreasuryCurrencies).values({
+                businessId: businessId,
+                treasuryId: id,
+                currencyId: currId,
+                isDefault: currCode === (defaultCurrency || currencies[0]),
+                openingBalance: "0",
+                currentBalance: "0",
+                createdBy: ctx.user?.id,
+              });
+            }
+          }
+        }
+      }
+      
       return { success: true };
     }),
 

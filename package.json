@@ -15,9 +15,9 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.693.0",
     "@aws-sdk/s3-request-presigner": "^3.693.0",
-    "@google/generative-ai": "^0.21.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@google/generative-ai": "^0.21.0",
     "@hookform/resolvers": "^5.2.2",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",
@@ -137,6 +137,7 @@
     },
     "onlyBuiltDependencies": [
       "@tailwindcss/oxide",
+      "bcrypt",
       "esbuild"
     ]
   }

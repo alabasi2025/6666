@@ -33,13 +33,12 @@ import CustomNotes from "./custom/CustomNotes";
 import CustomMemos from "./custom/CustomMemos";
 import CustomSubSystems from "./custom/CustomSubSystems";
 import CustomTreasuries from "./custom/CustomTreasuries";
-import CustomVouchers from "./custom/CustomVouchers";
+
 import CustomReconciliation from "./custom/CustomReconciliation";
 import SubSystemDetails from "./custom/SubSystemDetails";
 
 // Custom System v2.2.0 Pages
 import {
-  OperationsPage,
   JournalEntriesPage,
   AccountsPage as AccountsPageV2,
   CurrenciesPage,
@@ -79,16 +78,7 @@ const customNavigationItems = [
     textColor: "text-emerald-400",
     description: "الصناديق والبنوك",
   },
-  {
-    id: "custom-vouchers",
-    title: "السندات",
-    icon: Receipt,
-    path: "/custom/vouchers",
-    color: "from-blue-500 to-cyan-500",
-    bgColor: "bg-blue-500/10",
-    textColor: "text-blue-400",
-    description: "سندات القبض والصرف",
-  },
+
   {
     id: "custom-reconciliation",
     title: "التسويات",
@@ -140,16 +130,6 @@ const customNavigationItems = [
     description: "المذكرات والتنبيهات",
   },
   // Custom System v2.2.0 Pages
-  {
-    id: "custom-v2-operations",
-    title: "شاشة العمليات",
-    icon: Activity,
-    path: "/custom/v2/operations",
-    color: "from-indigo-500 to-blue-500",
-    bgColor: "bg-indigo-500/10",
-    textColor: "text-indigo-400",
-    description: "سندات القبض والصرف والتحويلات",
-  },
   {
     id: "custom-v2-journal-entries",
     title: "القيود اليومية",
@@ -239,13 +219,6 @@ const subSystemNavigationItems = [
     color: "from-emerald-500 to-green-500",
   },
   {
-    id: "vouchers",
-    title: "السندات",
-    icon: Receipt,
-    description: "سندات القبض والصرف",
-    color: "from-purple-500 to-pink-500",
-  },
-  {
     id: "transfers",
     title: "التحويلات",
     icon: ArrowLeftRight,
@@ -258,13 +231,6 @@ const subSystemNavigationItems = [
     icon: FileCheck,
     description: "مطابقة التحويلات",
     color: "from-indigo-500 to-blue-500",
-  },
-  {
-    id: "operations",
-    title: "شاشة العمليات",
-    icon: Activity,
-    description: "سندات القبض والصرف والتحويلات الموحدة",
-    color: "from-emerald-500 to-teal-500",
   },
   {
     id: "journal-entries",
@@ -369,16 +335,16 @@ export default function CustomSystem() {
   const [matchCustom] = useRoute("/custom");
   const [matchSubSystems] = useRoute("/custom/sub-systems");
   const [matchTreasuries] = useRoute("/custom/treasuries");
-  const [matchVouchers] = useRoute("/custom/vouchers");
+
   const [matchReconciliation] = useRoute("/custom/reconciliation");
   const [matchAccounts] = useRoute("/custom/accounts");
   const [matchNotes] = useRoute("/custom/notes");
   const [matchMemos] = useRoute("/custom/memos");
   const [matchSettings] = useRoute("/custom/settings");
   const [matchSubSystemDetails, subSystemParams] = useRoute("/custom/sub-systems/:id");
+  const [matchSubSystemTreasuries, subSystemTreasuriesParams] = useRoute("/custom/sub-systems/:id/treasuries");
   
   // Custom System v2.2.0 Routes
-  const [matchV2Operations] = useRoute("/custom/v2/operations");
   const [matchV2JournalEntries] = useRoute("/custom/v2/journal-entries");
   const [matchV2Accounts] = useRoute("/custom/v2/accounts");
   const [matchV2Currencies] = useRoute("/custom/v2/currencies");
@@ -407,7 +373,6 @@ export default function CustomSystem() {
   useEffect(() => {
     const needsSubSystemContext =
       matchTreasuries ||
-      matchVouchers ||
       matchReconciliation ||
       matchAccounts ||
       matchNotes ||
@@ -415,7 +380,6 @@ export default function CustomSystem() {
       matchInventory ||
       matchSuppliers ||
       matchPurchases ||
-      matchV2Operations ||
       matchV2JournalEntries ||
       matchV2Accounts ||
       matchV2Currencies ||
@@ -427,7 +391,6 @@ export default function CustomSystem() {
     }
   }, [
     matchTreasuries,
-    matchVouchers,
     matchReconciliation,
     matchAccounts,
     matchNotes,
@@ -435,7 +398,6 @@ export default function CustomSystem() {
     matchInventory,
     matchSuppliers,
     matchPurchases,
-    matchV2Operations,
     matchV2JournalEntries,
     matchV2Accounts,
     matchV2Currencies,
@@ -478,7 +440,6 @@ export default function CustomSystem() {
   // Render content based on route
   const renderContent = () => {
     // Custom System v2.2.0 Routes
-    if (matchV2Operations && matchSubSystemDetails) return <OperationsPage />;
     if (matchV2JournalEntries && matchSubSystemDetails) return <JournalEntriesPage />;
     if (matchV2Accounts && matchSubSystemDetails) return <AccountsPageV2 />;
     if (matchV2Currencies && matchSubSystemDetails) return <CurrenciesPage />;
@@ -491,10 +452,16 @@ export default function CustomSystem() {
     
     // Original Custom System Routes
     if (matchCustom) return <CustomSubSystems />; // الرئيسية تعرض إدارة الأنظمة الفرعية فقط
+    
+    // Sub System Pages - يجب أن تكون قبل matchSubSystemDetails
+    if (matchSubSystemTreasuries) {
+      const treasuriesSubSystemId = subSystemTreasuriesParams?.id ? parseInt(subSystemTreasuriesParams.id) : undefined;
+      return <CustomTreasuries subSystemId={treasuriesSubSystemId} />;
+    }
+    
     if (matchSubSystemDetails) return <SubSystemDetails activeTab={subSystemActiveTab} onTabChange={setSubSystemActiveTab} />;
     if (matchSubSystems) return <CustomSubSystems />;
     if (matchTreasuries && matchSubSystemDetails) return <CustomTreasuries />;
-    if (matchVouchers && matchSubSystemDetails) return <CustomVouchers />;
     if (matchReconciliation && matchSubSystemDetails) return <CustomReconciliation />;
     if (matchAccounts && matchSubSystemDetails) return <CustomAccounts />;
     if (matchNotes && matchSubSystemDetails) return <CustomNotes />;

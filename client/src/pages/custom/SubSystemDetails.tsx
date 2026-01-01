@@ -46,13 +46,13 @@ import {
 import {
   AccountsPage as AccountsPageV2,
   AccountTypesPage,
-  OperationsPage,
   JournalEntriesPage,
   CurrenciesPage,
   ExchangeRatesPage,
 } from "../CustomSystem/v2";
 import CustomNotes from "./CustomNotes";
 import CustomMemos from "./CustomMemos";
+import CustomTreasuries from "./CustomTreasuries";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -140,6 +140,10 @@ function TreasuryCard({ treasury, onEdit, onDelete }: any) {
   const Icon = treasuryTypeIcons[treasury.treasuryType as keyof typeof treasuryTypeIcons] || Wallet;
   const typeLabel = treasuryTypeLabels[treasury.treasuryType as keyof typeof treasuryTypeLabels] || treasury.treasuryType;
   const typeColor = treasuryTypeColors[treasury.treasuryType as keyof typeof treasuryTypeColors] || "bg-slate-500/20 text-slate-500";
+  
+  // جلب العملات المتعددة
+  const currencies = treasury.currencies || (treasury.currency ? [treasury.currency] : []);
+  const defaultCurrency = treasury.defaultCurrency || treasury.currency || currencies[0] || "";
 
   return (
     <Card className="bg-slate-900/50 border-slate-800 hover:border-slate-700 transition-all">
@@ -195,6 +199,27 @@ function TreasuryCard({ treasury, onEdit, onDelete }: any) {
             <span className="text-slate-500">المزود:</span> {treasury.walletProvider}
           </p>
         )}
+        
+        {/* عرض العملات المتعددة */}
+        {currencies.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-2">
+            {currencies.map((curr: string) => (
+              <Badge 
+                key={curr} 
+                variant="outline" 
+                className={cn(
+                  "text-xs",
+                  curr === defaultCurrency 
+                    ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" 
+                    : "bg-slate-700/50 text-slate-400 border-slate-600"
+                )}
+              >
+                {curr}
+                {curr === defaultCurrency && " ✓"}
+              </Badge>
+            ))}
+          </div>
+        )}
 
         {/* Balance */}
         <div className="mt-4 p-4 bg-gradient-to-r from-slate-800/50 to-slate-800/30 rounded-lg">
@@ -204,7 +229,7 @@ function TreasuryCard({ treasury, onEdit, onDelete }: any) {
               "text-xl font-bold",
               parseFloat(treasury.currentBalance || "0") >= 0 ? "text-green-500" : "text-red-500"
             )}>
-              {parseFloat(treasury.currentBalance || "0").toLocaleString("ar-SA")} {treasury.currency}
+              {parseFloat(treasury.currentBalance || "0").toLocaleString("ar-SA")} {defaultCurrency}
             </span>
           </div>
         </div>
@@ -222,62 +247,6 @@ function TreasuryCard({ treasury, onEdit, onDelete }: any) {
         </div>
       </CardContent>
     </Card>
-  );
-}
-
-// Voucher Row Component
-function VoucherRow({ voucher, type, onView }: any) {
-  const isReceipt = type === "receipt";
-  
-  return (
-    <div className="flex items-center justify-between p-4 bg-slate-800/30 rounded-lg hover:bg-slate-800/50 transition-all">
-      <div className="flex items-center gap-4">
-        <div className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center",
-          isReceipt ? "bg-green-500/20" : "bg-red-500/20"
-        )}>
-          {isReceipt ? (
-            <TrendingUp className="h-5 w-5 text-green-500" />
-          ) : (
-            <TrendingDown className="h-5 w-5 text-red-500" />
-          )}
-        </div>
-        <div>
-          <p className="font-medium text-white">{voucher.voucherNumber}</p>
-          <p className="text-sm text-slate-400">
-            {isReceipt ? voucher.sourceName : voucher.destinationName}
-          </p>
-        </div>
-      </div>
-      <div className="flex items-center gap-4">
-        <div className="text-left">
-          <p className={cn(
-            "font-bold",
-            isReceipt ? "text-green-500" : "text-red-500"
-          )}>
-            {isReceipt ? "+" : "-"}{parseFloat(voucher.amount).toLocaleString("ar-SA")} {voucher.currency}
-          </p>
-          <p className="text-xs text-slate-500">
-            {new Date(voucher.voucherDate).toLocaleDateString("ar-SA")}
-          </p>
-        </div>
-        <Badge variant="outline" className={cn(
-          voucher.status === "confirmed" ? "bg-green-500/20 text-green-500 border-green-500/30" :
-          voucher.status === "cancelled" ? "bg-red-500/20 text-red-500 border-red-500/30" :
-          "bg-yellow-500/20 text-yellow-500 border-yellow-500/30"
-        )}>
-          {voucher.status === "confirmed" ? "مؤكد" : voucher.status === "cancelled" ? "ملغي" : "مسودة"}
-        </Badge>
-        {voucher.isReconciled && (
-          <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">
-            مطابق
-          </Badge>
-        )}
-        <Button variant="ghost" size="icon" onClick={() => onView(voucher)}>
-          <Eye className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
   );
 }
 
@@ -304,8 +273,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
   };
   const [isAddTreasuryOpen, setIsAddTreasuryOpen] = useState(false);
   const [editingTreasury, setEditingTreasury] = useState<any>(null);
-  const [isAddVoucherOpen, setIsAddVoucherOpen] = useState(false);
-  const [voucherType, setVoucherType] = useState<"receipt" | "payment">("receipt");
   const [isAddTransferOpen, setIsAddTransferOpen] = useState(false);
 
   // New Treasury Form State
@@ -319,7 +286,8 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     iban: "",
     walletProvider: "",
     walletNumber: "",
-    currency: "",
+    currencies: [] as string[],
+    defaultCurrency: "" as string,
     openingBalance: "0",
     description: "",
     accountId: null as number | null,
@@ -340,19 +308,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     description: "",
   });
 
-  // New Voucher Form State
-  const [newVoucher, setNewVoucher] = useState({
-    amount: "",
-    sourceType: "person" as "person" | "entity" | "intermediary" | "other",
-    sourceName: "",
-    sourceIntermediaryId: undefined as number | undefined,
-    destinationType: "person" as "person" | "entity" | "intermediary" | "other",
-    destinationName: "",
-    destinationIntermediaryId: undefined as number | undefined,
-    treasuryId: 0,
-    description: "",
-  });
-
   // API Queries - تحسين الأداء بتحميل البيانات حسب الحاجة
   const { data: subSystem, isLoading: subSystemLoading, refetch: refetchSubSystem } = trpc.customSystem.subSystems.getById.useQuery(
     { id: parseInt(id || "0") },
@@ -362,17 +317,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
   const { data: treasuries, isLoading: treasuriesLoading, refetch: refetchTreasuries } = trpc.customSystem.treasuries.list.useQuery(
     { businessId: 1, subSystemId: parseInt(id || "0") },
     { enabled: !!id, staleTime: 30000 }
-  );
-
-  // تحميل السندات فقط عند الحاجة (تبويب نظرة عامة أو السندات)
-  const { data: receiptVouchers, refetch: refetchReceipts } = trpc.customSystem.receiptVouchers.list.useQuery(
-    { businessId: 1, subSystemId: parseInt(id || "0") },
-    { enabled: !!id && (activeTab === "overview" || activeTab === "vouchers"), staleTime: 30000 }
-  );
-
-  const { data: paymentVouchers, refetch: refetchPayments } = trpc.customSystem.paymentVouchers.list.useQuery(
-    { businessId: 1, subSystemId: parseInt(id || "0") },
-    { enabled: !!id && (activeTab === "overview" || activeTab === "vouchers"), staleTime: 30000 }
   );
 
   // تحميل الحسابات الوسيطة فقط في تبويب نظرة عامة
@@ -521,30 +465,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     },
   });
 
-  const createReceiptMutation = trpc.customSystem.receiptVouchers.create.useMutation({
-    onSuccess: () => {
-      toast.success("تم إنشاء سند القبض بنجاح");
-      setIsAddVoucherOpen(false);
-      resetVoucherForm();
-      refetchReceipts();
-    },
-    onError: (error) => {
-      toast.error("حدث خطأ: " + error.message);
-    },
-  });
-
-  const createPaymentMutation = trpc.customSystem.paymentVouchers.create.useMutation({
-    onSuccess: () => {
-      toast.success("تم إنشاء سند الصرف بنجاح");
-      setIsAddVoucherOpen(false);
-      resetVoucherForm();
-      refetchPayments();
-    },
-    onError: (error) => {
-      toast.error("حدث خطأ: " + error.message);
-    },
-  });
-
   const createTransferMutation = trpc.customSystem.transfers.create.useMutation({
     onSuccess: (data) => {
       toast.success(`تم إنشاء التحويل بنجاح - سند صرف: ${data.paymentVoucherNumber} | سند قبض: ${data.receiptVoucherNumber}`);
@@ -621,7 +541,8 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
       iban: "",
       walletProvider: "",
       walletNumber: "",
-      currency: "YER",
+      currencies: [],
+      defaultCurrency: "",
       openingBalance: "0",
       description: "",
       accountId: null,
@@ -655,23 +576,13 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     } as any);
   };
 
-  const resetVoucherForm = () => {
-    setNewVoucher({
-      amount: "",
-      sourceType: "person",
-      sourceName: "",
-      sourceIntermediaryId: undefined,
-      destinationType: "person",
-      destinationName: "",
-      destinationIntermediaryId: undefined,
-      treasuryId: 0,
-      description: "",
-    });
-  };
-
   // Handlers
   const handleEditTreasury = (treasury: any) => {
     setEditingTreasury(treasury);
+    // جلب العملات المحفوظة للخزينة
+    const treasuryCurrencies = treasury.currencies || (treasury.currency ? [treasury.currency] : []);
+    const treasuryDefaultCurrency = treasury.defaultCurrency || treasury.currency || "";
+    
     setNewTreasury({
       code: treasury.code || "",
       nameAr: treasury.nameAr || "",
@@ -682,7 +593,8 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
       iban: treasury.iban || "",
       walletProvider: treasury.walletProvider || "",
       walletNumber: treasury.walletNumber || "",
-      currency: treasury.currency || "",
+      currencies: treasuryCurrencies,
+      defaultCurrency: treasuryDefaultCurrency,
       openingBalance: treasury.openingBalance || "0",
       description: treasury.description || "",
       accountId: treasury.accountId || null,
@@ -697,13 +609,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             .filter((c: any) => c.code)
             .map((c: any) => c.code);
           setAccountCurrencies(currs);
-          if (currs.length > 0 && currs.includes(treasury.currency)) {
-            setNewTreasury((prev) => ({ ...prev, currency: treasury.currency }));
-          } else if (currs.length > 0) {
-            setNewTreasury((prev) => ({ ...prev, currency: currs[0] }));
-          } else {
-            setNewTreasury((prev) => ({ ...prev, currency: "" }));
-          }
         })
         .catch(() => {
           setAccountCurrencies([]);
@@ -720,6 +625,11 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
       toast.error("يرجى ملء جميع الحقول المطلوبة");
       return;
     }
+    
+    if (newTreasury.currencies.length === 0) {
+      toast.error("يرجى اختيار عملة واحدة على الأقل");
+      return;
+    }
 
     if (editingTreasury) {
       // تحديث الصندوق
@@ -734,7 +644,8 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
         iban: newTreasury.iban || undefined,
         walletProvider: newTreasury.walletProvider || undefined,
         walletNumber: newTreasury.walletNumber || undefined,
-        currency: newTreasury.currency,
+        currencies: newTreasury.currencies,
+        defaultCurrency: newTreasury.defaultCurrency || newTreasury.currencies[0],
         description: newTreasury.description || undefined,
         accountId: newTreasury.accountId || null,
       } as any);
@@ -744,6 +655,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
         businessId: 1,
         subSystemId: parseInt(id || "0"),
         ...newTreasury,
+        defaultCurrency: newTreasury.defaultCurrency || newTreasury.currencies[0],
         openingBalance: newTreasury.openingBalance || "0",
         currentBalance: newTreasury.openingBalance || "0",
         accountId: newTreasury.accountId || null,
@@ -755,32 +667,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
     handleSaveTreasury();
   };
 
-  const handleCreateVoucher = () => {
-    if (voucherType === "receipt") {
-      createReceiptMutation.mutate({
-        businessId: 1,
-        subSystemId: parseInt(id || "0"),
-        amount: newVoucher.amount,
-        sourceType: newVoucher.sourceType,
-        sourceName: newVoucher.sourceName,
-        sourceIntermediaryId: newVoucher.sourceIntermediaryId,
-        treasuryId: newVoucher.treasuryId,
-        description: newVoucher.description,
-      } as any);
-    } else {
-      createPaymentMutation.mutate({
-        businessId: 1,
-        subSystemId: parseInt(id || "0"),
-        amount: newVoucher.amount,
-        destinationType: newVoucher.destinationType,
-        destinationName: newVoucher.destinationName,
-        destinationIntermediaryId: newVoucher.destinationIntermediaryId,
-        treasuryId: newVoucher.treasuryId,
-        description: newVoucher.description,
-      } as any);
-    }
-  };
-
   const handleDeleteTreasury = (treasuryId: number) => {
     if (confirm("هل أنت متأكد من حذف هذه الخزينة؟")) {
       deleteTreasuryMutation.mutate({ id: treasuryId } as any);
@@ -789,8 +675,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
 
   // Calculate Stats
   const totalBalance = treasuries?.reduce((sum: number, t: any) => sum + parseFloat(t.currentBalance || "0"), 0) || 0;
-  const totalReceipts = receiptVouchers?.filter((v: any) => v.status === "confirmed").reduce((sum: number, v: any) => sum + parseFloat(v.amount), 0) || 0;
-  const totalPayments = paymentVouchers?.filter((v: any) => v.status === "confirmed").reduce((sum: number, v: any) => sum + parseFloat(v.amount), 0) || 0;
 
   // Get related intermediary accounts for this sub system
   const relatedIntermediaryAccounts = intermediaryAccounts?.filter(
@@ -860,30 +744,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-500/20 to-green-600/10 border-green-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-400">إجمالي القبض</p>
-                <p className="text-2xl font-bold text-white">{totalReceipts.toLocaleString("ar-SA")} ر.س</p>
-              </div>
-              <TrendingUp className="h-8 w-8 text-green-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-red-500/20 to-red-600/10 border-red-500/30">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-400">إجمالي الصرف</p>
-                <p className="text-2xl font-bold text-white">{totalPayments.toLocaleString("ar-SA")} ر.س</p>
-              </div>
-              <TrendingDown className="h-8 w-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-
         <Card className="bg-gradient-to-br from-purple-500/20 to-purple-600/10 border-purple-500/30">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -918,15 +778,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             الخزائن
           </Button>
           <Button
-            variant={activeTab === "vouchers" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("vouchers")}
-            className={activeTab === "vouchers" ? "" : "text-slate-400 hover:text-white"}
-          >
-            <Receipt className="ml-2 h-4 w-4" />
-            السندات
-          </Button>
-          <Button
             variant={activeTab === "transfers" ? "default" : "ghost"}
             size="sm"
             onClick={() => setActiveTab("transfers")}
@@ -944,15 +795,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             <FileCheck className="ml-2 h-4 w-4" />
             المطابقة
           </Button>
-          <Button
-            variant={activeTab === "operations" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("operations")}
-            className={activeTab === "operations" ? "" : "text-slate-400 hover:text-white"}
-          >
-            <Activity className="ml-2 h-4 w-4" />
-            شاشة العمليات
-          </Button>
+
           <Button
             variant={activeTab === "journal-entries" ? "default" : "ghost"}
             size="sm"
@@ -1051,48 +894,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           {/* Overview Tab */}
           {activeTab === "overview" && (
             <div className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recent Receipts */}
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">آخر سندات القبض</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setActiveTab("vouchers")}>
-                    عرض الكل
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {receiptVouchers?.slice(0, 5).map((voucher: any) => (
-                  <VoucherRow key={voucher.id} voucher={voucher} type="receipt" onView={() => {}} />
-                ))}
-                {(!receiptVouchers || receiptVouchers.length === 0) && (
-                  <p className="text-center text-slate-400 py-4">لا توجد سندات قبض</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Payments */}
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-white">آخر سندات الصرف</CardTitle>
-                  <Button variant="ghost" size="sm" onClick={() => setActiveTab("vouchers")}>
-                    عرض الكل
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {paymentVouchers?.slice(0, 5).map((voucher: any) => (
-                  <VoucherRow key={voucher.id} voucher={voucher} type="payment" onView={() => {}} />
-                ))}
-                {(!paymentVouchers || paymentVouchers.length === 0) && (
-                  <p className="text-center text-slate-400 py-4">لا توجد سندات صرف</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Intermediary Accounts */}
           <Card className="bg-slate-900/50 border-slate-800">
             <CardHeader>
@@ -1135,8 +936,13 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             </div>
           )}
 
-          {/* Treasuries Tab */}
+          {/* Treasuries Tab - استخدام الواجهة الجديدة مع دعم العملات المتعددة */}
           {activeTab === "treasuries" && (
+            <CustomTreasuries subSystemId={parseInt(id || "0")} />
+          )}
+
+          {/* OLD Treasuries Tab - محذوف واستبدل بالواجهة الجديدة */}
+          {false && activeTab === "treasuries_old" && (
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <h2 className="text-xl font-bold text-white">الخزائن</h2>
@@ -1269,40 +1075,103 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
                     </div>
                   )}
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                    <Label>العملة</Label>
-                      <Select
-                      value={newTreasury.currency}
-                      onValueChange={(v) => setNewTreasury({ ...newTreasury, currency: v })}
-                      disabled={currenciesLoading || accountCurrencies.length === 0}
-                      >
-                        <SelectTrigger>
-                        <SelectValue placeholder={currenciesLoading ? "جاري التحميل..." : accountCurrencies.length === 0 ? "لا توجد عملات مرتبطة بالحساب" : "اختر العملة"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {accountCurrencies.length === 0 && (
-                          <SelectItem value="__none" disabled>
-                            {currenciesLoading ? "جاري التحميل..." : "لا توجد عملات مرتبطة بالحساب"}
-                          </SelectItem>
-                        )}
-                        {accountCurrencies.map((code) => (
-                          <SelectItem key={code} value={code}>
-                            {code}
-                          </SelectItem>
-                        ))}
-                        </SelectContent>
-                      </Select>
+                  {/* العملات المتعددة */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label>العملات المتاحة</Label>
+                      {accountCurrencies.length > 0 && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (newTreasury.currencies.length === accountCurrencies.length) {
+                              setNewTreasury({ ...newTreasury, currencies: [], defaultCurrency: "" });
+                            } else {
+                              setNewTreasury({ ...newTreasury, currencies: [...accountCurrencies], defaultCurrency: newTreasury.defaultCurrency || accountCurrencies[0] });
+                            }
+                          }}
+                        >
+                          {newTreasury.currencies.length === accountCurrencies.length ? "إلغاء الكل" : "تحديد الكل"}
+                        </Button>
+                      )}
                     </div>
-                    <div className="space-y-2">
-                      <Label>الرصيد الافتتاحي</Label>
-                      <Input
-                        type="number"
-                        value={newTreasury.openingBalance}
-                        onChange={(e) => setNewTreasury({ ...newTreasury, openingBalance: e.target.value })}
-                        placeholder="0"
-                      />
-                    </div>
+                    {currenciesLoading ? (
+                      <div className="flex items-center gap-2 text-slate-400">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>جاري تحميل العملات...</span>
+                      </div>
+                    ) : accountCurrencies.length === 0 ? (
+                      <p className="text-sm text-slate-400">اختر حساباً أولاً لعرض العملات المتاحة</p>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                        {accountCurrencies.map((code) => {
+                          const isSelected = newTreasury.currencies.includes(code);
+                          const isDefault = newTreasury.defaultCurrency === code;
+                          return (
+                            <div
+                              key={code}
+                              className={cn(
+                                "p-3 rounded-lg border-2 cursor-pointer transition-all flex flex-col items-center gap-1",
+                                isSelected
+                                  ? "border-emerald-500 bg-emerald-500/10"
+                                  : "border-slate-700 hover:border-slate-600 bg-slate-800/60"
+                              )}
+                              onClick={() => {
+                                if (isSelected) {
+                                  const newCurrencies = newTreasury.currencies.filter(c => c !== code);
+                                  setNewTreasury({
+                                    ...newTreasury,
+                                    currencies: newCurrencies,
+                                    defaultCurrency: newTreasury.defaultCurrency === code ? (newCurrencies[0] || "") : newTreasury.defaultCurrency
+                                  });
+                                } else {
+                                  setNewTreasury({
+                                    ...newTreasury,
+                                    currencies: [...newTreasury.currencies, code],
+                                    defaultCurrency: newTreasury.defaultCurrency || code
+                                  });
+                                }
+                              }}
+                            >
+                              <span className={cn("font-bold", isSelected ? "text-emerald-400" : "text-slate-400")}>
+                                {code}
+                              </span>
+                              {isSelected && (
+                                <Badge
+                                  variant={isDefault ? "default" : "outline"}
+                                  className={cn(
+                                    "text-xs cursor-pointer",
+                                    isDefault ? "bg-emerald-500" : "hover:bg-emerald-500/20"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setNewTreasury({ ...newTreasury, defaultCurrency: code });
+                                  }}
+                                >
+                                  {isDefault ? "الافتراضية" : "تعيين افتراضي"}
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    {newTreasury.currencies.length > 0 && (
+                      <p className="text-xs text-slate-400">
+                        العملات المحددة: {newTreasury.currencies.join(", ")} | الافتراضية: {newTreasury.defaultCurrency}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>الرصيد الافتتاحي</Label>
+                    <Input
+                      type="number"
+                      value={newTreasury.openingBalance}
+                      onChange={(e) => setNewTreasury({ ...newTreasury, openingBalance: e.target.value })}
+                      placeholder="0"
+                    />
                   </div>
 
                   <div className="space-y-2">
@@ -1391,248 +1260,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
                 </CardContent>
               </Card>
             )}
-            </div>
-          )}
-
-          {/* Vouchers Tab */}
-          {activeTab === "vouchers" && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-bold text-white">السندات</h2>
-                <div className="flex gap-2">
-              <Button
-                variant="outline"
-                className="border-green-500/50 text-green-500 hover:bg-green-500/10"
-                onClick={() => {
-                  setVoucherType("receipt");
-                  setIsAddVoucherOpen(true);
-                }}
-              >
-                <Plus className="ml-2 h-4 w-4" />
-                سند قبض
-              </Button>
-              <Button
-                variant="outline"
-                className="border-red-500/50 text-red-500 hover:bg-red-500/10"
-                onClick={() => {
-                  setVoucherType("payment");
-                  setIsAddVoucherOpen(true);
-                }}
-              >
-                <Plus className="ml-2 h-4 w-4" />
-                سند صرف
-              </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Receipt Vouchers */}
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <CardTitle className="text-green-500 flex items-center gap-2">
-                  <TrendingUp className="h-5 w-5" />
-                  سندات القبض
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {receiptVouchers?.map((voucher: any) => (
-                  <VoucherRow key={voucher.id} voucher={voucher} type="receipt" onView={() => {}} />
-                ))}
-                {(!receiptVouchers || receiptVouchers.length === 0) && (
-                  <p className="text-center text-slate-400 py-4">لا توجد سندات قبض</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Payment Vouchers */}
-            <Card className="bg-slate-900/50 border-slate-800">
-              <CardHeader>
-                <CardTitle className="text-red-500 flex items-center gap-2">
-                  <TrendingDown className="h-5 w-5" />
-                  سندات الصرف
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {paymentVouchers?.map((voucher: any) => (
-                  <VoucherRow key={voucher.id} voucher={voucher} type="payment" onView={() => {}} />
-                ))}
-                {(!paymentVouchers || paymentVouchers.length === 0) && (
-                  <p className="text-center text-slate-400 py-4">لا توجد سندات صرف</p>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Add Voucher Dialog */}
-          <Dialog open={isAddVoucherOpen} onOpenChange={setIsAddVoucherOpen}>
-            <DialogContent className="bg-slate-900 border-slate-800 max-w-lg">
-              <DialogHeader>
-                <DialogTitle>
-                  {voucherType === "receipt" ? "إنشاء سند قبض" : "إنشاء سند صرف"}
-                </DialogTitle>
-                <DialogDescription>
-                  {voucherType === "receipt" 
-                    ? "سند قبض لاستلام مبلغ في الخزينة" 
-                    : "سند صرف لصرف مبلغ من الخزينة"}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>المبلغ</Label>
-                    <Input
-                      type="number"
-                      value={newVoucher.amount}
-                      onChange={(e) => setNewVoucher({ ...newVoucher, amount: e.target.value })}
-                      placeholder="0.00"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>الخزينة</Label>
-                    <Select
-                      value={newVoucher.treasuryId.toString()}
-                      onValueChange={(v) => setNewVoucher({ ...newVoucher, treasuryId: parseInt(v) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="اختر الخزينة" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {treasuries?.map((t: any) => (
-                          <SelectItem key={t.id} value={t.id.toString()}>
-                            {t.nameAr}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {voucherType === "receipt" ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label>نوع المصدر</Label>
-                      <Select
-                        value={newVoucher.sourceType}
-                        onValueChange={(v: any) => setNewVoucher({ ...newVoucher, sourceType: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="person">شخص</SelectItem>
-                          <SelectItem value="entity">جهة</SelectItem>
-                          <SelectItem value="intermediary">حساب وسيط</SelectItem>
-                          <SelectItem value="other">أخرى</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {newVoucher.sourceType === "intermediary" ? (
-                      <div className="space-y-2">
-                        <Label>الحساب الوسيط</Label>
-                        <Select
-                          value={newVoucher.sourceIntermediaryId?.toString() || ""}
-                          onValueChange={(v) => setNewVoucher({ ...newVoucher, sourceIntermediaryId: parseInt(v) })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر الحساب الوسيط" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {relatedIntermediaryAccounts.map((acc: any) => (
-                              <SelectItem key={acc.id} value={acc.id.toString()}>
-                                {acc.nameAr}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Label>اسم المصدر</Label>
-                        <Input
-                          value={newVoucher.sourceName}
-                          onChange={(e) => setNewVoucher({ ...newVoucher, sourceName: e.target.value })}
-                          placeholder="اسم الشخص أو الجهة"
-                        />
-                      </div>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <Label>نوع الوجهة</Label>
-                      <Select
-                        value={newVoucher.destinationType}
-                        onValueChange={(v: any) => setNewVoucher({ ...newVoucher, destinationType: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="person">شخص</SelectItem>
-                          <SelectItem value="entity">جهة</SelectItem>
-                          <SelectItem value="intermediary">حساب وسيط</SelectItem>
-                          <SelectItem value="other">أخرى</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {newVoucher.destinationType === "intermediary" ? (
-                      <div className="space-y-2">
-                        <Label>الحساب الوسيط</Label>
-                        <Select
-                          value={newVoucher.destinationIntermediaryId?.toString() || ""}
-                          onValueChange={(v) => setNewVoucher({ ...newVoucher, destinationIntermediaryId: parseInt(v) })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="اختر الحساب الوسيط" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {relatedIntermediaryAccounts.map((acc: any) => (
-                              <SelectItem key={acc.id} value={acc.id.toString()}>
-                                {acc.nameAr}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    ) : (
-                      <div className="space-y-2">
-                        <Label>اسم الوجهة</Label>
-                        <Input
-                          value={newVoucher.destinationName}
-                          onChange={(e) => setNewVoucher({ ...newVoucher, destinationName: e.target.value })}
-                          placeholder="اسم الشخص أو الجهة"
-                        />
-                      </div>
-                    )}
-                  </>
-                )}
-
-                <div className="space-y-2">
-                  <Label>الوصف</Label>
-                  <Textarea
-                    value={newVoucher.description}
-                    onChange={(e) => setNewVoucher({ ...newVoucher, description: e.target.value })}
-                    placeholder="وصف السند..."
-                  />
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddVoucherOpen(false)}>
-                  إلغاء
-                </Button>
-                <Button 
-                  onClick={handleCreateVoucher} 
-                  disabled={createReceiptMutation.isPending || createPaymentMutation.isPending}
-                  className={voucherType === "receipt" ? "bg-green-600 hover:bg-green-700" : "bg-red-600 hover:bg-red-700"}
-                >
-                  {(createReceiptMutation.isPending || createPaymentMutation.isPending) && (
-                    <Loader2 className="ml-2 h-4 w-4 animate-spin" />
-                  )}
-                  إنشاء
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
             </div>
           )}
 
@@ -2156,13 +1783,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           {activeTab === "account-types" && (
             <div className="space-y-4">
               <AccountTypesPage subSystemId={parseInt(id || "0")} />
-            </div>
-          )}
-
-          {/* Operations Tab - شاشة العمليات */}
-          {activeTab === "operations" && (
-            <div className="space-y-4">
-              <OperationsPage />
             </div>
           )}
 

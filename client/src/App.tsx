@@ -28,6 +28,8 @@ function Router() {
       <Route path="/custom" component={CustomSystem} />
       <Route path="/custom/:page" component={CustomSystem} />
       <Route path="/custom/:page/:action" component={CustomSystem} />
+      <Route path="/custom/:page/:action/:subpage" component={CustomSystem} />
+      <Route path="/custom/:page/:action/:subpage/:module" component={CustomSystem} />
       <Route path="/404" component={NotFound} />
       <Route component={NotFound} />
     </Switch>
