@@ -53,6 +53,7 @@ import {
 import CustomNotes from "./CustomNotes";
 import CustomMemos from "./CustomMemos";
 import CustomTreasuries from "./CustomTreasuries";
+import PaymentVoucher from "./PaymentVoucher";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -939,6 +940,11 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           {/* Treasuries Tab - استخدام الواجهة الجديدة مع دعم العملات المتعددة */}
           {activeTab === "treasuries" && (
             <CustomTreasuries subSystemId={parseInt(id || "0")} />
+          )}
+
+          {/* Payment Voucher Tab - سند الصرف */}
+          {activeTab === "payment-voucher" && (
+            <PaymentVoucher subSystemId={parseInt(id || "0")} />
           )}
 
           {/* OLD Treasuries Tab - محذوف واستبدل بالواجهة الجديدة */}

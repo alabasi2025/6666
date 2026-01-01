@@ -3267,6 +3267,7 @@ export const customPaymentVouchers = mysqlTable("custom_payment_vouchers", {
   voucherDate: date("voucher_date").notNull(),
   amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
+  currencyId: int("currency_id"), // ربط بجدول العملات
   // من أين (الخزينة)
   treasuryId: int("treasury_id").notNull(),
   // إلى أين (الوجهة)

@@ -36,6 +36,7 @@ import CustomTreasuries from "./custom/CustomTreasuries";
 
 import CustomReconciliation from "./custom/CustomReconciliation";
 import SubSystemDetails from "./custom/SubSystemDetails";
+import PaymentVoucher from "./custom/PaymentVoucher";
 
 // Custom System v2.2.0 Pages
 import {
@@ -211,12 +212,44 @@ const subSystemNavigationItems = [
     description: "نظرة شاملة على النظام",
     color: "from-blue-500 to-cyan-500",
   },
+  // النظام المالي - مجموعة
   {
-    id: "treasuries",
-    title: "الخزائن",
-    icon: Wallet,
-    description: "إدارة الخزائن والصناديق",
-    color: "from-emerald-500 to-green-500",
+    id: "financial-system",
+    title: "النظام المالي",
+    icon: Landmark,
+    description: "إدارة النظام المالي والمحاسبي",
+    color: "from-emerald-500 to-teal-500",
+    isGroup: true,
+    children: [
+      {
+        id: "treasuries",
+        title: "الخزائن",
+        icon: Wallet,
+        description: "إدارة الخزائن والصناديق",
+        color: "from-emerald-500 to-green-500",
+      },
+      {
+        id: "payment-voucher",
+        title: "سند الصرف",
+        icon: Receipt,
+        description: "إنشاء سندات الصرف",
+        color: "from-red-500 to-rose-500",
+      },
+      {
+        id: "accounts",
+        title: "دليل الحسابات",
+        icon: BookOpen,
+        description: "الدليل المحاسبي للحسابات",
+        color: "from-teal-500 to-cyan-500",
+      },
+      {
+        id: "account-types",
+        title: "أنواع الحسابات",
+        icon: Settings,
+        description: "إدارة أنواع الحسابات",
+        color: "from-purple-500 to-pink-500",
+      },
+    ],
   },
   {
     id: "transfers",
@@ -238,20 +271,6 @@ const subSystemNavigationItems = [
     icon: BookOpen,
     description: "إدارة القيود اليومية",
     color: "from-blue-500 to-indigo-500",
-  },
-  {
-    id: "accounts",
-    title: "دليل الحسابات",
-    icon: BookOpen,
-    description: "الدليل المحاسبي للحسابات",
-    color: "from-teal-500 to-cyan-500",
-  },
-  {
-    id: "account-types",
-    title: "أنواع الحسابات",
-    icon: Settings,
-    description: "إدارة أنواع الحسابات",
-    color: "from-purple-500 to-pink-500",
   },
   {
     id: "currencies",
@@ -787,7 +806,115 @@ export default function CustomSystem() {
                 className="h-full [&_[data-slot=scroll-area-scrollbar]]:border-l-violet-500/20 [&_[data-slot=scroll-area-scrollbar]]:bg-violet-500/5 [&_[data-slot=scroll-area-thumb]]:bg-violet-200/40"
               >
                 <nav className="p-4 space-y-2">
-                  {subSystemNavigationItems.map((item) => {
+                  {subSystemNavigationItems.map((item: any) => {
+                    // إذا كان العنصر مجموعة
+                    if (item.isGroup && item.children) {
+                      const isGroupActive = item.children.some((child: any) => subSystemActiveTab === child.id);
+                      return (
+                        <div key={item.id} className="space-y-1">
+                          {/* عنوان المجموعة */}
+                          <div className={cn(
+                            "flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold",
+                            isGroupActive 
+                              ? "bg-gradient-to-l from-emerald-500/20 to-teal-500/10 text-emerald-400 border-l-4 border-emerald-500/50" 
+                              : "text-zinc-500 border-l-4 border-transparent"
+                          )}>
+                            <div className={cn(
+                              "flex items-center justify-center w-9 h-9 rounded-lg",
+                              isGroupActive ? "bg-emerald-500/20" : "bg-zinc-800/50"
+                            )}>
+                              <item.icon className={cn(
+                                "h-4 w-4",
+                                isGroupActive ? "text-emerald-400" : "text-zinc-500"
+                              )} />
+                            </div>
+                            <span>{item.title}</span>
+                          </div>
+                          {/* عناصر المجموعة */}
+                          <div className="mr-4 space-y-1 border-r-2 border-emerald-500/20 pr-2">
+                            {item.children.map((child: any) => {
+                              const isActive = subSystemActiveTab === child.id;
+                              const getChildColorClasses = () => {
+                                switch(child.id) {
+                                  case 'treasuries':
+                                    return { 
+                                      activeBg: 'bg-gradient-to-l from-emerald-500 to-green-500', 
+                                      iconBg: 'bg-emerald-500/20',
+                                      text: 'text-emerald-400',
+                                      border: 'border-emerald-500/30',
+                                      glow: 'shadow-emerald-500/20'
+                                    };
+                                  case 'payment-voucher':
+                                    return { 
+                                      activeBg: 'bg-gradient-to-l from-red-500 to-rose-500', 
+                                      iconBg: 'bg-red-500/20',
+                                      text: 'text-red-400',
+                                      border: 'border-red-500/30',
+                                      glow: 'shadow-red-500/20'
+                                    };
+                                  case 'accounts':
+                                    return { 
+                                      activeBg: 'bg-gradient-to-l from-teal-500 to-cyan-500', 
+                                      iconBg: 'bg-teal-500/20',
+                                      text: 'text-teal-400',
+                                      border: 'border-teal-500/30',
+                                      glow: 'shadow-teal-500/20'
+                                    };
+                                  case 'account-types':
+                                    return { 
+                                      activeBg: 'bg-gradient-to-l from-purple-500 to-pink-500', 
+                                      iconBg: 'bg-purple-500/20',
+                                      text: 'text-purple-400',
+                                      border: 'border-purple-500/30',
+                                      glow: 'shadow-purple-500/20'
+                                    };
+                                  default:
+                                    return { 
+                                      activeBg: 'bg-gradient-to-l from-violet-500 to-purple-500', 
+                                      iconBg: 'bg-violet-500/20',
+                                      text: 'text-violet-400',
+                                      border: 'border-violet-500/30',
+                                      glow: 'shadow-violet-500/20'
+                                    };
+                                }
+                              };
+                              const colors = getChildColorClasses();
+                              return (
+                                <button
+                                  key={child.id}
+                                  onClick={() => setSubSystemActiveTab(child.id)}
+                                  className={cn(
+                                    "group relative w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-300 text-sm font-medium border-l-2",
+                                    "hover:scale-[1.01] hover:translate-x-[-2px]",
+                                    isActive 
+                                      ? `${colors.activeBg} text-white shadow-lg ${colors.border} ${colors.glow}` 
+                                      : "text-zinc-400 hover:bg-violet-500/10 border-transparent hover:border-zinc-700/50 hover:text-white bg-zinc-800/20"
+                                  )}
+                                >
+                                  <div className={cn(
+                                    "flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-300",
+                                    isActive ? "bg-white/25 shadow-lg" : `${colors.iconBg} group-hover:scale-105`
+                                  )}>
+                                    <child.icon className={cn(
+                                      "h-4 w-4 transition-all duration-300",
+                                      isActive ? "text-white" : colors.text
+                                    )} />
+                                  </div>
+                                  <div className="flex-1 text-right">
+                                    <span className={cn(
+                                      "block transition-colors font-medium",
+                                      isActive ? "text-white" : `${colors.text} group-hover:text-white`
+                                    )}>{child.title}</span>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      );
+                    }
+                    
+                    // عنصر عادي
                     const isActive = subSystemActiveTab === item.id;
                     
                     // Define color classes based on item id
@@ -801,24 +928,6 @@ export default function CustomSystem() {
                             hoverBg: 'hover:bg-blue-500/10',
                             border: 'border-blue-500/30',
                             glow: 'shadow-blue-500/20'
-                          };
-                        case 'treasuries':
-                          return { 
-                            activeBg: 'bg-gradient-to-l from-emerald-500 to-green-500', 
-                            iconBg: 'bg-emerald-500/20',
-                            text: 'text-emerald-400',
-                            hoverBg: 'hover:bg-emerald-500/10',
-                            border: 'border-emerald-500/30',
-                            glow: 'shadow-emerald-500/20'
-                          };
-                        case 'vouchers':
-                          return { 
-                            activeBg: 'bg-gradient-to-l from-purple-500 to-pink-500', 
-                            iconBg: 'bg-purple-500/20',
-                            text: 'text-purple-400',
-                            hoverBg: 'hover:bg-purple-500/10',
-                            border: 'border-purple-500/30',
-                            glow: 'shadow-purple-500/20'
                           };
                         case 'transfers':
                           return { 
@@ -837,15 +946,6 @@ export default function CustomSystem() {
                             hoverBg: 'hover:bg-indigo-500/10',
                             border: 'border-indigo-500/30',
                             glow: 'shadow-indigo-500/20'
-                          };
-                        case 'accounts':
-                          return { 
-                            activeBg: 'bg-gradient-to-l from-teal-500 to-cyan-500', 
-                            iconBg: 'bg-teal-500/20',
-                            text: 'text-teal-400',
-                            hoverBg: 'hover:bg-teal-500/10',
-                            border: 'border-teal-500/30',
-                            glow: 'shadow-teal-500/20'
                           };
                         case 'inventory':
                           return { 

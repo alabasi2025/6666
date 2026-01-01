@@ -1406,7 +1406,7 @@ export const customPaymentVouchersRouter = router({
         conditions.push(eq(customPaymentVouchers.status, input.status));
       }
       
-      return await db.select({
+      const vouchers = await db.select({
         id: customPaymentVouchers.id,
         businessId: customPaymentVouchers.businessId,
         subSystemId: customPaymentVouchers.subSystemId,
@@ -1414,9 +1414,11 @@ export const customPaymentVouchersRouter = router({
         voucherDate: customPaymentVouchers.voucherDate,
         amount: customPaymentVouchers.amount,
         currency: customPaymentVouchers.currency,
+        currencyId: customPaymentVouchers.currencyId,
         treasuryId: customPaymentVouchers.treasuryId,
         destinationType: customPaymentVouchers.destinationType,
         destinationName: customPaymentVouchers.destinationName,
+        destinationIntermediaryId: customPaymentVouchers.destinationIntermediaryId,
         description: customPaymentVouchers.description,
         status: customPaymentVouchers.status,
         isReconciled: customPaymentVouchers.isReconciled,
@@ -1424,17 +1426,40 @@ export const customPaymentVouchersRouter = router({
       }).from(customPaymentVouchers)
         .where(and(...conditions))
         .orderBy(desc(customPaymentVouchers.voucherDate));
+      
+      // جلب بيانات الخزائن والعملات
+      const treasuryIds = [...new Set(vouchers.map(v => v.treasuryId).filter(Boolean))];
+      const currencyIds = [...new Set(vouchers.map(v => v.currencyId).filter(Boolean))];
+      
+      const treasuriesData = treasuryIds.length > 0 ? await db.select({
+        id: customTreasuries.id,
+        nameAr: customTreasuries.nameAr,
+        code: customTreasuries.code,
+      }).from(customTreasuries).where(inArray(customTreasuries.id, treasuryIds as number[])) : [];
+      
+      const currenciesData = currencyIds.length > 0 ? await db.select({
+        id: currencies.id,
+        code: currencies.code,
+        nameAr: currencies.nameAr,
+      }).from(currencies).where(inArray(currencies.id, currencyIds as number[])) : [];
+      
+      return vouchers.map(v => ({
+        ...v,
+        treasury: treasuriesData.find(t => t.id === v.treasuryId) || null,
+        currencyData: currenciesData.find(c => c.id === v.currencyId) || null,
+      }));
     }),
 
   create: protectedProcedure
     .input(z.object({
       businessId: z.number(),
       subSystemId: z.number().optional(),
-      voucherDate: z.string(),
+      voucherDate: z.string().optional(),
       amount: z.string(),
       currency: z.string().default("SAR"),
+      currencyId: z.number().optional(),
       treasuryId: z.number(),
-      destinationType: z.enum(["person", "entity", "intermediary", "other"]),
+      destinationType: z.enum(["person", "entity", "intermediary", "company", "party", "other"]),
       destinationName: z.string().optional(),
       destinationIntermediaryId: z.number().optional(),
       description: z.string().optional(),
@@ -1453,6 +1478,7 @@ export const customPaymentVouchersRouter = router({
       const result = await db.insert(customPaymentVouchers).values({
         ...input,
         voucherNumber,
+        voucherDate: input.voucherDate || new Date().toISOString().split('T')[0],
         createdBy: ctx.user?.id,
       });
       return { id: result[0].insertId, voucherNumber, success: true };
