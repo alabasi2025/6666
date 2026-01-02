@@ -24,9 +24,10 @@ import {
   InsertCustomAccount, InsertCustomTransaction, InsertCustomNote, InsertCustomMemo,
   // الجداول الجديدة
   customParties, customCategories, customTreasuryMovements, customTreasuryCurrencies, customPartyTransactions, customSettings,
-  InsertCustomParty, InsertCustomCategory, InsertCustomTreasuryMovement, InsertCustomPartyTransaction, InsertCustomSetting
+  InsertCustomParty, InsertCustomCategory, InsertCustomTreasuryMovement, InsertCustomPartyTransaction, InsertCustomSetting,
+  customPaymentVoucherLines
 } from "../drizzle/schema";
-import { eq, and, desc, asc, like, sql } from "drizzle-orm";
+import { eq, and, desc, asc, like, sql, inArray } from "drizzle-orm";
 
 // ============================================
 /**
@@ -659,8 +660,10 @@ import {
   customIntermediaryAccounts,
   customReceiptVouchers,
   customPaymentVouchers,
+  customPaymentVoucherLines,
   customReconciliations,
   customTreasuryTransfers,
+  customCurrencies,
 } from "../drizzle/schema";
 
 // ============================================
@@ -1164,22 +1167,26 @@ export const customIntermediaryAccountsRouter = router({
       const db = await getDb();
     if (!db) throw new Error("Database not available");
       if (!db) return [];
-      
-      return await db.select({
-        id: customIntermediaryAccounts.id,
-        businessId: customIntermediaryAccounts.businessId,
-        fromSubSystemId: customIntermediaryAccounts.fromSubSystemId,
-        toSubSystemId: customIntermediaryAccounts.toSubSystemId,
-        code: customIntermediaryAccounts.code,
-        nameAr: customIntermediaryAccounts.nameAr,
-        nameEn: customIntermediaryAccounts.nameEn,
-        currency: customIntermediaryAccounts.currency,
-        currentBalance: customIntermediaryAccounts.currentBalance,
-        isActive: customIntermediaryAccounts.isActive,
-        createdAt: customIntermediaryAccounts.createdAt,
-      }).from(customIntermediaryAccounts)
-        .where(eq(customIntermediaryAccounts.businessId, input.businessId))
-        .orderBy(asc(customIntermediaryAccounts.code));
+      try {
+        return await db.select({
+          id: customIntermediaryAccounts.id,
+          businessId: customIntermediaryAccounts.businessId,
+          fromSubSystemId: customIntermediaryAccounts.fromSubSystemId,
+          toSubSystemId: customIntermediaryAccounts.toSubSystemId,
+          code: customIntermediaryAccounts.code,
+          nameAr: customIntermediaryAccounts.nameAr,
+          nameEn: customIntermediaryAccounts.nameEn,
+          currency: customIntermediaryAccounts.currency,
+          currentBalance: customIntermediaryAccounts.currentBalance,
+          isActive: customIntermediaryAccounts.isActive,
+          createdAt: customIntermediaryAccounts.createdAt,
+        }).from(customIntermediaryAccounts)
+          .where(eq(customIntermediaryAccounts.businessId, input.businessId))
+          .orderBy(asc(customIntermediaryAccounts.code));
+      } catch (err) {
+        console.error("customIntermediaryAccounts.list failed:", err);
+        return [];
+      }
     }),
 
   create: protectedProcedure
@@ -1387,6 +1394,127 @@ export const customReceiptVouchersRouter = router({
 // Custom Payment Vouchers Router
 // ============================================
 export const customPaymentVouchersRouter = router({
+  getById: protectedProcedure
+    .input(z.object({ id: z.number(), businessId: z.number() }))
+    .query(async ({ input }) => {
+      const db = await getDb();
+    if (!db) throw new Error("Database not available");
+      if (!db) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database not available" });
+
+      const voucher = await db
+        .select({
+          id: customPaymentVouchers.id,
+          businessId: customPaymentVouchers.businessId,
+          subSystemId: customPaymentVouchers.subSystemId,
+          voucherNumber: customPaymentVouchers.voucherNumber,
+          voucherDate: customPaymentVouchers.voucherDate,
+          amount: customPaymentVouchers.amount,
+          currency: customPaymentVouchers.currency,
+          currencyId: customPaymentVouchers.currencyId,
+          treasuryId: customPaymentVouchers.treasuryId,
+          destinationType: customPaymentVouchers.destinationType,
+          destinationName: customPaymentVouchers.destinationName,
+          destinationIntermediaryId: customPaymentVouchers.destinationIntermediaryId,
+          description: customPaymentVouchers.description,
+          status: customPaymentVouchers.status,
+          editCount: customPaymentVouchers.editCount,
+          isReconciled: customPaymentVouchers.isReconciled,
+          createdAt: customPaymentVouchers.createdAt,
+          updatedAt: customPaymentVouchers.updatedAt,
+        })
+        .from(customPaymentVouchers)
+        .where(and(eq(customPaymentVouchers.id, input.id), eq(customPaymentVouchers.businessId, input.businessId)))
+        .limit(1)
+        .catch(async (err) => {
+          if (String((err as any)?.message || "").includes("edit_count")) {
+            return await db
+              .select({
+                id: customPaymentVouchers.id,
+                businessId: customPaymentVouchers.businessId,
+                subSystemId: customPaymentVouchers.subSystemId,
+                voucherNumber: customPaymentVouchers.voucherNumber,
+                voucherDate: customPaymentVouchers.voucherDate,
+                amount: customPaymentVouchers.amount,
+                currency: customPaymentVouchers.currency,
+                currencyId: customPaymentVouchers.currencyId,
+                treasuryId: customPaymentVouchers.treasuryId,
+                destinationType: customPaymentVouchers.destinationType,
+                destinationName: customPaymentVouchers.destinationName,
+                destinationIntermediaryId: customPaymentVouchers.destinationIntermediaryId,
+                description: customPaymentVouchers.description,
+                status: customPaymentVouchers.status,
+                editCount: sql<number>`0`,
+                isReconciled: customPaymentVouchers.isReconciled,
+                createdAt: customPaymentVouchers.createdAt,
+                updatedAt: customPaymentVouchers.updatedAt,
+              })
+              .from(customPaymentVouchers)
+              .where(and(eq(customPaymentVouchers.id, input.id), eq(customPaymentVouchers.businessId, input.businessId)))
+              .limit(1);
+          }
+          throw err;
+        });
+
+      if (!voucher[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Voucher not found" });
+      }
+
+      // treasury and currency info for rich view/print
+      const treasuryData = voucher[0].treasuryId
+        ? await db
+            .select({
+              id: customTreasuries.id,
+              nameAr: customTreasuries.nameAr,
+              code: customTreasuries.code,
+              treasuryType: customTreasuries.treasuryType,
+            })
+            .from(customTreasuries)
+            .where(eq(customTreasuries.id, voucher[0].treasuryId))
+            .limit(1)
+        : [];
+
+      const currencyData = voucher[0].currencyId
+        ? await db
+            .select({
+              id: customCurrencies.id,
+              code: customCurrencies.code,
+              nameAr: customCurrencies.nameAr,
+            })
+            .from(customCurrencies)
+            .where(eq(customCurrencies.id, voucher[0].currencyId))
+            .limit(1)
+        : [];
+
+      const lines = await db
+        .select({
+          id: customPaymentVoucherLines.id,
+          paymentVoucherId: customPaymentVoucherLines.paymentVoucherId,
+          lineOrder: customPaymentVoucherLines.lineOrder,
+          accountType: customPaymentVoucherLines.accountType,
+          accountSubTypeId: customPaymentVoucherLines.accountSubTypeId,
+          accountId: customPaymentVoucherLines.accountId,
+          analyticAccountId: customPaymentVoucherLines.analyticAccountId,
+          analyticTreasuryId: customPaymentVoucherLines.analyticTreasuryId,
+          costCenterId: customPaymentVoucherLines.costCenterId,
+          description: customPaymentVoucherLines.description,
+          amount: customPaymentVoucherLines.amount,
+          createdAt: customPaymentVoucherLines.createdAt,
+        })
+        .from(customPaymentVoucherLines)
+        .where(and(
+          eq(customPaymentVoucherLines.paymentVoucherId, input.id),
+          eq(customPaymentVoucherLines.businessId, input.businessId),
+        ))
+        .orderBy(asc(customPaymentVoucherLines.lineOrder), asc(customPaymentVoucherLines.id));
+
+      return {
+        ...voucher[0],
+        lines,
+        treasury: treasuryData[0] || null,
+        currencyData: currencyData[0] || null,
+      };
+    }),
+
   list: protectedProcedure
     .input(z.object({ 
       businessId: z.number(),
@@ -1406,7 +1534,7 @@ export const customPaymentVouchersRouter = router({
         conditions.push(eq(customPaymentVouchers.status, input.status));
       }
       
-      const vouchers = await db.select({
+      const baseSelect = (withEdit: boolean) => ({
         id: customPaymentVouchers.id,
         businessId: customPaymentVouchers.businessId,
         subSystemId: customPaymentVouchers.subSystemId,
@@ -1421,11 +1549,26 @@ export const customPaymentVouchersRouter = router({
         destinationIntermediaryId: customPaymentVouchers.destinationIntermediaryId,
         description: customPaymentVouchers.description,
         status: customPaymentVouchers.status,
+        editCount: withEdit ? customPaymentVouchers.editCount : sql<number>`0`,
         isReconciled: customPaymentVouchers.isReconciled,
         createdAt: customPaymentVouchers.createdAt,
-      }).from(customPaymentVouchers)
-        .where(and(...conditions))
-        .orderBy(desc(customPaymentVouchers.voucherDate));
+        updatedAt: customPaymentVouchers.updatedAt,
+      });
+
+      let vouchers;
+      try {
+        vouchers = await db.select(baseSelect(true)).from(customPaymentVouchers)
+          .where(and(...conditions))
+          .orderBy(desc(customPaymentVouchers.voucherDate));
+      } catch (err: any) {
+        if (String(err?.message || "").includes("edit_count")) {
+          vouchers = await db.select(baseSelect(false)).from(customPaymentVouchers)
+            .where(and(...conditions))
+            .orderBy(desc(customPaymentVouchers.voucherDate));
+        } else {
+          throw err;
+        }
+      }
       
       // جلب بيانات الخزائن والعملات
       const treasuryIds = [...new Set(vouchers.map(v => v.treasuryId).filter(Boolean))];
@@ -1438,10 +1581,10 @@ export const customPaymentVouchersRouter = router({
       }).from(customTreasuries).where(inArray(customTreasuries.id, treasuryIds as number[])) : [];
       
       const currenciesData = currencyIds.length > 0 ? await db.select({
-        id: currencies.id,
-        code: currencies.code,
-        nameAr: currencies.nameAr,
-      }).from(currencies).where(inArray(currencies.id, currencyIds as number[])) : [];
+        id: customCurrencies.id,
+        code: customCurrencies.code,
+        nameAr: customCurrencies.nameAr,
+      }).from(customCurrencies).where(inArray(customCurrencies.id, currencyIds as number[])) : [];
       
       return vouchers.map(v => ({
         ...v,
@@ -1454,6 +1597,7 @@ export const customPaymentVouchersRouter = router({
     .input(z.object({
       businessId: z.number(),
       subSystemId: z.number().optional(),
+      voucherNumber: z.string().optional(),
       voucherDate: z.string().optional(),
       amount: z.string(),
       currency: z.string().default("SAR"),
@@ -1463,45 +1607,239 @@ export const customPaymentVouchersRouter = router({
       destinationName: z.string().optional(),
       destinationIntermediaryId: z.number().optional(),
       description: z.string().optional(),
+      lines: z.array(z.object({
+        accountType: z.string().min(1),
+        accountSubTypeId: z.number().optional(),
+        accountId: z.number().int().positive(),
+        analyticAccountId: z.number().int().positive().optional(),
+        analyticTreasuryId: z.number().int().positive().optional(),
+        costCenterId: z.number().int().positive().optional(),
+        description: z.string().optional(),
+        amount: z.string().min(1),
+      })).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const db = await getDb();
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
-      // Generate voucher number
-      const count = await db.select({ count: sql<number>`count(*)` })
-        .from(customPaymentVouchers)
-        .where(eq(customPaymentVouchers.businessId, input.businessId));
-      const voucherNumber = `PV-${String(count[0].count + 1).padStart(6, '0')}`;
+      // إذا كانت هناك بنود، تحقق من المجموع ونعتمدها كمبلغ السند
+      const lines = input.lines ?? [];
+      if (lines.length > 0) {
+        const sum = lines.reduce((acc, l) => acc + parseFloat(l.amount || "0"), 0);
+        const amountNum = parseFloat(input.amount || "0");
+        if (!Number.isFinite(sum) || sum <= 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "مجموع بنود السند غير صحيح" });
+        }
+        if (!Number.isFinite(amountNum) || Math.abs(sum - amountNum) > 0.01) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "مجموع البنود يجب أن يساوي إجمالي السند" });
+        }
+        for (const l of lines) {
+          const lineAmount = parseFloat(l.amount || "0");
+          if (!Number.isFinite(lineAmount) || lineAmount <= 0) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "أحد بنود السند يحتوي على مبلغ غير صحيح" });
+          }
+        }
+      }
+
+      const subSystemId = input.subSystemId ?? 0;
+      const voucherDateStr = input.voucherDate || new Date().toISOString().split('T')[0];
+      const year = new Date(voucherDateStr).getFullYear();
+
+      const desiredNumber = input.voucherNumber?.trim();
+      let voucherNumber: string;
+
+      if (desiredNumber) {
+        const dupCheck = await db.select({ count: sql<number>`count(*)` })
+          .from(customPaymentVouchers)
+          .where(and(
+            eq(customPaymentVouchers.businessId, input.businessId),
+            eq(customPaymentVouchers.subSystemId, subSystemId),
+            eq(customPaymentVouchers.voucherNumber, desiredNumber),
+          ));
+        if (dupCheck[0].count > 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "رقم السند مستخدم بالفعل" });
+        }
+        voucherNumber = desiredNumber;
+      } else {
+        const count = await db.select({ count: sql<number>`count(*)` })
+          .from(customPaymentVouchers)
+          .where(and(
+            eq(customPaymentVouchers.businessId, input.businessId),
+            eq(customPaymentVouchers.subSystemId, subSystemId),
+            eq(customPaymentVouchers.treasuryId, input.treasuryId),
+            sql`YEAR(${customPaymentVouchers.voucherDate}) = ${year}`,
+          ));
+        voucherNumber = `PV-${year}-${input.treasuryId}-${String(count[0].count + 1).padStart(5, '0')}`;
+      }
       
+      const { lines: _lines, ...voucherData } = input;
       const result = await db.insert(customPaymentVouchers).values({
-        ...input,
+        ...voucherData,
+        subSystemId,
         voucherNumber,
-        voucherDate: input.voucherDate || new Date().toISOString().split('T')[0],
+        voucherDate: voucherDateStr,
         createdBy: ctx.user?.id,
       });
-      return { id: result[0].insertId, voucherNumber, success: true };
+
+      const voucherId = result[0].insertId;
+
+      if (lines.length > 0) {
+        await db.insert(customPaymentVoucherLines).values(
+          lines.map((l, idx) => ({
+            businessId: input.businessId,
+            paymentVoucherId: voucherId,
+            lineOrder: idx + 1,
+            accountType: l.accountType,
+            accountSubTypeId: l.accountSubTypeId ?? null,
+            accountId: l.accountId,
+            analyticAccountId: l.analyticAccountId ?? null,
+            analyticTreasuryId: l.analyticTreasuryId ?? null,
+            costCenterId: l.costCenterId ?? null,
+            description: l.description ?? null,
+            amount: l.amount,
+          }))
+        );
+      }
+      return { id: voucherId, voucherNumber, success: true };
     }),
 
   update: protectedProcedure
     .input(z.object({
       id: z.number(),
+      voucherNumber: z.string().optional(),
       voucherDate: z.string().optional(),
       amount: z.string().optional(),
       treasuryId: z.number().optional(),
-      destinationType: z.enum(["person", "entity", "intermediary", "other"]).optional(),
+      destinationType: z.enum(["person", "entity", "intermediary", "company", "party", "other"]).optional(),
       destinationName: z.string().optional(),
       destinationIntermediaryId: z.number().optional(),
       description: z.string().optional(),
+      lines: z.array(z.object({
+        accountType: z.string().min(1),
+        accountSubTypeId: z.number().optional(),
+        accountId: z.number().int().positive(),
+        analyticAccountId: z.number().int().positive().optional(),
+        analyticTreasuryId: z.number().int().positive().optional(),
+        costCenterId: z.number().int().positive().optional(),
+        description: z.string().optional(),
+        amount: z.string().min(1),
+      })).optional(),
     }))
     .mutation(async ({ input }) => {
       const db = await getDb();
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
-      const { id, ...data } = input;
-      await db.update(customPaymentVouchers).set(data).where(eq(customPaymentVouchers.id, id));
+      const { id, lines, ...data } = input;
+
+      let supportsEditCount = true;
+      let existing = await db
+        .select({
+          id: customPaymentVouchers.id,
+          businessId: customPaymentVouchers.businessId,
+          subSystemId: customPaymentVouchers.subSystemId,
+          voucherNumber: customPaymentVouchers.voucherNumber,
+          status: customPaymentVouchers.status,
+          amount: customPaymentVouchers.amount,
+          treasuryId: customPaymentVouchers.treasuryId,
+          editCount: customPaymentVouchers.editCount,
+        })
+        .from(customPaymentVouchers)
+        .where(eq(customPaymentVouchers.id, id))
+        .limit(1)
+        .catch(async (err) => {
+          if (String((err as any)?.message || "").includes("edit_count")) {
+            supportsEditCount = false;
+            return await db
+              .select({
+                id: customPaymentVouchers.id,
+                businessId: customPaymentVouchers.businessId,
+                subSystemId: customPaymentVouchers.subSystemId,
+                voucherNumber: customPaymentVouchers.voucherNumber,
+                status: customPaymentVouchers.status,
+                amount: customPaymentVouchers.amount,
+                treasuryId: customPaymentVouchers.treasuryId,
+              })
+              .from(customPaymentVouchers)
+              .where(eq(customPaymentVouchers.id, id))
+              .limit(1);
+          }
+          throw err;
+        });
+
+      if (!existing[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Voucher not found" });
+      }
+
+      const businessId = existing[0].businessId;
+      if (existing[0].status !== "draft") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "لا يمكن تعديل سند غير مسودة" });
+      }
+
+      // Ensure voucher number uniqueness if provided
+      const desiredNumber = data.voucherNumber?.trim();
+      if (desiredNumber && desiredNumber !== existing[0].voucherNumber) {
+        const dupCheck = await db.select({ count: sql<number>`count(*)` })
+          .from(customPaymentVouchers)
+          .where(and(
+            eq(customPaymentVouchers.businessId, existing[0].businessId),
+            eq(customPaymentVouchers.subSystemId, existing[0].subSystemId),
+            eq(customPaymentVouchers.voucherNumber, desiredNumber),
+          ));
+        if (dupCheck[0].count > 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "رقم السند مستخدم بالفعل" });
+        }
+      }
+
+      // إذا تم تمرير بنود، استبدلها بالكامل
+      if (Array.isArray(lines)) {
+        const sum = lines.reduce((acc, l) => acc + parseFloat(l.amount || "0"), 0);
+        if (!Number.isFinite(sum) || sum <= 0) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "مجموع بنود السند غير صحيح" });
+        }
+        for (const l of lines) {
+          const lineAmount = parseFloat(l.amount || "0");
+          if (!Number.isFinite(lineAmount) || lineAmount <= 0) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "أحد بنود السند يحتوي على مبلغ غير صحيح" });
+          }
+        }
+
+        // تحديث مبلغ السند حسب البنود (إلا إذا تم تمرير amount صراحة)
+        const nextAmount = data.amount ?? sum.toFixed(2);
+        const nextEditCount = supportsEditCount ? ((existing[0] as any).editCount ?? 0) + 1 : undefined;
+        const setData: Record<string, any> = { ...data, amount: nextAmount };
+        if (supportsEditCount && nextEditCount !== undefined) {
+          setData.editCount = nextEditCount;
+        }
+        await db.update(customPaymentVouchers).set(setData).where(eq(customPaymentVouchers.id, id));
+
+        await db.delete(customPaymentVoucherLines).where(eq(customPaymentVoucherLines.paymentVoucherId, id));
+        if (lines.length > 0) {
+          await db.insert(customPaymentVoucherLines).values(
+            lines.map((l, idx) => ({
+              businessId,
+              paymentVoucherId: id,
+              lineOrder: idx + 1,
+              accountType: l.accountType,
+              accountSubTypeId: l.accountSubTypeId ?? null,
+              accountId: l.accountId,
+              analyticAccountId: l.analyticAccountId ?? null,
+              analyticTreasuryId: l.analyticTreasuryId ?? null,
+              costCenterId: l.costCenterId ?? null,
+              description: l.description ?? null,
+              amount: l.amount,
+            }))
+          );
+        }
+      } else {
+        const nextEditCount = supportsEditCount ? ((existing[0] as any).editCount ?? 0) + 1 : undefined;
+        const setData: Record<string, any> = { ...data };
+        if (supportsEditCount && nextEditCount !== undefined) {
+          setData.editCount = nextEditCount;
+        }
+        await db.update(customPaymentVouchers).set(setData).where(eq(customPaymentVouchers.id, id));
+      }
       return { success: true };
     }),
 
@@ -1517,12 +1855,17 @@ export const customPaymentVouchersRouter = router({
         id: customPaymentVouchers.id,
         treasuryId: customPaymentVouchers.treasuryId,
         amount: customPaymentVouchers.amount,
+        status: customPaymentVouchers.status,
       }).from(customPaymentVouchers)
         .where(eq(customPaymentVouchers.id, input.id))
         .limit(1);
       
       if (!voucher[0]) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Voucher not found' });
+      }
+
+      if (voucher[0].status !== "draft") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "السند ليس في حالة مسودة" });
       }
       
       // Update treasury balance
@@ -1555,9 +1898,82 @@ export const customPaymentVouchersRouter = router({
       const db = await getDb();
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
-      
+
+      const voucher = await db
+        .select({
+          id: customPaymentVouchers.id,
+          status: customPaymentVouchers.status,
+        })
+        .from(customPaymentVouchers)
+        .where(eq(customPaymentVouchers.id, input.id))
+        .limit(1);
+
+      if (!voucher[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Voucher not found" });
+      }
+      if (voucher[0].status !== "draft") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "لا يمكن حذف سند غير مسودة" });
+      }
+
+      await db.delete(customPaymentVoucherLines).where(eq(customPaymentVoucherLines.paymentVoucherId, input.id));
       await db.delete(customPaymentVouchers).where(eq(customPaymentVouchers.id, input.id));
       return { success: true };
+    }),
+
+  revertToDraft: protectedProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input }) => {
+      const db = await getDb();
+    if (!db) throw new Error("Database not available");
+      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+      const voucher = await db
+        .select({
+          id: customPaymentVouchers.id,
+          businessId: customPaymentVouchers.businessId,
+          status: customPaymentVouchers.status,
+          treasuryId: customPaymentVouchers.treasuryId,
+          amount: customPaymentVouchers.amount,
+        })
+        .from(customPaymentVouchers)
+        .where(eq(customPaymentVouchers.id, input.id))
+        .limit(1);
+
+      if (!voucher[0]) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Voucher not found" });
+      }
+
+      if (voucher[0].status === "draft") {
+        return { success: true, status: "draft" };
+      }
+
+      if (voucher[0].status !== "confirmed") {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "لا يمكن الإرجاع لمسودة إلا من حالة مؤكد" });
+      }
+
+      // إعادة المبلغ إلى الخزينة
+      const amountNum = parseFloat(voucher[0].amount || "0");
+      if (Number.isFinite(amountNum) && voucher[0].treasuryId) {
+        const treasury = await db
+          .select({ currentBalance: customTreasuries.currentBalance })
+          .from(customTreasuries)
+          .where(eq(customTreasuries.id, voucher[0].treasuryId))
+          .limit(1);
+
+        const curr = treasury[0]?.currentBalance ? parseFloat(treasury[0].currentBalance) : 0;
+        const next = curr + amountNum;
+        await db
+          .update(customTreasuries)
+          .set({ currentBalance: String(next) })
+          .where(eq(customTreasuries.id, voucher[0].treasuryId));
+      }
+
+      await db
+        .update(customPaymentVouchers)
+        .set({ status: "draft" })
+        .where(eq(customPaymentVouchers.id, input.id));
+
+      return { success: true, status: "draft" };
     }),
 });
 

@@ -3287,6 +3287,7 @@ export const customPaymentVouchers = mysqlTable("custom_payment_vouchers", {
   description: text("description"),
   attachments: json("attachments"),
   status: mysqlEnum("status", ["draft", "confirmed", "cancelled"]).default("draft"),
+  editCount: int("edit_count").default(0).notNull(),
   isReconciled: boolean("is_reconciled").default(false),
   reconciledWith: int("reconciled_with"), // رقم سند القبض المطابق
   reconciledAt: timestamp("reconciled_at"),
@@ -3301,6 +3302,44 @@ export const customPaymentVouchers = mysqlTable("custom_payment_vouchers", {
   categoryIdx: index("cpv_category_idx").on(table.categoryId),
   dateIdx: index("cpv_date_idx").on(table.voucherDate),
   numberIdx: uniqueIndex("cpv_number_idx").on(table.businessId, table.subSystemId, table.voucherNumber),
+}));
+
+// بنود سندات الصرف - Payment Voucher Lines (توزيع المبلغ على عدة حسابات)
+export const customPaymentVoucherLines = mysqlTable("custom_payment_voucher_lines", {
+  id: int("id").autoincrement().primaryKey(),
+  businessId: int("business_id").notNull(),
+
+  paymentVoucherId: int("payment_voucher_id").notNull(),
+  lineOrder: int("line_order").default(0).notNull(),
+
+  // تصنيفات الحساب (للعرض/الفلترة) - اختيارية لأن الحسابId يكفي
+  accountType: varchar("account_type", { length: 50 }),
+  accountSubTypeId: int("account_sub_type_id"),
+
+  // الحساب (من دليل الحسابات v2)
+  accountId: int("account_id").notNull(),
+
+  // الحساب التحليلي المرتبط بالحساب (حساب ابن/تفصيلي) إن وجد
+  analyticAccountId: int("analytic_account_id"),
+
+  // الخزينة التحليلية المرتبطة بالحساب (صندوق/بنك/محفظة/صراف) إن وجد
+  analyticTreasuryId: int("analytic_treasury_id"),
+
+  // (اختياري للتوسع لاحقاً) مركز تكلفة إن وجد
+  costCenterId: int("cost_center_id"),
+
+  // البيان والمبلغ
+  description: text("description"),
+  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  businessIdx: index("cpvl_business_idx").on(table.businessId),
+  voucherIdx: index("cpvl_voucher_idx").on(table.paymentVoucherId),
+  accountIdx: index("cpvl_account_idx").on(table.accountId),
+  analyticAccountIdx: index("cpvl_analytic_account_idx").on(table.analyticAccountId),
+  analyticTreasuryIdx: index("cpvl_analytic_treasury_idx").on(table.analyticTreasuryId),
+  costCenterIdx: index("cpvl_cost_center_idx").on(table.costCenterId),
 }));
 
 // المطابقات - Reconciliations
@@ -3351,6 +3390,8 @@ export type CustomReceiptVoucher = typeof customReceiptVouchers.$inferSelect;
 export type InsertCustomReceiptVoucher = typeof customReceiptVouchers.$inferInsert;
 export type CustomPaymentVoucher = typeof customPaymentVouchers.$inferSelect;
 export type InsertCustomPaymentVoucher = typeof customPaymentVouchers.$inferInsert;
+export type CustomPaymentVoucherLine = typeof customPaymentVoucherLines.$inferSelect;
+export type InsertCustomPaymentVoucherLine = typeof customPaymentVoucherLines.$inferInsert;
 export type CustomReconciliation = typeof customReconciliations.$inferSelect;
 export type InsertCustomReconciliation = typeof customReconciliations.$inferInsert;
 export type CustomTreasuryTransfer = typeof customTreasuryTransfers.$inferSelect;

@@ -42,6 +42,7 @@ import {
   Store,
   Activity,
   Coins,
+  BarChart3,
 } from "lucide-react";
 import {
   AccountsPage as AccountsPageV2,
@@ -275,6 +276,7 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
   const [isAddTreasuryOpen, setIsAddTreasuryOpen] = useState(false);
   const [editingTreasury, setEditingTreasury] = useState<any>(null);
   const [isAddTransferOpen, setIsAddTransferOpen] = useState(false);
+  const [reportsExpanded, setReportsExpanded] = useState(true);
 
   // New Treasury Form State
   const [newTreasury, setNewTreasury] = useState({
@@ -842,6 +844,43 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             <RefreshCw className="ml-2 h-4 w-4" />
             أسعار الصرف
           </Button>
+          <Button
+            variant={reportsExpanded ? "default" : "ghost"}
+            size="sm"
+            onClick={() => setReportsExpanded((prev) => !prev)}
+            className={reportsExpanded ? "" : "text-slate-400 hover:text-white"}
+          >
+            <FileText className="ml-2 h-4 w-4" />
+            التقارير
+          </Button>
+          {reportsExpanded && (
+            <div className="flex flex-wrap gap-2 w-full md:w-auto">
+              <Button
+                variant={activeTab === "ledger-report" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setActiveTab("ledger-report")}
+                className={cn(
+                  "border-slate-700",
+                  activeTab === "ledger-report" ? "" : "bg-slate-800/60 text-slate-200"
+                )}
+              >
+                <BookOpen className="ml-2 h-4 w-4" />
+                كشف حساب
+              </Button>
+              <Button
+                variant={activeTab === "trial-balance-report" ? "default" : "secondary"}
+                size="sm"
+                onClick={() => setActiveTab("trial-balance-report")}
+                className={cn(
+                  "border-slate-700",
+                  activeTab === "trial-balance-report" ? "" : "bg-slate-800/60 text-slate-200"
+                )}
+              >
+                <BarChart3 className="ml-2 h-4 w-4" />
+                ميزان المراجعة
+              </Button>
+            </div>
+          )}
           <Button
             variant={activeTab === "inventory" ? "default" : "ghost"}
             size="sm"
@@ -1810,6 +1849,52 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           {activeTab === "exchange-rates" && (
             <div className="space-y-4">
               <ExchangeRatesPage />
+            </div>
+          )}
+
+          {/* Reports Tab - كشف حساب */}
+          {activeTab === "ledger-report" && (
+            <div className="space-y-4">
+              <Card className="bg-slate-900/60 border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <BookOpen className="h-5 w-5 text-sky-400" />
+                    كشف حساب
+                  </CardTitle>
+                  <CardDescription>عرض حركات الحساب لفترة محددة</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-slate-300 mb-3">
+                    سيتم توفير تقرير كشف الحساب ضمن النظام المخصص قريباً.
+                  </p>
+                  <Button variant="outline" disabled className="cursor-not-allowed text-slate-400">
+                    قيد التطوير
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Reports Tab - ميزان المراجعة */}
+          {activeTab === "trial-balance-report" && (
+            <div className="space-y-4">
+              <Card className="bg-slate-900/60 border-slate-800">
+                <CardHeader>
+                  <CardTitle className="text-white flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-emerald-400" />
+                    ميزان المراجعة
+                  </CardTitle>
+                  <CardDescription>تجميع أرصدة الحسابات (مدين/دائن) لفترة محددة</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-slate-300 mb-3">
+                    سيتم توفير تقرير ميزان المراجعة ضمن النظام المخصص قريباً.
+                  </p>
+                  <Button variant="outline" disabled className="cursor-not-allowed text-slate-400">
+                    قيد التطوير
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           )}
 

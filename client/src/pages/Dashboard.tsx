@@ -18,7 +18,7 @@ import {
   Calculator, Landmark, FileText, Package, Warehouse,
   ShoppingCart, UserCircle, Gauge, Receipt, CreditCard,
   Activity, AlertTriangle, Camera, ClipboardList,
-  FolderKanban, Calendar, BarChart3, PieChart,
+  FolderKanban, Calendar, BarChart3, PieChart, BookOpen,
   Settings, LogOut, Menu, X, ChevronLeft, Bell,
   TrendingUp, TrendingDown, DollarSign, Wrench,
   Home, Search, HelpCircle, Moon, Sun, Truck, Users2, Clock, CalendarDays, Wallet,
@@ -233,6 +233,16 @@ const navigationItems = [
       { id: "journal-entries", title: "القيود اليومية", icon: FileText, path: "/dashboard/accounting/journal-entries" },
       { id: "general-ledger", title: "دفتر الأستاذ", icon: FileText, path: "/dashboard/accounting/general-ledger" },
       { id: "trial-balance", title: "ميزان المراجعة", icon: BarChart3, path: "/dashboard/accounting/trial-balance" },
+    ],
+  },
+  {
+    id: "reports",
+    title: "التقارير",
+    icon: FileText,
+    color: "text-sky-500",
+    children: [
+      { id: "ledger-report", title: "كشف حساب", icon: BookOpen, path: "/dashboard/reports/ledger" },
+      { id: "trial-balance-report", title: "ميزان المراجعة", icon: BarChart3, path: "/dashboard/reports/trial-balance" },
     ],
   },
   {
