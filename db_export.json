@@ -1,0 +1,1 @@
+{"success":false,"error":"Command failed: mysqldump -u root 666666\n'mysqldump' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n","stdout":"","stderr":"'mysqldump' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n"}

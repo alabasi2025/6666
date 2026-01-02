@@ -1,0 +1,115 @@
+{
+  "titles": {
+    "list": "قائمة الأطراف",
+    "create": "إضافة طرف جديد",
+    "edit": "تعديل بيانات الطرف",
+    "view": "عرض بيانات الطرف",
+    "customers": "العملاء",
+    "suppliers": "الموردون",
+    "employees": "الموظفون",
+    "others": "أطراف أخرى"
+  },
+  "fields": {
+    "name": "اسم الطرف",
+    "code": "رمز الطرف",
+    "type": "نوع الطرف",
+    "phone": "رقم الهاتف",
+    "mobile": "رقم الجوال",
+    "email": "البريد الإلكتروني",
+    "address": "العنوان",
+    "city": "المدينة",
+    "country": "الدولة",
+    "postalCode": "الرمز البريدي",
+    "balance": "الرصيد",
+    "creditLimit": "حد الائتمان",
+    "notes": "ملاحظات",
+    "status": "الحالة",
+    "taxNumber": "الرقم الضريبي",
+    "commercialRegister": "السجل التجاري",
+    "contactPerson": "جهة الاتصال",
+    "website": "الموقع الإلكتروني",
+    "category": "التصنيف",
+    "paymentTerms": "شروط الدفع",
+    "currency": "العملة",
+    "openingBalance": "الرصيد الافتتاحي",
+    "currentBalance": "الرصيد الحالي",
+    "createdAt": "تاريخ الإنشاء",
+    "updatedAt": "تاريخ التحديث"
+  },
+  "types": {
+    "customer": "عميل",
+    "supplier": "مورد",
+    "both": "عميل ومورد",
+    "employee": "موظف",
+    "other": "أخرى"
+  },
+  "status": {
+    "active": "نشط",
+    "inactive": "غير نشط",
+    "blocked": "محظور",
+    "pending": "قيد المراجعة"
+  },
+  "categories": {
+    "individual": "فرد",
+    "company": "شركة",
+    "government": "جهة حكومية",
+    "nonprofit": "منظمة غير ربحية"
+  },
+  "actions": {
+    "activate": "تفعيل",
+    "deactivate": "إلغاء التفعيل",
+    "block": "حظر",
+    "unblock": "إلغاء الحظر",
+    "viewStatement": "عرض كشف الحساب",
+    "sendEmail": "إرسال بريد",
+    "call": "اتصال"
+  },
+  "messages": {
+    "created": "تم إضافة الطرف بنجاح",
+    "updated": "تم تحديث بيانات الطرف بنجاح",
+    "deleted": "تم حذف الطرف بنجاح",
+    "activated": "تم تفعيل الطرف",
+    "deactivated": "تم إلغاء تفعيل الطرف",
+    "blocked": "تم حظر الطرف",
+    "unblocked": "تم إلغاء حظر الطرف"
+  },
+  "errors": {
+    "notFound": "الطرف غير موجود",
+    "codeExists": "رمز الطرف مستخدم بالفعل",
+    "emailExists": "البريد الإلكتروني مستخدم بالفعل",
+    "hasTransactions": "لا يمكن حذف الطرف لوجود معاملات مرتبطة",
+    "creditLimitExceeded": "تم تجاوز حد الائتمان",
+    "invalidPhone": "رقم الهاتف غير صالح",
+    "invalidEmail": "البريد الإلكتروني غير صالح"
+  },
+  "filters": {
+    "all": "الكل",
+    "active": "النشطون",
+    "inactive": "غير النشطين",
+    "blocked": "المحظورون",
+    "withBalance": "لديهم رصيد",
+    "withCredit": "لديهم ائتمان",
+    "overdue": "متأخرون"
+  },
+  "statement": {
+    "title": "كشف حساب",
+    "period": "الفترة",
+    "openingBalance": "الرصيد الافتتاحي",
+    "closingBalance": "الرصيد الختامي",
+    "totalDebit": "إجمالي المدين",
+    "totalCredit": "إجمالي الدائن",
+    "date": "التاريخ",
+    "description": "البيان",
+    "debit": "مدين",
+    "credit": "دائن",
+    "balance": "الرصيد"
+  },
+  "summary": {
+    "totalParties": "إجمالي الأطراف",
+    "totalCustomers": "إجمالي العملاء",
+    "totalSuppliers": "إجمالي الموردين",
+    "totalReceivables": "إجمالي المستحقات",
+    "totalPayables": "إجمالي الالتزامات",
+    "activeParties": "الأطراف النشطة"
+  }
+}

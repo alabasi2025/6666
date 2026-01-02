@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+# Husky pre-commit hook - الامتثال للقاعدة 41 و 42
+. "$(dirname -- "$0")/_/husky.sh"
+
+# تشغيل lint-staged للتحقق من الملفات المعدلة فقط
+npx lint-staged
