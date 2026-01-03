@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -50,33 +50,53 @@ import { format } from "date-fns";
 import { ar } from "date-fns/locale";
 
 const movementTypes = [
-  { value: "in", label: "إدخال", color: "bg-green-500", icon: ArrowDownCircle },
-  { value: "out", label: "إخراج", color: "bg-red-500", icon: ArrowUpCircle },
-  { value: "transfer", label: "تحويل", color: "bg-blue-500", icon: RefreshCw },
-  { value: "adjustment", label: "تسوية", color: "bg-yellow-500", icon: RefreshCw },
+  { value: "receipt", label: "استلام", color: "bg-green-500", icon: ArrowDownCircle },
+  { value: "issue", label: "صرف", color: "bg-red-500", icon: ArrowUpCircle },
+  { value: "transfer_in", label: "تحويل وارد", color: "bg-blue-500", icon: RefreshCw },
+  { value: "transfer_out", label: "تحويل صادر", color: "bg-indigo-500", icon: RefreshCw },
+  { value: "adjustment_in", label: "تسوية زيادة", color: "bg-emerald-500", icon: ArrowDownCircle },
+  { value: "adjustment_out", label: "تسوية نقص", color: "bg-amber-500", icon: ArrowUpCircle },
+  { value: "return", label: "مرتجع", color: "bg-teal-500", icon: ArrowDownCircle },
+  { value: "scrap", label: "هالك", color: "bg-slate-500", icon: ArrowUpCircle },
 ];
 
-export default function Movements() {
+type MovementsProps = {
+  businessId?: number;
+};
+
+export default function Movements({ businessId = 1 }: MovementsProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState<string>("all");
   const [showDialog, setShowDialog] = useState(false);
 
+  const resolvedBusinessId = businessId ?? 1;
+
   // Fetch movements
   const { data: movements = [], isLoading } = trpc.inventory.movements.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
+    limit: 200,
   });
 
   // Fetch items for dropdown
   const { data: items = [] } = trpc.inventory.items.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   });
 
   // Fetch warehouses for dropdown
   const { data: warehouses = [] } = trpc.inventory.warehouses.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   });
+
+  const itemsMap = useMemo(
+    () => new Map((items as any[]).map((i: any) => [i.id, i])),
+    [items]
+  );
+  const warehousesMap = useMemo(
+    () => new Map((warehouses as any[]).map((w: any) => [w.id, w])),
+    [warehouses]
+  );
 
   // Create mutation
   const createMutation = trpc.inventory.movements.create.useMutation({
@@ -91,11 +111,23 @@ export default function Movements() {
     },
   });
 
-  const filteredMovements = (movements as any[]).filter((mov: any) => {
-    const matchesSearch =
-      mov.item?.nameAr?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.item?.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      mov.reference?.toLowerCase().includes(searchTerm.toLowerCase());
+  const enrichedMovements = useMemo(() => {
+    return (movements as any[]).map((mov) => {
+      const item = itemsMap.get(mov.itemId);
+      const warehouse = warehousesMap.get(mov.warehouseId);
+      return {
+        ...mov,
+        itemName: item?.nameAr || "-",
+        itemCode: item?.code || "",
+        warehouseName: warehouse?.nameAr || "-",
+      };
+    });
+  }, [itemsMap, movements, warehousesMap]);
+
+  const filteredMovements = enrichedMovements.filter((mov: any) => {
+    const matchesSearch = `${mov.itemName} ${mov.itemCode}`
+      .toLowerCase()
+      .includes(searchTerm.toLowerCase());
     const matchesType = filterType === "all" || mov.movementType === filterType;
     return matchesSearch && matchesType;
   });
@@ -105,12 +137,13 @@ export default function Movements() {
     const formData = new FormData(e.currentTarget);
 
     createMutation.mutate({
+      businessId: resolvedBusinessId,
       itemId: parseInt((formData as any).get("itemId") as string),
       warehouseId: parseInt((formData as any).get("warehouseId") as string),
       movementType: (formData as any).get("movementType") as any,
-      quantity: parseFloat((formData as any).get("quantity") as string),
+      quantity: (formData as any).get("quantity") as string,
       unitCost: (formData as any).get("unitCost") as string || undefined,
-      reference: (formData as any).get("reference") as string || undefined,
+      documentNumber: (formData as any).get("documentNumber") as string || undefined,
       notes: (formData as any).get("notes") as string || undefined,
       movementDate: (formData as any).get("movementDate") as string,
     } as any);
@@ -121,8 +154,12 @@ export default function Movements() {
   };
 
   // Stats
-  const totalIn = (movements as any[]).filter((m: any) => m.movementType === "in").reduce((sum: number, m: any) => sum + (m.quantity || 0), 0);
-  const totalOut = (movements as any[]).filter((m: any) => m.movementType === "out").reduce((sum: number, m: any) => sum + (m.quantity || 0), 0);
+  const inboundTypes = ["receipt", "transfer_in", "adjustment_in", "return"];
+  const outboundTypes = ["issue", "transfer_out", "adjustment_out", "scrap"];
+  const totalIn = (movements as any[]).filter((m: any) => inboundTypes.includes(m.movementType))
+    .reduce((sum: number, m: any) => sum + parseFloat(m.quantity || "0"), 0);
+  const totalOut = (movements as any[]).filter((m: any) => outboundTypes.includes(m.movementType))
+    .reduce((sum: number, m: any) => sum + parseFloat(m.quantity || "0"), 0);
 
   if (isLoading) {
     return (
@@ -264,6 +301,7 @@ export default function Movements() {
               ) : (
                 (filteredMovements as any[]).map((movement: any) => {
                   const typeInfo = getMovementTypeInfo(movement.movementType);
+                  const Icon = (typeInfo as any).icon || RefreshCw;
                   return (
                     <TableRow key={movement.id}>
                       <TableCell>
@@ -273,24 +311,25 @@ export default function Movements() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{movement.item?.nameAr || "-"}</p>
-                          <p className="text-sm text-muted-foreground">{movement.item?.code}</p>
+                          <p className="font-medium">{movement.itemName}</p>
+                          <p className="text-sm text-muted-foreground">{movement.itemCode}</p>
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={`${typeInfo.color} text-white`}>
+                        <Badge className={`${typeInfo.color} text-white flex items-center gap-1`}>
+                          <Icon className="w-4 h-4" />
                           {typeInfo.label}
                         </Badge>
                       </TableCell>
-                      <TableCell>{movement.warehouse?.nameAr || "-"}</TableCell>
+                      <TableCell>{movement.warehouseName}</TableCell>
                       <TableCell className="font-medium">
-                        {movement.quantity?.toLocaleString() || 0}
+                        {Number(movement.quantity || 0).toLocaleString()}
                       </TableCell>
                       <TableCell>
                         {movement.unitCost ? `${parseFloat(movement.unitCost).toLocaleString()} ر.س` : "-"}
                       </TableCell>
                       <TableCell className="font-mono text-sm">
-                        {movement.reference || "-"}
+                        {movement.documentNumber || movement.notes || "-"}
                       </TableCell>
                     </TableRow>
                   );
@@ -389,10 +428,10 @@ export default function Movements() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="reference">المرجع</Label>
+                <Label htmlFor="documentNumber">رقم المستند / المرجع</Label>
                 <Input
-                  id="reference"
-                  name="reference"
+                  id="documentNumber"
+                  name="documentNumber"
                   placeholder="رقم الفاتورة أو أمر الشراء"
                 />
               </div>

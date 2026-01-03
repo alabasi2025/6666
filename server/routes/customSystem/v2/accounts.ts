@@ -12,6 +12,8 @@ import {
   customAccountCurrencies,
   customAccountBalances,
   customCurrencies,
+  customJournalEntries,
+  customJournalEntryLines,
   type InsertCustomAccount,
   type InsertCustomAccountCurrency,
 } from "../../../../drizzle/schemas/customSystemV2";
@@ -75,7 +77,25 @@ router.get("/", async (req, res) => {
     fetch('http://127.0.0.1:7243/ingest/7a8c2091-2dd7-4e94-8295-a31512164037',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'accounts.ts:68',message:'GET /accounts - Before select query',data:{conditionsCount:conditions.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
     // #endregion
     const accounts = await db
-      .select()
+      .select({
+        id: customAccounts.id,
+        businessId: customAccounts.businessId,
+        subSystemId: customAccounts.subSystemId,
+        accountCode: customAccounts.accountCode,
+        accountNameAr: customAccounts.accountNameAr,
+        accountNameEn: customAccounts.accountNameEn,
+        accountType: customAccounts.accountType,
+        accountTypeId: customAccounts.accountTypeId,
+        accountSubTypeId: customAccounts.accountSubTypeId,
+        parentAccountId: customAccounts.parentAccountId,
+        level: customAccounts.level,
+        description: customAccounts.description,
+        isActive: customAccounts.isActive,
+        allowManualEntry: customAccounts.allowManualEntry,
+        requiresCostCenter: customAccounts.requiresCostCenter,
+        createdAt: customAccounts.createdAt,
+        updatedAt: customAccounts.updatedAt,
+      })
       .from(customAccounts)
       .where(and(...conditions))
       .orderBy(customAccounts.accountCode);
@@ -113,6 +133,92 @@ router.get("/", async (req, res) => {
 });
 
 /**
+ * GET /api/custom-system/v2/accounts/statement
+ * كشف حساب لحساب محدد داخل نظام فرعي
+ */
+router.get("/statement", async (req, res) => {
+  try {
+    const businessId = req.user?.businessId;
+    if (!businessId) {
+      return res.status(400).json({ error: "معرف النشاط التجاري مطلوب" });
+    }
+
+    const accountId = parseInt(String(req.query.accountId ?? ""));
+    const subSystemId = req.query.subSystemId ? parseInt(String(req.query.subSystemId)) : undefined;
+    const fromDate = req.query.fromDate ? new Date(String(req.query.fromDate)) : undefined;
+    const toDate = req.query.toDate ? new Date(String(req.query.toDate)) : undefined;
+
+    if (!accountId || Number.isNaN(accountId)) {
+      return res.status(400).json({ error: "accountId مطلوب" });
+    }
+
+    const db = await getDb();
+    if (!db) {
+      return res.status(500).json({ error: "فشل في الاتصال بقاعدة البيانات" });
+    }
+
+    const conditions = [
+      eq(customJournalEntryLines.accountId, accountId),
+      eq(customJournalEntries.businessId, businessId),
+    ];
+
+    if (subSystemId && !Number.isNaN(subSystemId)) {
+      conditions.push(eq(customJournalEntries.subSystemId, subSystemId));
+    }
+
+    if (fromDate) {
+      conditions.push(sql`${customJournalEntries.entryDate} >= ${fromDate}`);
+    }
+    if (toDate) {
+      conditions.push(sql`${customJournalEntries.entryDate} <= ${toDate}`);
+    }
+
+    const rows = await db
+      .select({
+        id: customJournalEntryLines.id,
+        entryId: customJournalEntries.id,
+        entryNumber: customJournalEntries.entryNumber,
+        entryDate: customJournalEntries.entryDate,
+        referenceType: customJournalEntries.referenceType,
+        referenceId: customJournalEntries.referenceId,
+        description: customJournalEntryLines.description,
+        debit: customJournalEntryLines.debitAmountBase,
+        credit: customJournalEntryLines.creditAmountBase,
+        status: customJournalEntries.status,
+      })
+      .from(customJournalEntryLines)
+      .innerJoin(customJournalEntries, eq(customJournalEntryLines.journalEntryId, customJournalEntries.id))
+      .where(and(...conditions))
+      .orderBy(customJournalEntries.entryDate, customJournalEntryLines.id);
+
+    let runningBalance = 0;
+    const statement = rows.map((row) => {
+      const debit = parseFloat(String(row.debit));
+      const credit = parseFloat(String(row.credit));
+      runningBalance += debit - credit;
+      return {
+        id: row.id,
+        entryId: row.entryId,
+        entryNumber: row.entryNumber,
+        entryDate: row.entryDate,
+        referenceType: row.referenceType,
+        referenceId: row.referenceId,
+        description: row.description,
+        debit,
+        credit,
+        balance: runningBalance,
+        status: row.status,
+      };
+    });
+
+    res.json({ accountId, subSystemId: subSystemId ?? null, statement });
+  } catch (error) {
+    console.error("[Accounts API] statement error:", error);
+    res.status(500).json({ error: "حدث خطأ أثناء جلب كشف الحساب" });
+  }
+});
+
+/**
  * GET /api/custom-system/v2/accounts/:id
  * الحصول على حساب محدد مع تفاصيله
  */
@@ -136,7 +242,25 @@ router.get("/:id", async (req, res) => {
 
     // جلب الحساب
     const [account] = await db
-      .select()
+      .select({
+        id: customAccounts.id,
+        businessId: customAccounts.businessId,
+        subSystemId: customAccounts.subSystemId,
+        accountCode: customAccounts.accountCode,
+        accountNameAr: customAccounts.accountNameAr,
+        accountNameEn: customAccounts.accountNameEn,
+        accountType: customAccounts.accountType,
+        accountTypeId: customAccounts.accountTypeId,
+        accountSubTypeId: customAccounts.accountSubTypeId,
+        parentAccountId: customAccounts.parentAccountId,
+        level: customAccounts.level,
+        description: customAccounts.description,
+        isActive: customAccounts.isActive,
+        allowManualEntry: customAccounts.allowManualEntry,
+        requiresCostCenter: customAccounts.requiresCostCenter,
+        createdAt: customAccounts.createdAt,
+        updatedAt: customAccounts.updatedAt,
+      })
       .from(customAccounts)
       .where(
         and(
@@ -173,7 +297,25 @@ router.get("/:id", async (req, res) => {
 
     const hasTransactions = balances.length > 0;
 
-    res.json({ ...account, currencies, balances, hasTransactions });
+    // إذا لم يكن accountType موجوداً لكن يوجد accountTypeId، نجلب typeCode المقابل
+    let finalAccountType = account.accountType;
+    if (!finalAccountType && account.accountTypeId) {
+      const [typeRow] = await db
+        .select()
+        .from(customAccountTypes)
+        .where(
+          and(
+            eq(customAccountTypes.id, account.accountTypeId),
+            eq(customAccountTypes.businessId, businessId)
+          )
+        )
+        .limit(1);
+      if (typeRow?.typeCode) {
+        finalAccountType = typeRow.typeCode;
+      }
+    }
+
+    res.json({ ...account, accountType: finalAccountType, currencies, balances, hasTransactions });
   } catch (error) {
     console.error("خطأ في جلب الحساب:", error);
     res.status(500).json({ error: "فشل في جلب الحساب" });

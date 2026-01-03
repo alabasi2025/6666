@@ -59,6 +59,7 @@ interface Account {
   accountNameAr: string;
   accountNameEn: string | null;
   accountType: string;
+  accountTypeId?: number | null;
   accountLevel?: "main" | "sub";
   parentAccountId?: number | null;
   level: number;
@@ -139,10 +140,10 @@ interface AccountsPageProps {
 export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
   const { user } = useAuth();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [currencies, setCurrencies] = useState<Currency[]>([]);
   const [subSystems, setSubSystems] = useState<SubSystem[]>([]);
   const [accountSubTypes, setAccountSubTypes] = useState<AccountSubType[]>([]);
-  const [accountTypes, setAccountTypes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -237,6 +238,22 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
       ];
       setAccountTypes(defaultTypes);
     }
+  };
+
+  const getAccountTypeInfo = (account: Account) => {
+    if (account.accountTypeId) {
+      const t = accountTypes.find((x) => x.id === account.accountTypeId);
+      if (t) {
+        return {
+          label: t.typeNameAr || t.typeCode,
+          color: t.color || "#475569",
+        };
+      }
+    }
+    return {
+      label: getAccountTypeLabel(account.accountType),
+      color: "#475569",
+    };
   };
 
   const fetchAccountSubTypes = async () => {
@@ -734,15 +751,20 @@ export default function AccountsPage({ subSystemId }: AccountsPageProps = {}) {
                         </Box>
                       </TableCell>
                       <TableCell>
-                        <Chip
-                          label={getAccountTypeLabel(account.accountType)}
-                          color={getAccountTypeColor(account.accountType)}
-                          size="small"
-                          sx={{
-                            fontWeight: 600,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                          }}
-                        />
+                        {(() => {
+                          const info = getAccountTypeInfo(account);
+                          return (
+                            <Chip
+                              label={info.label}
+                              size="small"
+                              sx={{
+                                fontWeight: 700,
+                                backgroundColor: info.color,
+                                color: "#fff",
+                              }}
+                            />
+                          );
+                        })()}
                       </TableCell>
                       <TableCell align="center">
                         <Chip

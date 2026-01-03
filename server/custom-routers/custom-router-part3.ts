@@ -186,7 +186,7 @@ export const customIntermediaryAccountsRouter = router({
         nameAr: customIntermediaryAccounts.nameAr,
         nameEn: customIntermediaryAccounts.nameEn,
         currency: customIntermediaryAccounts.currency,
-        currentBalance: customIntermediaryAccounts.currentBalance,
+        balance: customIntermediaryAccounts.balance,
         isActive: customIntermediaryAccounts.isActive,
         createdAt: customIntermediaryAccounts.createdAt,
       }).from(customIntermediaryAccounts)

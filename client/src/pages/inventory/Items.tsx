@@ -39,12 +39,18 @@ const itemTypeMap: Record<string, { label: string; variant: "default" | "success
   finished_good: { label: "منتج نهائي", variant: "success" },
 };
 
-export default function Items() {
+type ItemsProps = {
+  businessId?: number;
+};
+
+export default function Items({ businessId = 1 }: ItemsProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
+
+  const resolvedBusinessId = businessId ?? 1;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -64,19 +70,19 @@ export default function Items() {
 
   // Fetch items from API
   const { data: items = [], isLoading, refetch } = trpc.inventory.items.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
     categoryId: filterCategory !== "all" ? parseInt(filterCategory) : undefined,
     type: filterType !== "all" ? filterType : undefined,
   } as any);
 
   // Fetch categories
   const { data: categories = [] } = trpc.inventory.categories.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   } as any);
 
   // Fetch dashboard stats
   const { data: stats } = trpc.inventory.dashboardStats.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   } as any);
 
   // Mutations
@@ -258,7 +264,7 @@ export default function Items() {
     const data = {
       ...formData,
       categoryId: (formData as any).categoryId ? parseInt((formData as any).categoryId) : undefined,
-      businessId: 1,
+      businessId: resolvedBusinessId,
     };
 
     if (selectedItem) {

@@ -49,7 +49,6 @@ import {
   AccountTypesPage,
   JournalEntriesPage,
   CurrenciesPage,
-  ExchangeRatesPage,
 } from "../CustomSystem/v2";
 import CustomNotes from "./CustomNotes";
 import CustomMemos from "./CustomMemos";
@@ -82,6 +81,491 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+type AccountOption = {
+  id: number;
+  accountCode: string;
+  accountNameAr: string;
+};
+
+type StatementRow = {
+  id: number;
+  entryId: number;
+  entryNumber: string | null;
+  entryDate: string | Date | null;
+  referenceType: string | null;
+  referenceId: number | null;
+  description: string | null;
+  debit: number;
+  credit: number;
+  balance: number;
+  status: string | null;
+};
+
+function LedgerStatement({ subSystemId }: { subSystemId: number }) {
+  const [accounts, setAccounts] = useState<AccountOption[]>([]);
+  const [accountId, setAccountId] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+  const [loading, setLoading] = useState(false);
+  const [statement, setStatement] = useState<StatementRow[]>([]);
+
+  useEffect(() => {
+    const loadAccounts = async () => {
+      try {
+        const res = await axios.get<AccountOption[]>("/api/custom-system/v2/accounts", {
+          params: { subSystemId },
+        });
+        setAccounts(res.data || []);
+      } catch (error) {
+        console.error("فشل في جلب الحسابات", error);
+        toast.error("تعذر جلب الحسابات للنظام الفرعي");
+      }
+    };
+    if (subSystemId) {
+      loadAccounts();
+    }
+  }, [subSystemId]);
+
+  const fetchStatement = async () => {
+    if (!accountId) {
+      toast.error("اختر الحساب أولاً");
+      return;
+    }
+    setLoading(true);
+    try {
+      const res = await axios.get<{ statement: StatementRow[] }>("/api/custom-system/v2/accounts/statement", {
+        params: {
+          accountId: Number(accountId),
+          subSystemId,
+          fromDate: fromDate || undefined,
+          toDate: toDate || undefined,
+        },
+      });
+      setStatement(res.data.statement || []);
+      if (!res.data.statement?.length) {
+        toast.info("لا توجد حركات في الفترة المحددة");
+      }
+    } catch (error) {
+      console.error("فشل في جلب كشف الحساب", error);
+      toast.error("تعذر جلب كشف الحساب");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const selectedAccount = accounts.find((a) => a.id === Number(accountId));
+
+  return (
+    <Card className="bg-slate-900/60 border-slate-800">
+      <CardHeader>
+        <CardTitle className="text-white flex items-center gap-2">
+          <BookOpen className="h-5 w-5 text-sky-400" />
+          كشف الحساب
+        </CardTitle>
+        <CardDescription>عرض حركات الحساب داخل النظام الفرعي</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="space-y-2">
+            <Label className="text-slate-200">الحساب</Label>
+            <Select value={accountId} onValueChange={setAccountId}>
+              <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                <SelectValue placeholder="اختر الحساب" />
+              </SelectTrigger>
+              <SelectContent className="bg-slate-900 text-white">
+                {accounts.map((acc) => (
+                  <SelectItem key={acc.id} value={String(acc.id)}>
+                    {acc.accountCode} - {acc.accountNameAr}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label className="text-slate-200">من تاريخ</Label>
+            <Input
+              type="date"
+              value={fromDate}
+              onChange={(e) => setFromDate(e.target.value)}
+              className="bg-slate-800 border-slate-700 text-white"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-slate-200">إلى تاريخ</Label>
+            <Input
+              type="date"
+              value={toDate}
+              onChange={(e) => setToDate(e.target.value)}
+              className="bg-slate-800 border-slate-700 text-white"
+            />
+          </div>
+          <div className="flex items-end">
+            <Button onClick={fetchStatement} disabled={loading} className="w-full">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
+              عرض كشف الحساب
+            </Button>
+          </div>
+        </div>
+
+        {selectedAccount && (
+          <div className="text-slate-300 text-sm">
+            الحساب المختار: <span className="font-bold text-white">{selectedAccount.accountCode} - {selectedAccount.accountNameAr}</span>
+          </div>
+        )}
+
+        {statement.length === 0 && !loading && (
+          <div className="text-center py-8 text-slate-400 border border-dashed border-slate-700 rounded-lg">
+            لا توجد بيانات لعرضها. اختر الحساب وحدد الفترة ثم اضغط عرض كشف الحساب.
+          </div>
+        )}
+
+        {statement.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex justify-between text-sm text-slate-300">
+              <span>عدد الحركات: {statement.length}</span>
+              <span>
+                الرصيد الختامي:{" "}
+                <span className="font-bold text-white">
+                  {statement[statement.length - 1].balance.toLocaleString("ar-SA")}
+                </span>
+              </span>
+            </div>
+            <div className="rounded-lg border border-slate-800 overflow-hidden">
+              <Table>
+                <TableHeader className="bg-slate-800/60">
+                  <TableRow>
+                    <TableHead className="text-right text-slate-200">التاريخ</TableHead>
+                    <TableHead className="text-right text-slate-200">رقم القيد</TableHead>
+                    <TableHead className="text-right text-slate-200">المرجع</TableHead>
+                    <TableHead className="text-right text-slate-200">الوصف</TableHead>
+                    <TableHead className="text-right text-slate-200">مدين</TableHead>
+                    <TableHead className="text-right text-slate-200">دائن</TableHead>
+                    <TableHead className="text-right text-slate-200">الرصيد</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {statement.map((row) => (
+                    <TableRow key={row.id} className="border-slate-800">
+                      <TableCell className="text-right text-white">
+                        {row.entryDate ? new Date(row.entryDate).toLocaleDateString("ar-EG") : "-"}
+                      </TableCell>
+                      <TableCell className="text-right text-white">
+                        {row.entryNumber ?? `#${row.entryId}`}
+                      </TableCell>
+                      <TableCell className="text-right text-slate-200">
+                        {row.referenceType ? `${row.referenceType} ${row.referenceId ?? ""}` : "-"}
+                      </TableCell>
+                      <TableCell className="text-right text-slate-200">{row.description ?? "-"}</TableCell>
+                      <TableCell className="text-right text-emerald-400">
+                        {row.debit.toLocaleString("ar-SA")}
+                      </TableCell>
+                      <TableCell className="text-right text-amber-400">
+                        {row.credit.toLocaleString("ar-SA")}
+                      </TableCell>
+                      <TableCell className="text-right text-white font-semibold">
+                        {row.balance.toLocaleString("ar-SA")}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function InventoryTabContent({
+  subSystemId,
+  businessId,
+  subSystemName,
+}: {
+  subSystemId: number;
+  businessId: number;
+  subSystemName?: string;
+}) {
+  const [inventoryTab, setInventoryTab] = useState<"overview" | "warehouses" | "items" | "stock" | "movements">("overview");
+
+  const {
+    data: inventoryStats,
+    isLoading: statsLoading,
+    refetch: refetchInventoryStats,
+  } = trpc.inventory.dashboardStats.useQuery(
+    { businessId },
+    { enabled: businessId > 0, staleTime: 30000 }
+  );
+
+  const {
+    data: warehouses = [],
+    isLoading: warehousesLoading,
+    refetch: refetchWarehouses,
+  } = trpc.inventory.warehouses.list.useQuery(
+    { businessId },
+    { enabled: inventoryTab === "overview" }
+  );
+
+  const {
+    data: items = [],
+    isLoading: itemsLoading,
+    refetch: refetchItems,
+  } = trpc.inventory.items.list.useQuery(
+    { businessId },
+    { enabled: inventoryTab === "overview" }
+  );
+
+  const itemsMap = useMemo(
+    () => new Map((items as any[]).map((i: any) => [i.id, i])),
+    [items]
+  );
+
+  const {
+    data: stockBalances = [],
+    isLoading: stockLoading,
+    refetch: refetchStock,
+  } = trpc.inventory.stockBalances.list.useQuery(
+    { businessId } as any,
+    { enabled: inventoryTab === "overview" }
+  );
+
+  const {
+    data: recentMovements = [],
+    isLoading: movesLoading,
+    refetch: refetchMovements,
+  } = trpc.inventory.movements.list.useQuery(
+    { businessId, limit: 8 } as any,
+    { enabled: inventoryTab === "overview" }
+  );
+
+  const movementsWithNames = useMemo(
+    () =>
+      (recentMovements as any[]).map((mov: any) => ({
+        ...mov,
+        itemName: mov.itemName || itemsMap.get(mov.itemId)?.nameAr || mov.itemId,
+      })),
+    [itemsMap, recentMovements]
+  );
+
+  const overviewLoading = statsLoading || warehousesLoading || itemsLoading || stockLoading || movesLoading;
+
+  const lowStock = (stockBalances as any[])
+    .filter((b: any) => parseFloat(b.availableQty || b.quantity || "0") <= 0)
+    .slice(0, 5);
+
+  const movementTypeMap: Record<string, { label: string; color: string; Icon: any }> = {
+    receipt: { label: "استلام", color: "text-green-400", Icon: ArrowDownCircle },
+    issue: { label: "صرف", color: "text-red-400", Icon: ArrowUpCircle },
+    transfer_in: { label: "تحويل وارد", color: "text-blue-400", Icon: RefreshCwIcon },
+    transfer_out: { label: "تحويل صادر", color: "text-indigo-400", Icon: RefreshCwIcon },
+    adjustment_in: { label: "تسوية زيادة", color: "text-emerald-400", Icon: ArrowDownCircle },
+    adjustment_out: { label: "تسوية نقص", color: "text-amber-400", Icon: ArrowUpCircle },
+    return: { label: "مرتجع", color: "text-teal-400", Icon: ArrowDownCircle },
+    scrap: { label: "هالك", color: "text-slate-400", Icon: ArrowUpCircle },
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-slate-400">نظام المخزون - {subSystemName || `نظام فرعي #${subSystemId}`}</p>
+          <h2 className="text-2xl font-bold text-white">إدارة المخزون</h2>
+        </div>
+        <Button
+          variant="outline"
+          className="border-slate-700 text-slate-200"
+          onClick={() => {
+            refetchInventoryStats();
+            refetchWarehouses();
+            refetchItems();
+            refetchStock();
+            refetchMovements();
+          }}
+        >
+          <RefreshCw className="ml-2 h-4 w-4" />
+          تحديث البيانات
+        </Button>
+      </div>
+
+      <Tabs value={inventoryTab} onValueChange={(v) => setInventoryTab(v as any)} className="space-y-4">
+        <TabsList className="bg-slate-900/60 border border-slate-800">
+          <TabsTrigger value="overview">الملخص</TabsTrigger>
+          <TabsTrigger value="warehouses">المستودعات</TabsTrigger>
+          <TabsTrigger value="items">الأصناف</TabsTrigger>
+          <TabsTrigger value="stock">أرصدة المخزون</TabsTrigger>
+          <TabsTrigger value="movements">حركات المخزون</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="overview">
+          {overviewLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-blue-300/80">إجمالي الأصناف</p>
+                        <p className="text-2xl font-bold text-white">
+                          {(inventoryStats?.totalItems || items.length || 0).toLocaleString("ar-SA")}
+                        </p>
+                      </div>
+                      <Package className="h-7 w-7 text-blue-300" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-500/5 border-emerald-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-emerald-300/80">المستودعات</p>
+                        <p className="text-2xl font-bold text-white">
+                          {(inventoryStats?.totalWarehouses || warehouses.length || 0).toLocaleString("ar-SA")}
+                        </p>
+                      </div>
+                      <Store className="h-7 w-7 text-emerald-300" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-amber-300/80">قيمة المخزون</p>
+                        <p className="text-2xl font-bold text-white">
+                          {(inventoryStats?.totalValue || 0).toLocaleString("ar-SA")} ر.س
+                        </p>
+                      </div>
+                      <Coins className="h-7 w-7 text-amber-300" />
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="bg-gradient-to-br from-rose-500/10 to-rose-500/5 border-rose-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm text-rose-300/80">أصناف منخفضة</p>
+                        <p className="text-2xl font-bold text-white">
+                          {(inventoryStats?.lowStockItems || lowStock.length || 0).toLocaleString("ar-SA")}
+                        </p>
+                      </div>
+                      <AlertCircle className="h-7 w-7 text-rose-300" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                <Card className="bg-slate-900/60 border-slate-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">الأصناف منخفضة المخزون</CardTitle>
+                    <CardDescription>متابعة الأصناف التي تحتاج إعادة طلب</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {lowStock.length === 0 ? (
+                      <p className="text-slate-400 text-sm">لا توجد أصناف منخفضة حالياً</p>
+                    ) : (
+                      lowStock.map((item: any) => (
+                        <div key={item.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/60 border border-slate-700">
+                          <div>
+                            <p className="text-white font-medium">{item.itemName}</p>
+                            <p className="text-xs text-slate-400">{item.itemCode}</p>
+                          </div>
+                          <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/30">
+                            الكمية {parseFloat(item.availableQty || item.quantity || "0").toLocaleString("ar-SA")}
+                          </Badge>
+                        </div>
+                      ))
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-900/60 border-slate-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">أحدث الحركات</CardTitle>
+                    <CardDescription>آخر التحركات المسجلة</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                  {movementsWithNames.length === 0 ? (
+                      <p className="text-slate-400 text-sm">لا توجد حركات مسجلة</p>
+                    ) : (
+                    movementsWithNames.map((mov: any) => {
+                        const map = movementTypeMap[mov.movementType] || { label: mov.movementType, color: "text-slate-400", Icon: RefreshCwIcon };
+                        const Icon = map.Icon || RefreshCwIcon;
+                        return (
+                          <div key={mov.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/60 border border-slate-700">
+                            <div>
+                            <p className="text-white font-medium">{mov.itemName || mov.itemId}</p>
+                              <p className="text-xs text-slate-400">{new Date(mov.movementDate).toLocaleDateString("ar-SA")}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className={`text-sm font-semibold ${map.color} flex items-center gap-1 justify-end`}>
+                                <Icon className="w-4 h-4" />
+                                {map.label}
+                              </p>
+                              <p className="text-slate-300 text-sm">
+                                {parseFloat(mov.quantity || "0").toLocaleString("ar-SA")}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-slate-900/60 border-slate-800">
+                  <CardHeader>
+                    <CardTitle className="text-white">المستودعات</CardTitle>
+                    <CardDescription>نظرة سريعة على أهم المستودعات</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {(warehouses as any[]).slice(0, 4).map((wh: any) => (
+                      <div key={wh.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/60 border border-slate-700">
+                        <div>
+                          <p className="text-white font-medium">{wh.nameAr}</p>
+                          <p className="text-xs text-slate-400">{wh.code}</p>
+                        </div>
+                        <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                          {wh.type || "رئيسي"}
+                        </Badge>
+                      </div>
+                    ))}
+                    {warehouses.length === 0 && (
+                      <p className="text-slate-400 text-sm">لا توجد مستودعات مسجلة</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="warehouses" className="space-y-4">
+          <Warehouses businessId={businessId} />
+        </TabsContent>
+
+        <TabsContent value="items" className="space-y-4">
+          <Items businessId={businessId} />
+        </TabsContent>
+
+        <TabsContent value="stock" className="space-y-4">
+          <StockBalance businessId={businessId} />
+        </TabsContent>
+
+        <TabsContent value="movements" className="space-y-4">
+          <Movements businessId={businessId} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
 
 // Treasury Type Icons
 const treasuryTypeIcons = {
@@ -834,15 +1318,6 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
           >
             <Coins className="ml-2 h-4 w-4" />
             العملات
-          </Button>
-          <Button
-            variant={activeTab === "exchange-rates" ? "default" : "ghost"}
-            size="sm"
-            onClick={() => setActiveTab("exchange-rates")}
-            className={activeTab === "exchange-rates" ? "" : "text-slate-400 hover:text-white"}
-          >
-            <RefreshCw className="ml-2 h-4 w-4" />
-            أسعار الصرف
           </Button>
           <Button
             variant={reportsExpanded ? "default" : "ghost"}
@@ -1845,33 +2320,10 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
             </div>
           )}
 
-          {/* Exchange Rates Tab - أسعار الصرف */}
-          {activeTab === "exchange-rates" && (
-            <div className="space-y-4">
-              <ExchangeRatesPage />
-            </div>
-          )}
-
           {/* Reports Tab - كشف حساب */}
           {activeTab === "ledger-report" && (
             <div className="space-y-4">
-              <Card className="bg-slate-900/60 border-slate-800">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <BookOpen className="h-5 w-5 text-sky-400" />
-                    كشف حساب
-                  </CardTitle>
-                  <CardDescription>عرض حركات الحساب لفترة محددة</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-slate-300 mb-3">
-                    سيتم توفير تقرير كشف الحساب ضمن النظام المخصص قريباً.
-                  </p>
-                  <Button variant="outline" disabled className="cursor-not-allowed text-slate-400">
-                    قيد التطوير
-                  </Button>
-                </CardContent>
-              </Card>
+              <LedgerStatement subSystemId={parseInt(id || "0")} />
             </div>
           )}
 

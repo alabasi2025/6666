@@ -127,8 +127,12 @@ export async function getDb() {
       // Test connection
       if (!_connectionTested) {
         await _db.execute(sql`SELECT 1`);
-        // ضبط charset بعد الاتصال
+        // ضبط charset بعد الاتصال - مهم جداً للنصوص العربية
         await _db.execute(sql`SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci`);
+        await _db.execute(sql`SET CHARACTER SET utf8mb4`);
+        await _db.execute(sql`SET character_set_client = utf8mb4`);
+        await _db.execute(sql`SET character_set_connection = utf8mb4`);
+        await _db.execute(sql`SET character_set_results = utf8mb4`);
         logger.info("[Database] Connected successfully with UTF-8 encoding");
         _connectionTested = true;
       }
@@ -4379,10 +4383,16 @@ export async function getStockMovements(businessId: number, filters: any) {
     itemId: stockMovements.itemId,
     warehouseId: stockMovements.warehouseId,
     movementType: stockMovements.movementType,
+    documentType: stockMovements.documentType,
+    documentId: stockMovements.documentId,
+    documentNumber: stockMovements.documentNumber,
     quantity: stockMovements.quantity,
+    unitCost: stockMovements.unitCost,
+    totalCost: stockMovements.totalCost,
     balanceBefore: stockMovements.balanceBefore,
     balanceAfter: stockMovements.balanceAfter,
     movementDate: stockMovements.movementDate,
+    notes: stockMovements.notes,
     createdAt: stockMovements.createdAt,
   }).from(stockMovements)
     .where(and(...conditions))

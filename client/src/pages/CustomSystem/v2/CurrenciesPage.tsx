@@ -8,11 +8,17 @@ import {
   Button,
   Card,
   CardContent,
+  CardHeader,
+  CardMedia,
   Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
   IconButton,
+  Divider,
+  Slider,
+  InputAdornment,
+  Stack,
   Paper,
   Table,
   TableBody,
@@ -26,6 +32,9 @@ import {
   FormControlLabel,
   Alert,
   Chip,
+  LinearProgress,
+  Tooltip,
+  Chip as MuiChip,
 } from "@mui/material";
 import {
   Add as AddIcon,
@@ -91,6 +100,9 @@ export default function CurrenciesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [showOnlyActive, setShowOnlyActive] = useState(false);
+  const [sortBy, setSortBy] = useState<"display_order" | "code" | "rate_desc">("display_order");
 
   const [openDialog, setOpenDialog] = useState(false);
   const [editMode, setEditMode] = useState(false);
@@ -151,16 +163,57 @@ export default function CurrenciesPage() {
     setFormData(initialFormData);
   };
 
+  const setField = (name: keyof CurrencyFormData, value: any) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const filteredCurrencies = currencies
+    .filter((c) => {
+      const term = search.trim().toLowerCase();
+      const match =
+        !term ||
+        c.code.toLowerCase().includes(term) ||
+        c.nameAr.toLowerCase().includes(term) ||
+        (c.nameEn || "").toLowerCase().includes(term) ||
+        (c.symbol || "").toLowerCase().includes(term);
+      const activeOk = showOnlyActive ? c.isActive : true;
+      return match && activeOk;
+    })
+    .sort((a, b) => {
+      if (sortBy === "rate_desc") {
+        const ra = Number(a.currentRate || 0);
+        const rb = Number(b.currentRate || 0);
+        return rb - ra;
+      }
+      if (sortBy === "code") return a.code.localeCompare(b.code);
+      return (a.displayOrder ?? 0) - (b.displayOrder ?? 0);
+    });
+
+  const shimmerRows = Array.from({ length: 4 });
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, checked, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
+    if (name === "code") {
+      setField("code", value.toUpperCase().trim());
+      return;
+    }
+    if (["decimalPlaces", "displayOrder"].includes(name)) {
+      setField(name as keyof CurrencyFormData, value === "" ? "" : Number(value));
+      return;
+    }
+    setField(name as keyof CurrencyFormData, type === "checkbox" ? checked : value);
   };
 
   const handleSubmit = async () => {
     try {
+      if (!formData.code || !formData.nameAr) {
+        setError("الرجاء إدخال رمز العملة والاسم بالعربية");
+        return;
+      }
+      if (!formData.isBaseCurrency && !formData.currentRate) {
+        setError("أدخل السعر الحالي مقابل العملة الأساسية أو اجعلها أساسية");
+        return;
+      }
       if (editMode && currentCurrencyId) {
         await axios.put(`/api/custom-system/v2/currencies/${currentCurrencyId}`, formData);
         setSuccess("تم تحديث العملة بنجاح");
@@ -191,24 +244,127 @@ export default function CurrenciesPage() {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
-        <Typography variant="h4" component="h1">
-          إدارة العملات وأسعار الصرف (مقابل {baseCode})
-        </Typography>
-        <Box>
-          <Button
-            variant="outlined"
-            startIcon={<RefreshIcon />}
-            onClick={fetchCurrencies}
-            sx={{ mr: 2 }}
-          >
-            تحديث
-          </Button>
-          <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
-            إضافة عملة
-          </Button>
-        </Box>
-      </Box>
+      <Card
+        sx={{
+          mb: 3,
+          overflow: "hidden",
+          position: "relative",
+          background: "linear-gradient(135deg, #0b1220 0%, #0f172a 50%, #0a0f1d 100%)",
+          color: "#ffffff",
+        }}
+      >
+        <CardMedia
+          component="div"
+          sx={{
+            position: "absolute",
+            inset: 0,
+            opacity: 0.02,
+            background:
+              "radial-gradient(circle at 20% 20%, rgba(56,189,248,0.35), transparent 25%), radial-gradient(circle at 80% 10%, rgba(167,139,250,0.35), transparent 25%), radial-gradient(circle at 50% 80%, rgba(52,211,153,0.28), transparent 30%)",
+          }}
+        />
+        <CardHeader
+          title="إدارة العملات وأسعار الصرف"
+          subheader={`الأساس: ${baseCode} — تصميم متطور بدقة عالية`}
+          sx={{ position: "relative", zIndex: 1, color: "#e5e7eb",
+            "& .MuiCardHeader-subheader": { color: "#e2e8f0" },
+            "& .MuiCardHeader-title": { color: "#ffffff" },
+          }}
+        />
+        <CardContent sx={{ position: "relative", zIndex: 1 }}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} alignItems="center" justifyContent="space-between">
+            <Stack direction={{ xs: "column", sm: "row" }} spacing={2} sx={{ width: "100%" }}>
+              <TextField
+                fullWidth
+                placeholder="بحث سريع: رمز، اسم، رمز مختصر..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                InputProps={{
+                  startAdornment: <InputAdornment position="start">🔍</InputAdornment>,
+                  sx: { color: "#f8fafc" },
+                }}
+                sx={{
+                  "& .MuiInputBase-input": { color: "#ffffff" },
+                  "& .MuiInputLabel-root": { color: "#cbd5e1" },
+                  "& .MuiOutlinedInput-notchedOutline": { borderColor: "#475569" },
+                  "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "#38bdf8" },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "#38bdf8" },
+                  backgroundColor: "#0f172a",
+                }}
+              />
+              <Stack direction="row" spacing={1} alignItems="center" sx={{ minWidth: 220 }}>
+                <MuiChip
+                  label="نشط فقط"
+                  color={showOnlyActive ? "success" : "default"}
+                  variant={showOnlyActive ? "filled" : "outlined"}
+                  onClick={() => setShowOnlyActive((p) => !p)}
+                  clickable
+                />
+                <MuiChip
+                  label={sortBy === "rate_desc" ? "فرز بالسعر" : sortBy === "code" ? "فرز بالكود" : "فرز بالترتيب"}
+                  variant="outlined"
+                  onClick={() => {
+                    if (sortBy === "display_order") setSortBy("rate_desc");
+                    else if (sortBy === "rate_desc") setSortBy("code");
+                    else setSortBy("display_order");
+                  }}
+                  clickable
+                />
+              </Stack>
+            </Stack>
+            <Stack direction="row" spacing={1}>
+              <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchCurrencies}>
+                تحديث
+              </Button>
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => handleOpenDialog()}>
+                إضافة عملة
+              </Button>
+            </Stack>
+          </Stack>
+
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2} sx={{ mt: 3 }}>
+            <Card sx={{ flex: 1, bgcolor: "#0b1727", borderColor: "#1f2a3a" }} variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle2" color="info.main">
+                  العملة الأساسية
+                </Typography>
+                <Typography variant="h5" fontWeight={900} sx={{ color: "#7dd3fc" }}>
+                  {baseCode}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  تُستخدم كأساس لاحتساب كل الأسعار
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ flex: 1, bgcolor: "#0b1b2c", borderColor: "#1f2f46" }} variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle2" color="success.main">
+                  عدد العملات
+                </Typography>
+                <Typography variant="h5" fontWeight={900} sx={{ color: "#ffffff" }}>
+                  {currencies.length}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  بعد الفلترة: {filteredCurrencies.length}
+                </Typography>
+              </CardContent>
+            </Card>
+            <Card sx={{ flex: 1, bgcolor: "#1d1b2f", borderColor: "#2d2a4a" }} variant="outlined">
+              <CardContent>
+                <Typography variant="subtitle2" color="warning.main">
+                  تحديث الأسعار
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                  أدخل أسعار دقيقة 6 منازل عشرية
+                </Typography>
+                <Button variant="outlined" size="small" onClick={() => fetchCurrencies()}>
+                  تحديث يدوي
+                </Button>
+              </CardContent>
+            </Card>
+          </Stack>
+        </CardContent>
+      </Card>
 
       {error && (
         <Alert severity="error" onClose={() => setError(null)} sx={{ mb: 2 }}>
@@ -223,55 +379,63 @@ export default function CurrenciesPage() {
       )}
 
       <Card>
-        <CardContent>
-          <TableContainer component={Paper}>
+        <CardContent sx={{ p: 0 }}>
+          <TableContainer component={Paper} sx={{ backgroundColor: "#0f172a" }}>
             <Table>
               <TableHead>
-                <TableRow>
-                  <TableCell>الرمز</TableCell>
-                  <TableCell>الاسم بالعربية</TableCell>
-                  <TableCell>الاسم بالإنجليزية</TableCell>
-                  <TableCell>الرمز المختصر</TableCell>
-                  <TableCell align="center">السعر الحالي مقابل {baseCode}</TableCell>
-                  <TableCell align="center">الحد الأدنى</TableCell>
-                  <TableCell align="center">الحد الأعلى</TableCell>
-                  <TableCell align="center">عملة أساسية</TableCell>
-                  <TableCell align="center">الحالة</TableCell>
-                  <TableCell align="center">الإجراءات</TableCell>
+                <TableRow sx={{ backgroundColor: "#111827" }}>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }}>الرمز</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }}>الاسم بالعربية</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }}>الاسم بالإنجليزية</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }}>الرمز المختصر</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }} align="center">السعر الحالي مقابل {baseCode}</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }} align="center">الحد الأدنى</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }} align="center">الحد الأعلى</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }} align="center">عملة أساسية</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }} align="center">الحالة</TableCell>
+                  <TableCell sx={{ color: "#ffffff", fontWeight: 700 }} align="center">الإجراءات</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {loading ? (
+                  shimmerRows.map((_, idx) => (
+                    <TableRow key={idx}>
+                      <TableCell colSpan={10} sx={{ backgroundColor: "#0f172a" }}>
+                        <LinearProgress />
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : filteredCurrencies.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={10} align="center">
-                      جاري التحميل...
-                    </TableCell>
-                  </TableRow>
-                ) : currencies.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={10} align="center">
+                    <TableCell colSpan={10} align="center" sx={{ color: "#e5e7eb", backgroundColor: "#0f172a" }}>
                       لا توجد عملات
                     </TableCell>
                   </TableRow>
                 ) : (
-                  currencies.map((currency) => (
-                    <TableRow key={currency.id}>
-                      <TableCell>{currency.code}</TableCell>
-                      <TableCell>{currency.nameAr}</TableCell>
-                      <TableCell>{currency.nameEn || "-"}</TableCell>
-                      <TableCell>{currency.symbol || "-"}</TableCell>
+                  filteredCurrencies.map((currency, idx) => (
+                    <TableRow
+                      key={currency.id}
+                      sx={{
+                        backgroundColor: idx % 2 === 0 ? "#0b1220" : "#0d1524",
+                        "&:hover": { backgroundColor: "#13223b" },
+                      }}
+                    >
+                      <TableCell sx={{ color: "#f8fafc" }}>{currency.code}</TableCell>
+                      <TableCell sx={{ color: "#f8fafc" }}>{currency.nameAr}</TableCell>
+                      <TableCell sx={{ color: "#e2e8f0" }}>{currency.nameEn || "-"}</TableCell>
+                      <TableCell sx={{ color: "#e2e8f0" }}>{currency.symbol || "-"}</TableCell>
                       <TableCell align="center">
-                        <Typography variant="body2" fontWeight="bold" color="primary">
+                        <Typography variant="body2" fontWeight="bold" sx={{ color: "#38bdf8" }}>
                           {currency.currentRate ? parseFloat(currency.currentRate).toFixed(6) : "-"}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
-                        <Typography variant="body2" color="error">
+                        <Typography variant="body2" sx={{ color: "#f87171" }}>
                           {currency.minRate ? parseFloat(currency.minRate).toFixed(6) : "-"}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
-                        <Typography variant="body2" color="success.main">
+                        <Typography variant="body2" sx={{ color: "#4ade80" }}>
                           {currency.maxRate ? parseFloat(currency.maxRate).toFixed(6) : "-"}
                         </Typography>
                       </TableCell>
@@ -316,131 +480,172 @@ export default function CurrenciesPage() {
       </Card>
 
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{editMode ? "تعديل عملة" : "إضافة عملة جديدة"}</DialogTitle>
+        <DialogTitle sx={{ pb: 1 }}>
+          {editMode ? "تعديل عملة" : "إضافة عملة جديدة"}
+          <Typography variant="body2" color="text.secondary">
+            أدخل البيانات بدقة، وستستخدم هذه العملة كأساس للتسعير والتقارير.
+          </Typography>
+        </DialogTitle>
         <DialogContent>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 2 }}>
-            <TextField
-              label="رمز العملة (ISO)"
-              name="code"
-              value={formData.code}
-              onChange={handleInputChange}
-              required
-              fullWidth
-              disabled={editMode}
-              placeholder="SAR, USD, YER"
-            />
-            <TextField
-              label="الاسم بالعربية"
-              name="nameAr"
-              value={formData.nameAr}
-              onChange={handleInputChange}
-              required
-              fullWidth
-              placeholder="ريال سعودي"
-            />
-            <TextField
-              label="الاسم بالإنجليزية"
-              name="nameEn"
-              value={formData.nameEn}
-              onChange={handleInputChange}
-              fullWidth
-              placeholder="Saudi Riyal"
-            />
-            <TextField
-              label="الرمز المختصر"
-              name="symbol"
-              value={formData.symbol}
-              onChange={handleInputChange}
-              fullWidth
-              placeholder="ر.س, $, ر.ي"
-            />
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                label={`السعر الحالي مقابل ${baseCode}`}
-                name="currentRate"
-                type="number"
-                value={formData.currentRate}
-                onChange={handleInputChange}
-                fullWidth
-                inputProps={{ step: "0.000001", min: "0" }}
-                placeholder="0.000000"
-                disabled={formData.isBaseCurrency}
-                helperText={formData.isBaseCurrency ? "العملة الأساسية سعرها دائماً 1" : ""}
-              />
+          <Stack spacing={3} sx={{ mt: 1 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", md: "1.2fr 1fr" }, gap: 2 }}>
+              <Card variant="outlined">
+                <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={700}>معلومات أساسية</Typography>
+                  <TextField
+                    label="رمز العملة (ISO)"
+                    name="code"
+                    value={formData.code}
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    disabled={editMode}
+                    placeholder="SAR, USD, YER"
+                    helperText="3-10 أحرف كبيرة حسب معيار ISO"
+                  />
+                  <TextField
+                    label="الاسم بالعربية"
+                    name="nameAr"
+                    value={formData.nameAr}
+                    onChange={handleInputChange}
+                    required
+                    fullWidth
+                    placeholder="ريال سعودي"
+                  />
+                  <TextField
+                    label="الاسم بالإنجليزية"
+                    name="nameEn"
+                    value={formData.nameEn}
+                    onChange={handleInputChange}
+                    fullWidth
+                    placeholder="Saudi Riyal"
+                  />
+                  <TextField
+                    label="الرمز المختصر"
+                    name="symbol"
+                    value={formData.symbol}
+                    onChange={handleInputChange}
+                    fullWidth
+                    placeholder="ر.س, $, ر.ي"
+                  />
+                  <TextField
+                    label="ملاحظات"
+                    name="notes"
+                    value={formData.notes}
+                    onChange={handleInputChange}
+                    fullWidth
+                    multiline
+                    minRows={2}
+                    placeholder="ملاحظات داخلية أو مرجع السعر"
+                  />
+                </CardContent>
+              </Card>
+
+              <Card variant="outlined">
+                <CardContent sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Typography variant="subtitle1" fontWeight={700}>التسعير مقابل {baseCode}</Typography>
+                  <TextField
+                    label={`السعر الحالي مقابل ${baseCode}`}
+                    name="currentRate"
+                    type="number"
+                    value={formData.currentRate}
+                    onChange={handleInputChange}
+                    fullWidth
+                    inputProps={{ step: "0.000001", min: "0" }}
+                    placeholder="0.000000"
+                    disabled={formData.isBaseCurrency}
+                    helperText={formData.isBaseCurrency ? "العملة الأساسية سعرها دائماً 1" : "أدخل سعر الصرف الحالي بدقة 6 منازل"}
+                    InputProps={{
+                      endAdornment: <InputAdornment position="end">{baseCode}</InputAdornment>,
+                    }}
+                  />
+                  <Box sx={{ display: "flex", gap: 2, flexDirection: { xs: "column", sm: "row" } }}>
+                    <TextField
+                      label="الحد الأدنى (سقف سفلي)"
+                      name="minRate"
+                      type="number"
+                      value={formData.minRate}
+                      onChange={handleInputChange}
+                      fullWidth
+                      inputProps={{ step: "0.000001", min: "0" }}
+                      placeholder="0.000000"
+                      disabled={formData.isBaseCurrency}
+                    />
+                    <TextField
+                      label="الحد الأعلى (سقف علوي)"
+                      name="maxRate"
+                      type="number"
+                      value={formData.maxRate}
+                      onChange={handleInputChange}
+                      fullWidth
+                      inputProps={{ step: "0.000001", min: "0" }}
+                      placeholder="0.000000"
+                      disabled={formData.isBaseCurrency}
+                    />
+                  </Box>
+
+                  <Divider />
+
+                  <Typography variant="subtitle2" color="text.secondary">
+                    المنازل العشرية (للعرض والحساب)
+                  </Typography>
+                  <Stack direction="row" spacing={2} alignItems="center">
+                    <Slider
+                      value={formData.decimalPlaces}
+                      min={0}
+                      max={6}
+                      step={1}
+                      marks
+                      valueLabelDisplay="auto"
+                      onChange={(_, val) => setField("decimalPlaces", Number(val))}
+                    />
+                    <TextField
+                      label="منازل عشرية"
+                      name="decimalPlaces"
+                      type="number"
+                      value={formData.decimalPlaces}
+                      onChange={handleInputChange}
+                      inputProps={{ min: 0, max: 6 }}
+                      sx={{ width: 120 }}
+                    />
+                  </Stack>
+
+                  <TextField
+                    label="ترتيب العرض"
+                    name="displayOrder"
+                    type="number"
+                    value={formData.displayOrder}
+                    onChange={handleInputChange}
+                    inputProps={{ min: 0, max: 999 }}
+                    fullWidth
+                  />
+
+                  <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="isBaseCurrency"
+                          checked={formData.isBaseCurrency}
+                          onChange={handleInputChange}
+                        />
+                      }
+                      label="عملة أساسية"
+                    />
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          name="isActive"
+                          checked={formData.isActive}
+                          onChange={handleInputChange}
+                        />
+                      }
+                      label="نشط"
+                    />
+                  </Stack>
+                </CardContent>
+              </Card>
             </Box>
-            <Box sx={{ display: "flex", gap: 2 }}>
-              <TextField
-                label={`الحد الأدنى (سقف سفلي) مقابل ${baseCode}`}
-                name="minRate"
-                type="number"
-                value={formData.minRate}
-                onChange={handleInputChange}
-                fullWidth
-                inputProps={{ step: "0.000001", min: "0" }}
-                placeholder="0.000000"
-                disabled={formData.isBaseCurrency}
-                helperText={formData.isBaseCurrency ? "العملة الأساسية لا تحتاج حد أدنى" : "أدنى سعر صرف مسموح"}
-              />
-              <TextField
-                label={`الحد الأعلى (سقف علوي) مقابل ${baseCode}`}
-                name="maxRate"
-                type="number"
-                value={formData.maxRate}
-                onChange={handleInputChange}
-                fullWidth
-                inputProps={{ step: "0.000001", min: "0" }}
-                placeholder="0.000000"
-                disabled={formData.isBaseCurrency}
-                helperText={formData.isBaseCurrency ? "العملة الأساسية لا تحتاج حد أعلى" : "أعلى سعر صرف مسموح"}
-              />
-            </Box>
-            <TextField
-              label="عدد المنازل العشرية"
-              name="decimalPlaces"
-              type="number"
-              value={formData.decimalPlaces}
-              onChange={handleInputChange}
-              fullWidth
-              inputProps={{ min: 0, max: 6 }}
-            />
-            <TextField
-              label="ترتيب العرض"
-              name="displayOrder"
-              type="number"
-              value={formData.displayOrder}
-              onChange={handleInputChange}
-              fullWidth
-            />
-            <TextField
-              label="ملاحظات"
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
-              fullWidth
-              multiline
-              rows={2}
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  name="isBaseCurrency"
-                  checked={formData.isBaseCurrency}
-                  onChange={handleInputChange}
-                />
-              }
-              label="عملة أساسية"
-            />
-            <FormControlLabel
-              control={
-                <Switch
-                  name="isActive"
-                  checked={formData.isActive}
-                  onChange={handleInputChange}
-                />
-              }
-              label="نشط"
-            />
-          </Box>
+          </Stack>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDialog}>إلغاء</Button>

@@ -36,7 +36,13 @@
     "bank": "Bank",
     "safe": "Safe",
     "petty": "Petty Cash",
-    "pos": "Point of Sale"
+    "pos": "Point of Sale",
+    "wallet": "E-Wallet",
+    "exchange": "Exchange",
+    "supplier": "Supplier",
+    "customer": "Customer",
+    "store": "Store",
+    "general": "General"
   },
   "status": {
     "active": "Active",

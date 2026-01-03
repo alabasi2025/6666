@@ -1,4 +1,4 @@
-
+﻿
 /**
  * @fileoverview Router للنظام المخصص والحسابات الخاصة
  * @module customSystemRouter
@@ -52,9 +52,7 @@ export const customAccountsRouter = router({
   list: protectedProcedure
     .input(z.object({ businessId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       return await db.select({
         id: customAccounts.id,
@@ -87,9 +85,7 @@ export const customAccountsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return null;
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.select({
         id: customAccounts.id,
@@ -137,9 +133,7 @@ export const customAccountsRouter = router({
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.insert(customAccounts).values({
         ...input,
@@ -174,9 +168,7 @@ export const customAccountsRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, ...data } = input;
       await db.update(customAccounts).set(data).where(eq(customAccounts.id, id));
@@ -197,9 +189,7 @@ export const customAccountsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.delete(customAccounts).where(eq(customAccounts.id, input.id));
       return { success: true };
@@ -235,9 +225,7 @@ export const customTransactionsRouter = router({
       limit: z.number().default(50),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const selectFields = {
         id: customTransactions.id,
@@ -298,9 +286,7 @@ export const customTransactionsRouter = router({
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.insert(customTransactions).values({
         ...input,
@@ -357,9 +343,7 @@ export const customNotesRouter = router({
       isArchived: z.boolean().default(false),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       return await db.select({
         id: customNotes.id,
@@ -385,9 +369,7 @@ export const customNotesRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return null;
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.select({
         id: customNotes.id,
@@ -419,9 +401,7 @@ export const customNotesRouter = router({
       tags: z.array(z.string()).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.insert(customNotes).values({
         ...input,
@@ -444,9 +424,7 @@ export const customNotesRouter = router({
       isArchived: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, ...data } = input;
       await db.update(customNotes).set(data).where(eq(customNotes.id, id));
@@ -457,9 +435,7 @@ export const customNotesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.delete(customNotes).where(eq(customNotes.id, input.id));
       return { success: true };
@@ -493,9 +469,7 @@ export const customMemosRouter = router({
       status: z.enum(["draft", "sent", "received", "archived"]).optional(),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       let conditions = [eq(customMemos.businessId, input.businessId)];
       if (input.status) {
@@ -524,9 +498,7 @@ export const customMemosRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return null;
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.select({
         id: customMemos.id,
@@ -565,9 +537,7 @@ export const customMemosRouter = router({
       responseDeadline: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.insert(customMemos).values({
         ...input,
@@ -586,9 +556,7 @@ export const customMemosRouter = router({
       priority: z.enum(["low", "medium", "high", "urgent"]).optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, ...data } = input;
       await db.update(customMemos).set(data).where(eq(customMemos.id, id));
@@ -599,9 +567,7 @@ export const customMemosRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.delete(customMemos).where(eq(customMemos.id, input.id));
       return { success: true };
@@ -615,9 +581,7 @@ export const noteCategoriesRouter = router({
   list: protectedProcedure
     .input(z.object({ businessId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       return await db.select({
         id: noteCategories.id,
@@ -639,9 +603,7 @@ export const noteCategoriesRouter = router({
       icon: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.insert(noteCategories).values(input);
       return { id: result[0].insertId, success: true };
@@ -673,9 +635,7 @@ export const customSubSystemsRouter = router({
   list: protectedProcedure
     .input(z.object({ businessId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       return await db.select({
         id: customSubSystems.id,
@@ -696,9 +656,7 @@ export const customSubSystemsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return null;
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.select({
         id: customSubSystems.id,
@@ -720,9 +678,7 @@ export const customSubSystemsRouter = router({
   stats: protectedProcedure
     .input(z.object({ businessId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Get all sub systems
       const subSystems = await db.select({
@@ -781,9 +737,7 @@ export const customSubSystemsRouter = router({
       icon: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.insert(customSubSystems).values({
         ...input,
@@ -804,9 +758,7 @@ export const customSubSystemsRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, ...data } = input;
       await db.update(customSubSystems).set(data).where(eq(customSubSystems.id, id));
@@ -816,9 +768,7 @@ export const customSubSystemsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.delete(customSubSystems).where(eq(customSubSystems.id, input.id));
       return { success: true };
@@ -837,9 +787,7 @@ export const customTreasuriesRouter = router({
     }))
     .query(async ({ input }) => {
       console.log("[Treasuries API] جلب الخزائن:", input);
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       let conditions = [eq(customTreasuries.businessId, input.businessId)];
       if (input.subSystemId) {
@@ -907,9 +855,7 @@ export const customTreasuriesRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return null;
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.select({
         id: customTreasuries.id,
@@ -981,9 +927,7 @@ export const customTreasuriesRouter = router({
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // إزالة currencies و defaultCurrency من input لأنهما ليسا في جدول customTreasuries
       const { currencies, defaultCurrency, ...treasuryData } = input;
@@ -1002,10 +946,13 @@ export const customTreasuriesRouter = router({
       if (currencies && currencies.length > 0) {
         // جلب IDs العملات
         const currencyRecords = await db.select({
-          id: sql<number>`id`,
-          code: sql<string>`code`,
-        }).from(sql`custom_currencies`)
-          .where(sql`business_id = ${input.businessId} AND code IN (${sql.join(currencies.map(c => sql`${c}`), sql`, `)})`);
+          id: customCurrencies.id,
+          code: customCurrencies.code,
+        }).from(customCurrencies)
+          .where(and(
+            eq(customCurrencies.businessId, input.businessId),
+            inArray(customCurrencies.code, currencies)
+          ));
         
         const currencyMap = new Map(currencyRecords.map(c => [c.code, c.id]));
         
@@ -1049,9 +996,7 @@ export const customTreasuriesRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, currencies, defaultCurrency, ...data } = input;
       
@@ -1082,10 +1027,13 @@ export const customTreasuriesRouter = router({
           
           // جلب IDs العملات الجديدة
           const currencyRecords = await db.select({
-            id: sql<number>`id`,
-            code: sql<string>`code`,
-          }).from(sql`custom_currencies`)
-            .where(sql`business_id = ${businessId} AND code IN (${sql.join(currencies.map(c => sql`${c}`), sql`, `)})`);
+            id: customCurrencies.id,
+            code: customCurrencies.code,
+          }).from(customCurrencies)
+            .where(and(
+              eq(customCurrencies.businessId, businessId),
+              inArray(customCurrencies.code, currencies)
+            ));
           
           const currencyMap = new Map(currencyRecords.map(c => [c.code, c.id]));
           
@@ -1113,9 +1061,7 @@ export const customTreasuriesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.delete(customTreasuries).where(eq(customTreasuries.id, input.id));
       return { success: true };
@@ -1128,9 +1074,7 @@ export const customTreasuriesRouter = router({
       operation: z.enum(["add", "subtract"]),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const treasury = await db.select({
         id: customTreasuries.id,
@@ -1164,9 +1108,7 @@ export const customIntermediaryAccountsRouter = router({
   list: protectedProcedure
     .input(z.object({ businessId: z.number() }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       try {
         return await db.select({
           id: customIntermediaryAccounts.id,
@@ -1177,7 +1119,7 @@ export const customIntermediaryAccountsRouter = router({
           nameAr: customIntermediaryAccounts.nameAr,
           nameEn: customIntermediaryAccounts.nameEn,
           currency: customIntermediaryAccounts.currency,
-          currentBalance: customIntermediaryAccounts.currentBalance,
+        balance: customIntermediaryAccounts.balance,
           isActive: customIntermediaryAccounts.isActive,
           createdAt: customIntermediaryAccounts.createdAt,
         }).from(customIntermediaryAccounts)
@@ -1200,9 +1142,7 @@ export const customIntermediaryAccountsRouter = router({
       currency: z.string().default("SAR"),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const result = await db.insert(customIntermediaryAccounts).values(input);
       return { id: result[0].insertId, success: true };
@@ -1217,9 +1157,7 @@ export const customIntermediaryAccountsRouter = router({
       isActive: z.boolean().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, ...data } = input;
       await db.update(customIntermediaryAccounts).set(data).where(eq(customIntermediaryAccounts.id, id));
@@ -1229,9 +1167,7 @@ export const customIntermediaryAccountsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.delete(customIntermediaryAccounts).where(eq(customIntermediaryAccounts.id, input.id));
       return { success: true };
@@ -1249,9 +1185,7 @@ export const customReceiptVouchersRouter = router({
       status: z.enum(["draft", "confirmed", "cancelled"]).optional(),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       let conditions = [eq(customReceiptVouchers.businessId, input.businessId)];
       if (input.subSystemId) {
@@ -1295,9 +1229,7 @@ export const customReceiptVouchersRouter = router({
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Generate voucher number
       const count = await db.select({ count: sql<number>`count(*)` })
@@ -1325,9 +1257,7 @@ export const customReceiptVouchersRouter = router({
       description: z.string().optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, ...data } = input;
       await db.update(customReceiptVouchers).set(data).where(eq(customReceiptVouchers.id, id));
@@ -1337,9 +1267,7 @@ export const customReceiptVouchersRouter = router({
   confirm: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Get voucher
       const voucher = await db.select({
@@ -1381,9 +1309,7 @@ export const customReceiptVouchersRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.delete(customReceiptVouchers).where(eq(customReceiptVouchers.id, input.id));
       return { success: true };
@@ -1522,9 +1448,7 @@ export const customPaymentVouchersRouter = router({
       status: z.enum(["draft", "confirmed", "cancelled"]).optional(),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       let conditions = [eq(customPaymentVouchers.businessId, input.businessId)];
       if (input.subSystemId) {
@@ -1619,9 +1543,7 @@ export const customPaymentVouchersRouter = router({
       })).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // إذا كانت هناك بنود، تحقق من المجموع ونعتمدها كمبلغ السند
       const lines = input.lines ?? [];
@@ -1727,9 +1649,7 @@ export const customPaymentVouchersRouter = router({
       })).optional(),
     }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const { id, lines, ...data } = input;
 
@@ -1846,9 +1766,7 @@ export const customPaymentVouchersRouter = router({
   confirm: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Get voucher
       const voucher = await db.select({
@@ -1895,9 +1813,7 @@ export const customPaymentVouchersRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
 
       const voucher = await db
         .select({
@@ -1923,9 +1839,7 @@ export const customPaymentVouchersRouter = router({
   revertToDraft: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
 
       const voucher = await db
         .select({
@@ -1995,9 +1909,7 @@ export const customTransfersRouter = router({
       transferDate: z.string(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // 1. البحث عن أو إنشاء الحساب الوسيط
       let intermediaryAccount = await db.select({
@@ -2114,9 +2026,7 @@ export const customTransfersRouter = router({
       subSystemId: z.number().optional(),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // جلب سندات الصرف التي تمت إلى حسابات وسيطة
       let conditions = [
@@ -2233,9 +2143,7 @@ export const customReconciliationsRouter = router({
       status: z.enum(["pending", "confirmed", "rejected"]).optional(),
     }))
     .query(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) return [];
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       let conditions = [eq(customReconciliations.businessId, input.businessId)];
       if (input.status) {
@@ -2260,9 +2168,7 @@ export const customReconciliationsRouter = router({
   autoReconcile: protectedProcedure
     .input(z.object({ businessId: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       // Get unreconciled payment vouchers with intermediary destination
       const payments = await db.select({
@@ -2335,9 +2241,7 @@ export const customReconciliationsRouter = router({
   confirm: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input, ctx }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       const reconciliation = await db.select({
         id: customReconciliations.id,
@@ -2383,9 +2287,7 @@ export const customReconciliationsRouter = router({
   reject: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const db = await getDb();
-    if (!db) throw new Error("Database not available");
-      if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+      const db = await getDb(); if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
       
       await db.update(customReconciliations)
         .set({ status: "rejected" })
@@ -3145,3 +3047,4 @@ export const customSystemRouter = router({
   partyTransactions: customPartyTransactionsRouter,
   settings: customSettingsRouter,
 });
+

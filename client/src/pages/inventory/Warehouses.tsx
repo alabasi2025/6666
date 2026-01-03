@@ -33,10 +33,16 @@ const warehouseTypeMap: Record<string, { label: string; variant: "default" | "su
   quarantine: { label: "حجر", variant: "destructive" },
 };
 
-export default function Warehouses() {
+type WarehousesProps = {
+  businessId?: number;
+};
+
+export default function Warehouses({ businessId = 1 }: WarehousesProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedWarehouse, setSelectedWarehouse] = useState<any>(null);
+
+  const resolvedBusinessId = businessId ?? 1;
 
   // Form state
   const [formData, setFormData] = useState({
@@ -52,12 +58,12 @@ export default function Warehouses() {
 
   // Fetch warehouses from API
   const { data: warehouses = [], isLoading, refetch } = trpc.inventory.warehouses.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   } as any);
 
   // Fetch dashboard stats
   const { data: stats } = trpc.inventory.dashboardStats.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   } as any);
 
   // Mutations
@@ -197,7 +203,7 @@ export default function Warehouses() {
     const data = {
       ...formData,
       managerId: (formData as any).managerId ? parseInt((formData as any).managerId) : undefined,
-      businessId: 1,
+      businessId: resolvedBusinessId,
     };
 
     if (selectedWarehouse) {

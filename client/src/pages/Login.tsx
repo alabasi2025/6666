@@ -9,8 +9,26 @@ import { toast } from "sonner";
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [phone, setPhone] = useState("0500000000");
-  const [password, setPassword] = useState("123456");
+  const [phone, setPhone] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("login_phone") || "0500000000";
+      } catch {
+        return "0500000000";
+      }
+    }
+    return "0500000000";
+  });
+  const [password, setPassword] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        return localStorage.getItem("login_password") || "123456";
+      } catch {
+        return "123456";
+      }
+    }
+    return "123456";
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -132,7 +150,11 @@ export default function Login() {
                       type="tel"
                       placeholder="05xxxxxxxx"
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPhone(value);
+                        try { localStorage.setItem("login_phone", value); } catch {}
+                      }}
                       className="w-full h-11 pr-10 pl-4 text-right rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       dir="ltr"
                       autoComplete="tel"
@@ -151,7 +173,11 @@ export default function Login() {
                       type={showPassword ? "text" : "password"}
                       placeholder="أدخل كلمة المرور"
                       value={password}
-                      onChange={(e) => setPassword(e.target.value)}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setPassword(value);
+                        try { localStorage.setItem("login_password", value); } catch {}
+                      }}
                       className="w-full h-11 pr-10 pl-10 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                       autoComplete="current-password"
                     />

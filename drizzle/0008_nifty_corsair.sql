@@ -48,7 +48,7 @@ CREATE TABLE `custom_notes` (
 	`is_archived` boolean DEFAULT false,
 	`tags` json,
 	`attachments` json,
-	`reminder_date` timestamp,
+	`reminder_date` timestamp NULL DEFAULT NULL,
 	`created_by` int,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,

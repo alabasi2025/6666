@@ -35,24 +35,30 @@ import {
   Warehouse,
 } from "lucide-react";
 
-export default function StockBalance() {
+type StockBalanceProps = {
+  businessId?: number;
+};
+
+export default function StockBalance({ businessId = 1 }: StockBalanceProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterWarehouse, setFilterWarehouse] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
 
+  const resolvedBusinessId = businessId ?? 1;
+
   // Fetch items with stock info
   const { data: items = [], isLoading } = trpc.inventory.items.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   });
 
   // Fetch warehouses
   const { data: warehouses = [] } = trpc.inventory.warehouses.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
   });
 
   // Fetch stock balance
   const { data: stockBalance = [] } = trpc.inventory.stockBalances.list.useQuery({
-    businessId: 1,
+    businessId: resolvedBusinessId,
     warehouseId: filterWarehouse !== "all" ? parseInt(filterWarehouse) : undefined,
   });
 

@@ -294,13 +294,6 @@ const subSystemNavigationItems = [
     color: "from-amber-500 to-orange-500",
   },
   {
-    id: "exchange-rates",
-    title: "أسعار الصرف",
-    icon: RefreshCw,
-    description: "إدارة أسعار الصرف",
-    color: "from-cyan-500 to-sky-500",
-  },
-  {
     id: "inventory",
     title: "نظام المخزون",
     icon: Package,
@@ -384,7 +377,6 @@ export default function CustomSystem() {
   const [matchV2JournalEntries] = useRoute("/custom/v2/journal-entries");
   const [matchV2Accounts] = useRoute("/custom/v2/accounts");
   const [matchV2Currencies] = useRoute("/custom/v2/currencies");
-  const [matchV2ExchangeRates] = useRoute("/custom/v2/exchange-rates"); // إعادة توجيه إلى العملات
   const [matchV2AccountTypes] = useRoute("/custom/v2/account-types");
   
   // New Systems Routes
@@ -419,7 +411,6 @@ export default function CustomSystem() {
       matchV2JournalEntries ||
       matchV2Accounts ||
       matchV2Currencies ||
-      matchV2ExchangeRates ||
       matchV2AccountTypes;
 
     if (needsSubSystemContext && !matchSubSystemDetails) {
@@ -437,7 +428,6 @@ export default function CustomSystem() {
     matchV2JournalEntries,
     matchV2Accounts,
     matchV2Currencies,
-    matchV2ExchangeRates,
     matchV2AccountTypes,
     matchSubSystemDetails,
     setLocation,
@@ -480,11 +470,6 @@ export default function CustomSystem() {
     if (matchV2Accounts && matchSubSystemDetails) return <AccountsPageV2 />;
     if (matchV2Currencies && matchSubSystemDetails) return <CurrenciesPage />;
     if (matchV2AccountTypes && matchSubSystemDetails) return <AccountTypesPage />;
-    if (matchV2ExchangeRates && matchSubSystemDetails) {
-      // إعادة توجيه إلى صفحة العملات (تم دمجها)
-      setLocation("/custom/v2/currencies");
-      return null;
-    }
     
     // Original Custom System Routes
     if (matchCustom) return <CustomSubSystems />; // الرئيسية تعرض إدارة الأنظمة الفرعية فقط

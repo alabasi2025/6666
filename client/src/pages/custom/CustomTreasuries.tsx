@@ -142,11 +142,16 @@ const treasuryFormSchema = z.object({
 type TreasuryFormValues = z.infer<typeof treasuryFormSchema>;
 
 // Treasury Card Component
-function TreasuryCard({ treasury, onEdit, onDelete }: any) {
+function TreasuryCard({ treasury, accountLookup, onEdit, onDelete }: any) {
   const config = treasuryTypes[(treasury as any).treasuryType as keyof typeof treasuryTypes];
   const Icon = config?.icon || Wallet;
   const balance = parseFloat((treasury as any).currentBalance || "0");
   const isPositive = balance >= 0;
+  const accountId: number | undefined = (treasury as any).accountId ?? undefined;
+  const linkedAccount =
+    typeof accountId === "number" && accountId > 0
+      ? (accountLookup?.get ? accountLookup.get(accountId) : accountLookup?.[accountId]) ?? null
+      : null;
 
   return (
     <Card className={cn(
@@ -164,6 +169,14 @@ function TreasuryCard({ treasury, onEdit, onDelete }: any) {
               <CardDescription className="text-slate-400">
                 {(treasury as any).code} • {config?.label}
               </CardDescription>
+              {linkedAccount && (
+                <CardDescription className="text-slate-500 text-xs mt-1">
+                  الحساب:{" "}
+                  <span className="font-mono text-slate-300">{linkedAccount.accountCode}</span>
+                  {" - "}
+                  <span className="text-slate-400">{linkedAccount.accountNameAr}</span>
+                </CardDescription>
+              )}
             </div>
           </div>
           <DropdownMenu>
@@ -297,6 +310,7 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
   const [accountsLoading, setAccountsLoading] = useState(false);
   const [accountCurrencies, setAccountCurrencies] = useState<string[]>([]);
   const [currenciesLoading, setCurrenciesLoading] = useState(false);
+  const [systemCurrencies, setSystemCurrencies] = useState<string[]>([]);
 
   // Form - تعيين subSystemId من URL إذا كان متاحاً
   const form = useForm<TreasuryFormValues>({
@@ -317,6 +331,27 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
 
   const watchTreasuryType = form.watch("treasuryType");
   const watchSubSystemId = form.watch("subSystemId");
+
+  const accountsById = useMemo(() => {
+    const map = new Map<number, any>();
+    (accounts || []).forEach((a: any) => {
+      if (a && typeof a.id === "number") map.set(a.id, a);
+    });
+    return map;
+  }, [accounts]);
+
+  // جلب قائمة العملات العامة (لاستخدامها كبديل عند غياب عملات الحساب)
+  useEffect(() => {
+    axios
+      .get("/api/custom-system/v2/currencies")
+      .then((res) => {
+        const codes = (res.data || [])
+          .filter((c: any) => c.code)
+          .map((c: any) => c.code);
+        setSystemCurrencies(codes);
+      })
+      .catch(() => setSystemCurrencies([]));
+  }, []);
 
   // API Queries - استخدام subSystemId من URL إذا كان متاحاً
   const { data: treasuries, isLoading, refetch } = trpc.customSystem.treasuries.list.useQuery(
@@ -395,7 +430,8 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
           const currs = (res.data?.currencies || [])
             .filter((c: any) => c.code)
             .map((c: any) => c.code);
-          setAccountCurrencies(currs);
+          const fallback = currs.length > 0 ? currs : systemCurrencies;
+          setAccountCurrencies(fallback);
           // تعيين العملات المحفوظة إذا كانت موجودة
           const savedCurrencies = (treasury as any).currencies || [];
           if (savedCurrencies.length > 0) {
@@ -417,13 +453,13 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
           }
         })
         .catch(() => {
-          setAccountCurrencies([]);
+          setAccountCurrencies(systemCurrencies);
           form.setValue("currencies", []);
           form.setValue("defaultCurrency", undefined);
         })
         .finally(() => setCurrenciesLoading(false));
     } else {
-      setAccountCurrencies([]);
+      setAccountCurrencies(systemCurrencies);
       form.setValue("currencies", []);
       form.setValue("defaultCurrency", undefined);
     }
@@ -503,7 +539,19 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
 
     // عرض الحسابات التي تطابق نوع الحساب الفرعي فقط
     if (!subTypeId) return [];
-    const base = accounts.filter((acc: any) => acc.accountSubTypeId === subTypeId);
+    // استبعاد الحسابات "الرئيسية/التجميعية" (التي لديها أبناء) وإظهار الحسابات القابلة للاستخدام فقط
+    const parentIds = new Set<number>();
+    accounts.forEach((acc: any) => {
+      const pid = acc?.parentAccountId;
+      if (typeof pid === "number" && pid > 0) parentIds.add(pid);
+    });
+
+    const base = accounts.filter((acc: any) => {
+      const isSub = (acc.level && acc.level > 1) || (acc.parentAccountId && acc.parentAccountId > 0);
+      const hasChildren = parentIds.has(acc.id);
+      const allowsEntry = acc.allowManualEntry !== false;
+      return isSub && !hasChildren && allowsEntry && acc.accountSubTypeId === subTypeId;
+    });
     const selectedId = form.watch("accountId");
     const selected = accounts.find((acc: any) => acc.id === selectedId);
     if (selected && !base.some((acc: any) => acc.id === selected.id)) {
@@ -517,7 +565,7 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
     const accId = form.watch("accountId");
     const currentCurrencies = form.watch("currencies") || [];
     if (!accId) {
-      setAccountCurrencies([]);
+      setAccountCurrencies(systemCurrencies);
       form.setValue("currencies", []);
       form.setValue("defaultCurrency", undefined);
       return;
@@ -529,21 +577,30 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
         const currs = (res.data?.currencies || [])
           .filter((c: any) => c.code)
           .map((c: any) => c.code);
-        setAccountCurrencies(currs);
+        const fallback = currs.length > 0 ? currs : systemCurrencies;
+        setAccountCurrencies(fallback);
+        if (currs.length === 0) {
+          toast.warning("الحساب المختار بلا عملات. سيتم عرض عملات النظام العامة مؤقتاً.");
+        }
+        if (fallback.length === 0) {
+          form.setValue("currencies", []);
+          form.setValue("defaultCurrency", undefined);
+          return;
+        }
         // لا نغير العملات المحددة إذا كانت موجودة بالفعل
-        if (currentCurrencies.length === 0 && currs.length > 0) {
+        if (currentCurrencies.length === 0 && fallback.length > 0) {
           // فقط إذا لم يكن هناك عملات محددة
           form.setValue("currencies", []);
           form.setValue("defaultCurrency", undefined);
         }
       })
       .catch(() => {
-        setAccountCurrencies([]);
+        setAccountCurrencies(systemCurrencies);
         form.setValue("currencies", []);
         form.setValue("defaultCurrency", undefined);
       })
       .finally(() => setCurrenciesLoading(false));
-  }, [watchTreasuryType, form.watch("accountId")]);
+  }, [watchTreasuryType, form.watch("accountId"), systemCurrencies]);
 
   // Filter treasuries
   const filteredTreasuries = treasuries?.filter((t: any) => {
@@ -594,17 +651,22 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                 إضافة خزينة
               </Button>
             </DialogTrigger>
-            <DialogContent className="bg-slate-900 border-slate-800 max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle className="text-white">
-                  {editingTreasury ? "تعديل الخزينة" : "إضافة خزينة جديدة"}
-                </DialogTitle>
-                <DialogDescription className="text-slate-400">
-                  {editingTreasury ? "قم بتعديل بيانات الخزينة" : "أدخل بيانات الخزينة الجديدة"}
-                </DialogDescription>
-              </DialogHeader>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit as any)} className="space-y-4">
+            <DialogContent className="bg-slate-900 border-slate-800 max-w-3xl p-0 max-h-[90vh] overflow-hidden">
+              <div className="flex flex-col max-h-[90vh]">
+                <DialogHeader className="p-6 pb-4 border-b border-slate-800">
+                  <DialogTitle className="text-white">
+                    {editingTreasury ? "تعديل الخزينة" : "إضافة خزينة جديدة"}
+                  </DialogTitle>
+                  <DialogDescription className="text-slate-400">
+                    {editingTreasury ? "قم بتعديل بيانات الخزينة" : "أدخل بيانات الخزينة الجديدة"}
+                  </DialogDescription>
+                </DialogHeader>
+                <Form {...form}>
+                  <form
+                    id="treasury-form"
+                    onSubmit={form.handleSubmit(onSubmit as any)}
+                    className="flex-1 overflow-y-auto p-6 space-y-6"
+                  >
                   {/* Treasury Type */}
                   <FormField
                     control={form.control as any}
@@ -640,14 +702,120 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-4">
+                  {/* Accounting Link (Account + SubSystem) */}
+                  <div className="rounded-xl border border-slate-800 bg-slate-950/20 p-4 space-y-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <h3 className="text-white font-medium">الربط المحاسبي</h3>
+                        <p className="text-slate-400 text-xs">
+                          اختر حساب الخزينة من دليل الحسابات. يتم إظهار الحسابات الفرعية فقط المطابقة لنوع الخزينة.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* ربط الخزينة بالحساب (يُفلتر حسب النوع الفرعي) */}
+                      <FormField
+                        control={form.control as any}
+                        name="accountId"
+                        render={({ field }) => {
+                          const selected = accounts.find((a: any) => a.id === field.value);
+                          return (
+                            <FormItem>
+                              <FormLabel className="text-slate-300">
+                                الحساب في دليل الحسابات <span className="text-red-400">*</span>
+                              </FormLabel>
+                              <Select
+                                onValueChange={(val) => field.onChange(parseInt(val))}
+                                value={field.value ? String(field.value) : ""}
+                                disabled={accountsLoading}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="bg-slate-800 border-slate-700">
+                                    <SelectValue placeholder={accountsLoading ? "جاري التحميل..." : "اختر الحساب"} />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-slate-900 border-slate-800 max-h-72">
+                                  {filteredAccounts.length === 0 && (
+                                    <SelectItem value="-1" disabled>
+                                      {accountsLoading ? "جاري التحميل..." : "لا توجد حسابات مطابقة لنوع الخزينة"}
+                                    </SelectItem>
+                                  )}
+                                  {filteredAccounts.map((acc: any) => (
+                                    <SelectItem key={acc.id} value={String(acc.id)}>
+                                      <div className="flex flex-col gap-1">
+                                        <span className="font-mono text-blue-400">{acc.accountCode}</span>
+                                        <span className="text-sm text-slate-200">{acc.accountNameAr}</span>
+                                        <span className="text-xs text-slate-500">
+                                          نوع فرعي: {accountSubTypes.find((s) => s.id === acc.accountSubTypeId)?.nameAr || "غير محدد"}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormDescription className="text-slate-400 text-xs">
+                                {selected
+                                  ? `المختار: ${selected.accountCode} - ${selected.accountNameAr}`
+                                  : "ملاحظة: لن تظهر الحسابات الرئيسية/التجميعية في هذه القائمة."}
+                              </FormDescription>
+                              <FormMessage />
+                            </FormItem>
+                          );
+                        }}
+                      />
+
+                      {/* Sub System - مخفي إذا كان محدداً من URL */}
+                      {!urlSubSystemId ? (
+                        <FormField
+                          control={form.control as any}
+                          name="subSystemId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-slate-300">النظام الفرعي (اختياري)</FormLabel>
+                              <Select
+                                onValueChange={(v) => field.onChange(v === "0" ? undefined : parseInt(v))}
+                                value={field.value ? field.value.toString() : "0"}
+                              >
+                                <FormControl>
+                                  <SelectTrigger className="bg-slate-800 border-slate-700">
+                                    <SelectValue placeholder="اختر النظام الفرعي" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent className="bg-slate-900 border-slate-800">
+                                  <SelectItem value="0">بدون نظام فرعي</SelectItem>
+                                  {subSystems?.map((sys: any) => (
+                                    <SelectItem key={sys.id} value={sys.id.toString()}>
+                                      {sys.nameAr}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      ) : (
+                        <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg h-fit">
+                          <span className="text-slate-400 text-sm">النظام الفرعي: </span>
+                          <span className="text-emerald-400 font-medium">
+                            {subSystems?.find((s: any) => s.id === urlSubSystemId)?.nameAr || `نظام #${urlSubSystemId}`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Code */}
                     <FormField
                       control={form.control as any}
                       name="code"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-300">الكود</FormLabel>
+                          <FormLabel className="text-slate-300">
+                            الكود <span className="text-red-400">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="مثال: CASH-001" className="bg-slate-800 border-slate-700" />
                           </FormControl>
@@ -663,7 +831,9 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                       render={({ field }) => (
                         <FormItem>
                           <div className="flex items-center justify-between">
-                            <FormLabel className="text-slate-300">العملات المسموحة</FormLabel>
+                            <FormLabel className="text-slate-300">
+                              العملات المسموحة <span className="text-red-400">*</span>
+                            </FormLabel>
                             {accountCurrencies.length > 1 && (
                               <Button
                                 type="button"
@@ -806,7 +976,7 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                           <FormLabel className="text-slate-300">العملة الافتراضية</FormLabel>
                           <Select
                             onValueChange={field.onChange}
-                            value={field.value}
+                            value={field.value || ""}
                             disabled={!form.watch("currencies") || form.watch("currencies").length === 0}
                           >
                             <FormControl>
@@ -831,14 +1001,16 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                     />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {/* Name Arabic */}
                     <FormField
                       control={form.control as any}
                       name="nameAr"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-slate-300">الاسم بالعربي</FormLabel>
+                          <FormLabel className="text-slate-300">
+                            الاسم بالعربي <span className="text-red-400">*</span>
+                          </FormLabel>
                           <FormControl>
                             <Input {...field} placeholder="مثال: الصندوق الرئيسي" className="bg-slate-800 border-slate-700" />
                           </FormControl>
@@ -862,82 +1034,6 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                       )}
                     />
                   </div>
-
-                  {/* Sub System - مخفي إذا كان محدداً من URL */}
-                  {!urlSubSystemId && (
-                    <FormField
-                      control={form.control as any}
-                      name="subSystemId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-slate-300">النظام الفرعي (اختياري)</FormLabel>
-                          <Select onValueChange={(v) => field.onChange(parseInt(v))} value={field.value?.toString()}>
-                            <FormControl>
-                              <SelectTrigger className="bg-slate-800 border-slate-700">
-                                <SelectValue placeholder="اختر النظام الفرعي" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="bg-slate-900 border-slate-800">
-                              <SelectItem value="0">بدون نظام فرعي</SelectItem>
-                              {subSystems?.map((sys: any) => (
-                                <SelectItem key={sys.id} value={sys.id.toString()}>
-                                  {sys.nameAr}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-                  
-                  {/* عرض اسم النظام الفرعي إذا كان محدداً من URL */}
-                  {urlSubSystemId && (
-                    <div className="p-3 bg-slate-800/50 border border-slate-700 rounded-lg">
-                      <span className="text-slate-400 text-sm">النظام الفرعي: </span>
-                      <span className="text-emerald-400 font-medium">
-                        {subSystems?.find((s: any) => s.id === urlSubSystemId)?.nameAr || `نظام #${urlSubSystemId}`}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Account Selection Field */}
-                  <FormField
-                    control={form.control as any}
-                    name="accountId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-slate-300">الحساب المحاسبي (اختياري)</FormLabel>
-                        <Select 
-                          onValueChange={(v) => field.onChange(v === "0" ? null : parseInt(v))} 
-                          value={field.value?.toString() || "0"}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="bg-slate-800 border-slate-700">
-                              <SelectValue placeholder="اختر حساباً من الدليل" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent className="bg-slate-900 border-slate-800 max-h-[300px]">
-                            <SelectItem value="0">
-                              <span className="text-slate-400">بدون حساب محاسبي</span>
-                            </SelectItem>
-                            {accounts?.map((acc: any) => (
-                              <SelectItem key={acc.id} value={acc.id.toString()}>
-                                <span className="font-mono text-blue-400">{acc.accountCode}</span>
-                                {" - "}
-                                <span>{acc.accountNameAr}</span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormDescription className="text-xs text-slate-400">
-                          اربط هذا الصندوق بحساب محاسبي من دليل الحسابات
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
 
                   {/* Bank Fields */}
                   {watchTreasuryType === "bank" && (
@@ -995,7 +1091,7 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                         render={({ field }) => (
                           <FormItem>
                             <FormLabel className="text-slate-300">مزود المحفظة</FormLabel>
-                            <Select onValueChange={field.onChange} value={field.value}>
+                            <Select onValueChange={field.onChange} value={field.value || ""}>
                               <FormControl>
                                 <SelectTrigger className="bg-slate-800 border-slate-700">
                                   <SelectValue placeholder="اختر المزود" />
@@ -1029,43 +1125,6 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                     </div>
                   )}
 
-              {/* ربط الخزينة بالحساب (يُفلتر حسب النوع الفرعي) */}
-              <FormField
-                control={form.control as any}
-                name="accountId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-slate-300">الحساب في دليل الحسابات</FormLabel>
-                    <FormDescription className="text-slate-400">
-                      تظهر الحسابات التي نوعها الفرعي يطابق نوع الخزينة (صندوق/بنك/محفظة/صراف).
-                    </FormDescription>
-                    <Select
-                      onValueChange={(val) => field.onChange(parseInt(val))}
-                      value={field.value ? String(field.value) : undefined}
-                      disabled={accountsLoading}
-                    >
-                      <FormControl>
-                        <SelectTrigger className="bg-slate-800 border-slate-700">
-                          <SelectValue placeholder={accountsLoading ? "جاري التحميل..." : "اختر الحساب"} />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent className="bg-slate-900 border-slate-800 max-h-72">
-                        {filteredAccounts.length === 0 && (
-                          <SelectItem value="-1" disabled>
-                            {accountsLoading ? "جاري التحميل..." : "لا توجد حسابات مطابقة"}
-                          </SelectItem>
-                        )}
-                        {filteredAccounts.map((acc: any) => (
-                          <SelectItem key={acc.id} value={String(acc.id)}>
-                            {acc.accountCode} - {acc.accountNameAr}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
                   {/* Opening Balance */}
                   <FormField
@@ -1096,13 +1155,22 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                       </FormItem>
                     )}
                   />
+                  </form>
+                </Form>
 
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsDialogOpen(false)} className="border-slate-700">
+                <div className="p-6 pt-4 border-t border-slate-800 bg-slate-900">
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsDialogOpen(false)}
+                      className="border-slate-700"
+                    >
                       إلغاء
                     </Button>
-                    <Button 
-                      type="submit" 
+                    <Button
+                      type="submit"
+                      form="treasury-form"
                       disabled={createMutation.isPending || updateMutation.isPending}
                       className="bg-gradient-to-r from-blue-500 to-purple-600"
                     >
@@ -1111,9 +1179,9 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
                       )}
                       {editingTreasury ? "تحديث" : "إضافة"}
                     </Button>
-                  </DialogFooter>
-                </form>
-              </Form>
+                  </div>
+                </div>
+              </div>
             </DialogContent>
           </Dialog>
         </div>
@@ -1205,6 +1273,7 @@ export default function CustomTreasuries({ subSystemId: propSubSystemId }: Custo
             <TreasuryCard
               key={(treasury as any).id}
               treasury={treasury}
+              accountLookup={accountsById}
               onEdit={handleEdit}
               onDelete={handleDelete}
             />

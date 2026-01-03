@@ -58,8 +58,8 @@ CREATE TABLE `field_operations` (
 	`address` text,
 	`scheduled_date` date,
 	`scheduled_time` varchar(10),
-	`started_at` timestamp,
-	`completed_at` timestamp,
+	`started_at` timestamp NULL DEFAULT NULL,
+	`completed_at` timestamp NULL DEFAULT NULL,
 	`assigned_team_id` int,
 	`assigned_worker_id` int,
 	`estimated_duration` int,
@@ -108,7 +108,7 @@ CREATE TABLE `field_workers` (
 	`status` enum('available','busy','on_leave','inactive') DEFAULT 'available',
 	`current_location_lat` decimal(10,8),
 	`current_location_lng` decimal(11,8),
-	`last_location_update` timestamp,
+	`last_location_update` timestamp NULL DEFAULT NULL,
 	`hire_date` date,
 	`daily_rate` decimal(10,2),
 	`operation_rate` decimal(10,2),
@@ -192,7 +192,7 @@ CREATE TABLE `installation_photos` (
 	`caption` varchar(200),
 	`latitude` decimal(10,8),
 	`longitude` decimal(11,8),
-	`captured_at` timestamp,
+	`captured_at` timestamp NULL DEFAULT NULL,
 	`uploaded_by` int,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `installation_photos_id` PRIMARY KEY(`id`)
@@ -223,9 +223,9 @@ CREATE TABLE `material_requests` (
 	`status` enum('pending','approved','issued','returned','cancelled') DEFAULT 'pending',
 	`notes` text,
 	`approved_by` int,
-	`approved_at` timestamp,
+	`approved_at` timestamp NULL DEFAULT NULL,
 	`issued_by` int,
-	`issued_at` timestamp,
+	`issued_at` timestamp NULL DEFAULT NULL,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	`updated_at` timestamp NOT NULL DEFAULT (now()) ON UPDATE CURRENT_TIMESTAMP,
 	CONSTRAINT `material_requests_id` PRIMARY KEY(`id`)
@@ -237,7 +237,7 @@ CREATE TABLE `operation_approvals` (
 	`approval_level` int DEFAULT 1,
 	`approver_id` int,
 	`status` enum('pending','approved','rejected') DEFAULT 'pending',
-	`decision_date` timestamp,
+	`decision_date` timestamp NULL DEFAULT NULL,
 	`notes` text,
 	`signature_url` varchar(500),
 	CONSTRAINT `operation_approvals_id` PRIMARY KEY(`id`)
@@ -256,8 +256,8 @@ CREATE TABLE `operation_payments` (
 	`status` enum('calculated','approved','paid') DEFAULT 'calculated',
 	`calculated_at` timestamp NOT NULL DEFAULT (now()),
 	`approved_by` int,
-	`approved_at` timestamp,
-	`paid_at` timestamp,
+	`approved_at` timestamp NULL DEFAULT NULL,
+	`paid_at` timestamp NULL DEFAULT NULL,
 	CONSTRAINT `operation_payments_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
@@ -286,7 +286,7 @@ CREATE TABLE `period_settlements` (
 	`net_amount` decimal(15,2) DEFAULT '0',
 	`status` enum('draft','approved','paid') DEFAULT 'draft',
 	`approved_by` int,
-	`approved_at` timestamp,
+	`approved_at` timestamp NULL DEFAULT NULL,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `period_settlements_id` PRIMARY KEY(`id`)
 );
@@ -302,7 +302,7 @@ CREATE TABLE `settlement_items` (
 	`net_amount` decimal(12,2) DEFAULT '0',
 	`payment_method` enum('cash','bank_transfer','check'),
 	`payment_reference` varchar(100),
-	`paid_at` timestamp,
+	`paid_at` timestamp NULL DEFAULT NULL,
 	CONSTRAINT `settlement_items_id` PRIMARY KEY(`id`)
 );
 --> statement-breakpoint
@@ -317,8 +317,8 @@ CREATE TABLE `worker_incentives` (
 	`reference_id` int,
 	`status` enum('pending','approved','paid','cancelled') DEFAULT 'pending',
 	`approved_by` int,
-	`approved_at` timestamp,
-	`paid_at` timestamp,
+	`approved_at` timestamp NULL DEFAULT NULL,
+	`paid_at` timestamp NULL DEFAULT NULL,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `worker_incentives_id` PRIMARY KEY(`id`)
 );
@@ -353,7 +353,7 @@ CREATE TABLE `worker_performance` (
 	`attendance_rate` decimal(5,2),
 	`notes` text,
 	`evaluated_by` int,
-	`evaluated_at` timestamp,
+	`evaluated_at` timestamp NULL DEFAULT NULL,
 	`created_at` timestamp NOT NULL DEFAULT (now()),
 	CONSTRAINT `worker_performance_id` PRIMARY KEY(`id`)
 );
