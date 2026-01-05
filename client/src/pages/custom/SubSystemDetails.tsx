@@ -227,12 +227,355 @@ function LedgerStatement({ subSystemId }: { subSystemId: number }) {
     toast.success("تم تصدير الملف بنجاح");
   };
 
+  const escapeHtml = (text: string | null | undefined): string => {
+    if (!text) return "-";
+    return text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  };
+
   const handlePrint = () => {
     if (statement.length === 0) {
       toast.error("لا توجد بيانات للطباعة");
       return;
     }
-    window.print();
+
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      toast.error("تعذر فتح نافذة الطباعة - تأكد من السماح بالنوافذ المنبثقة");
+      return;
+    }
+
+    const dateRange = fromDate || toDate 
+      ? `من ${fromDate || "البداية"} إلى ${toDate || "اليوم"}`
+      : "جميع الحركات";
+
+    const printContent = `
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>كشف حساب - ${escapeHtml(selectedAccount?.accountNameAr)}</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    @page {
+      size: A4;
+      margin: 15mm;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Arial, sans-serif;
+      font-size: 12px;
+      line-height: 1.5;
+      color: #1f2937;
+      background: white;
+      direction: rtl;
+    }
+    
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 2px solid #1e40af;
+    }
+    
+    .company-name {
+      font-size: 20px;
+      font-weight: bold;
+      color: #1e40af;
+      margin-bottom: 5px;
+    }
+    
+    .report-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #374151;
+      margin: 10px 0;
+    }
+    
+    .account-info {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 15px;
+    }
+    
+    .account-info-row {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+    
+    .account-info-row:last-child {
+      margin-bottom: 0;
+    }
+    
+    .info-label {
+      font-weight: 600;
+      color: #64748b;
+    }
+    
+    .info-value {
+      font-weight: 600;
+      color: #1e293b;
+    }
+    
+    .summary-cards {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    
+    .summary-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    
+    .summary-card.debit {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+    
+    .summary-card.credit {
+      background: #fffbeb;
+      border-color: #fde68a;
+    }
+    
+    .summary-card.net {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+    }
+    
+    .summary-card.balance {
+      background: #f8fafc;
+      border-color: #cbd5e1;
+    }
+    
+    .summary-label {
+      font-size: 10px;
+      color: #64748b;
+      margin-bottom: 3px;
+    }
+    
+    .summary-value {
+      font-size: 14px;
+      font-weight: bold;
+    }
+    
+    .summary-card.debit .summary-value { color: #059669; }
+    .summary-card.credit .summary-value { color: #d97706; }
+    .summary-card.net .summary-value { color: #0284c7; }
+    .summary-card.balance .summary-value { color: #374151; }
+    .summary-card.balance .summary-value.negative { color: #dc2626; }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 15px;
+      font-size: 11px;
+    }
+    
+    thead {
+      background: #1e40af;
+      color: white;
+    }
+    
+    th {
+      padding: 10px 8px;
+      text-align: right;
+      font-weight: 600;
+    }
+    
+    td {
+      padding: 8px;
+      text-align: right;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    
+    tbody tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    
+    tbody tr:hover {
+      background: #f1f5f9;
+    }
+    
+    .num-col {
+      font-family: 'Courier New', monospace;
+      text-align: left;
+      direction: ltr;
+    }
+    
+    .debit-col { color: #059669; font-weight: 500; }
+    .credit-col { color: #d97706; font-weight: 500; }
+    .balance-col { font-weight: 600; }
+    .balance-negative { color: #dc2626; }
+    
+    .totals-row {
+      background: #1e293b !important;
+      color: white;
+      font-weight: bold;
+    }
+    
+    .totals-row td {
+      border-bottom: none;
+      padding: 12px 8px;
+    }
+    
+    .totals-row .debit-col { color: #34d399; }
+    .totals-row .credit-col { color: #fbbf24; }
+    .totals-row .balance-col { color: white; }
+    .totals-row .balance-negative { color: #f87171; }
+    
+    .footer {
+      margin-top: 20px;
+      padding-top: 15px;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: #64748b;
+    }
+    
+    .signatures {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      text-align: center;
+    }
+    
+    .signature-box {
+      padding-top: 40px;
+      border-top: 1px solid #374151;
+    }
+    
+    .signature-label {
+      font-size: 11px;
+      color: #374151;
+      font-weight: 500;
+    }
+    
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .no-print { display: none; }
+      thead { display: table-header-group; }
+      tr { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="company-name">العباسي لتوليد وتوزيع الكهرباء</div>
+    <div class="report-title">كشف حساب تفصيلي</div>
+  </div>
+  
+  <div class="account-info">
+    <div class="account-info-row">
+      <span><span class="info-label">الحساب:</span> <span class="info-value">${escapeHtml(selectedAccount?.accountCode)} - ${escapeHtml(selectedAccount?.accountNameAr)}</span></span>
+      <span><span class="info-label">الفترة:</span> <span class="info-value">${escapeHtml(dateRange)}</span></span>
+    </div>
+    <div class="account-info-row">
+      <span><span class="info-label">تاريخ الطباعة:</span> <span class="info-value">${new Date().toLocaleString("ar-EG")}</span></span>
+      <span><span class="info-label">عدد الحركات:</span> <span class="info-value">${statement.length}</span></span>
+    </div>
+  </div>
+  
+  <div class="summary-cards">
+    <div class="summary-card debit">
+      <div class="summary-label">إجمالي المدين</div>
+      <div class="summary-value">${totalDebit.toLocaleString("ar-SA")}</div>
+    </div>
+    <div class="summary-card credit">
+      <div class="summary-label">إجمالي الدائن</div>
+      <div class="summary-value">${totalCredit.toLocaleString("ar-SA")}</div>
+    </div>
+    <div class="summary-card net">
+      <div class="summary-label">صافي الحركة</div>
+      <div class="summary-value">${netMovement.toLocaleString("ar-SA")}</div>
+    </div>
+    <div class="summary-card balance">
+      <div class="summary-label">الرصيد الختامي</div>
+      <div class="summary-value ${closingBalance < 0 ? "negative" : ""}">${closingBalance.toLocaleString("ar-SA")}</div>
+    </div>
+  </div>
+  
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 5%">#</th>
+        <th style="width: 12%">التاريخ</th>
+        <th style="width: 10%">رقم القيد</th>
+        <th style="width: 12%">المرجع</th>
+        <th style="width: 25%">الوصف</th>
+        <th style="width: 12%">مدين</th>
+        <th style="width: 12%">دائن</th>
+        <th style="width: 12%">الرصيد</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${statement.map((row, index) => `
+        <tr>
+          <td>${index + 1}</td>
+          <td>${row.entryDate ? new Date(row.entryDate).toLocaleDateString("ar-EG") : "-"}</td>
+          <td>${escapeHtml(row.entryNumber) || `#${row.entryId}`}</td>
+          <td>${row.referenceType ? `${escapeHtml(row.referenceType)} ${row.referenceId ?? ""}` : "-"}</td>
+          <td>${escapeHtml(row.description)}</td>
+          <td class="num-col debit-col">${row.debit > 0 ? row.debit.toLocaleString("ar-SA") : "-"}</td>
+          <td class="num-col credit-col">${row.credit > 0 ? row.credit.toLocaleString("ar-SA") : "-"}</td>
+          <td class="num-col balance-col ${row.balance < 0 ? "balance-negative" : ""}">${row.balance.toLocaleString("ar-SA")}</td>
+        </tr>
+      `).join("")}
+      <tr class="totals-row">
+        <td colspan="5">الإجمالي</td>
+        <td class="num-col debit-col">${totalDebit.toLocaleString("ar-SA")}</td>
+        <td class="num-col credit-col">${totalCredit.toLocaleString("ar-SA")}</td>
+        <td class="num-col balance-col ${closingBalance < 0 ? "balance-negative" : ""}">${closingBalance.toLocaleString("ar-SA")}</td>
+      </tr>
+    </tbody>
+  </table>
+  
+  <div class="signatures">
+    <div class="signature-box">
+      <div class="signature-label">المحاسب</div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-label">المدير المالي</div>
+    </div>
+    <div class="signature-box">
+      <div class="signature-label">المدير العام</div>
+    </div>
+  </div>
+  
+  <div class="footer">
+    <span>تم إنشاء هذا التقرير آلياً من نظام إدارة الطاقة</span>
+    <span>صفحة 1</span>
+  </div>
+  
+  <script>
+    window.onload = function() {
+      window.print();
+    };
+  </script>
+</body>
+</html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   return (
