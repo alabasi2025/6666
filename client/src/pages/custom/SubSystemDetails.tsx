@@ -157,126 +157,444 @@ function LedgerStatement({ subSystemId }: { subSystemId: number }) {
 
   const selectedAccount = accounts.find((a) => a.id === Number(accountId));
 
+  const totalDebit = statement.reduce((sum, row) => sum + row.debit, 0);
+  const totalCredit = statement.reduce((sum, row) => sum + row.credit, 0);
+  const closingBalance = statement.length > 0 ? statement[statement.length - 1].balance : 0;
+  const netMovement = totalDebit - totalCredit;
+
+  const setQuickDateRange = (range: "today" | "week" | "month" | "quarter" | "year") => {
+    const today = new Date();
+    const formatDate = (d: Date) => d.toISOString().split("T")[0];
+    setToDate(formatDate(today));
+
+    switch (range) {
+      case "today":
+        setFromDate(formatDate(today));
+        break;
+      case "week":
+        const weekAgo = new Date(today);
+        weekAgo.setDate(today.getDate() - 7);
+        setFromDate(formatDate(weekAgo));
+        break;
+      case "month":
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        setFromDate(formatDate(monthStart));
+        break;
+      case "quarter":
+        const quarterStart = new Date(today.getFullYear(), Math.floor(today.getMonth() / 3) * 3, 1);
+        setFromDate(formatDate(quarterStart));
+        break;
+      case "year":
+        const yearStart = new Date(today.getFullYear(), 0, 1);
+        setFromDate(formatDate(yearStart));
+        break;
+    }
+  };
+
+  const clearFilters = () => {
+    setFromDate("");
+    setToDate("");
+    setStatement([]);
+  };
+
+  const exportToCSV = () => {
+    if (statement.length === 0) {
+      toast.error("لا توجد بيانات للتصدير");
+      return;
+    }
+
+    const headers = ["التاريخ", "رقم القيد", "المرجع", "الوصف", "مدين", "دائن", "الرصيد"];
+    const rows = statement.map((row) => [
+      row.entryDate ? new Date(row.entryDate).toLocaleDateString("ar-EG") : "-",
+      row.entryNumber ?? `#${row.entryId}`,
+      row.referenceType ? `${row.referenceType} ${row.referenceId ?? ""}` : "-",
+      row.description ?? "-",
+      row.debit.toString(),
+      row.credit.toString(),
+      row.balance.toString(),
+    ]);
+
+    const csvContent = "\uFEFF" + [headers, ...rows].map((row) => row.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `كشف_حساب_${selectedAccount?.accountCode || "account"}_${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("تم تصدير الملف بنجاح");
+  };
+
+  const handlePrint = () => {
+    if (statement.length === 0) {
+      toast.error("لا توجد بيانات للطباعة");
+      return;
+    }
+    window.print();
+  };
+
   return (
-    <Card className="bg-slate-900/60 border-slate-800">
-      <CardHeader>
-        <CardTitle className="text-white flex items-center gap-2">
-          <BookOpen className="h-5 w-5 text-sky-400" />
-          كشف الحساب
-        </CardTitle>
-        <CardDescription>عرض حركات الحساب داخل النظام الفرعي</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-          <div className="space-y-2">
-            <Label className="text-slate-200">الحساب</Label>
-            <Select value={accountId} onValueChange={setAccountId}>
-              <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                <SelectValue placeholder="اختر الحساب" />
-              </SelectTrigger>
-              <SelectContent className="bg-slate-900 text-white">
-                {accounts.map((acc) => (
-                  <SelectItem key={acc.id} value={String(acc.id)}>
-                    {acc.accountCode} - {acc.accountNameAr}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label className="text-slate-200">من تاريخ</Label>
-            <Input
-              type="date"
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              className="bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label className="text-slate-200">إلى تاريخ</Label>
-            <Input
-              type="date"
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              className="bg-slate-800 border-slate-700 text-white"
-            />
-          </div>
-          <div className="flex items-end">
-            <Button onClick={fetchStatement} disabled={loading} className="w-full">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
-              عرض كشف الحساب
-            </Button>
-          </div>
-        </div>
-
-        {selectedAccount && (
-          <div className="text-slate-300 text-sm">
-            الحساب المختار: <span className="font-bold text-white">{selectedAccount.accountCode} - {selectedAccount.accountNameAr}</span>
-          </div>
-        )}
-
-        {statement.length === 0 && !loading && (
-          <div className="text-center py-8 text-slate-400 border border-dashed border-slate-700 rounded-lg">
-            لا توجد بيانات لعرضها. اختر الحساب وحدد الفترة ثم اضغط عرض كشف الحساب.
-          </div>
-        )}
-
-        {statement.length > 0 && (
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm text-slate-300">
-              <span>عدد الحركات: {statement.length}</span>
-              <span>
-                الرصيد الختامي:{" "}
-                <span className="font-bold text-white">
-                  {statement[statement.length - 1].balance.toLocaleString("ar-SA")}
-                </span>
-              </span>
+    <div className="space-y-6 print:space-y-4">
+      <Card className="bg-gradient-to-br from-slate-900/80 to-slate-800/60 border-slate-700/50 shadow-xl print:shadow-none print:border print:border-gray-300">
+        <CardHeader className="border-b border-slate-700/50 pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-sky-500/20 rounded-xl">
+                <BookOpen className="h-6 w-6 text-sky-400" />
+              </div>
+              <div>
+                <CardTitle className="text-xl text-white">كشف الحساب</CardTitle>
+                <CardDescription className="text-slate-400 mt-0.5">عرض تفصيلي لحركات الحساب المالية</CardDescription>
+              </div>
             </div>
-            <div className="rounded-lg border border-slate-800 overflow-hidden">
-              <Table>
-                <TableHeader className="bg-slate-800/60">
-                  <TableRow>
-                    <TableHead className="text-right text-slate-200">التاريخ</TableHead>
-                    <TableHead className="text-right text-slate-200">رقم القيد</TableHead>
-                    <TableHead className="text-right text-slate-200">المرجع</TableHead>
-                    <TableHead className="text-right text-slate-200">الوصف</TableHead>
-                    <TableHead className="text-right text-slate-200">مدين</TableHead>
-                    <TableHead className="text-right text-slate-200">دائن</TableHead>
-                    <TableHead className="text-right text-slate-200">الرصيد</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {statement.map((row) => (
-                    <TableRow key={row.id} className="border-slate-800">
-                      <TableCell className="text-right text-white">
-                        {row.entryDate ? new Date(row.entryDate).toLocaleDateString("ar-EG") : "-"}
-                      </TableCell>
-                      <TableCell className="text-right text-white">
-                        {row.entryNumber ?? `#${row.entryId}`}
-                      </TableCell>
-                      <TableCell className="text-right text-slate-200">
-                        {row.referenceType ? `${row.referenceType} ${row.referenceId ?? ""}` : "-"}
-                      </TableCell>
-                      <TableCell className="text-right text-slate-200">{row.description ?? "-"}</TableCell>
-                      <TableCell className="text-right text-emerald-400">
-                        {row.debit.toLocaleString("ar-SA")}
-                      </TableCell>
-                      <TableCell className="text-right text-amber-400">
-                        {row.credit.toLocaleString("ar-SA")}
-                      </TableCell>
-                      <TableCell className="text-right text-white font-semibold">
-                        {row.balance.toLocaleString("ar-SA")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+            {statement.length > 0 && (
+              <div className="flex items-center gap-2 print:hidden">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="border-slate-600 text-slate-200 hover:bg-slate-700">
+                      <Download className="h-4 w-4 ml-2" />
+                      تصدير
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="bg-slate-800 border-slate-700">
+                    <DropdownMenuItem onClick={exportToCSV} className="text-slate-200 hover:bg-slate-700 cursor-pointer">
+                      <FileText className="h-4 w-4 ml-2" />
+                      تصدير CSV
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handlePrint} className="text-slate-200 hover:bg-slate-700 cursor-pointer">
+                      <Eye className="h-4 w-4 ml-2" />
+                      طباعة
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            )}
+          </div>
+        </CardHeader>
+
+        <CardContent className="space-y-6 pt-6">
+          <div className="bg-slate-800/40 rounded-xl p-4 border border-slate-700/30 print:hidden">
+            <div className="flex items-center gap-2 mb-4">
+              <Activity className="h-4 w-4 text-slate-400" />
+              <span className="text-sm font-medium text-slate-300">فلاتر البحث</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300 text-sm">الحساب</Label>
+                <Select value={accountId} onValueChange={setAccountId}>
+                  <SelectTrigger className="bg-slate-900/60 border-slate-600 text-white h-10">
+                    <SelectValue placeholder="اختر الحساب" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-slate-900 border-slate-700 text-white max-h-60">
+                    {accounts.map((acc) => (
+                      <SelectItem key={acc.id} value={String(acc.id)} className="hover:bg-slate-800">
+                        <span className="font-mono text-sky-400">{acc.accountCode}</span>
+                        <span className="mx-2 text-slate-500">-</span>
+                        <span>{acc.accountNameAr}</span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300 text-sm">من تاريخ</Label>
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="bg-slate-900/60 border-slate-600 text-white h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-slate-300 text-sm">إلى تاريخ</Label>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="bg-slate-900/60 border-slate-600 text-white h-10"
+                />
+              </div>
+
+              <div className="flex items-end gap-2">
+                <Button
+                  onClick={fetchStatement}
+                  disabled={loading || !accountId}
+                  className="flex-1 h-10 bg-sky-600 hover:bg-sky-500 text-white"
+                >
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin ml-2" />
+                  ) : (
+                    <FileText className="h-4 w-4 ml-2" />
+                  )}
+                  عرض
+                </Button>
+                <Button
+                  onClick={clearFilters}
+                  variant="outline"
+                  className="h-10 border-slate-600 text-slate-300 hover:bg-slate-700"
+                  title="مسح الفلاتر"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 mt-4 pt-4 border-t border-slate-700/30">
+              <span className="text-xs text-slate-500 ml-2">فترات سريعة:</span>
+              {[
+                { key: "today", label: "اليوم" },
+                { key: "week", label: "آخر أسبوع" },
+                { key: "month", label: "هذا الشهر" },
+                { key: "quarter", label: "هذا الربع" },
+                { key: "year", label: "هذه السنة" },
+              ].map((item) => (
+                <Button
+                  key={item.key}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setQuickDateRange(item.key as any)}
+                  className="h-7 px-3 text-xs bg-slate-700/50 hover:bg-slate-600 text-slate-300"
+                >
+                  {item.label}
+                </Button>
+              ))}
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {selectedAccount && (
+            <div className="hidden print:block text-center border-b pb-4 mb-4">
+              <h2 className="text-xl font-bold">كشف حساب</h2>
+              <p className="text-lg">{selectedAccount.accountCode} - {selectedAccount.accountNameAr}</p>
+              {fromDate && toDate && (
+                <p className="text-sm text-gray-600">
+                  الفترة من {new Date(fromDate).toLocaleDateString("ar-EG")} إلى {new Date(toDate).toLocaleDateString("ar-EG")}
+                </p>
+              )}
+            </div>
+          )}
+
+          {loading && (
+            <div className="flex flex-col items-center justify-center py-16 text-slate-400">
+              <Loader2 className="h-10 w-10 animate-spin text-sky-500 mb-4" />
+              <p className="text-sm">جاري تحميل كشف الحساب...</p>
+            </div>
+          )}
+
+          {!loading && statement.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed border-slate-700/50 rounded-xl bg-slate-800/20 print:hidden">
+              <div className="p-4 bg-slate-800/60 rounded-full mb-4">
+                <BookOpen className="h-10 w-10 text-slate-500" />
+              </div>
+              <h3 className="text-lg font-medium text-slate-300 mb-2">لا توجد بيانات لعرضها</h3>
+              <p className="text-sm text-slate-500 text-center max-w-md">
+                اختر الحساب المطلوب وحدد الفترة الزمنية ثم اضغط على زر "عرض" لاستعراض حركات الحساب
+              </p>
+            </div>
+          )}
+
+          {!loading && statement.length > 0 && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 print:grid-cols-4">
+                <Card className="bg-gradient-to-br from-emerald-500/10 to-emerald-600/5 border-emerald-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-emerald-300/70 mb-1">إجمالي المدين</p>
+                        <p className="text-xl font-bold text-emerald-400 font-mono tabular-nums">
+                          {totalDebit.toLocaleString("ar-SA")}
+                        </p>
+                      </div>
+                      <TrendingUp className="h-8 w-8 text-emerald-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-amber-300/70 mb-1">إجمالي الدائن</p>
+                        <p className="text-xl font-bold text-amber-400 font-mono tabular-nums">
+                          {totalCredit.toLocaleString("ar-SA")}
+                        </p>
+                      </div>
+                      <TrendingDown className="h-8 w-8 text-amber-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-blue-300/70 mb-1">صافي الحركة</p>
+                        <p className={cn(
+                          "text-xl font-bold font-mono tabular-nums",
+                          netMovement >= 0 ? "text-emerald-400" : "text-rose-400"
+                        )}>
+                          {netMovement.toLocaleString("ar-SA")}
+                        </p>
+                      </div>
+                      <ArrowLeftRight className="h-8 w-8 text-blue-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-gradient-to-br from-violet-500/10 to-violet-600/5 border-violet-500/20">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-violet-300/70 mb-1">الرصيد الختامي</p>
+                        <p className={cn(
+                          "text-xl font-bold font-mono tabular-nums",
+                          closingBalance >= 0 ? "text-white" : "text-rose-400"
+                        )}>
+                          {closingBalance.toLocaleString("ar-SA")}
+                        </p>
+                      </div>
+                      <Wallet className="h-8 w-8 text-violet-500/30" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {selectedAccount && (
+                <div className="flex items-center justify-between bg-slate-800/40 rounded-lg px-4 py-3 border border-slate-700/30 print:bg-gray-100 print:border-gray-300">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-sky-500/20 rounded-lg print:bg-sky-100">
+                      <CreditCard className="h-4 w-4 text-sky-400 print:text-sky-600" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400 print:text-gray-500">الحساب المختار</p>
+                      <p className="text-sm font-medium text-white print:text-gray-900">
+                        <span className="font-mono text-sky-400 print:text-sky-600">{selectedAccount.accountCode}</span>
+                        <span className="mx-2 text-slate-500">-</span>
+                        {selectedAccount.accountNameAr}
+                      </p>
+                    </div>
+                  </div>
+                  <Badge variant="outline" className="border-slate-600 text-slate-300 print:border-gray-400 print:text-gray-600">
+                    {statement.length} حركة
+                  </Badge>
+                </div>
+              )}
+
+              <div className="rounded-xl border border-slate-700/50 overflow-hidden shadow-lg print:shadow-none print:border-gray-300">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-800/80 hover:bg-slate-800/80 print:bg-gray-200">
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">#</TableHead>
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">التاريخ</TableHead>
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">رقم القيد</TableHead>
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">المرجع</TableHead>
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">الوصف</TableHead>
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">مدين</TableHead>
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">دائن</TableHead>
+                        <TableHead className="text-right text-slate-200 font-semibold py-4 print:text-gray-700">الرصيد</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {statement.map((row, index) => (
+                        <TableRow
+                          key={row.id}
+                          className={cn(
+                            "border-slate-700/30 transition-colors",
+                            index % 2 === 0 ? "bg-slate-900/30" : "bg-slate-800/20",
+                            "hover:bg-slate-700/30 print:hover:bg-transparent",
+                            index % 2 === 0 ? "print:bg-white" : "print:bg-gray-50"
+                          )}
+                        >
+                          <TableCell className="text-right text-slate-500 font-mono text-xs print:text-gray-500">
+                            {index + 1}
+                          </TableCell>
+                          <TableCell className="text-right text-white font-mono text-sm print:text-gray-900">
+                            {row.entryDate ? new Date(row.entryDate).toLocaleDateString("ar-EG") : "-"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="text-sky-400 font-mono text-sm print:text-sky-600">
+                              {row.entryNumber ?? `#${row.entryId}`}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right text-slate-300 text-sm print:text-gray-600">
+                            {row.referenceType ? (
+                              <Badge variant="outline" className="border-slate-600 text-xs print:border-gray-400">
+                                {row.referenceType} {row.referenceId ?? ""}
+                              </Badge>
+                            ) : (
+                              <span className="text-slate-500">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right text-slate-200 text-sm max-w-xs truncate print:text-gray-700">
+                            {row.description ?? "-"}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {row.debit > 0 ? (
+                              <span className="text-emerald-400 font-medium print:text-emerald-600">
+                                {row.debit.toLocaleString("ar-SA")}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {row.credit > 0 ? (
+                              <span className="text-amber-400 font-medium print:text-amber-600">
+                                {row.credit.toLocaleString("ar-SA")}
+                              </span>
+                            ) : (
+                              <span className="text-slate-600">-</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            <span className={cn(
+                              "font-semibold",
+                              row.balance >= 0 ? "text-white print:text-gray-900" : "text-rose-400 print:text-rose-600"
+                            )}>
+                              {row.balance.toLocaleString("ar-SA")}
+                            </span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+
+                      <TableRow className="bg-slate-800/60 border-t-2 border-slate-600 font-bold print:bg-gray-200">
+                        <TableCell colSpan={5} className="text-right text-slate-200 py-4 print:text-gray-700">
+                          الإجمالي
+                        </TableCell>
+                        <TableCell className="text-right text-emerald-400 font-mono tabular-nums py-4 print:text-emerald-600">
+                          {totalDebit.toLocaleString("ar-SA")}
+                        </TableCell>
+                        <TableCell className="text-right text-amber-400 font-mono tabular-nums py-4 print:text-amber-600">
+                          {totalCredit.toLocaleString("ar-SA")}
+                        </TableCell>
+                        <TableCell className="text-right font-mono tabular-nums py-4">
+                          <span className={cn(
+                            "font-bold text-lg",
+                            closingBalance >= 0 ? "text-white print:text-gray-900" : "text-rose-400 print:text-rose-600"
+                          )}>
+                            {closingBalance.toLocaleString("ar-SA")}
+                          </span>
+                        </TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-slate-500 pt-2 print:text-gray-500">
+                <span>تم إنشاء التقرير في: {new Date().toLocaleString("ar-EG")}</span>
+                <span>عدد الحركات: {statement.length}</span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 
