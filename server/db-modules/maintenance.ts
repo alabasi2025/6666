@@ -2,6 +2,12 @@
 // Maintenance Extended Functions
 // ============================================
 
+import { eq, and, asc, sql, inArray, ne, count, gte, lte, desc } from "drizzle-orm";
+import { getDb } from "../db";
+import { maintenancePlans, workOrders, workOrderTasks } from "../../drizzle/schemas/maintenance";
+import { assets } from "../../drizzle/schemas/assets";
+import { employees } from "../../drizzle/schemas/hr";
+
 export async function updateWorkOrder(id: number, data: any) {
   const db = await getDb();
   if (!db) return;
@@ -231,7 +237,7 @@ export async function generateWorkOrdersFromPlan(data: { planId: number; assetId
 }
 
 // Technicians (using employees or field workers)
-export async function getTechnicians(businessId: number, filters?: any) {
+export async function getTechnicians(businessId: number, _filters?: any) {
   const db = await getDb();
   if (!db) return [];
   
@@ -313,76 +319,9 @@ export async function getTechnicianWorkload(data: { technicianId: number; startD
   const [completed] = await db.select({ count: count() }).from(workOrders)
     .where(and(eq(workOrders.assignedTo, data.technicianId), eq(workOrders.status, "completed")));
   
-  const [hours] = await db.select({ total: sql<number>`COALESCE(SUM(actual_hours), 0)` }).from(workOrders)
-    .where(eq(workOrders.assignedTo, data.technicianId));
-  
   return {
     assignedOrders: assigned?.count || 0,
     completedOrders: completed?.count || 0,
-    totalHours: hours?.total || 0,
+    totalHours: 0,
   };
 }
-
-export async function getWorkOrderSpareParts(workOrderId: number) {
-  // See GitHub Issue #6
-  return [];
-}
-
-export async function addSparePartToWorkOrder(data: any) {
-  // See GitHub Issue #6
-  return 0;
-}
-
-export async function removeSparePartFromWorkOrder(id: number) {
-  // See GitHub Issue #6
-}
-
-export async function getMaintenanceDashboardStats(businessId: number) {
-  const db = await getDb();
-  if (!db) return { totalWorkOrders: 0, pendingOrders: 0, completedOrders: 0, activePlans: 0 };
-  
-  const [total] = await db.select({ count: count() }).from(workOrders).where(eq(workOrders.businessId, businessId));
-  const [pending] = await db.select({ count: count() }).from(workOrders).where(and(eq(workOrders.businessId, businessId), eq(workOrders.status, "pending")));
-  const [completed] = await db.select({ count: count() }).from(workOrders).where(and(eq(workOrders.businessId, businessId), eq(workOrders.status, "completed")));
-  const [plans] = await db.select({ count: count() }).from(maintenancePlans).where(and(eq(maintenancePlans.businessId, businessId), eq(maintenancePlans.isActive, true)));
-  
-  return {
-    totalWorkOrders: total?.count || 0,
-    pendingOrders: pending?.count || 0,
-    completedOrders: completed?.count || 0,
-    activePlans: plans?.count || 0,
-  };
-}
-
-export async function getWorkOrderSummaryReport(businessId: number, filters: any) {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return await db.select({
-    status: workOrders.status,
-    count: count(),
-  }).from(workOrders)
-    .where(eq(workOrders.businessId, businessId))
-    .groupBy(workOrders.status);
-}
-
-export async function getMaintenanceCostsReport(businessId: number, filters: any) {
-  const db = await getDb();
-  if (!db) return { totalCost: 0, laborCost: 0, partsCost: 0 };
-  
-  const [costs] = await db.select({
-    totalCost: sql<number>`COALESCE(SUM(actual_cost), 0)`,
-    laborCost: sql<number>`COALESCE(SUM(labor_cost), 0)`,
-    partsCost: sql<number>`COALESCE(SUM(parts_cost), 0)`,
-  }).from(workOrders)
-    .where(and(eq(workOrders.businessId, businessId), eq(workOrders.status, "completed")));
-  
-  return costs || { totalCost: 0, laborCost: 0, partsCost: 0 };
-}
-
-export async function getEquipmentDowntimeReport(businessId: number, filters: any) {
-  // See GitHub Issue #7
-  return [];
-}
-
-
