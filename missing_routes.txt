@@ -1,0 +1,19 @@
+# المسارات الموجودة في القائمة الجانبية ولكن غير معرفة في renderContent
+
+1. /dashboard/fieldops/tasks/collectors - مهام المتحصلين
+2. /dashboard/fieldops/tasks/electricians - مهام الكهربائيين
+3. /dashboard/fieldops/tasks/station-manager - مهام مدير المحطة
+4. /dashboard/government-support/consumption - تتبع الاستهلاك
+5. /dashboard/government-support/customers - بيانات الدعم
+6. /dashboard/government-support/quotas - الحصص
+7. /dashboard/government-support/reports - التقارير
+8. /dashboard/reports/analytics - التحليلات
+9. /dashboard/reports/financial - التقارير المالية
+10. /dashboard/reports/ledger - كشف حساب
+11. /dashboard/reports/operational - التقارير التشغيلية
+12. /dashboard/reports/trial-balance - ميزان المراجعة
+13. /dashboard/settings - الإعدادات
+14. /dashboard/transition-support/alerts - التنبيهات
+15. /dashboard/transition-support/billing - تعديلات الفوترة
+16. /dashboard/transition-support/notifications - الإشعارات
+17. /dashboard/users/roles - الأدوار والصلاحيات

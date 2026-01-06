@@ -133,9 +133,16 @@ const STSCharging = lazy(() => import("./sts/STSCharging"));
 
 // Government Support Pages - Lazy Loaded
 const GovernmentSupportDashboard = lazy(() => import("./government-support/GovernmentSupportDashboard"));
+const GovernmentSupportCustomers = lazy(() => import("./government-support/GovernmentSupportCustomers"));
+const GovernmentSupportQuotas = lazy(() => import("./government-support/GovernmentSupportQuotas"));
+const GovernmentSupportConsumption = lazy(() => import("./government-support/GovernmentSupportConsumption"));
+const GovernmentSupportReports = lazy(() => import("./government-support/GovernmentSupportReports"));
 
 // Transition Support Pages - Lazy Loaded
 const TransitionDashboard = lazy(() => import("./transition-support/TransitionDashboard"));
+const TransitionNotifications = lazy(() => import("./transition-support/TransitionNotifications"));
+const TransitionBilling = lazy(() => import("./transition-support/TransitionBilling"));
+const TransitionAlerts = lazy(() => import("./transition-support/TransitionAlerts"));
 
 // Organization Pages - Lazy Loaded
 const Businesses = lazy(() => import("./organization/Businesses"));
@@ -149,6 +156,22 @@ const MiscAssets = lazy(() => import("./operations/MiscAssets"));
 
 // Users Management Pages - Lazy Loaded
 const UsersManagement = lazy(() => import("./users/UsersManagement"));
+const RolesManagement = lazy(() => import("./users/RolesManagement"));
+
+// Reports Pages - Lazy Loaded
+const LedgerReport = lazy(() => import("./reports/LedgerReport"));
+const TrialBalanceReport = lazy(() => import("./reports/TrialBalanceReport"));
+const FinancialReports = lazy(() => import("./reports/FinancialReports"));
+const OperationalReports = lazy(() => import("./reports/OperationalReports"));
+const Analytics = lazy(() => import("./reports/Analytics"));
+
+// Settings Pages - Lazy Loaded
+const Settings = lazy(() => import("./settings/Settings"));
+
+// Field Operations Tasks - Lazy Loaded
+const CollectorTasks = lazy(() => import("./fieldops/tasks/CollectorTasks"));
+const ElectricianTasks = lazy(() => import("./fieldops/tasks/ElectricianTasks"));
+const StationManagerTasks = lazy(() => import("./fieldops/tasks/StationManagerTasks"));
 
 // Custom System Pages - Lazy Loaded
 const CustomDashboard = lazy(() => import("./custom/CustomDashboard"));
@@ -689,10 +712,17 @@ export default function Dashboard() {
         {/* Government Support System */}
         {path === "/dashboard/government-support" && <GovernmentSupportDashboard />}
         {path === "/dashboard/government-support/dashboard" && <GovernmentSupportDashboard />}
+        {path === "/dashboard/government-support/customers" && <GovernmentSupportCustomers />}
+        {path === "/dashboard/government-support/quotas" && <GovernmentSupportQuotas />}
+        {path === "/dashboard/government-support/consumption" && <GovernmentSupportConsumption />}
+        {path === "/dashboard/government-support/reports" && <GovernmentSupportReports />}
         
         {/* Transition Support System */}
         {path === "/dashboard/transition-support" && <TransitionDashboard />}
         {path === "/dashboard/transition-support/dashboard" && <TransitionDashboard />}
+        {path === "/dashboard/transition-support/notifications" && <TransitionNotifications />}
+        {path === "/dashboard/transition-support/billing" && <TransitionBilling />}
+        {path === "/dashboard/transition-support/alerts" && <TransitionAlerts />}
         
         {/* Billing System */}
         {path === "/dashboard/billing" && <BillingDashboard />}
@@ -727,6 +757,24 @@ export default function Dashboard() {
         {path === "/dashboard/engines/scheduling" && <SchedulingEngine />}
         {path === "/dashboard/engines/assignment" && <AssignmentEngine />}
         {path === "/dashboard/engines/health" && <HealthCheck />}
+        
+        {/* Users */}
+        {path === "/dashboard/users/roles" && <RolesManagement />}
+        
+        {/* Reports */}
+        {path === "/dashboard/reports/ledger" && <LedgerReport />}
+        {path === "/dashboard/reports/trial-balance" && <TrialBalanceReport />}
+        {path === "/dashboard/reports/financial" && <FinancialReports />}
+        {path === "/dashboard/reports/operational" && <OperationalReports />}
+        {path === "/dashboard/reports/analytics" && <Analytics />}
+        
+        {/* Settings */}
+        {path === "/dashboard/settings" && <Settings />}
+        
+        {/* Field Operations Tasks */}
+        {path === "/dashboard/fieldops/tasks/collectors" && <CollectorTasks />}
+        {path === "/dashboard/fieldops/tasks/electricians" && <ElectricianTasks />}
+        {path === "/dashboard/fieldops/tasks/station-manager" && <StationManagerTasks />}
         
         {/* Developer */}
         {path === "/dashboard/developer" && <DeveloperDashboard />}
