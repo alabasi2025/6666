@@ -105,10 +105,12 @@ export default function STSManagement() {
   });
 
   // Fetch customers for dropdown
-  const { data: customers } = trpc.customerSystem.getCustomers.useQuery({
+  const { data: customersData } = trpc.customerSystem.getCustomers.useQuery({
     businessId,
     limit: 1000,
   });
+  // استخراج مصفوفة العملاء من البيانات المرجعة
+  const customers = Array.isArray(customersData) ? customersData : (customersData?.data || []);
 
   // Create mutation
   const createMutation = trpc.sts.meters.create.useMutation({
