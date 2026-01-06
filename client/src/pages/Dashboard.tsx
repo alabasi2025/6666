@@ -166,7 +166,7 @@ const OperationalReports = lazy(() => import("./reports/OperationalReports"));
 const Analytics = lazy(() => import("./reports/Analytics"));
 
 // Settings Pages - Lazy Loaded
-const Settings = lazy(() => import("./settings/Settings"));
+const SettingsPage = lazy(() => import("./settings/Settings"));
 
 // Field Operations Tasks - Lazy Loaded
 const CollectorTasks = lazy(() => import("./fieldops/tasks/CollectorTasks"));
@@ -769,7 +769,7 @@ export default function Dashboard() {
         {path === "/dashboard/reports/analytics" && <Analytics />}
         
         {/* Settings */}
-        {path === "/dashboard/settings" && <Settings />}
+        {path === "/dashboard/settings" && <SettingsPage />}
         
         {/* Field Operations Tasks */}
         {path === "/dashboard/fieldops/tasks/collectors" && <CollectorTasks />}
