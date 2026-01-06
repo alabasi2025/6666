@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router, protectedProcedure } from "./_core/trpc";
 import * as db from "./db";
+import { SmartAssignmentEngine } from "./core/smart-assignment-engine";
 
 /**
  * @fileoverview Router لنظام العمليات الميدانية
@@ -131,6 +132,32 @@ export const fieldOpsRouter = router({
           scheduledDate: input.scheduledDate ? new Date(input.scheduledDate) : undefined,
           createdBy: ctx.user.id,
         });
+
+        // إسناد تلقائي للعمليات الطارئة
+        if (input.priority === "urgent" && !input.assignedWorkerId && input.locationLat && input.locationLng) {
+          try {
+            const assignment = await SmartAssignmentEngine.assignEmergencyTask({
+              businessId: input.businessId,
+              operationId: id,
+              taskLatitude: input.locationLat,
+              taskLongitude: input.locationLng,
+              taskType: input.operationType,
+              maxDistance: 20, // 20 كيلومتر كحد أقصى
+            });
+
+            if (assignment) {
+              // تحديث العملية بالفني المُسند
+              await db.updateFieldOperation(id, {
+                assignedWorkerId: assignment.workerId,
+                status: "assigned",
+              });
+            }
+          } catch (error: any) {
+            // لا نرمي الخطأ - نكتفي بتسجيله
+            console.error("Failed to auto-assign emergency task", error);
+          }
+        }
+
         return { id };
       }),
 

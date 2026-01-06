@@ -6,6 +6,7 @@ import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
 import * as db from "./db";
+import { getDb } from "./db";
 import * as auth from "./auth";
 import { fieldOpsRouter } from "./fieldOpsRouter";
 import { hrRouter } from "./hrRouter";
@@ -21,7 +22,18 @@ import { scadaRouter } from "./scadaRouter";
 import { dieselRouter } from "./dieselRouter";
 import { intermediarySystemRouter } from "./intermediarySystemRouter";
 import { customAccountTypesRouter } from "./customAccountTypesRouter";
+import { stsRouter } from "./stsRouter";
+import { governmentSupportRouter } from "./governmentSupportRouter";
+import { transitionSupportRouter } from "./transitionSupportRouter";
+import { paymentGatewaysRouter } from "./paymentGatewaysRouter";
+import { messagingRouter } from "./messagingRouter";
 import { logger } from './utils/logger';
+import { AutoJournalEngine } from "./core/auto-journal-engine";
+import { PricingEngine } from "./core/pricing-engine";
+import { ReconciliationEngine } from "./core/reconciliation-engine";
+import { PreventiveSchedulingEngine } from "./core/preventive-scheduling-engine";
+import { SmartAssignmentEngine } from "./core/smart-assignment-engine";
+import { EnginesValidator } from "./core/engines-validation";
 
 // Admin procedure - requires admin role
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
@@ -837,6 +849,29 @@ export const appRouter = router({
           createdBy: ctx.user.id,
         });
         
+        // إنشاء قيد محاسبي تلقائي
+        try {
+          const journalEntryId = await AutoJournalEngine.onInvoiceCreated({
+            id,
+            businessId: input.businessId,
+            branchId: input.branchId,
+            customerId: input.customerId,
+            invoiceNumber,
+            invoiceDate: new Date(input.invoiceDate),
+            totalAmount,
+            createdBy: ctx.user.id,
+          });
+          
+          // تحديث الفاتورة برقم القيد (إذا كانت الدالة موجودة)
+          // await db.updateInvoice(id, { journalEntryId });
+        } catch (error: any) {
+          // لا نرمي الخطأ - نكتفي بتسجيله
+          logger.error("Failed to create auto journal entry for invoice", {
+            error: error.message,
+            invoiceId: id,
+          });
+        }
+        
         return { id, invoiceNumber, success: true };
       }),
   }),
@@ -1495,6 +1530,450 @@ export const appRouter = router({
   intermediarySystem: intermediarySystemRouter,
   // Custom Account Types - أنواع الحسابات المخصصة
   customAccountTypes: customAccountTypesRouter,
+  // STS System - نظام عدادات STS
+  sts: stsRouter,
+  // Government Support - إدارة الدعم الحكومي
+  governmentSupport: governmentSupportRouter,
+  // Transition Support - دعم المرحلة الانتقالية
+  transitionSupport: transitionSupportRouter,
+  // Payment Gateways - تكامل بوابات الدفع
+  paymentGateways: paymentGatewaysRouter,
+  // Messaging - تكامل SMS/WhatsApp
+  messaging: messagingRouter,
+
+  // ============================================
+  // Pricing Engine - محرك التسعير
+  // ============================================
+  pricing: router({
+    calculate: protectedProcedure
+      .input(z.object({
+        businessId: z.number(),
+        meterType: z.enum(["traditional", "sts", "iot"]),
+        usageType: z.enum(["residential", "commercial", "industrial"]),
+      }))
+      .query(async ({ input }) => {
+        return await PricingEngine.calculate(
+          input.businessId,
+          input.meterType,
+          input.usageType
+        );
+      }),
+
+    rules: router({
+      list: protectedProcedure
+        .input(z.object({
+          businessId: z.number(),
+          activeOnly: z.boolean().default(true),
+        }))
+        .query(async ({ input }) => {
+          return await PricingEngine.getRules(input.businessId, input.activeOnly);
+        }),
+
+      create: protectedProcedure
+        .input(z.object({
+          businessId: z.number(),
+          meterType: z.enum(["traditional", "sts", "iot"]),
+          usageType: z.enum(["residential", "commercial", "industrial"]),
+          subscriptionFee: z.number(),
+          depositAmount: z.number(),
+          depositRequired: z.boolean(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input, ctx }) => {
+          const id = await PricingEngine.createRule({
+            ...input,
+            createdBy: ctx.user.id,
+          });
+          return { id, success: true };
+        }),
+
+      update: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+          subscriptionFee: z.number().optional(),
+          depositAmount: z.number().optional(),
+          depositRequired: z.boolean().optional(),
+          active: z.boolean().optional(),
+          notes: z.string().optional(),
+        }))
+        .mutation(async ({ input }) => {
+          const { id, ...data } = input;
+          await PricingEngine.updateRule(id, data);
+          return { success: true };
+        }),
+    }),
+  }),
+
+  // ============================================
+  // Reconciliation Engine - محرك التسوية
+  // ============================================
+  reconciliation: router({
+    clearingAccounts: router({
+      create: protectedProcedure
+        .input(z.object({
+          businessId: z.number(),
+          code: z.string(),
+          nameAr: z.string(),
+          parentAccountId: z.number(),
+        }))
+        .mutation(async ({ input }) => {
+          const id = await ReconciliationEngine.createClearingAccount(input);
+          return { id, success: true };
+        }),
+    }),
+
+    entries: router({
+      record: protectedProcedure
+        .input(z.object({
+          businessId: z.number(),
+          clearingAccountId: z.number(),
+          entryDate: z.string(),
+          description: z.string(),
+          debit: z.number().optional(),
+          credit: z.number().optional(),
+          sourceModule: z.string(),
+          sourceId: z.number(),
+        }))
+        .mutation(async ({ input, ctx }) => {
+          const id = await ReconciliationEngine.recordClearingEntry({
+            ...input,
+            entryDate: new Date(input.entryDate),
+            createdBy: ctx.user.id,
+          });
+          return { id, success: true };
+        }),
+
+      getUnmatched: protectedProcedure
+        .input(z.object({
+          businessId: z.number(),
+          clearingAccountId: z.number(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+        }))
+        .query(async ({ input }) => {
+          return await ReconciliationEngine.getUnmatchedEntries(
+            input.businessId,
+            input.clearingAccountId,
+            input.startDate ? new Date(input.startDate) : undefined,
+            input.endDate ? new Date(input.endDate) : undefined
+          );
+        }),
+    }),
+
+    match: router({
+      oneToOne: protectedProcedure
+        .input(z.object({
+          entry1Id: z.number(),
+          entry2Id: z.number(),
+        }))
+        .mutation(async ({ input }) => {
+          const isMatched = await ReconciliationEngine.matchOneToOne(
+            input.entry1Id,
+            input.entry2Id
+          );
+          return { matched: isMatched };
+        }),
+
+      oneToMany: protectedProcedure
+        .input(z.object({
+          entryId: z.number(),
+          entryIds: z.array(z.number()),
+        }))
+        .mutation(async ({ input }) => {
+          const isMatched = await ReconciliationEngine.matchOneToMany(
+            input.entryId,
+            input.entryIds
+          );
+          return { matched: isMatched };
+        }),
+
+      manyToMany: protectedProcedure
+        .input(z.object({
+          entryIds1: z.array(z.number()),
+          entryIds2: z.array(z.number()),
+        }))
+        .mutation(async ({ input }) => {
+          const isMatched = await ReconciliationEngine.matchManyToMany(
+            input.entryIds1,
+            input.entryIds2
+          );
+          return { matched: isMatched };
+        }),
+    }),
+
+    reconcile: protectedProcedure
+      .input(z.object({
+        businessId: z.number(),
+        matchedEntryIds: z.array(z.number()),
+        description: z.string(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const id = await ReconciliationEngine.reconcileMatchedEntries({
+          ...input,
+          createdBy: ctx.user.id,
+        });
+        return { id, success: true };
+      }),
+  }),
+
+  // ============================================
+  // Preventive Scheduling - الجدولة الوقائية
+  // ============================================
+  preventiveScheduling: router({
+    schedule: protectedProcedure
+      .input(z.object({
+        businessId: z.number(),
+      }))
+      .mutation(async ({ input }) => {
+        const result = await PreventiveSchedulingEngine.schedulePreventiveMaintenance(
+          input.businessId,
+          1 // system user
+        );
+        return result;
+      }),
+
+    getDuePlans: protectedProcedure
+      .input(z.object({
+        assetId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await PreventiveSchedulingEngine.getDuePlansForAsset(input.assetId);
+      }),
+  }),
+
+  // ============================================
+  // Smart Assignment - الإسناد الذكي
+  // ============================================
+  smartAssignment: router({
+    assignEmergency: protectedProcedure
+      .input(z.object({
+        businessId: z.number(),
+        operationId: z.number().optional(),
+        workOrderId: z.number().optional(),
+        taskLatitude: z.number(),
+        taskLongitude: z.number(),
+        taskType: z.string().optional(),
+        requiredSkills: z.array(z.string()).optional(),
+        maxDistance: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await SmartAssignmentEngine.assignEmergencyTask(input);
+      }),
+
+    getNearest: protectedProcedure
+      .input(z.object({
+        businessId: z.number(),
+        latitude: z.number(),
+        longitude: z.number(),
+        limit: z.number().default(5),
+      }))
+      .query(async ({ input }) => {
+        return await SmartAssignmentEngine.getNearestWorkers(
+          input.businessId,
+          input.latitude,
+          input.longitude,
+          input.limit
+        );
+      }),
+
+    reassign: protectedProcedure
+      .input(z.object({
+        operationId: z.number(),
+        reason: z.string(),
+        excludeWorkerId: z.number().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        return await SmartAssignmentEngine.reassignTask(
+          input.operationId,
+          input.reason,
+          input.excludeWorkerId
+        );
+      }),
+  }),
+
+  // ============================================
+  // Auto Journal Engine - محرك القيود المحاسبية
+  // ============================================
+  autoJournal: router({
+    entries: router({
+      list: protectedProcedure
+        .input(z.object({
+          businessId: z.number(),
+          startDate: z.string().optional(),
+          endDate: z.string().optional(),
+          type: z.enum(["auto", "invoice", "payment", "receipt", "transfer", "depreciation"]).optional(),
+          limit: z.number().default(50),
+          offset: z.number().default(0),
+        }))
+        .query(async ({ input }) => {
+          const db = await getDb();
+          if (!db) throw new Error("Database not available");
+
+          const { journalEntries, journalEntryLines, accounts } = await import("../drizzle/schemas/accounting");
+          const { eq, and, gte, lte, desc } = await import("drizzle-orm");
+
+          const conditions = [eq(journalEntries.businessId, input.businessId)];
+          
+          if (input.type) {
+            conditions.push(eq(journalEntries.type, input.type));
+          }
+          
+          if (input.startDate) {
+            conditions.push(gte(journalEntries.entryDate, new Date(input.startDate)));
+          }
+          
+          if (input.endDate) {
+            conditions.push(lte(journalEntries.entryDate, new Date(input.endDate)));
+          }
+
+          // جلب القيود التلقائية فقط (type = 'auto' أو sourceModule موجود)
+          const entries = await db
+            .select({
+              id: journalEntries.id,
+              entryNumber: journalEntries.entryNumber,
+              entryDate: journalEntries.entryDate,
+              type: journalEntries.type,
+              sourceModule: journalEntries.sourceModule,
+              sourceId: journalEntries.sourceId,
+              description: journalEntries.description,
+              totalDebit: journalEntries.totalDebit,
+              totalCredit: journalEntries.totalCredit,
+              status: journalEntries.status,
+              createdAt: journalEntries.createdAt,
+            })
+            .from(journalEntries)
+            .where(and(...conditions))
+            .orderBy(desc(journalEntries.createdAt))
+            .limit(input.limit)
+            .offset(input.offset);
+
+          // جلب بنود كل قيد
+          const entriesWithLines = await Promise.all(
+            entries.map(async (entry) => {
+              const lines = await db
+                .select({
+                  id: journalEntryLines.id,
+                  lineNumber: journalEntryLines.lineNumber,
+                  accountId: journalEntryLines.accountId,
+                  accountCode: accounts.code,
+                  accountNameAr: accounts.nameAr,
+                  accountNameEn: accounts.nameEn,
+                  debit: journalEntryLines.debit,
+                  credit: journalEntryLines.credit,
+                  description: journalEntryLines.description,
+                })
+                .from(journalEntryLines)
+                .leftJoin(accounts, eq(journalEntryLines.accountId, accounts.id))
+                .where(eq(journalEntryLines.entryId, entry.id))
+                .orderBy(journalEntryLines.lineNumber);
+
+              return {
+                ...entry,
+                lines,
+              };
+            })
+          );
+
+          return entriesWithLines;
+        }),
+
+      getById: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+        }))
+        .query(async ({ input }) => {
+          const db = await getDb();
+          if (!db) throw new Error("Database not available");
+
+          const { journalEntries, journalEntryLines, accounts } = await import("../drizzle/schemas/accounting");
+          const { eq } = await import("drizzle-orm");
+
+          const [entry] = await db
+            .select()
+            .from(journalEntries)
+            .where(eq(journalEntries.id, input.id))
+            .limit(1);
+
+          if (!entry) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "القيد غير موجود" });
+          }
+
+          const lines = await db
+            .select({
+              id: journalEntryLines.id,
+              lineNumber: journalEntryLines.lineNumber,
+              accountId: journalEntryLines.accountId,
+              accountCode: accounts.code,
+              accountNameAr: accounts.nameAr,
+              accountNameEn: accounts.nameEn,
+              debit: journalEntryLines.debit,
+              credit: journalEntryLines.credit,
+              description: journalEntryLines.description,
+            })
+            .from(journalEntryLines)
+            .leftJoin(accounts, eq(journalEntryLines.accountId, accounts.id))
+            .where(eq(journalEntryLines.entryId, input.id))
+            .orderBy(journalEntryLines.lineNumber);
+
+          return {
+            ...entry,
+            lines,
+          };
+        }),
+    }),
+
+    stats: protectedProcedure
+      .input(z.object({
+        businessId: z.number(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+      }))
+      .query(async ({ input }) => {
+        const db = await getDb();
+        if (!db) throw new Error("Database not available");
+
+          const { journalEntries } = await import("../drizzle/schemas/accounting");
+          const { eq, and, gte, lte, count, sql } = await import("drizzle-orm");
+
+        const conditions = [eq(journalEntries.businessId, input.businessId)];
+        
+        if (input.startDate) {
+          conditions.push(gte(journalEntries.entryDate, new Date(input.startDate)));
+        }
+        
+        if (input.endDate) {
+          conditions.push(lte(journalEntries.entryDate, new Date(input.endDate)));
+        }
+
+        const [stats] = await db
+          .select({
+            totalEntries: count(),
+            totalDebit: sql<number>`COALESCE(SUM(CAST(${journalEntries.totalDebit} AS DECIMAL)), 0)`,
+            totalCredit: sql<number>`COALESCE(SUM(CAST(${journalEntries.totalCredit} AS DECIMAL)), 0)`,
+          })
+          .from(journalEntries)
+          .where(and(...conditions));
+
+        return {
+          totalEntries: stats.totalEntries || 0,
+          totalDebit: Number(stats.totalDebit) || 0,
+          totalCredit: Number(stats.totalCredit) || 0,
+        };
+      }),
+  }),
+
+  // ============================================
+  // Health Check - فحص صحة المحركات
+  // ============================================
+  health: router({
+    engines: protectedProcedure
+      .input(z.object({
+        businessId: z.number(),
+      }))
+      .query(async ({ input }) => {
+        return await EnginesValidator.validateAll(input.businessId);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

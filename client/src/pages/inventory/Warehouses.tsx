@@ -54,6 +54,7 @@ export default function Warehouses({ businessId = 1 }: WarehousesProps) {
     phone: "",
     managerId: "",
     description: "",
+    accountId: "",
   });
 
   // Fetch warehouses from API
@@ -64,6 +65,14 @@ export default function Warehouses({ businessId = 1 }: WarehousesProps) {
   // Fetch dashboard stats
   const { data: stats } = trpc.inventory.dashboardStats.useQuery({
     businessId: resolvedBusinessId,
+  } as any);
+
+  // Fetch inventory sub accounts from Chart of Accounts (دليل الحسابات)
+  const { data: inventoryAccounts = [], isLoading: accountsLoading } = trpc.accounting.accounts.list.useQuery({
+    businessId: resolvedBusinessId,
+    systemModule: "inventory",
+    accountType: "sub",
+    isActive: true,
   } as any);
 
   // Mutations
@@ -113,6 +122,7 @@ export default function Warehouses({ businessId = 1 }: WarehousesProps) {
       phone: "",
       managerId: "",
       description: "",
+      accountId: "",
     });
     setSelectedWarehouse(null);
   };
@@ -167,6 +177,9 @@ export default function Warehouses({ businessId = 1 }: WarehousesProps) {
   };
 
   const handleEdit = (warehouse: any) => {
+    const linkedAccount = (inventoryAccounts as any[]).find(
+      (a: any) => a.linkedEntityType === "warehouse" && a.linkedEntityId === warehouse.id
+    );
     setSelectedWarehouse(warehouse);
     setFormData({
       code: warehouse.code || "",
@@ -177,6 +190,7 @@ export default function Warehouses({ businessId = 1 }: WarehousesProps) {
       phone: warehouse.phone || "",
       managerId: warehouse.managerId?.toString() || "",
       description: warehouse.description || "",
+      accountId: linkedAccount?.id ? linkedAccount.id.toString() : "",
     });
     setShowAddDialog(true);
   };
@@ -207,9 +221,14 @@ export default function Warehouses({ businessId = 1 }: WarehousesProps) {
     };
 
     if (selectedWarehouse) {
-      updateWarehouse.mutate({ id: selectedWarehouse.id, ...data } as any);
+      updateWarehouse.mutate({
+        id: selectedWarehouse.id,
+        ...data,
+        accountId: (formData as any).accountId ? parseInt((formData as any).accountId) : null,
+      } as any);
     } else {
-      createWarehouse.mutate(data as any);
+      const accountId = (formData as any).accountId ? parseInt((formData as any).accountId) : undefined;
+      createWarehouse.mutate({ ...(data as any), accountId } as any);
     }
   };
 
@@ -331,6 +350,38 @@ export default function Warehouses({ businessId = 1 }: WarehousesProps) {
                   value={(formData as any).address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                 />
+              </div>
+              <div className="space-y-2">
+                <Label>حساب المخزون (فرعي)</Label>
+                <Select
+                  value={(formData as any).accountId}
+                  onValueChange={(value) => setFormData({ ...formData, accountId: value === "none" ? "" : value })}
+                  disabled={accountsLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={accountsLoading ? "جاري تحميل الحسابات..." : "اختر حساب المخزون"} />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[300px]">
+                    <SelectItem value="none">بدون</SelectItem>
+                    {(inventoryAccounts as any[]).map((acc: any) => {
+                      const isUsedByOtherWarehouse =
+                        acc.linkedEntityType === "warehouse" &&
+                        acc.linkedEntityId &&
+                        acc.linkedEntityId !== selectedWarehouse?.id;
+                      return (
+                        <SelectItem key={acc.id} value={acc.id.toString()} disabled={isUsedByOtherWarehouse}>
+                          <span className="font-mono text-primary">{acc.code}</span>
+                          {" - "}
+                          <span>{acc.nameAr}</span>
+                          {isUsedByOtherWarehouse ? " (مستخدم)" : ""}
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  يتم عرض الحسابات الفرعية فقط ضمن <span className="font-semibold">نظام المخزون</span> من دليل الحسابات.
+                </p>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">الهاتف</Label>

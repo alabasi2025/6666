@@ -22,12 +22,14 @@ import {
   Settings, LogOut, Menu, X, ChevronLeft, Bell,
   TrendingUp, TrendingDown, DollarSign, Wrench,
   Home, Search, HelpCircle, Moon, Sun, Truck, Users2, Clock, CalendarDays, Wallet,
-  Loader2
+  Loader2, Navigation, Smartphone, AlertTriangle
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 import { trpc } from "@/lib/trpc";
+import EngineInfoDialog from "@/components/engines/EngineInfoDialog";
+import { resolvePageInfo } from "@/components/engines/pageInfoRegistry";
 
 // Loading Component
 const PageLoader = () => (
@@ -125,6 +127,16 @@ const Attendance = lazy(() => import("./hr/Attendance"));
 const Leaves = lazy(() => import("./hr/Leaves"));
 const Payroll = lazy(() => import("./hr/Payroll"));
 
+// STS Pages - Lazy Loaded
+const STSManagement = lazy(() => import("./sts/STSManagement"));
+const STSCharging = lazy(() => import("./sts/STSCharging"));
+
+// Government Support Pages - Lazy Loaded
+const GovernmentSupportDashboard = lazy(() => import("./government-support/GovernmentSupportDashboard"));
+
+// Transition Support Pages - Lazy Loaded
+const TransitionDashboard = lazy(() => import("./transition-support/TransitionDashboard"));
+
 // Organization Pages - Lazy Loaded
 const Businesses = lazy(() => import("./organization/Businesses"));
 const Branches = lazy(() => import("./organization/Branches"));
@@ -147,6 +159,14 @@ const CustomSubSystems = lazy(() => import("./custom/CustomSubSystems"));
 const CustomTreasuries = lazy(() => import("./custom/CustomTreasuries"));
 
 const CustomReconciliation = lazy(() => import("./custom/CustomReconciliation"));
+
+// Engines Pages - Lazy Loaded
+const AutoJournalEngine = lazy(() => import("./engines/AutoJournalEngine"));
+const PricingEngine = lazy(() => import("./engines/PricingEngine"));
+const ReconciliationEngine = lazy(() => import("./engines/ReconciliationEngine"));
+const SchedulingEngine = lazy(() => import("./engines/SchedulingEngine"));
+const AssignmentEngine = lazy(() => import("./engines/AssignmentEngine"));
+const HealthCheck = lazy(() => import("./engines/HealthCheck"));
 
 // Customer System Pages - Lazy Loaded
 const CustomerDashboard = lazy(() => import("./customers/CustomerDashboard"));
@@ -243,6 +263,9 @@ const navigationItems = [
     children: [
       { id: "ledger-report", title: "كشف حساب", icon: BookOpen, path: "/dashboard/reports/ledger" },
       { id: "trial-balance-report", title: "ميزان المراجعة", icon: BarChart3, path: "/dashboard/reports/trial-balance" },
+      { id: "financial", title: "التقارير المالية", icon: DollarSign, path: "/dashboard/reports/financial" },
+      { id: "operational", title: "التقارير التشغيلية", icon: Activity, path: "/dashboard/reports/operational" },
+      { id: "analytics", title: "التحليلات", icon: PieChart, path: "/dashboard/reports/analytics" },
     ],
   },
   {
@@ -317,12 +340,79 @@ const navigationItems = [
     children: [
       { id: "dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/customers/dashboard" },
       { id: "customers-list", title: "العملاء", icon: Users, path: "/dashboard/customers" },
+      {
+        id: "billing-main-data",
+        title: "البيانات الأساسية",
+        icon: Building2,
+        children: [
+          { id: "areas", title: "المناطق", icon: Building2, path: "/dashboard/billing/areas" },
+          { id: "squares", title: "المربعات", icon: Building2, path: "/dashboard/billing/squares" },
+          { id: "cabinets", title: "الكبائن", icon: Package, path: "/dashboard/billing/cabinets" },
+        ],
+      },
       { id: "meters", title: "العدادات", icon: Gauge, path: "/dashboard/customers/meters" },
       { id: "readings", title: "القراءات", icon: Activity, path: "/dashboard/customers/readings" },
       { id: "tariffs", title: "التعريفات", icon: DollarSign, path: "/dashboard/customers/tariffs" },
       { id: "billing-periods", title: "فترات الفوترة", icon: Calendar, path: "/dashboard/customers/billing-periods" },
       { id: "invoices", title: "الفواتير", icon: Receipt, path: "/dashboard/customers/invoices" },
       { id: "payments", title: "المدفوعات", icon: CreditCard, path: "/dashboard/customers/payments" },
+      {
+        id: "billing-settings",
+        title: "إعدادات الفوترة",
+        icon: Settings,
+        children: [
+          { id: "fee-types", title: "أنواع الرسوم", icon: Receipt, path: "/dashboard/billing/fee-types" },
+          { id: "payment-methods", title: "طرق الدفع", icon: CreditCard, path: "/dashboard/billing/payment-methods" },
+          { id: "cashboxes", title: "الصناديق", icon: Wallet, path: "/dashboard/billing/cashboxes" },
+        ],
+      },
+      {
+        id: "sts",
+        title: "عدادات STS",
+        icon: Smartphone,
+        children: [
+          { id: "sts-meters", title: "إدارة العدادات", icon: Gauge, path: "/dashboard/sts/meters" },
+          { id: "sts-charging", title: "شحن الرصيد", icon: CreditCard, path: "/dashboard/sts/charging" },
+        ],
+      },
+      {
+        id: "government-support",
+        title: "الدعم الحكومي",
+        icon: Shield,
+        children: [
+          { id: "gov-support-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/government-support/dashboard" },
+          { id: "gov-support-customers", title: "بيانات الدعم", icon: Users, path: "/dashboard/government-support/customers" },
+          { id: "gov-support-quotas", title: "الحصص", icon: Calendar, path: "/dashboard/government-support/quotas" },
+          { id: "gov-support-consumption", title: "تتبع الاستهلاك", icon: TrendingUp, path: "/dashboard/government-support/consumption" },
+          { id: "gov-support-reports", title: "التقارير", icon: Shield, path: "/dashboard/government-support/reports" },
+        ],
+      },
+      {
+        id: "transition-support",
+        title: "المرحلة الانتقالية",
+        icon: TrendingUp,
+        children: [
+          { id: "transition-dashboard", title: "لوحة المراقبة", icon: Gauge, path: "/dashboard/transition-support/dashboard" },
+          { id: "transition-notifications", title: "الإشعارات", icon: Bell, path: "/dashboard/transition-support/notifications" },
+          { id: "transition-billing", title: "تعديلات الفوترة", icon: FileText, path: "/dashboard/transition-support/billing" },
+          { id: "transition-alerts", title: "التنبيهات", icon: AlertTriangle, path: "/dashboard/transition-support/alerts" },
+        ],
+      },
+      {
+        id: "billing-system",
+        title: "نظام الفوترة المتقدم",
+        icon: Receipt,
+        children: [
+          { id: "billing-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/billing" },
+          { id: "billing-tariffs", title: "التعريفات", icon: DollarSign, path: "/dashboard/billing/tariffs" },
+          { id: "billing-meters", title: "العدادات", icon: Gauge, path: "/dashboard/billing/meters" },
+          { id: "billing-customers", title: "المشتركين", icon: Users, path: "/dashboard/billing/customers" },
+          { id: "billing-periods", title: "فترات الفوترة", icon: Calendar, path: "/dashboard/billing/periods" },
+          { id: "billing-readings", title: "القراءات", icon: Activity, path: "/dashboard/billing/readings" },
+          { id: "billing-invoices", title: "الفواتير", icon: Receipt, path: "/dashboard/billing/invoices" },
+          { id: "billing-payments", title: "التحصيل", icon: CreditCard, path: "/dashboard/billing/payments" },
+        ],
+      },
     ],
   },
   {
@@ -393,14 +483,17 @@ const navigationItems = [
     ],
   },
   {
-    id: "reports",
-    title: "التقارير",
-    icon: BarChart3,
-    color: "text-sky-500",
+    id: "engines",
+    title: "المحركات الأساسية",
+    icon: Activity,
+    color: "text-indigo-500",
     children: [
-      { id: "financial", title: "التقارير المالية", icon: DollarSign, path: "/dashboard/reports/financial" },
-      { id: "operational", title: "التقارير التشغيلية", icon: Activity, path: "/dashboard/reports/operational" },
-      { id: "analytics", title: "التحليلات", icon: PieChart, path: "/dashboard/reports/analytics" },
+      { id: "auto-journal-engine", title: "محرك القيود المحاسبية", icon: BookOpen, path: "/dashboard/engines/auto-journal" },
+      { id: "pricing-engine", title: "محرك التسعير", icon: DollarSign, path: "/dashboard/engines/pricing" },
+      { id: "reconciliation-engine", title: "محرك التسوية", icon: GitBranch, path: "/dashboard/engines/reconciliation" },
+      { id: "scheduling-engine", title: "محرك الجدولة", icon: Calendar, path: "/dashboard/engines/scheduling" },
+      { id: "assignment-engine", title: "محرك الإسناد", icon: Navigation, path: "/dashboard/engines/assignment" },
+      { id: "health-check", title: "فحص الصحة", icon: Activity, path: "/dashboard/engines/health" },
     ],
   },
   {
@@ -412,28 +505,6 @@ const navigationItems = [
       { id: "diesel-config", title: "تهيئة مخطط الديزل", icon: Settings, path: "/dashboard/diesel/configuration" },
       { id: "diesel-receiving", title: "عمليات الاستلام", icon: Truck, path: "/dashboard/diesel/receiving" },
       { id: "diesel-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/diesel/dashboard" },
-    ],
-  },
-  {
-    id: "billing",
-    title: "نظام الفوترة",
-    icon: Receipt,
-    color: "text-rose-500",
-    children: [
-      { id: "billing-dashboard", title: "لوحة التحكم", icon: Gauge, path: "/dashboard/billing" },
-      { id: "areas", title: "المناطق", icon: Building2, path: "/dashboard/billing/areas" },
-      { id: "squares", title: "المربعات", icon: Building2, path: "/dashboard/billing/squares" },
-      { id: "cabinets", title: "الكبائن", icon: Package, path: "/dashboard/billing/cabinets" },
-      { id: "billing-tariffs", title: "التعريفات", icon: DollarSign, path: "/dashboard/billing/tariffs" },
-      { id: "fee-types", title: "أنواع الرسوم", icon: Receipt, path: "/dashboard/billing/fee-types" },
-      { id: "payment-methods", title: "طرق الدفع", icon: CreditCard, path: "/dashboard/billing/payment-methods" },
-      { id: "cashboxes", title: "الصناديق", icon: Wallet, path: "/dashboard/billing/cashboxes" },
-      { id: "billing-meters", title: "العدادات", icon: Gauge, path: "/dashboard/billing/meters" },
-      { id: "billing-customers", title: "المشتركين", icon: Users, path: "/dashboard/billing/customers" },
-      { id: "billing-periods", title: "فترات الفوترة", icon: Calendar, path: "/dashboard/billing/periods" },
-      { id: "billing-readings", title: "القراءات", icon: Activity, path: "/dashboard/billing/readings" },
-      { id: "billing-invoices", title: "الفواتير", icon: Receipt, path: "/dashboard/billing/invoices" },
-      { id: "billing-payments", title: "التحصيل", icon: CreditCard, path: "/dashboard/billing/payments" },
     ],
   },
 
@@ -465,6 +536,7 @@ export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
   const [isDarkMode, setIsDarkMode] = useState(true);
+  const pageInfo = resolvePageInfo(location);
   
   const { data: user, isLoading: userLoading } = trpc.auth.me.useQuery();
 
@@ -610,6 +682,18 @@ export default function Dashboard() {
         {path === "/dashboard/hr/leaves" && <Leaves />}
         {path === "/dashboard/hr/payroll" && <Payroll />}
         
+        {/* STS System */}
+        {path === "/dashboard/sts/meters" && <STSManagement />}
+        {path === "/dashboard/sts/charging" && <STSCharging />}
+        
+        {/* Government Support System */}
+        {path === "/dashboard/government-support" && <GovernmentSupportDashboard />}
+        {path === "/dashboard/government-support/dashboard" && <GovernmentSupportDashboard />}
+        
+        {/* Transition Support System */}
+        {path === "/dashboard/transition-support" && <TransitionDashboard />}
+        {path === "/dashboard/transition-support/dashboard" && <TransitionDashboard />}
+        
         {/* Billing System */}
         {path === "/dashboard/billing" && <BillingDashboard />}
         {path === "/dashboard/billing/areas" && <AreasManagement />}
@@ -635,6 +719,14 @@ export default function Dashboard() {
         {path === "/dashboard/custom/accounts" && <CustomAccounts />}
         {path === "/dashboard/custom/notes" && <CustomNotes />}
         {path === "/dashboard/custom/memos" && <CustomMemos />}
+        
+        {/* Engines */}
+        {path === "/dashboard/engines/auto-journal" && <AutoJournalEngine />}
+        {path === "/dashboard/engines/pricing" && <PricingEngine />}
+        {path === "/dashboard/engines/reconciliation" && <ReconciliationEngine />}
+        {path === "/dashboard/engines/scheduling" && <SchedulingEngine />}
+        {path === "/dashboard/engines/assignment" && <AssignmentEngine />}
+        {path === "/dashboard/engines/health" && <HealthCheck />}
         
         {/* Developer */}
         {path === "/dashboard/developer" && <DeveloperDashboard />}
@@ -960,6 +1052,7 @@ export default function Dashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
+            <EngineInfoDialog info={pageInfo} />
             {/* System Switcher Icon */}
             <Button 
               variant="ghost" 

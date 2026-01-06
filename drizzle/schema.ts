@@ -1,18 +1,17 @@
 import {
-  int,
-  mysqlEnum,
-  mysqlTable,
+  integer,
+  pgTable,
   text,
   timestamp,
   varchar,
-  decimal,
+  numeric,
   boolean,
-  json,
+  jsonb,
   date,
-  datetime,
   index,
   uniqueIndex,
-} from "drizzle-orm/mysql-core";
+  serial,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 // ============================================
@@ -20,14 +19,14 @@ import { relations } from "drizzle-orm";
 // ============================================
 
 // الشركات - Companies/Businesses
-export const businesses = mysqlTable("businesses", {
-  id: int("id").autoincrement().primaryKey(),
+export const businesses = pgTable("businesses", {
+  id: serial("id").primaryKey(),
   code: varchar("code", { length: 20 }).notNull().unique(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("type", ["holding", "subsidiary", "branch"]).default("subsidiary").notNull(),
-  systemType: mysqlEnum("system_type", ["energy", "custom", "both"]).default("both").notNull(),
-  parentId: int("parent_id"),
+  type: varchar("type", { length: 20 }).default("subsidiary").notNull(),
+  systemType: varchar("system_type", { length: 20 }).default("both").notNull(),
+  parentId: integer("parent_id"),
   logo: text("logo"),
   address: text("address"),
   phone: varchar("phone", { length: 50 }),
@@ -36,62 +35,59 @@ export const businesses = mysqlTable("businesses", {
   taxNumber: varchar("tax_number", { length: 50 }),
   commercialRegister: varchar("commercial_register", { length: 50 }),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  fiscalYearStart: int("fiscal_year_start").default(1),
+  fiscalYearStart: integer("fiscal_year_start").default(1),
   timezone: varchar("timezone", { length: 50 }).default("Asia/Riyadh"),
   isActive: boolean("is_active").default(true),
-  settings: json("settings"),
+  settings: jsonb("settings"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الفروع - Branches
-export const branches = mysqlTable("branches", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const branches = pgTable("branches", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("type", ["main", "regional", "local"]).default("local").notNull(),
-  parentId: int("parent_id"),
+  type: varchar("type", { length: 20 }).default("local").notNull(),
+  parentId: integer("parent_id"),
   address: text("address"),
   city: varchar("city", { length: 100 }),
   region: varchar("region", { length: 100 }),
   country: varchar("country", { length: 100 }).default("Saudi Arabia"),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
-  managerId: int("manager_id"),
+  managerId: integer("manager_id"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // المحطات - Stations
-export const stations = mysqlTable("stations", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id").notNull(),
+export const stations = pgTable("stations", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("type", [
-    "generation", "transmission", "distribution", "substation", 
-    "solar", "wind", "hydro", "thermal", "nuclear", "storage"
-  ]).notNull(),
-  status: mysqlEnum("status", ["operational", "maintenance", "offline", "construction", "decommissioned"]).default("operational"),
-  capacity: decimal("capacity", { precision: 15, scale: 2 }),
+  type: varchar("type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).default("operational"),
+  capacity: numeric("capacity", { precision: 15, scale: 2 }),
   capacityUnit: varchar("capacity_unit", { length: 20 }).default("MW"),
   voltageLevel: varchar("voltage_level", { length: 50 }),
   address: text("address"),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   commissionDate: date("commission_date"),
-  managerId: int("manager_id"),
+  managerId: integer("manager_id"),
   isActive: boolean("is_active").default(true),
-  metadata: json("metadata"),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -99,8 +95,8 @@ export const stations = mysqlTable("stations", {
 // ============================================
 
 // المستخدمين
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   employeeId: varchar("employee_id", { length: 20 }),
   name: text("name"),
@@ -110,36 +106,36 @@ export const users = mysqlTable("users", {
   password: varchar("password", { length: 255 }),
   avatar: text("avatar"),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["user", "admin", "super_admin"]).default("user").notNull(),
-  businessId: int("business_id"),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
-  departmentId: int("department_id"),
+  role: varchar("role", { length: 50 }).default("user").notNull(),
+  businessId: integer("business_id"),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
+  departmentId: integer("department_id"),
   jobTitle: varchar("job_title", { length: 100 }),
   isActive: boolean("is_active").default(true),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
 
 // الأدوار
-export const roles = mysqlTable("roles", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id"),
+export const roles = pgTable("roles", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id"),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 100 }).notNull(),
   nameEn: varchar("name_en", { length: 100 }),
   description: text("description"),
-  level: int("level").default(1),
+  level: integer("level").default(1),
   isSystem: boolean("is_system").default(false),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الصلاحيات
-export const permissions = mysqlTable("permissions", {
-  id: int("id").autoincrement().primaryKey(),
+export const permissions = pgTable("permissions", {
+  id: serial("id").primaryKey(),
   module: varchar("module", { length: 50 }).notNull(),
   code: varchar("code", { length: 100 }).notNull().unique(),
   nameAr: varchar("name_ar", { length: 100 }).notNull(),
@@ -149,21 +145,21 @@ export const permissions = mysqlTable("permissions", {
 });
 
 // ربط الأدوار بالصلاحيات
-export const rolePermissions = mysqlTable("role_permissions", {
-  id: int("id").autoincrement().primaryKey(),
-  roleId: int("role_id").notNull(),
-  permissionId: int("permission_id").notNull(),
+export const rolePermissions = pgTable("role_permissions", {
+  id: serial("id").primaryKey(),
+  roleId: integer("role_id").notNull(),
+  permissionId: integer("permission_id").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // ربط المستخدمين بالأدوار
-export const userRoles = mysqlTable("user_roles", {
-  id: int("id").autoincrement().primaryKey(),
-  userId: int("user_id").notNull(),
-  roleId: int("role_id").notNull(),
-  businessId: int("business_id"),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
+export const userRoles = pgTable("user_roles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull(),
+  roleId: integer("role_id").notNull(),
+  businessId: integer("business_id"),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -172,125 +168,105 @@ export const userRoles = mysqlTable("user_roles", {
 // ============================================
 
 // شجرة الحسابات - هيكل جديد يتفرع من أسماء الأنظمة
-export const accounts = mysqlTable("accounts", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const accounts = pgTable("accounts", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  parentId: int("parent_id"),
-  level: int("level").default(1),
+  parentId: integer("parent_id"),
+  level: integer("level").default(1),
   // النظام الذي ينتمي إليه الحساب (بدلاً من التصنيف المحاسبي التقليدي)
-  systemModule: mysqlEnum("system_module", [
-    "assets",           // إدارة الأصول
-    "maintenance",      // الصيانة
-    "inventory",        // المخزون
-    "procurement",      // المشتريات
-    "customers",        // العملاء
-    "billing",          // الفوترة
-    "scada",            // المراقبة والتحكم
-    "projects",         // المشاريع
-    "hr",               // الموارد البشرية
-    "operations",       // العمليات
-    "finance",          // المالية العامة
-    "general"           // عام
-  ]).notNull(),
+  systemModule: varchar("system_module", { length: 50 }).notNull(),
   // نوع الحساب داخل النظام
-  accountType: mysqlEnum("account_type", [
-    "main",             // حساب رئيسي
-    "sub",              // حساب فرعي
-    "detail"            // حساب تفصيلي
-  ]).default("detail"),
-  nature: mysqlEnum("nature", ["debit", "credit"]).notNull(),
+  accountType: varchar("account_type", { length: 50 }).default("detail"),
+  nature: varchar("nature", { length: 50 }).notNull(),
   isParent: boolean("is_parent").default(false),
   isActive: boolean("is_active").default(true),
   isCashAccount: boolean("is_cash_account").default(false),
   isBankAccount: boolean("is_bank_account").default(false),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  openingBalance: decimal("opening_balance", { precision: 18, scale: 2 }).default("0"),
-  currentBalance: decimal("current_balance", { precision: 18, scale: 2 }).default("0"),
+  openingBalance: numeric("opening_balance", { precision: 18, scale: 2 }).default("0"),
+  currentBalance: numeric("current_balance", { precision: 18, scale: 2 }).default("0"),
   description: text("description"),
   // ربط الحساب بكيان محدد (مستودع، عميل، مورد، مشروع، إلخ)
   linkedEntityType: varchar("linked_entity_type", { length: 50 }),
-  linkedEntityId: int("linked_entity_id"),
+  linkedEntityId: integer("linked_entity_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الفترات المحاسبية
-export const fiscalPeriods = mysqlTable("fiscal_periods", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  year: int("year").notNull(),
-  period: int("period").notNull(),
+export const fiscalPeriods = pgTable("fiscal_periods", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  year: integer("year").notNull(),
+  period: integer("period").notNull(),
   nameAr: varchar("name_ar", { length: 100 }).notNull(),
   nameEn: varchar("name_en", { length: 100 }),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
-  status: mysqlEnum("status", ["open", "closed", "locked"]).default("open"),
-  closedBy: int("closed_by"),
+  status: varchar("status", { length: 50 }).default("open"),
+  closedBy: integer("closed_by"),
   closedAt: timestamp("closed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // القيود اليومية
-export const journalEntries = mysqlTable("journal_entries", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
+export const journalEntries = pgTable("journal_entries", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
   entryNumber: varchar("entry_number", { length: 50 }).notNull(),
   entryDate: date("entry_date").notNull(),
-  periodId: int("period_id").notNull(),
-  type: mysqlEnum("type", [
-    "manual", "auto", "opening", "closing", "adjustment",
-    "invoice", "payment", "receipt", "transfer", "depreciation"
-  ]).default("manual"),
+  periodId: integer("period_id").notNull(),
+  type: varchar("type", { length: 50 }).default("manual"),
   sourceModule: varchar("source_module", { length: 50 }),
-  sourceId: int("source_id"),
+  sourceId: integer("source_id"),
   description: text("description"),
-  totalDebit: decimal("total_debit", { precision: 18, scale: 2 }).default("0"),
-  totalCredit: decimal("total_credit", { precision: 18, scale: 2 }).default("0"),
-  status: mysqlEnum("status", ["draft", "posted", "reversed"]).default("draft"),
-  postedBy: int("posted_by"),
+  totalDebit: numeric("total_debit", { precision: 18, scale: 2 }).default("0"),
+  totalCredit: numeric("total_credit", { precision: 18, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  postedBy: integer("posted_by"),
   postedAt: timestamp("posted_at"),
-  reversedBy: int("reversed_by"),
+  reversedBy: integer("reversed_by"),
   reversedAt: timestamp("reversed_at"),
-  reversalEntryId: int("reversal_entry_id"),
-  createdBy: int("created_by").notNull(),
+  reversalEntryId: integer("reversal_entry_id"),
+  createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // تفاصيل القيود
-export const journalEntryLines = mysqlTable("journal_entry_lines", {
-  id: int("id").autoincrement().primaryKey(),
-  entryId: int("entry_id").notNull(),
-  lineNumber: int("line_number").notNull(),
-  accountId: int("account_id").notNull(),
-  costCenterId: int("cost_center_id"),
+export const journalEntryLines = pgTable("journal_entry_lines", {
+  id: serial("id").primaryKey(),
+  entryId: integer("entry_id").notNull(),
+  lineNumber: integer("line_number").notNull(),
+  accountId: integer("account_id").notNull(),
+  costCenterId: integer("cost_center_id"),
   description: text("description"),
-  debit: decimal("debit", { precision: 18, scale: 2 }).default("0"),
-  credit: decimal("credit", { precision: 18, scale: 2 }).default("0"),
+  debit: numeric("debit", { precision: 18, scale: 2 }).default("0"),
+  credit: numeric("credit", { precision: 18, scale: 2 }).default("0"),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).default("1"),
+  exchangeRate: numeric("exchange_rate", { precision: 10, scale: 6 }).default("1"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // مراكز التكلفة
-export const costCenters = mysqlTable("cost_centers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const costCenters = pgTable("cost_centers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  parentId: int("parent_id"),
-  level: int("level").default(1),
-  type: mysqlEnum("type", ["station", "department", "project", "activity"]),
-  stationId: int("station_id"),
+  parentId: integer("parent_id"),
+  level: integer("level").default(1),
+  type: varchar("type", { length: 50 }),
+  stationId: integer("station_id"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -298,31 +274,31 @@ export const costCenters = mysqlTable("cost_centers", {
 // ============================================
 
 // فئات الأصول
-export const assetCategories = mysqlTable("asset_categories", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const assetCategories = pgTable("asset_categories", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  parentId: int("parent_id"),
-  depreciationMethod: mysqlEnum("depreciation_method", ["straight_line", "declining_balance", "units_of_production"]).default("straight_line"),
-  usefulLife: int("useful_life"),
-  salvagePercentage: decimal("salvage_percentage", { precision: 5, scale: 2 }).default("0"),
-  assetAccountId: int("asset_account_id"),
-  depreciationAccountId: int("depreciation_account_id"),
-  accumulatedDepAccountId: int("accumulated_dep_account_id"),
+  parentId: integer("parent_id"),
+  depreciationMethod: varchar("depreciationMethod", { length: 50 }).default("straight_line"),
+  usefulLife: integer("useful_life"),
+  salvagePercentage: numeric("salvage_percentage", { precision: 5, scale: 2 }).default("0"),
+  assetAccountId: integer("asset_account_id"),
+  depreciationAccountId: integer("depreciation_account_id"),
+  accumulatedDepAccountId: integer("accumulated_dep_account_id"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الأصول الثابتة
-export const assets = mysqlTable("assets", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
-  categoryId: int("category_id").notNull(),
+export const assets = pgTable("assets", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
+  categoryId: integer("category_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
@@ -332,48 +308,45 @@ export const assets = mysqlTable("assets", {
   manufacturer: varchar("manufacturer", { length: 100 }),
   purchaseDate: date("purchase_date"),
   commissionDate: date("commission_date"),
-  purchaseCost: decimal("purchase_cost", { precision: 18, scale: 2 }).default("0"),
-  currentValue: decimal("current_value", { precision: 18, scale: 2 }).default("0"),
-  accumulatedDepreciation: decimal("accumulated_depreciation", { precision: 18, scale: 2 }).default("0"),
-  salvageValue: decimal("salvage_value", { precision: 18, scale: 2 }).default("0"),
-  usefulLife: int("useful_life"),
-  depreciationMethod: mysqlEnum("depreciation_method", ["straight_line", "declining_balance", "units_of_production"]),
-  status: mysqlEnum("status", ["active", "maintenance", "disposed", "transferred", "idle"]).default("active"),
+  purchaseCost: numeric("purchase_cost", { precision: 18, scale: 2 }).default("0"),
+  currentValue: numeric("current_value", { precision: 18, scale: 2 }).default("0"),
+  accumulatedDepreciation: numeric("accumulated_depreciation", { precision: 18, scale: 2 }).default("0"),
+  salvageValue: numeric("salvage_value", { precision: 18, scale: 2 }).default("0"),
+  usefulLife: integer("useful_life"),
+  depreciationMethod: varchar("depreciationMethod", { length: 50 }),
+  status: varchar("status", { length: 50 }).default("active"),
   location: varchar("location", { length: 255 }),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   warrantyExpiry: date("warranty_expiry"),
-  supplierId: int("supplier_id"),
-  purchaseOrderId: int("purchase_order_id"),
-  parentAssetId: int("parent_asset_id"),
+  supplierId: integer("supplier_id"),
+  purchaseOrderId: integer("purchase_order_id"),
+  parentAssetId: integer("parent_asset_id"),
   qrCode: varchar("qr_code", { length: 255 }),
   barcode: varchar("barcode", { length: 100 }),
   image: text("image"),
-  specifications: json("specifications"),
-  createdBy: int("created_by"),
+  specifications: jsonb("specifications"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // حركات الأصول
-export const assetMovements = mysqlTable("asset_movements", {
-  id: int("id").autoincrement().primaryKey(),
-  assetId: int("asset_id").notNull(),
-  movementType: mysqlEnum("movement_type", [
-    "purchase", "transfer", "maintenance", "upgrade", 
-    "revaluation", "impairment", "disposal", "depreciation"
-  ]).notNull(),
+export const assetMovements = pgTable("asset_movements", {
+  id: serial("id").primaryKey(),
+  assetId: integer("asset_id").notNull(),
+  movementType: varchar("movement_type", { length: 50 }).notNull(),
   movementDate: date("movement_date").notNull(),
-  fromBranchId: int("from_branch_id"),
-  toBranchId: int("to_branch_id"),
-  fromStationId: int("from_station_id"),
-  toStationId: int("to_station_id"),
-  amount: decimal("amount", { precision: 18, scale: 2 }),
+  fromBranchId: integer("from_branch_id"),
+  toBranchId: integer("to_branch_id"),
+  fromStationId: integer("from_station_id"),
+  toStationId: integer("to_station_id"),
+  amount: numeric("amount", { precision: 18, scale: 2 }),
   description: text("description"),
   referenceType: varchar("reference_type", { length: 50 }),
-  referenceId: int("reference_id"),
-  journalEntryId: int("journal_entry_id"),
-  createdBy: int("created_by").notNull(),
+  referenceId: integer("reference_id"),
+  journalEntryId: integer("journal_entry_id"),
+  createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -382,85 +355,82 @@ export const assetMovements = mysqlTable("asset_movements", {
 // ============================================
 
 // أوامر العمل
-export const workOrders = mysqlTable("work_orders", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
+export const workOrders = pgTable("work_orders", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
   orderNumber: varchar("order_number", { length: 50 }).notNull(),
-  type: mysqlEnum("type", ["preventive", "corrective", "emergency", "inspection", "calibration"]).notNull(),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium"),
-  status: mysqlEnum("status", [
-    "draft", "pending", "approved", "assigned", "in_progress", 
-    "on_hold", "completed", "cancelled", "closed"
-  ]).default("draft"),
-  assetId: int("asset_id"),
-  equipmentId: int("equipment_id"),
+  type: varchar("type", { length: 50 }).notNull(),
+  priority: varchar("priority", { length: 50 }).default("medium"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  assetId: integer("asset_id"),
+  equipmentId: integer("equipment_id"),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
-  requestedBy: int("requested_by"),
-  requestedDate: datetime("requested_date"),
-  scheduledStart: datetime("scheduled_start"),
-  scheduledEnd: datetime("scheduled_end"),
-  actualStart: datetime("actual_start"),
-  actualEnd: datetime("actual_end"),
-  assignedTo: int("assigned_to"),
-  teamId: int("team_id"),
-  estimatedHours: decimal("estimated_hours", { precision: 8, scale: 2 }),
-  actualHours: decimal("actual_hours", { precision: 8, scale: 2 }),
-  estimatedCost: decimal("estimated_cost", { precision: 18, scale: 2 }),
-  actualCost: decimal("actual_cost", { precision: 18, scale: 2 }),
-  laborCost: decimal("labor_cost", { precision: 18, scale: 2 }),
-  partsCost: decimal("parts_cost", { precision: 18, scale: 2 }),
+  requestedBy: integer("requested_by"),
+  requestedDate: timestamp("requested_date"),
+  scheduledStart: timestamp("scheduled_start"),
+  scheduledEnd: timestamp("scheduled_end"),
+  actualStart: timestamp("actual_start"),
+  actualEnd: timestamp("actual_end"),
+  assignedTo: integer("assigned_to"),
+  teamId: integer("team_id"),
+  estimatedHours: numeric("estimated_hours", { precision: 8, scale: 2 }),
+  actualHours: numeric("actual_hours", { precision: 8, scale: 2 }),
+  estimatedCost: numeric("estimated_cost", { precision: 18, scale: 2 }),
+  actualCost: numeric("actual_cost", { precision: 18, scale: 2 }),
+  laborCost: numeric("labor_cost", { precision: 18, scale: 2 }),
+  partsCost: numeric("parts_cost", { precision: 18, scale: 2 }),
   completionNotes: text("completion_notes"),
   failureCode: varchar("failure_code", { length: 50 }),
   rootCause: text("root_cause"),
-  approvedBy: int("approved_by"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
-  closedBy: int("closed_by"),
+  closedBy: integer("closed_by"),
   closedAt: timestamp("closed_at"),
-  createdBy: int("created_by").notNull(),
+  createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مهام أمر العمل
-export const workOrderTasks = mysqlTable("work_order_tasks", {
-  id: int("id").autoincrement().primaryKey(),
-  workOrderId: int("work_order_id").notNull(),
-  taskNumber: int("task_number").notNull(),
+export const workOrderTasks = pgTable("work_order_tasks", {
+  id: serial("id").primaryKey(),
+  workOrderId: integer("work_order_id").notNull(),
+  taskNumber: integer("task_number").notNull(),
   description: text("description").notNull(),
-  status: mysqlEnum("status", ["pending", "in_progress", "completed", "skipped"]).default("pending"),
-  assignedTo: int("assigned_to"),
-  estimatedHours: decimal("estimated_hours", { precision: 8, scale: 2 }),
-  actualHours: decimal("actual_hours", { precision: 8, scale: 2 }),
+  status: varchar("status", { length: 50 }).default("pending"),
+  assignedTo: integer("assigned_to"),
+  estimatedHours: numeric("estimated_hours", { precision: 8, scale: 2 }),
+  actualHours: numeric("actual_hours", { precision: 8, scale: 2 }),
   completedAt: timestamp("completed_at"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // خطط الصيانة الوقائية
-export const maintenancePlans = mysqlTable("maintenance_plans", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const maintenancePlans = pgTable("maintenance_plans", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
-  assetCategoryId: int("asset_category_id"),
-  frequency: mysqlEnum("frequency", ["daily", "weekly", "monthly", "quarterly", "semi_annual", "annual"]).notNull(),
-  intervalDays: int("interval_days"),
-  basedOn: mysqlEnum("based_on", ["calendar", "meter", "condition"]).default("calendar"),
+  assetCategoryId: integer("asset_category_id"),
+  frequency: varchar("frequency", { length: 50 }).notNull(),
+  intervalDays: integer("interval_days"),
+  basedOn: varchar("basedOn", { length: 50 }).default("calendar"),
   meterType: varchar("meter_type", { length: 50 }),
-  meterInterval: decimal("meter_interval", { precision: 15, scale: 2 }),
-  estimatedHours: decimal("estimated_hours", { precision: 8, scale: 2 }),
-  estimatedCost: decimal("estimated_cost", { precision: 18, scale: 2 }),
+  meterInterval: numeric("meter_interval", { precision: 15, scale: 2 }),
+  estimatedHours: numeric("estimated_hours", { precision: 8, scale: 2 }),
+  estimatedCost: numeric("estimated_cost", { precision: 18, scale: 2 }),
   isActive: boolean("is_active").default(true),
-  tasks: json("tasks"),
-  createdBy: int("created_by"),
+  tasks: jsonb("tasks"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -468,98 +438,95 @@ export const maintenancePlans = mysqlTable("maintenance_plans", {
 // ============================================
 
 // المستودعات
-export const warehouses = mysqlTable("warehouses", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
+export const warehouses = pgTable("warehouses", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("type", ["main", "spare_parts", "consumables", "transit", "quarantine"]).default("main"),
+  type: varchar("type", { length: 50 }).default("main"),
   address: text("address"),
-  managerId: int("manager_id"),
+  managerId: integer("manager_id"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // فئات الأصناف
-export const itemCategories = mysqlTable("item_categories", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const itemCategories = pgTable("item_categories", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  parentId: int("parent_id"),
-  inventoryAccountId: int("inventory_account_id"),
-  cogsAccountId: int("cogs_account_id"),
+  parentId: integer("parent_id"),
+  inventoryAccountId: integer("inventory_account_id"),
+  cogsAccountId: integer("cogs_account_id"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الأصناف
-export const items = mysqlTable("items", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  categoryId: int("category_id"),
+export const items = pgTable("items", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  categoryId: integer("category_id"),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
-  type: mysqlEnum("type", ["spare_part", "consumable", "raw_material", "finished_good"]).default("spare_part"),
+  type: varchar("type", { length: 50 }).default("spare_part"),
   unit: varchar("unit", { length: 20 }).notNull(),
   barcode: varchar("barcode", { length: 100 }),
-  minStock: decimal("min_stock", { precision: 15, scale: 3 }).default("0"),
-  maxStock: decimal("max_stock", { precision: 15, scale: 3 }),
-  reorderPoint: decimal("reorder_point", { precision: 15, scale: 3 }),
-  reorderQty: decimal("reorder_qty", { precision: 15, scale: 3 }),
-  standardCost: decimal("standard_cost", { precision: 18, scale: 4 }).default("0"),
-  lastPurchasePrice: decimal("last_purchase_price", { precision: 18, scale: 4 }),
-  averageCost: decimal("average_cost", { precision: 18, scale: 4 }),
+  minStock: numeric("min_stock", { precision: 15, scale: 3 }).default("0"),
+  maxStock: numeric("max_stock", { precision: 15, scale: 3 }),
+  reorderPoint: numeric("reorder_point", { precision: 15, scale: 3 }),
+  reorderQty: numeric("reorder_qty", { precision: 15, scale: 3 }),
+  standardCost: numeric("standard_cost", { precision: 18, scale: 4 }).default("0"),
+  lastPurchasePrice: numeric("last_purchase_price", { precision: 18, scale: 4 }),
+  averageCost: numeric("average_cost", { precision: 18, scale: 4 }),
   isActive: boolean("is_active").default(true),
   image: text("image"),
-  specifications: json("specifications"),
+  specifications: jsonb("specifications"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // أرصدة المخزون
-export const stockBalances = mysqlTable("stock_balances", {
-  id: int("id").autoincrement().primaryKey(),
-  itemId: int("item_id").notNull(),
-  warehouseId: int("warehouse_id").notNull(),
-  quantity: decimal("quantity", { precision: 15, scale: 3 }).default("0"),
-  reservedQty: decimal("reserved_qty", { precision: 15, scale: 3 }).default("0"),
-  availableQty: decimal("available_qty", { precision: 15, scale: 3 }).default("0"),
-  averageCost: decimal("average_cost", { precision: 18, scale: 4 }).default("0"),
-  totalValue: decimal("total_value", { precision: 18, scale: 2 }).default("0"),
+export const stockBalances = pgTable("stock_balances", {
+  id: serial("id").primaryKey(),
+  itemId: integer("item_id").notNull(),
+  warehouseId: integer("warehouse_id").notNull(),
+  quantity: numeric("quantity", { precision: 15, scale: 3 }).default("0"),
+  reservedQty: numeric("reserved_qty", { precision: 15, scale: 3 }).default("0"),
+  availableQty: numeric("available_qty", { precision: 15, scale: 3 }).default("0"),
+  averageCost: numeric("average_cost", { precision: 18, scale: 4 }).default("0"),
+  totalValue: numeric("total_value", { precision: 18, scale: 2 }).default("0"),
   lastMovementDate: timestamp("last_movement_date"),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // حركات المخزون
-export const stockMovements = mysqlTable("stock_movements", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  itemId: int("item_id").notNull(),
-  warehouseId: int("warehouse_id").notNull(),
-  movementType: mysqlEnum("movement_type", [
-    "receipt", "issue", "transfer_in", "transfer_out",
-    "adjustment_in", "adjustment_out", "return", "scrap"
-  ]).notNull(),
-  movementDate: datetime("movement_date").notNull(),
+export const stockMovements = pgTable("stock_movements", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  itemId: integer("item_id").notNull(),
+  warehouseId: integer("warehouse_id").notNull(),
+  movementType: varchar("movement_type", { length: 50 }).notNull(),
+  movementDate: timestamp("movement_date").notNull(),
   documentType: varchar("document_type", { length: 50 }),
-  documentId: int("document_id"),
+  documentId: integer("document_id"),
   documentNumber: varchar("document_number", { length: 50 }),
-  quantity: decimal("quantity", { precision: 15, scale: 3 }).notNull(),
-  unitCost: decimal("unit_cost", { precision: 18, scale: 4 }),
-  totalCost: decimal("total_cost", { precision: 18, scale: 2 }),
-  balanceBefore: decimal("balance_before", { precision: 15, scale: 3 }),
-  balanceAfter: decimal("balance_after", { precision: 15, scale: 3 }),
+  quantity: numeric("quantity", { precision: 15, scale: 3 }).notNull(),
+  unitCost: numeric("unit_cost", { precision: 18, scale: 4 }),
+  totalCost: numeric("total_cost", { precision: 18, scale: 2 }),
+  balanceBefore: numeric("balance_before", { precision: 15, scale: 3 }),
+  balanceAfter: numeric("balance_after", { precision: 15, scale: 3 }),
   notes: text("notes"),
-  createdBy: int("created_by").notNull(),
+  createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -568,13 +535,13 @@ export const stockMovements = mysqlTable("stock_movements", {
 // ============================================
 
 // الموردين
-export const suppliers = mysqlTable("suppliers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const suppliers = pgTable("suppliers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("type", ["manufacturer", "distributor", "contractor", "service_provider"]),
+  type: varchar("type", { length: 50 }),
   contactPerson: varchar("contact_person", { length: 100 }),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
@@ -582,68 +549,65 @@ export const suppliers = mysqlTable("suppliers", {
   city: varchar("city", { length: 100 }),
   country: varchar("country", { length: 100 }),
   taxNumber: varchar("tax_number", { length: 50 }),
-  paymentTerms: int("payment_terms").default(30),
-  creditLimit: decimal("credit_limit", { precision: 18, scale: 2 }),
-  currentBalance: decimal("current_balance", { precision: 18, scale: 2 }).default("0"),
-  accountId: int("account_id"),
-  rating: int("rating"),
+  paymentTerms: integer("payment_terms").default(30),
+  creditLimit: numeric("credit_limit", { precision: 18, scale: 2 }),
+  currentBalance: numeric("current_balance", { precision: 18, scale: 2 }).default("0"),
+  accountId: integer("account_id"),
+  rating: integer("rating"),
   isActive: boolean("is_active").default(true),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // طلبات الشراء
-export const purchaseRequests = mysqlTable("purchase_requests", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
+export const purchaseRequests = pgTable("purchase_requests", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
   requestNumber: varchar("request_number", { length: 50 }).notNull(),
   requestDate: date("request_date").notNull(),
   requiredDate: date("required_date"),
-  status: mysqlEnum("status", ["draft", "pending", "approved", "rejected", "converted", "cancelled"]).default("draft"),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium"),
-  requestedBy: int("requested_by").notNull(),
-  departmentId: int("department_id"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  priority: varchar("priority", { length: 50 }).default("medium"),
+  requestedBy: integer("requested_by").notNull(),
+  departmentId: integer("department_id"),
   purpose: text("purpose"),
-  totalAmount: decimal("total_amount", { precision: 18, scale: 2 }).default("0"),
-  approvedBy: int("approved_by"),
+  totalAmount: numeric("total_amount", { precision: 18, scale: 2 }).default("0"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // أوامر الشراء
-export const purchaseOrders = mysqlTable("purchase_orders", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
+export const purchaseOrders = pgTable("purchase_orders", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
   orderNumber: varchar("order_number", { length: 50 }).notNull(),
   orderDate: date("order_date").notNull(),
-  supplierId: int("supplier_id").notNull(),
-  status: mysqlEnum("status", [
-    "draft", "pending", "approved", "sent", "partial_received",
-    "received", "cancelled", "closed"
-  ]).default("draft"),
+  supplierId: integer("supplier_id").notNull(),
+  status: varchar("status", { length: 50 }).default("draft"),
   deliveryDate: date("delivery_date"),
-  warehouseId: int("warehouse_id"),
-  paymentTerms: int("payment_terms"),
+  warehouseId: integer("warehouse_id"),
+  paymentTerms: integer("payment_terms"),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).default("1"),
-  subtotal: decimal("subtotal", { precision: 18, scale: 2 }).default("0"),
-  taxAmount: decimal("tax_amount", { precision: 18, scale: 2 }).default("0"),
-  discountAmount: decimal("discount_amount", { precision: 18, scale: 2 }).default("0"),
-  totalAmount: decimal("total_amount", { precision: 18, scale: 2 }).default("0"),
-  paidAmount: decimal("paid_amount", { precision: 18, scale: 2 }).default("0"),
+  exchangeRate: numeric("exchange_rate", { precision: 10, scale: 6 }).default("1"),
+  subtotal: numeric("subtotal", { precision: 18, scale: 2 }).default("0"),
+  taxAmount: numeric("tax_amount", { precision: 18, scale: 2 }).default("0"),
+  discountAmount: numeric("discount_amount", { precision: 18, scale: 2 }).default("0"),
+  totalAmount: numeric("total_amount", { precision: 18, scale: 2 }).default("0"),
+  paidAmount: numeric("paid_amount", { precision: 18, scale: 2 }).default("0"),
   notes: text("notes"),
   terms: text("terms"),
-  approvedBy: int("approved_by"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
-  createdBy: int("created_by").notNull(),
+  createdBy: integer("created_by").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -651,17 +615,17 @@ export const purchaseOrders = mysqlTable("purchase_orders", {
 // ============================================
 
 // العملاء
-export const customers = mysqlTable("customers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
+export const customers = pgTable("customers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
   accountNumber: varchar("account_number", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("type", ["residential", "commercial", "industrial", "government", "agricultural"]).default("residential"),
+  type: varchar("type", { length: 50 }).default("residential"),
   category: varchar("category", { length: 50 }),
-  idType: mysqlEnum("id_type", ["national_id", "iqama", "passport", "cr"]),
+  idType: varchar("idType", { length: 50 }),
   idNumber: varchar("id_number", { length: 50 }),
   phone: varchar("phone", { length: 50 }),
   mobile: varchar("mobile", { length: 50 }),
@@ -670,109 +634,109 @@ export const customers = mysqlTable("customers", {
   city: varchar("city", { length: 100 }),
   district: varchar("district", { length: 100 }),
   postalCode: varchar("postal_code", { length: 20 }),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
-  tariffId: int("tariff_id"),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
+  tariffId: integer("tariff_id"),
   connectionDate: date("connection_date"),
-  status: mysqlEnum("status", ["active", "suspended", "disconnected", "closed"]).default("active"),
-  currentBalance: decimal("current_balance", { precision: 18, scale: 2 }).default("0"),
-  depositAmount: decimal("deposit_amount", { precision: 18, scale: 2 }).default("0"),
-  creditLimit: decimal("credit_limit", { precision: 18, scale: 2 }),
-  accountId: int("account_id"),
+  status: varchar("status", { length: 50 }).default("active"),
+  currentBalance: numeric("current_balance", { precision: 18, scale: 2 }).default("0"),
+  depositAmount: numeric("deposit_amount", { precision: 18, scale: 2 }).default("0"),
+  creditLimit: numeric("credit_limit", { precision: 18, scale: 2 }),
+  accountId: integer("account_id"),
   isActive: boolean("is_active").default(true),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // العدادات
-export const meters = mysqlTable("meters", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  customerId: int("customer_id").notNull(),
+export const meters = pgTable("meters", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  customerId: integer("customer_id").notNull(),
   meterNumber: varchar("meter_number", { length: 50 }).notNull(),
-  type: mysqlEnum("type", ["single_phase", "three_phase", "smart", "prepaid"]).default("single_phase"),
-  status: mysqlEnum("status", ["active", "inactive", "faulty", "replaced"]).default("active"),
+  type: varchar("type", { length: 50 }).default("single_phase"),
+  status: varchar("status", { length: 50 }).default("active"),
   installationDate: date("installation_date"),
   lastReadingDate: date("last_reading_date"),
-  lastReading: decimal("last_reading", { precision: 15, scale: 3 }),
-  multiplier: decimal("multiplier", { precision: 10, scale: 4 }).default("1"),
-  maxLoad: decimal("max_load", { precision: 10, scale: 2 }),
+  lastReading: numeric("last_reading", { precision: 15, scale: 3 }),
+  multiplier: numeric("multiplier", { precision: 10, scale: 4 }).default("1"),
+  maxLoad: numeric("max_load", { precision: 10, scale: 2 }),
   location: varchar("location", { length: 255 }),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   manufacturer: varchar("manufacturer", { length: 100 }),
   model: varchar("model", { length: 100 }),
   serialNumber: varchar("serial_number", { length: 100 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // قراءات العدادات
-export const meterReadings = mysqlTable("meter_readings", {
-  id: int("id").autoincrement().primaryKey(),
-  meterId: int("meter_id").notNull(),
+export const meterReadings = pgTable("meter_readings", {
+  id: serial("id").primaryKey(),
+  meterId: integer("meter_id").notNull(),
   readingDate: date("reading_date").notNull(),
-  readingValue: decimal("reading_value", { precision: 15, scale: 3 }).notNull(),
-  previousReading: decimal("previous_reading", { precision: 15, scale: 3 }),
-  consumption: decimal("consumption", { precision: 15, scale: 3 }),
-  readingType: mysqlEnum("reading_type", ["actual", "estimated", "adjusted"]).default("actual"),
-  readBy: int("read_by"),
+  readingValue: numeric("reading_value", { precision: 15, scale: 3 }).notNull(),
+  previousReading: numeric("previous_reading", { precision: 15, scale: 3 }),
+  consumption: numeric("consumption", { precision: 15, scale: 3 }),
+  readingType: varchar("readingType", { length: 50 }).default("actual"),
+  readBy: integer("read_by"),
   image: text("image"),
   notes: text("notes"),
-  status: mysqlEnum("status", ["pending", "verified", "billed", "disputed"]).default("pending"),
+  status: varchar("status", { length: 50 }).default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الفواتير
-export const invoices = mysqlTable("invoices", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  customerId: int("customer_id").notNull(),
-  meterId: int("meter_id"),
+export const invoices = pgTable("invoices", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  customerId: integer("customer_id").notNull(),
+  meterId: integer("meter_id"),
   invoiceNumber: varchar("invoice_number", { length: 50 }).notNull(),
   invoiceDate: date("invoice_date").notNull(),
   dueDate: date("due_date").notNull(),
   periodStart: date("period_start"),
   periodEnd: date("period_end"),
-  readingId: int("reading_id"),
-  consumption: decimal("consumption", { precision: 15, scale: 3 }),
-  consumptionAmount: decimal("consumption_amount", { precision: 18, scale: 2 }).default("0"),
-  fixedCharges: decimal("fixed_charges", { precision: 18, scale: 2 }).default("0"),
-  taxAmount: decimal("tax_amount", { precision: 18, scale: 2 }).default("0"),
-  otherCharges: decimal("other_charges", { precision: 18, scale: 2 }).default("0"),
-  discountAmount: decimal("discount_amount", { precision: 18, scale: 2 }).default("0"),
-  previousBalance: decimal("previous_balance", { precision: 18, scale: 2 }).default("0"),
-  totalAmount: decimal("total_amount", { precision: 18, scale: 2 }).default("0"),
-  paidAmount: decimal("paid_amount", { precision: 18, scale: 2 }).default("0"),
-  balanceDue: decimal("balance_due", { precision: 18, scale: 2 }).default("0"),
-  status: mysqlEnum("status", ["draft", "issued", "sent", "partial", "paid", "overdue", "cancelled"]).default("draft"),
-  journalEntryId: int("journal_entry_id"),
+  readingId: integer("reading_id"),
+  consumption: numeric("consumption", { precision: 15, scale: 3 }),
+  consumptionAmount: numeric("consumption_amount", { precision: 18, scale: 2 }).default("0"),
+  fixedCharges: numeric("fixed_charges", { precision: 18, scale: 2 }).default("0"),
+  taxAmount: numeric("tax_amount", { precision: 18, scale: 2 }).default("0"),
+  otherCharges: numeric("other_charges", { precision: 18, scale: 2 }).default("0"),
+  discountAmount: numeric("discount_amount", { precision: 18, scale: 2 }).default("0"),
+  previousBalance: numeric("previous_balance", { precision: 18, scale: 2 }).default("0"),
+  totalAmount: numeric("total_amount", { precision: 18, scale: 2 }).default("0"),
+  paidAmount: numeric("paid_amount", { precision: 18, scale: 2 }).default("0"),
+  balanceDue: numeric("balance_due", { precision: 18, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  journalEntryId: integer("journal_entry_id"),
   notes: text("notes"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // المدفوعات
-export const payments = mysqlTable("payments", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  customerId: int("customer_id").notNull(),
+export const payments = pgTable("payments", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  customerId: integer("customer_id").notNull(),
   paymentNumber: varchar("payment_number", { length: 50 }).notNull(),
   paymentDate: date("payment_date").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
-  paymentMethod: mysqlEnum("payment_method", ["cash", "card", "bank_transfer", "check", "online", "sadad"]).default("cash"),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+  paymentMethod: varchar("paymentMethod", { length: 50 }).default("cash"),
   referenceNumber: varchar("reference_number", { length: 100 }),
-  bankAccountId: int("bank_account_id"),
-  status: mysqlEnum("status", ["pending", "completed", "failed", "refunded"]).default("completed"),
+  bankAccountId: integer("bank_account_id"),
+  status: varchar("status", { length: 50 }).default("completed"),
   notes: text("notes"),
-  journalEntryId: int("journal_entry_id"),
-  receivedBy: int("received_by"),
+  journalEntryId: integer("journal_entry_id"),
+  receivedBy: integer("received_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -780,23 +744,20 @@ export const payments = mysqlTable("payments", {
 // ============================================
 
 // المعدات
-export const equipment = mysqlTable("equipment", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id").notNull(),
-  assetId: int("asset_id"),
+export const equipment = pgTable("equipment", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id").notNull(),
+  assetId: integer("asset_id"),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("type", [
-    "transformer", "generator", "switchgear", "breaker", "relay",
-    "meter", "sensor", "inverter", "battery", "panel", "cable", "motor"
-  ]).notNull(),
-  status: mysqlEnum("status", ["online", "offline", "maintenance", "fault", "unknown"]).default("unknown"),
+  type: varchar("type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).default("unknown"),
   manufacturer: varchar("manufacturer", { length: 100 }),
   model: varchar("model", { length: 100 }),
   serialNumber: varchar("serial_number", { length: 100 }),
-  ratedCapacity: decimal("rated_capacity", { precision: 15, scale: 2 }),
+  ratedCapacity: numeric("rated_capacity", { precision: 15, scale: 2 }),
   capacityUnit: varchar("capacity_unit", { length: 20 }),
   voltageRating: varchar("voltage_rating", { length: 50 }),
   currentRating: varchar("current_rating", { length: 50 }),
@@ -804,77 +765,74 @@ export const equipment = mysqlTable("equipment", {
   lastMaintenanceDate: date("last_maintenance_date"),
   nextMaintenanceDate: date("next_maintenance_date"),
   location: varchar("location", { length: 255 }),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   isControllable: boolean("is_controllable").default(false),
   isMonitored: boolean("is_monitored").default(true),
   communicationProtocol: varchar("communication_protocol", { length: 50 }),
   ipAddress: varchar("ip_address", { length: 50 }),
-  metadata: json("metadata"),
+  metadata: jsonb("metadata"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // أجهزة الاستشعار
-export const sensors = mysqlTable("sensors", {
-  id: int("id").autoincrement().primaryKey(),
-  equipmentId: int("equipment_id").notNull(),
+export const sensors = pgTable("sensors", {
+  id: serial("id").primaryKey(),
+  equipmentId: integer("equipment_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 100 }).notNull(),
   nameEn: varchar("name_en", { length: 100 }),
-  type: mysqlEnum("type", [
-    "voltage", "current", "power", "frequency", "temperature",
-    "humidity", "pressure", "flow", "level", "speed", "vibration"
-  ]).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
   unit: varchar("unit", { length: 20 }).notNull(),
-  minValue: decimal("min_value", { precision: 15, scale: 4 }),
-  maxValue: decimal("max_value", { precision: 15, scale: 4 }),
-  warningLow: decimal("warning_low", { precision: 15, scale: 4 }),
-  warningHigh: decimal("warning_high", { precision: 15, scale: 4 }),
-  criticalLow: decimal("critical_low", { precision: 15, scale: 4 }),
-  criticalHigh: decimal("critical_high", { precision: 15, scale: 4 }),
-  currentValue: decimal("current_value", { precision: 15, scale: 4 }),
+  minValue: numeric("min_value", { precision: 15, scale: 4 }),
+  maxValue: numeric("max_value", { precision: 15, scale: 4 }),
+  warningLow: numeric("warning_low", { precision: 15, scale: 4 }),
+  warningHigh: numeric("warning_high", { precision: 15, scale: 4 }),
+  criticalLow: numeric("critical_low", { precision: 15, scale: 4 }),
+  criticalHigh: numeric("critical_high", { precision: 15, scale: 4 }),
+  currentValue: numeric("current_value", { precision: 15, scale: 4 }),
   lastReadingTime: timestamp("last_reading_time"),
-  status: mysqlEnum("status", ["active", "inactive", "faulty"]).default("active"),
+  status: varchar("status", { length: 50 }).default("active"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // التنبيهات
-export const alerts = mysqlTable("alerts", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id"),
-  equipmentId: int("equipment_id"),
-  sensorId: int("sensor_id"),
-  alertType: mysqlEnum("alert_type", ["info", "warning", "critical", "emergency"]).notNull(),
+export const alerts = pgTable("alerts", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id"),
+  equipmentId: integer("equipment_id"),
+  sensorId: integer("sensor_id"),
+  alertType: varchar("alertType", { length: 50 }).notNull(),
   category: varchar("category", { length: 50 }),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message"),
-  value: decimal("value", { precision: 15, scale: 4 }),
-  threshold: decimal("threshold", { precision: 15, scale: 4 }),
-  status: mysqlEnum("status", ["active", "acknowledged", "resolved", "escalated"]).default("active"),
+  value: numeric("value", { precision: 15, scale: 4 }),
+  threshold: numeric("threshold", { precision: 15, scale: 4 }),
+  status: varchar("status", { length: 50 }).default("active"),
   triggeredAt: timestamp("triggered_at").defaultNow().notNull(),
-  acknowledgedBy: int("acknowledged_by"),
+  acknowledgedBy: integer("acknowledged_by"),
   acknowledgedAt: timestamp("acknowledged_at"),
-  resolvedBy: int("resolved_by"),
+  resolvedBy: integer("resolved_by"),
   resolvedAt: timestamp("resolved_at"),
   resolution: text("resolution"),
-  workOrderId: int("work_order_id"),
+  workOrderId: integer("work_order_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // سجل التدقيق
-export const auditLogs = mysqlTable("audit_logs", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id"),
-  userId: int("user_id"),
+export const auditLogs = pgTable("audit_logs", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id"),
+  userId: integer("user_id"),
   action: varchar("action", { length: 50 }).notNull(),
   module: varchar("module", { length: 50 }).notNull(),
   entityType: varchar("entity_type", { length: 50 }),
-  entityId: int("entity_id"),
-  oldValues: json("old_values"),
-  newValues: json("new_values"),
+  entityId: integer("entity_id"),
+  oldValues: jsonb("old_values"),
+  newValues: jsonb("new_values"),
   ipAddress: varchar("ip_address", { length: 50 }),
   userAgent: text("user_agent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -885,47 +843,41 @@ export const auditLogs = mysqlTable("audit_logs", {
 // ============================================
 
 // المشاريع
-export const projects = mysqlTable("projects", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
-  stationId: int("station_id"),
+export const projects = pgTable("projects", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
-  type: mysqlEnum("type", [
-    "construction", "expansion", "maintenance", "upgrade",
-    "installation", "decommission", "study"
-  ]).notNull(),
-  status: mysqlEnum("status", [
-    "planning", "approved", "in_progress", "on_hold",
-    "completed", "cancelled", "closed"
-  ]).default("planning"),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "critical"]).default("medium"),
-  managerId: int("manager_id"),
+  type: varchar("type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).default("planning"),
+  priority: varchar("priority", { length: 50 }).default("medium"),
+  managerId: integer("manager_id"),
   startDate: date("start_date"),
   plannedEndDate: date("planned_end_date"),
   actualEndDate: date("actual_end_date"),
-  budget: decimal("budget", { precision: 18, scale: 2 }),
-  actualCost: decimal("actual_cost", { precision: 18, scale: 2 }).default("0"),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
-  costCenterId: int("cost_center_id"),
-  approvedBy: int("approved_by"),
+  budget: numeric("budget", { precision: 18, scale: 2 }),
+  actualCost: numeric("actual_cost", { precision: 18, scale: 2 }).default("0"),
+  progress: numeric("progress", { precision: 5, scale: 2 }).default("0"),
+  costCenterId: integer("cost_center_id"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
-  closedBy: int("closed_by"),
+  closedBy: integer("closed_by"),
   closedAt: timestamp("closed_at"),
   notes: text("notes"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مراحل المشروع
-export const projectPhases = mysqlTable("project_phases", {
-  id: int("id").autoincrement().primaryKey(),
-  projectId: int("project_id").notNull(),
-  phaseNumber: int("phase_number").notNull(),
+export const projectPhases = pgTable("project_phases", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  phaseNumber: integer("phase_number").notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
@@ -933,38 +885,38 @@ export const projectPhases = mysqlTable("project_phases", {
   endDate: date("end_date"),
   actualStartDate: date("actual_start_date"),
   actualEndDate: date("actual_end_date"),
-  budget: decimal("budget", { precision: 18, scale: 2 }),
-  actualCost: decimal("actual_cost", { precision: 18, scale: 2 }).default("0"),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
-  status: mysqlEnum("status", ["pending", "in_progress", "completed", "cancelled"]).default("pending"),
+  budget: numeric("budget", { precision: 18, scale: 2 }),
+  actualCost: numeric("actual_cost", { precision: 18, scale: 2 }).default("0"),
+  progress: numeric("progress", { precision: 5, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("pending"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مهام المشروع
-export const projectTasks = mysqlTable("project_tasks", {
-  id: int("id").autoincrement().primaryKey(),
-  projectId: int("project_id").notNull(),
-  phaseId: int("phase_id"),
-  parentTaskId: int("parent_task_id"),
+export const projectTasks = pgTable("project_tasks", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id").notNull(),
+  phaseId: integer("phase_id"),
+  parentTaskId: integer("parent_task_id"),
   taskNumber: varchar("task_number", { length: 50 }),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
-  type: mysqlEnum("type", ["task", "milestone"]).default("task"),
-  status: mysqlEnum("status", ["pending", "in_progress", "completed", "cancelled"]).default("pending"),
-  priority: mysqlEnum("priority", ["low", "medium", "high"]).default("medium"),
-  assignedTo: int("assigned_to"),
+  type: varchar("type", { length: 50 }).default("task"),
+  status: varchar("status", { length: 50 }).default("pending"),
+  priority: varchar("priority", { length: 50 }).default("medium"),
+  assignedTo: integer("assigned_to"),
   startDate: date("start_date"),
   endDate: date("end_date"),
   actualStartDate: date("actual_start_date"),
   actualEndDate: date("actual_end_date"),
-  estimatedHours: decimal("estimated_hours", { precision: 8, scale: 2 }),
-  actualHours: decimal("actual_hours", { precision: 8, scale: 2 }),
-  progress: decimal("progress", { precision: 5, scale: 2 }).default("0"),
-  dependencies: json("dependencies"),
+  estimatedHours: numeric("estimated_hours", { precision: 8, scale: 2 }),
+  actualHours: numeric("actual_hours", { precision: 8, scale: 2 }),
+  progress: numeric("progress", { precision: 5, scale: 2 }).default("0"),
+  dependencies: jsonb("dependencies"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -972,143 +924,140 @@ export const projectTasks = mysqlTable("project_tasks", {
 // ============================================
 
 // التكاملات الخارجية - External Integrations
-export const integrations = mysqlTable("integrations", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const integrations = pgTable("integrations", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 200 }).notNull(),
   nameEn: varchar("name_en", { length: 200 }),
   description: text("description"),
-  integrationType: mysqlEnum("integration_type", [
-    "payment_gateway", "sms", "whatsapp", "email", "iot", 
-    "erp", "crm", "scada", "gis", "weather", "maps", "other"
-  ]).notNull(),
-  category: mysqlEnum("category", ["local", "international", "internal"]).default("local"),
+  integrationType: varchar("integration_type", { length: 50 }).notNull(),
+  category: varchar("category", { length: 50 }).default("local"),
   provider: varchar("provider", { length: 100 }),
   baseUrl: varchar("base_url", { length: 500 }),
   apiVersion: varchar("api_version", { length: 20 }),
-  authType: mysqlEnum("auth_type", ["api_key", "oauth2", "basic", "hmac", "jwt", "none"]).default("api_key"),
+  authType: varchar("authType", { length: 50 }).default("api_key"),
   isActive: boolean("is_active").default(true),
   isPrimary: boolean("is_primary").default(false),
-  priority: int("priority").default(1),
+  priority: integer("priority").default(1),
   lastHealthCheck: timestamp("last_health_check"),
-  healthStatus: mysqlEnum("health_status", ["healthy", "degraded", "down", "unknown"]).default("unknown"),
+  healthStatus: varchar("healthStatus", { length: 50 }).default("unknown"),
   webhookUrl: varchar("webhook_url", { length: 500 }),
   webhookSecret: varchar("webhook_secret", { length: 255 }),
-  rateLimitPerMinute: int("rate_limit_per_minute").default(60),
-  timeoutSeconds: int("timeout_seconds").default(30),
-  retryAttempts: int("retry_attempts").default(3),
-  metadata: json("metadata"),
-  createdBy: int("created_by"),
+  rateLimitPerMinute: integer("rate_limit_per_minute").default(60),
+  timeoutSeconds: integer("timeout_seconds").default(30),
+  retryAttempts: integer("retry_attempts").default(3),
+  metadata: jsonb("metadata"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // إعدادات التكاملات - Integration Configs
-export const integrationConfigs = mysqlTable("integration_configs", {
-  id: int("id").autoincrement().primaryKey(),
-  integrationId: int("integration_id").notNull(),
+export const integrationConfigs = pgTable("integration_configs", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").notNull(),
   configKey: varchar("config_key", { length: 100 }).notNull(),
   configValue: text("config_value"),
   isEncrypted: boolean("is_encrypted").default(false),
-  valueType: mysqlEnum("value_type", ["string", "number", "boolean", "json"]).default("string"),
-  environment: mysqlEnum("environment", ["production", "staging", "development"]).default("production"),
+  valueType: varchar("valueType", { length: 50 }).default("string"),
+  environment: varchar("environment", { length: 50 }).default("production"),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // سجلات التكاملات - Integration Logs
-export const integrationLogs = mysqlTable("integration_logs", {
-  id: int("id").autoincrement().primaryKey(),
-  integrationId: int("integration_id").notNull(),
-  businessId: int("business_id").notNull(),
+export const integrationLogs = pgTable("integration_logs", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").notNull(),
+  businessId: integer("business_id").notNull(),
   requestId: varchar("request_id", { length: 100 }),
-  direction: mysqlEnum("direction", ["outgoing", "incoming"]).notNull(),
+  direction: varchar("direction", { length: 50 }).notNull(),
   method: varchar("method", { length: 10 }),
   endpoint: varchar("endpoint", { length: 500 }),
-  requestHeaders: json("request_headers"),
-  requestBody: json("request_body"),
-  responseStatus: int("response_status"),
-  responseHeaders: json("response_headers"),
-  responseBody: json("response_body"),
-  durationMs: int("duration_ms"),
-  status: mysqlEnum("status", ["success", "failed", "timeout", "error"]).notNull(),
+  requestHeaders: jsonb("request_headers"),
+  requestBody: jsonb("request_body"),
+  responseStatus: integer("response_status"),
+  responseHeaders: jsonb("response_headers"),
+  responseBody: jsonb("response_body"),
+  durationMs: integer("duration_ms"),
+  status: varchar("status", { length: 50 }).notNull(),
   errorMessage: text("error_message"),
-  retryCount: int("retry_count").default(0),
+  retryCount: integer("retry_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // نظام الأحداث - Events System
-export const systemEvents = mysqlTable("system_events", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const systemEvents = pgTable("system_events", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   eventType: varchar("event_type", { length: 100 }).notNull(),
   eventSource: varchar("event_source", { length: 50 }).notNull(),
   aggregateType: varchar("aggregate_type", { length: 50 }),
-  aggregateId: int("aggregate_id"),
-  payload: json("payload").notNull(),
-  metadata: json("metadata"),
+  aggregateId: integer("aggregate_id"),
+  payload: jsonb("payload").notNull(),
+  metadata: jsonb("metadata"),
   correlationId: varchar("correlation_id", { length: 100 }),
   causationId: varchar("causation_id", { length: 100 }),
-  status: mysqlEnum("status", ["pending", "processing", "completed", "failed"]).default("pending"),
+  status: varchar("status", { length: 50 }).default("pending"),
   processedAt: timestamp("processed_at"),
   errorMessage: text("error_message"),
-  retryCount: int("retry_count").default(0),
+  retryCount: integer("retry_count").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الاشتراكات في الأحداث - Event Subscriptions
-export const eventSubscriptions = mysqlTable("event_subscriptions", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const eventSubscriptions = pgTable("event_subscriptions", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   subscriberName: varchar("subscriber_name", { length: 100 }).notNull(),
   eventType: varchar("event_type", { length: 100 }).notNull(),
-  handlerType: mysqlEnum("handler_type", ["webhook", "queue", "function", "email", "sms"]).notNull(),
-  handlerConfig: json("handler_config").notNull(),
-  filterExpression: json("filter_expression"),
+  handlerType: varchar("handlerType", { length: 50 }).notNull(),
+  handlerConfig: jsonb("handler_config").notNull(),
+  filterExpression: jsonb("filter_expression"),
   isActive: boolean("is_active").default(true),
-  priority: int("priority").default(0),
-  maxRetries: int("max_retries").default(3),
-  retryDelaySeconds: int("retry_delay_seconds").default(60),
-  createdBy: int("created_by"),
+  priority: integer("priority").default(0),
+  maxRetries: integer("max_retries").default(3),
+  retryDelaySeconds: integer("retry_delay_seconds").default(60),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مفاتيح API - API Keys
-export const apiKeys = mysqlTable("api_keys", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   name: varchar("name", { length: 100 }).notNull(),
   description: text("description"),
   keyHash: varchar("key_hash", { length: 255 }).notNull(),
   keyPrefix: varchar("key_prefix", { length: 20 }).notNull(),
-  permissions: json("permissions"),
-  allowedIps: json("allowed_ips"),
-  allowedOrigins: json("allowed_origins"),
-  rateLimitPerMinute: int("rate_limit_per_minute").default(60),
-  rateLimitPerDay: int("rate_limit_per_day").default(10000),
+  permissions: jsonb("permissions"),
+  allowedIps: jsonb("allowed_ips"),
+  allowedOrigins: jsonb("allowed_origins"),
+  rateLimitPerMinute: integer("rate_limit_per_minute").default(60),
+  rateLimitPerDay: integer("rate_limit_per_day").default(10000),
   expiresAt: timestamp("expires_at"),
   lastUsedAt: timestamp("last_used_at"),
-  usageCount: int("usage_count").default(0),
+  usageCount: integer("usage_count").default(0),
   isActive: boolean("is_active").default(true),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // سجلات استخدام API - API Usage Logs
-export const apiLogs = mysqlTable("api_logs", {
-  id: int("id").autoincrement().primaryKey(),
-  apiKeyId: int("api_key_id"),
-  businessId: int("business_id").notNull(),
+export const apiLogs = pgTable("api_logs", {
+  id: serial("id").primaryKey(),
+  apiKeyId: integer("api_key_id"),
+  businessId: integer("business_id").notNull(),
   endpoint: varchar("endpoint", { length: 500 }).notNull(),
   method: varchar("method", { length: 10 }).notNull(),
-  requestHeaders: json("request_headers"),
-  requestBody: json("request_body"),
-  responseStatus: int("response_status"),
-  responseTime: int("response_time"),
+  requestHeaders: jsonb("request_headers"),
+  requestBody: jsonb("request_body"),
+  responseStatus: integer("response_status"),
+  responseTime: integer("response_time"),
   ipAddress: varchar("ip_address", { length: 50 }),
   userAgent: varchar("user_agent", { length: 500 }),
   errorMessage: text("error_message"),
@@ -1116,136 +1065,126 @@ export const apiLogs = mysqlTable("api_logs", {
 });
 
 // نماذج الذكاء الاصطناعي - AI Models
-export const aiModels = mysqlTable("ai_models", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const aiModels = pgTable("ai_models", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 200 }).notNull(),
   nameEn: varchar("name_en", { length: 200 }),
   description: text("description"),
-  modelType: mysqlEnum("model_type", [
-    "consumption_forecast", "fault_detection", "load_optimization",
-    "anomaly_detection", "demand_prediction", "maintenance_prediction",
-    "customer_churn", "fraud_detection", "price_optimization", "other"
-  ]).notNull(),
-  provider: mysqlEnum("provider", ["internal", "openai", "azure", "google", "aws", "custom", "manus", "gemini"]).default("internal"),
+  modelType: varchar("model_type", { length: 50 }).notNull(),
+  provider: varchar("provider", { length: 50 }).default("internal"),
   modelVersion: varchar("model_version", { length: 50 }),
   endpoint: varchar("endpoint", { length: 500 }),
-  inputSchema: json("input_schema"),
-  outputSchema: json("output_schema"),
-  accuracy: decimal("accuracy", { precision: 5, scale: 2 }),
+  inputSchema: jsonb("input_schema"),
+  outputSchema: jsonb("output_schema"),
+  accuracy: numeric("accuracy", { precision: 5, scale: 2 }),
   lastTrainedAt: timestamp("last_trained_at"),
-  trainingDataCount: int("training_data_count"),
+  trainingDataCount: integer("training_data_count"),
   isActive: boolean("is_active").default(true),
-  config: json("config"),
-  createdBy: int("created_by"),
+  config: jsonb("config"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // تنبؤات الذكاء الاصطناعي - AI Predictions
-export const aiPredictions = mysqlTable("ai_predictions", {
-  id: int("id").autoincrement().primaryKey(),
-  modelId: int("model_id").notNull(),
-  businessId: int("business_id").notNull(),
+export const aiPredictions = pgTable("ai_predictions", {
+  id: serial("id").primaryKey(),
+  modelId: integer("model_id").notNull(),
+  businessId: integer("business_id").notNull(),
   predictionType: varchar("prediction_type", { length: 50 }).notNull(),
   targetEntity: varchar("target_entity", { length: 50 }),
-  targetEntityId: int("target_entity_id"),
-  inputData: json("input_data").notNull(),
-  prediction: json("prediction").notNull(),
-  confidence: decimal("confidence", { precision: 5, scale: 2 }),
+  targetEntityId: integer("target_entity_id"),
+  inputData: jsonb("input_data").notNull(),
+  prediction: jsonb("prediction").notNull(),
+  confidence: numeric("confidence", { precision: 5, scale: 2 }),
   predictionDate: date("prediction_date").notNull(),
   validFrom: timestamp("valid_from"),
   validTo: timestamp("valid_to"),
-  actualValue: json("actual_value"),
-  accuracy: decimal("accuracy", { precision: 5, scale: 2 }),
+  actualValue: jsonb("actual_value"),
+  accuracy: numeric("accuracy", { precision: 5, scale: 2 }),
   isVerified: boolean("is_verified").default(false),
   verifiedAt: timestamp("verified_at"),
-  verifiedBy: int("verified_by"),
+  verifiedBy: integer("verified_by"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // قواعد التنبيهات التقنية - Technical Alert Rules
-export const technicalAlertRules = mysqlTable("technical_alert_rules", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const technicalAlertRules = pgTable("technical_alert_rules", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 200 }).notNull(),
   nameEn: varchar("name_en", { length: 200 }),
   description: text("description"),
-  category: mysqlEnum("category", [
-    "performance", "security", "availability", "integration", "database", "api", "system"
-  ]).notNull(),
-  severity: mysqlEnum("severity", ["info", "warning", "error", "critical"]).default("warning"),
-  condition: json("condition").notNull(),
-  threshold: decimal("threshold", { precision: 15, scale: 4 }),
-  comparisonOperator: mysqlEnum("comparison_operator", ["gt", "gte", "lt", "lte", "eq", "neq"]),
-  evaluationPeriodMinutes: int("evaluation_period_minutes").default(5),
-  cooldownMinutes: int("cooldown_minutes").default(15),
-  notificationChannels: json("notification_channels"),
-  escalationRules: json("escalation_rules"),
+  category: varchar("category", { length: 50 }).notNull(),
+  severity: varchar("severity", { length: 50 }).default("warning"),
+  condition: jsonb("condition").notNull(),
+  threshold: numeric("threshold", { precision: 15, scale: 4 }),
+  comparisonOperator: varchar("comparisonOperator", { length: 50 }),
+  evaluationPeriodMinutes: integer("evaluation_period_minutes").default(5),
+  cooldownMinutes: integer("cooldown_minutes").default(15),
+  notificationChannels: jsonb("notification_channels"),
+  escalationRules: jsonb("escalation_rules"),
   autoResolve: boolean("auto_resolve").default(true),
   isActive: boolean("is_active").default(true),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // التنبيهات التقنية - Technical Alerts
-export const technicalAlerts = mysqlTable("technical_alerts", {
-  id: int("id").autoincrement().primaryKey(),
-  ruleId: int("rule_id").notNull(),
-  businessId: int("business_id").notNull(),
+export const technicalAlerts = pgTable("technical_alerts", {
+  id: serial("id").primaryKey(),
+  ruleId: integer("rule_id").notNull(),
+  businessId: integer("business_id").notNull(),
   alertType: varchar("alert_type", { length: 50 }).notNull(),
-  severity: mysqlEnum("severity", ["info", "warning", "error", "critical"]).notNull(),
+  severity: varchar("severity", { length: 50 }).notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   source: varchar("source", { length: 100 }),
   sourceId: varchar("source_id", { length: 100 }),
-  currentValue: decimal("current_value", { precision: 15, scale: 4 }),
-  thresholdValue: decimal("threshold_value", { precision: 15, scale: 4 }),
-  metadata: json("metadata"),
-  status: mysqlEnum("status", ["active", "acknowledged", "resolved", "suppressed"]).default("active"),
-  acknowledgedBy: int("acknowledged_by"),
+  currentValue: numeric("current_value", { precision: 15, scale: 4 }),
+  thresholdValue: numeric("threshold_value", { precision: 15, scale: 4 }),
+  metadata: jsonb("metadata"),
+  status: varchar("status", { length: 50 }).default("active"),
+  acknowledgedBy: integer("acknowledged_by"),
   acknowledgedAt: timestamp("acknowledged_at"),
-  resolvedBy: int("resolved_by"),
+  resolvedBy: integer("resolved_by"),
   resolvedAt: timestamp("resolved_at"),
   resolutionNotes: text("resolution_notes"),
-  notificationsSent: json("notifications_sent"),
+  notificationsSent: jsonb("notifications_sent"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // مقاييس الأداء - Performance Metrics
-export const performanceMetrics = mysqlTable("performance_metrics", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  metricType: mysqlEnum("metric_type", [
-    "response_time", "throughput", "error_rate", "cpu_usage", 
-    "memory_usage", "disk_usage", "network_io", "db_connections",
-    "active_users", "api_calls", "queue_size", "cache_hit_rate"
-  ]).notNull(),
+export const performanceMetrics = pgTable("performance_metrics", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  metricType: varchar("metric_type", { length: 50 }).notNull(),
   source: varchar("source", { length: 100 }),
-  value: decimal("value", { precision: 15, scale: 4 }).notNull(),
+  value: numeric("value", { precision: 15, scale: 4 }).notNull(),
   unit: varchar("unit", { length: 20 }),
-  tags: json("tags"),
+  tags: jsonb("tags"),
   recordedAt: timestamp("recorded_at").defaultNow().notNull(),
 });
 
 // Webhooks المستلمة - Incoming Webhooks
-export const incomingWebhooks = mysqlTable("incoming_webhooks", {
-  id: int("id").autoincrement().primaryKey(),
-  integrationId: int("integration_id").notNull(),
-  businessId: int("business_id").notNull(),
+export const incomingWebhooks = pgTable("incoming_webhooks", {
+  id: serial("id").primaryKey(),
+  integrationId: integer("integration_id").notNull(),
+  businessId: integer("business_id").notNull(),
   webhookType: varchar("webhook_type", { length: 100 }).notNull(),
-  payload: json("payload").notNull(),
-  headers: json("headers"),
+  payload: jsonb("payload").notNull(),
+  headers: jsonb("headers"),
   signature: varchar("signature", { length: 255 }),
   isValid: boolean("is_valid").default(true),
-  status: mysqlEnum("status", ["received", "processing", "processed", "failed"]).default("received"),
+  status: varchar("status", { length: 50 }).default("received"),
   processedAt: timestamp("processed_at"),
   errorMessage: text("error_message"),
-  retryCount: int("retry_count").default(0),
+  retryCount: integer("retry_count").default(0),
   sourceIp: varchar("source_ip", { length: 50 }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
@@ -1255,375 +1194,362 @@ export const incomingWebhooks = mysqlTable("incoming_webhooks", {
 // ============================================
 
 // العمليات الميدانية - Field Operations
-export const fieldOperations = mysqlTable("field_operations", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id"),
+export const fieldOperations = pgTable("field_operations", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id"),
   operationNumber: varchar("operation_number", { length: 30 }).notNull(),
-  operationType: mysqlEnum("operation_type", [
-    "installation", "maintenance", "inspection", "disconnection", 
-    "reconnection", "meter_reading", "collection", "repair", "replacement"
-  ]).notNull(),
-  status: mysqlEnum("status", [
-    "draft", "scheduled", "assigned", "in_progress", "waiting_customer",
-    "on_hold", "completed", "cancelled", "rejected"
-  ]).default("draft"),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium"),
+  operationType: varchar("operation_type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 50 }).default("draft"),
+  priority: varchar("priority", { length: 50 }).default("medium"),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   referenceType: varchar("reference_type", { length: 50 }),
-  referenceId: int("reference_id"),
-  customerId: int("customer_id"),
-  assetId: int("asset_id"),
-  locationLat: decimal("location_lat", { precision: 10, scale: 8 }),
-  locationLng: decimal("location_lng", { precision: 11, scale: 8 }),
+  referenceId: integer("reference_id"),
+  customerId: integer("customer_id"),
+  assetId: integer("asset_id"),
+  locationLat: numeric("location_lat", { precision: 10, scale: 8 }),
+  locationLng: numeric("location_lng", { precision: 11, scale: 8 }),
   address: text("address"),
   scheduledDate: date("scheduled_date"),
   scheduledTime: varchar("scheduled_time", { length: 10 }),
   startedAt: timestamp("started_at"),
   completedAt: timestamp("completed_at"),
-  assignedTeamId: int("assigned_team_id"),
-  assignedWorkerId: int("assigned_worker_id"),
-  estimatedDuration: int("estimated_duration"),
-  actualDuration: int("actual_duration"),
+  assignedTeamId: integer("assigned_team_id"),
+  assignedWorkerId: integer("assigned_worker_id"),
+  estimatedDuration: integer("estimated_duration"),
+  actualDuration: integer("actual_duration"),
   notes: text("notes"),
   completionNotes: text("completion_notes"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // سجل حالات العملية - Operation Status Log
-export const operationStatusLog = mysqlTable("operation_status_log", {
-  id: int("id").autoincrement().primaryKey(),
-  operationId: int("operation_id").notNull(),
+export const operationStatusLog = pgTable("operation_status_log", {
+  id: serial("id").primaryKey(),
+  operationId: integer("operation_id").notNull(),
   fromStatus: varchar("from_status", { length: 30 }),
   toStatus: varchar("to_status", { length: 30 }).notNull(),
-  changedBy: int("changed_by"),
+  changedBy: integer("changed_by"),
   changedAt: timestamp("changed_at").defaultNow().notNull(),
   reason: text("reason"),
   notes: text("notes"),
 });
 
 // بيانات التركيب الفنية - Installation Details
-export const installationDetails = mysqlTable("installation_details", {
-  id: int("id").autoincrement().primaryKey(),
-  operationId: int("operation_id").notNull(),
-  customerId: int("customer_id"),
+export const installationDetails = pgTable("installation_details", {
+  id: serial("id").primaryKey(),
+  operationId: integer("operation_id").notNull(),
+  customerId: integer("customer_id"),
   meterSerialNumber: varchar("meter_serial_number", { length: 100 }),
-  meterType: mysqlEnum("meter_type", ["smart", "traditional", "prepaid"]),
+  meterType: varchar("meterType", { length: 50 }),
   sealNumber: varchar("seal_number", { length: 50 }),
   sealColor: varchar("seal_color", { length: 30 }),
   sealType: varchar("seal_type", { length: 50 }),
   breakerType: varchar("breaker_type", { length: 50 }),
   breakerCapacity: varchar("breaker_capacity", { length: 20 }),
   breakerBrand: varchar("breaker_brand", { length: 50 }),
-  cableLength: decimal("cable_length", { precision: 10, scale: 2 }),
+  cableLength: numeric("cable_length", { precision: 10, scale: 2 }),
   cableType: varchar("cable_type", { length: 50 }),
   cableSize: varchar("cable_size", { length: 20 }),
-  initialReading: decimal("initial_reading", { precision: 15, scale: 3 }),
+  initialReading: numeric("initial_reading", { precision: 15, scale: 3 }),
   installationDate: date("installation_date"),
   installationTime: varchar("installation_time", { length: 10 }),
-  technicianId: int("technician_id"),
+  technicianId: integer("technician_id"),
   notes: text("notes"),
   customerSignature: text("customer_signature"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // صور التركيب - Installation Photos
-export const installationPhotos = mysqlTable("installation_photos", {
-  id: int("id").autoincrement().primaryKey(),
-  installationId: int("installation_id"),
-  operationId: int("operation_id").notNull(),
-  photoType: mysqlEnum("photo_type", [
-    "meter_front", "meter_reading", "seal", "breaker", "wiring",
-    "location", "customer_premises", "before_installation", "after_installation"
-  ]),
+export const installationPhotos = pgTable("installation_photos", {
+  id: serial("id").primaryKey(),
+  installationId: integer("installation_id"),
+  operationId: integer("operation_id").notNull(),
+  photoType: varchar("photo_type", { length: 50 }),
   photoUrl: varchar("photo_url", { length: 500 }).notNull(),
   caption: varchar("caption", { length: 200 }),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   capturedAt: timestamp("captured_at"),
-  uploadedBy: int("uploaded_by"),
+  uploadedBy: integer("uploaded_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الفرق الميدانية - Field Teams
-export const fieldTeams = mysqlTable("field_teams", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
+export const fieldTeams = pgTable("field_teams", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  teamType: mysqlEnum("team_type", [
-    "installation", "maintenance", "inspection", "collection", "mixed"
-  ]).default("mixed"),
-  leaderId: int("leader_id"),
-  maxMembers: int("max_members").default(10),
-  currentMembers: int("current_members").default(0),
-  status: mysqlEnum("status", ["active", "inactive", "on_leave"]).default("active"),
+  teamType: varchar("team_type", { length: 50 }).default("mixed"),
+  leaderId: integer("leader_id"),
+  maxMembers: integer("max_members").default(10),
+  currentMembers: integer("current_members").default(0),
+  status: varchar("status", { length: 50 }).default("active"),
   workingArea: text("working_area"),
   notes: text("notes"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // العاملين الميدانيين - Field Workers
-export const fieldWorkers = mysqlTable("field_workers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  userId: int("user_id"),
-  employeeId: int("employee_id"), // ربط بجدول الموظفين
+export const fieldWorkers = pgTable("field_workers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  userId: integer("user_id"),
+  employeeId: integer("employee_id"), // ربط بجدول الموظفين
   employeeNumber: varchar("employee_number", { length: 30 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
-  teamId: int("team_id"),
-  workerType: mysqlEnum("worker_type", [
-    "technician", "engineer", "supervisor", "driver", "helper"
-  ]).default("technician"),
+  teamId: integer("team_id"),
+  workerType: varchar("worker_type", { length: 50 }).default("technician"),
   specialization: varchar("specialization", { length: 100 }),
-  skills: json("skills"),
-  status: mysqlEnum("status", ["available", "busy", "on_leave", "inactive"]).default("available"),
-  currentLocationLat: decimal("current_location_lat", { precision: 10, scale: 8 }),
-  currentLocationLng: decimal("current_location_lng", { precision: 11, scale: 8 }),
+  skills: jsonb("skills"),
+  status: varchar("status", { length: 50 }).default("available"),
+  currentLocationLat: numeric("current_location_lat", { precision: 10, scale: 8 }),
+  currentLocationLng: numeric("current_location_lng", { precision: 11, scale: 8 }),
   lastLocationUpdate: timestamp("last_location_update"),
   hireDate: date("hire_date"),
-  dailyRate: decimal("daily_rate", { precision: 10, scale: 2 }),
-  operationRate: decimal("operation_rate", { precision: 10, scale: 2 }),
+  dailyRate: numeric("daily_rate", { precision: 10, scale: 2 }),
+  operationRate: numeric("operation_rate", { precision: 10, scale: 2 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مواقع العاملين - Worker Locations
-export const workerLocations = mysqlTable("worker_locations", {
-  id: int("id").autoincrement().primaryKey(),
-  workerId: int("worker_id").notNull(),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }).notNull(),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }).notNull(),
-  accuracy: decimal("accuracy", { precision: 10, scale: 2 }),
-  speed: decimal("speed", { precision: 10, scale: 2 }),
-  heading: decimal("heading", { precision: 5, scale: 2 }),
-  altitude: decimal("altitude", { precision: 10, scale: 2 }),
-  batteryLevel: int("battery_level"),
+export const workerLocations = pgTable("worker_locations", {
+  id: serial("id").primaryKey(),
+  workerId: integer("worker_id").notNull(),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }).notNull(),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }).notNull(),
+  accuracy: numeric("accuracy", { precision: 10, scale: 2 }),
+  speed: numeric("speed", { precision: 10, scale: 2 }),
+  heading: numeric("heading", { precision: 5, scale: 2 }),
+  altitude: numeric("altitude", { precision: 10, scale: 2 }),
+  batteryLevel: integer("battery_level"),
   isMoving: boolean("is_moving").default(false),
-  operationId: int("operation_id"),
+  operationId: integer("operation_id"),
   recordedAt: timestamp("recorded_at").defaultNow().notNull(),
 });
 
 // تقييم أداء العاملين - Worker Performance
-export const workerPerformance = mysqlTable("worker_performance", {
-  id: int("id").autoincrement().primaryKey(),
-  workerId: int("worker_id").notNull(),
+export const workerPerformance = pgTable("worker_performance", {
+  id: serial("id").primaryKey(),
+  workerId: integer("worker_id").notNull(),
   periodStart: date("period_start").notNull(),
   periodEnd: date("period_end").notNull(),
-  totalOperations: int("total_operations").default(0),
-  completedOperations: int("completed_operations").default(0),
-  onTimeOperations: int("on_time_operations").default(0),
-  avgCompletionTime: decimal("avg_completion_time", { precision: 10, scale: 2 }),
-  customerRating: decimal("customer_rating", { precision: 3, scale: 2 }),
-  qualityScore: decimal("quality_score", { precision: 5, scale: 2 }),
-  attendanceRate: decimal("attendance_rate", { precision: 5, scale: 2 }),
+  totalOperations: integer("total_operations").default(0),
+  completedOperations: integer("completed_operations").default(0),
+  onTimeOperations: integer("on_time_operations").default(0),
+  avgCompletionTime: numeric("avg_completion_time", { precision: 10, scale: 2 }),
+  customerRating: numeric("customer_rating", { precision: 3, scale: 2 }),
+  qualityScore: numeric("quality_score", { precision: 5, scale: 2 }),
+  attendanceRate: numeric("attendance_rate", { precision: 5, scale: 2 }),
   notes: text("notes"),
-  evaluatedBy: int("evaluated_by"),
+  evaluatedBy: integer("evaluated_by"),
   evaluatedAt: timestamp("evaluated_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الحوافز والمكافآت - Worker Incentives
-export const workerIncentives = mysqlTable("worker_incentives", {
-  id: int("id").autoincrement().primaryKey(),
-  workerId: int("worker_id").notNull(),
-  businessId: int("business_id").notNull(),
-  incentiveType: mysqlEnum("incentive_type", ["bonus", "commission", "penalty", "allowance"]).notNull(),
-  amount: decimal("amount", { precision: 12, scale: 2 }).notNull(),
+export const workerIncentives = pgTable("worker_incentives", {
+  id: serial("id").primaryKey(),
+  workerId: integer("worker_id").notNull(),
+  businessId: integer("business_id").notNull(),
+  incentiveType: varchar("incentiveType", { length: 50 }).notNull(),
+  amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
   reason: text("reason"),
   referenceType: varchar("reference_type", { length: 50 }),
-  referenceId: int("reference_id"),
-  status: mysqlEnum("status", ["pending", "approved", "paid", "cancelled"]).default("pending"),
-  approvedBy: int("approved_by"),
+  referenceId: integer("reference_id"),
+  status: varchar("status", { length: 50 }).default("pending"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
   paidAt: timestamp("paid_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // طلبات صرف المواد - Material Requests
-export const materialRequests = mysqlTable("material_requests", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const materialRequests = pgTable("material_requests", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   requestNumber: varchar("request_number", { length: 30 }).notNull(),
-  operationId: int("operation_id"),
-  workerId: int("worker_id"),
-  teamId: int("team_id"),
-  warehouseId: int("warehouse_id"),
+  operationId: integer("operation_id"),
+  workerId: integer("worker_id"),
+  teamId: integer("team_id"),
+  warehouseId: integer("warehouse_id"),
   requestDate: date("request_date").notNull(),
-  status: mysqlEnum("status", ["pending", "approved", "issued", "returned", "cancelled"]).default("pending"),
+  status: varchar("status", { length: 50 }).default("pending"),
   notes: text("notes"),
-  approvedBy: int("approved_by"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
-  issuedBy: int("issued_by"),
+  issuedBy: integer("issued_by"),
   issuedAt: timestamp("issued_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // بنود طلب المواد - Material Request Items
-export const materialRequestItems = mysqlTable("material_request_items", {
-  id: int("id").autoincrement().primaryKey(),
-  requestId: int("request_id").notNull(),
-  itemId: int("item_id").notNull(),
-  requestedQty: decimal("requested_qty", { precision: 12, scale: 3 }).notNull(),
-  approvedQty: decimal("approved_qty", { precision: 12, scale: 3 }),
-  issuedQty: decimal("issued_qty", { precision: 12, scale: 3 }),
-  returnedQty: decimal("returned_qty", { precision: 12, scale: 3 }),
+export const materialRequestItems = pgTable("material_request_items", {
+  id: serial("id").primaryKey(),
+  requestId: integer("request_id").notNull(),
+  itemId: integer("item_id").notNull(),
+  requestedQty: numeric("requested_qty", { precision: 12, scale: 3 }).notNull(),
+  approvedQty: numeric("approved_qty", { precision: 12, scale: 3 }),
+  issuedQty: numeric("issued_qty", { precision: 12, scale: 3 }),
+  returnedQty: numeric("returned_qty", { precision: 12, scale: 3 }),
   unit: varchar("unit", { length: 20 }),
   notes: text("notes"),
 });
 
 // المعدات الميدانية - Field Equipment
-export const fieldEquipment = mysqlTable("field_equipment", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const fieldEquipment = pgTable("field_equipment", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   equipmentCode: varchar("equipment_code", { length: 30 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  equipmentType: mysqlEnum("equipment_type", ["tool", "vehicle", "device", "safety", "measuring"]).notNull(),
+  equipmentType: varchar("equipmentType", { length: 50 }).notNull(),
   serialNumber: varchar("serial_number", { length: 100 }),
   model: varchar("model", { length: 100 }),
   brand: varchar("brand", { length: 100 }),
-  status: mysqlEnum("status", ["available", "in_use", "maintenance", "retired", "lost"]).default("available"),
-  currentHolderId: int("current_holder_id"),
-  assignedTeamId: int("assigned_team_id"),
+  status: varchar("status", { length: 50 }).default("available"),
+  currentHolderId: integer("current_holder_id"),
+  assignedTeamId: integer("assigned_team_id"),
   purchaseDate: date("purchase_date"),
-  purchaseCost: decimal("purchase_cost", { precision: 12, scale: 2 }),
+  purchaseCost: numeric("purchase_cost", { precision: 12, scale: 2 }),
   warrantyEnd: date("warranty_end"),
   lastMaintenance: date("last_maintenance"),
   nextMaintenance: date("next_maintenance"),
-  condition: mysqlEnum("condition", ["excellent", "good", "fair", "poor"]).default("good"),
+  condition: varchar("condition", { length: 50 }).default("good"),
   notes: text("notes"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // حركات المعدات - Equipment Movements
-export const equipmentMovements = mysqlTable("equipment_movements", {
-  id: int("id").autoincrement().primaryKey(),
-  equipmentId: int("equipment_id").notNull(),
-  movementType: mysqlEnum("movement_type", ["checkout", "return", "transfer", "maintenance", "retire"]).notNull(),
-  fromHolderId: int("from_holder_id"),
-  toHolderId: int("to_holder_id"),
-  operationId: int("operation_id"),
+export const equipmentMovements = pgTable("equipment_movements", {
+  id: serial("id").primaryKey(),
+  equipmentId: integer("equipment_id").notNull(),
+  movementType: varchar("movementType", { length: 50 }).notNull(),
+  fromHolderId: integer("from_holder_id"),
+  toHolderId: integer("to_holder_id"),
+  operationId: integer("operation_id"),
   movementDate: timestamp("movement_date").defaultNow().notNull(),
-  conditionBefore: mysqlEnum("condition_before", ["excellent", "good", "fair", "poor"]),
-  conditionAfter: mysqlEnum("condition_after", ["excellent", "good", "fair", "poor"]),
+  conditionBefore: varchar("conditionBefore", { length: 50 }),
+  conditionAfter: varchar("conditionAfter", { length: 50 }),
   notes: text("notes"),
-  recordedBy: int("recorded_by"),
+  recordedBy: integer("recorded_by"),
 });
 
 // الفحوصات - Inspections
-export const inspections = mysqlTable("inspections", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  operationId: int("operation_id").notNull(),
+export const inspections = pgTable("inspections", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  operationId: integer("operation_id").notNull(),
   inspectionNumber: varchar("inspection_number", { length: 30 }).notNull(),
-  inspectionType: mysqlEnum("inspection_type", ["quality", "safety", "completion", "periodic"]).notNull(),
-  inspectorId: int("inspector_id"),
+  inspectionType: varchar("inspectionType", { length: 50 }).notNull(),
+  inspectorId: integer("inspector_id"),
   inspectionDate: timestamp("inspection_date").defaultNow().notNull(),
-  status: mysqlEnum("status", ["pending", "passed", "failed", "conditional"]).default("pending"),
-  overallScore: decimal("overall_score", { precision: 5, scale: 2 }),
+  status: varchar("status", { length: 50 }).default("pending"),
+  overallScore: numeric("overall_score", { precision: 5, scale: 2 }),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // بنود الفحص - Inspection Items
-export const inspectionItems = mysqlTable("inspection_items", {
-  id: int("id").autoincrement().primaryKey(),
-  inspectionId: int("inspection_id").notNull(),
-  checklistItemId: int("checklist_item_id"),
+export const inspectionItems = pgTable("inspection_items", {
+  id: serial("id").primaryKey(),
+  inspectionId: integer("inspection_id").notNull(),
+  checklistItemId: integer("checklist_item_id"),
   itemName: varchar("item_name", { length: 255 }).notNull(),
   isPassed: boolean("is_passed"),
-  score: decimal("score", { precision: 5, scale: 2 }),
+  score: numeric("score", { precision: 5, scale: 2 }),
   notes: text("notes"),
   photoUrl: varchar("photo_url", { length: 500 }),
 });
 
 // قوائم الفحص - Inspection Checklists
-export const inspectionChecklists = mysqlTable("inspection_checklists", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const inspectionChecklists = pgTable("inspection_checklists", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 30 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   operationType: varchar("operation_type", { length: 50 }),
-  items: json("items"),
+  items: jsonb("items"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الموافقات - Operation Approvals
-export const operationApprovals = mysqlTable("operation_approvals", {
-  id: int("id").autoincrement().primaryKey(),
-  operationId: int("operation_id").notNull(),
-  approvalLevel: int("approval_level").default(1),
-  approverId: int("approver_id"),
-  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending"),
+export const operationApprovals = pgTable("operation_approvals", {
+  id: serial("id").primaryKey(),
+  operationId: integer("operation_id").notNull(),
+  approvalLevel: integer("approval_level").default(1),
+  approverId: integer("approver_id"),
+  status: varchar("status", { length: 50 }).default("pending"),
   decisionDate: timestamp("decision_date"),
   notes: text("notes"),
   signatureUrl: varchar("signature_url", { length: 500 }),
 });
 
 // مستحقات العمليات - Operation Payments
-export const operationPayments = mysqlTable("operation_payments", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  operationId: int("operation_id").notNull(),
-  workerId: int("worker_id").notNull(),
-  paymentType: mysqlEnum("payment_type", ["fixed", "per_operation", "commission", "hourly"]).default("per_operation"),
-  baseAmount: decimal("base_amount", { precision: 12, scale: 2 }).default("0"),
-  bonusAmount: decimal("bonus_amount", { precision: 12, scale: 2 }).default("0"),
-  deductionAmount: decimal("deduction_amount", { precision: 12, scale: 2 }).default("0"),
-  netAmount: decimal("net_amount", { precision: 12, scale: 2 }).default("0"),
-  status: mysqlEnum("status", ["calculated", "approved", "paid"]).default("calculated"),
+export const operationPayments = pgTable("operation_payments", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  operationId: integer("operation_id").notNull(),
+  workerId: integer("worker_id").notNull(),
+  paymentType: varchar("paymentType", { length: 50 }).default("per_operation"),
+  baseAmount: numeric("base_amount", { precision: 12, scale: 2 }).default("0"),
+  bonusAmount: numeric("bonus_amount", { precision: 12, scale: 2 }).default("0"),
+  deductionAmount: numeric("deduction_amount", { precision: 12, scale: 2 }).default("0"),
+  netAmount: numeric("net_amount", { precision: 12, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("calculated"),
   calculatedAt: timestamp("calculated_at").defaultNow().notNull(),
-  approvedBy: int("approved_by"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
   paidAt: timestamp("paid_at"),
 });
 
 // تسويات الفترة - Period Settlements
-export const periodSettlements = mysqlTable("period_settlements", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const periodSettlements = pgTable("period_settlements", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   settlementNumber: varchar("settlement_number", { length: 30 }).notNull(),
   periodStart: date("period_start").notNull(),
   periodEnd: date("period_end").notNull(),
-  totalOperations: int("total_operations").default(0),
-  totalAmount: decimal("total_amount", { precision: 15, scale: 2 }).default("0"),
-  totalBonuses: decimal("total_bonuses", { precision: 15, scale: 2 }).default("0"),
-  totalDeductions: decimal("total_deductions", { precision: 15, scale: 2 }).default("0"),
-  netAmount: decimal("net_amount", { precision: 15, scale: 2 }).default("0"),
-  status: mysqlEnum("status", ["draft", "approved", "paid"]).default("draft"),
-  approvedBy: int("approved_by"),
+  totalOperations: integer("total_operations").default(0),
+  totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).default("0"),
+  totalBonuses: numeric("total_bonuses", { precision: 15, scale: 2 }).default("0"),
+  totalDeductions: numeric("total_deductions", { precision: 15, scale: 2 }).default("0"),
+  netAmount: numeric("net_amount", { precision: 15, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // بنود التسوية - Settlement Items
-export const settlementItems = mysqlTable("settlement_items", {
-  id: int("id").autoincrement().primaryKey(),
-  settlementId: int("settlement_id").notNull(),
-  workerId: int("worker_id").notNull(),
-  operationsCount: int("operations_count").default(0),
-  baseAmount: decimal("base_amount", { precision: 12, scale: 2 }).default("0"),
-  bonuses: decimal("bonuses", { precision: 12, scale: 2 }).default("0"),
-  deductions: decimal("deductions", { precision: 12, scale: 2 }).default("0"),
-  netAmount: decimal("net_amount", { precision: 12, scale: 2 }).default("0"),
-  paymentMethod: mysqlEnum("payment_method", ["cash", "bank_transfer", "check"]),
+export const settlementItems = pgTable("settlement_items", {
+  id: serial("id").primaryKey(),
+  settlementId: integer("settlement_id").notNull(),
+  workerId: integer("worker_id").notNull(),
+  operationsCount: integer("operations_count").default(0),
+  baseAmount: numeric("base_amount", { precision: 12, scale: 2 }).default("0"),
+  bonuses: numeric("bonuses", { precision: 12, scale: 2 }).default("0"),
+  deductions: numeric("deductions", { precision: 12, scale: 2 }).default("0"),
+  netAmount: numeric("net_amount", { precision: 12, scale: 2 }).default("0"),
+  paymentMethod: varchar("paymentMethod", { length: 50 }),
   paymentReference: varchar("payment_reference", { length: 100 }),
   paidAt: timestamp("paid_at"),
 });
@@ -1633,31 +1559,31 @@ export const settlementItems = mysqlTable("settlement_items", {
 // ============================================
 
 // الإعدادات العامة
-export const settings = mysqlTable("settings", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id"),
+export const settings = pgTable("settings", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id"),
   category: varchar("category", { length: 50 }).notNull(),
   key: varchar("key", { length: 100 }).notNull(),
   value: text("value"),
-  valueType: mysqlEnum("value_type", ["string", "number", "boolean", "json"]).default("string"),
+  valueType: varchar("valueType", { length: 50 }).default("string"),
   description: text("description"),
   isSystem: boolean("is_system").default(false),
-  updatedBy: int("updated_by"),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedBy: integer("updated_by"),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // التسلسلات
-export const sequences = mysqlTable("sequences", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const sequences = pgTable("sequences", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   prefix: varchar("prefix", { length: 20 }),
   suffix: varchar("suffix", { length: 20 }),
-  currentValue: int("current_value").default(0),
-  minDigits: int("min_digits").default(6),
-  resetPeriod: mysqlEnum("reset_period", ["never", "yearly", "monthly"]).default("never"),
+  currentValue: integer("current_value").default(0),
+  minDigits: integer("min_digits").default(6),
+  resetPeriod: varchar("resetPeriod", { length: 50 }).default("never"),
   lastResetDate: date("last_reset_date"),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // ============================================
@@ -1665,83 +1591,83 @@ export const sequences = mysqlTable("sequences", {
 // ============================================
 
 // حسابات النظام المخصص - Custom Accounts
-export const customAccounts = mysqlTable("custom_accounts", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const customAccounts = pgTable("custom_accounts", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   accountNumber: varchar("account_number", { length: 50 }).notNull(),
   accountName: varchar("account_name", { length: 255 }).notNull(),
-  accountType: mysqlEnum("account_type", ["asset", "liability", "equity", "revenue", "expense"]).notNull(),
-  parentId: int("parent_id"),
-  balance: decimal("balance", { precision: 15, scale: 2 }).default("0"),
+  accountType: varchar("account_type", { length: 50 }).notNull(),
+  parentId: integer("parent_id"),
+  balance: numeric("balance", { precision: 15, scale: 2 }).default("0"),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   description: text("description"),
   isActive: boolean("is_active").default(true),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // حركات الحسابات المخصصة - Custom Account Transactions
-export const customTransactions = mysqlTable("custom_transactions", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const customTransactions = pgTable("custom_transactions", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   transactionNumber: varchar("transaction_number", { length: 50 }).notNull(),
   transactionDate: date("transaction_date").notNull(),
-  accountId: int("account_id").notNull(),
-  transactionType: mysqlEnum("transaction_type", ["debit", "credit"]).notNull(),
-  amount: decimal("amount", { precision: 15, scale: 2 }).notNull(),
+  accountId: integer("account_id").notNull(),
+  transactionType: varchar("transaction_type", { length: 50 }).notNull(),
+  amount: numeric("amount", { precision: 15, scale: 2 }).notNull(),
   description: text("description"),
   referenceType: varchar("reference_type", { length: 50 }),
-  referenceId: int("reference_id"),
-  attachments: json("attachments"),
-  createdBy: int("created_by"),
+  referenceId: integer("reference_id"),
+  attachments: jsonb("attachments"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الملاحظات - Notes
-export const customNotes = mysqlTable("custom_notes", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const customNotes = pgTable("custom_notes", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content"),
   category: varchar("category", { length: 100 }),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium"),
+  priority: varchar("priority", { length: 50 }).default("medium"),
   color: varchar("color", { length: 20 }),
   isPinned: boolean("is_pinned").default(false),
   isArchived: boolean("is_archived").default(false),
-  tags: json("tags"),
-  attachments: json("attachments"),
+  tags: jsonb("tags"),
+  attachments: jsonb("attachments"),
   reminderDate: timestamp("reminder_date"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // المذكرات - Memos
-export const customMemos = mysqlTable("custom_memos", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const customMemos = pgTable("custom_memos", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   memoNumber: varchar("memo_number", { length: 50 }).notNull(),
   memoDate: date("memo_date").notNull(),
   subject: varchar("subject", { length: 255 }).notNull(),
   content: text("content"),
-  memoType: mysqlEnum("memo_type", ["internal", "external", "circular", "directive"]).default("internal"),
+  memoType: varchar("memoType", { length: 50 }).default("internal"),
   fromDepartment: varchar("from_department", { length: 255 }),
   toDepartment: varchar("to_department", { length: 255 }),
-  status: mysqlEnum("status", ["draft", "sent", "received", "archived"]).default("draft"),
-  priority: mysqlEnum("priority", ["low", "medium", "high", "urgent"]).default("medium"),
-  attachments: json("attachments"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  priority: varchar("priority", { length: 50 }).default("medium"),
+  attachments: jsonb("attachments"),
   responseRequired: boolean("response_required").default(false),
   responseDeadline: date("response_deadline"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // فئات الملاحظات - Note Categories
-export const noteCategories = mysqlTable("note_categories", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const noteCategories = pgTable("note_categories", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   name: varchar("name", { length: 100 }).notNull(),
   color: varchar("color", { length: 20 }),
   icon: varchar("icon", { length: 50 }),
@@ -1905,57 +1831,57 @@ export type InsertSettlementItem = typeof settlementItems.$inferInsert;
 // ============================================
 
 // الأقسام - Departments
-export const departments = mysqlTable("departments", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 100 }).notNull(),
   nameEn: varchar("name_en", { length: 100 }),
-  parentId: int("parent_id"),
-  managerId: int("manager_id"),
-  costCenterId: int("cost_center_id"),
+  parentId: integer("parent_id"),
+  managerId: integer("manager_id"),
+  costCenterId: integer("cost_center_id"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // المسميات الوظيفية - Job Titles/Positions
-export const jobTitles = mysqlTable("job_titles", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const jobTitles = pgTable("job_titles", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   titleAr: varchar("title_ar", { length: 100 }).notNull(),
   titleEn: varchar("title_en", { length: 100 }),
-  departmentId: int("department_id"),
-  gradeId: int("grade_id"),
-  level: int("level").default(1),
+  departmentId: integer("department_id"),
+  gradeId: integer("grade_id"),
+  level: integer("level").default(1),
   description: text("description"),
   responsibilities: text("responsibilities"),
   requirements: text("requirements"),
-  headcount: int("headcount").default(1),
-  currentCount: int("current_count").default(0),
+  headcount: integer("headcount").default(1),
+  currentCount: integer("current_count").default(0),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // سلم الرواتب - Salary Grades
-export const salaryGrades = mysqlTable("salary_grades", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const salaryGrades = pgTable("salary_grades", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 100 }).notNull(),
-  minSalary: decimal("min_salary", { precision: 15, scale: 2 }),
-  maxSalary: decimal("max_salary", { precision: 15, scale: 2 }),
-  housingAllowancePct: decimal("housing_allowance_pct", { precision: 5, scale: 2 }).default("0"),
-  transportAllowance: decimal("transport_allowance", { precision: 15, scale: 2 }).default("0"),
+  minSalary: numeric("min_salary", { precision: 15, scale: 2 }),
+  maxSalary: numeric("max_salary", { precision: 15, scale: 2 }),
+  housingAllowancePct: numeric("housing_allowance_pct", { precision: 5, scale: 2 }).default("0"),
+  transportAllowance: numeric("transport_allowance", { precision: 15, scale: 2 }).default("0"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الموظفين - Employees
-export const employees = mysqlTable("employees", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const employees = pgTable("employees", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   employeeNumber: varchar("employee_number", { length: 20 }).notNull(),
   
   // البيانات الشخصية
@@ -1966,15 +1892,15 @@ export const employees = mysqlTable("employees", {
   fullNameEn: varchar("full_name_en", { length: 200 }),
   
   // الهوية
-  idType: mysqlEnum("id_type", ["national_id", "passport", "residence"]).default("national_id"),
+  idType: varchar("idType", { length: 50 }).default("national_id"),
   idNumber: varchar("id_number", { length: 50 }).notNull(),
   idExpiryDate: date("id_expiry_date"),
   
   nationality: varchar("nationality", { length: 50 }),
-  gender: mysqlEnum("gender", ["male", "female"]).default("male"),
+  gender: varchar("gender", { length: 50 }).default("male"),
   dateOfBirth: date("date_of_birth"),
   placeOfBirth: varchar("place_of_birth", { length: 100 }),
-  maritalStatus: mysqlEnum("marital_status", ["single", "married", "divorced", "widowed"]).default("single"),
+  maritalStatus: varchar("maritalStatus", { length: 50 }).default("single"),
   
   // معلومات الاتصال
   phone: varchar("phone", { length: 20 }),
@@ -1998,58 +1924,58 @@ export const employees = mysqlTable("employees", {
   // بيانات التوظيف
   hireDate: date("hire_date").notNull(),
   probationEndDate: date("probation_end_date"),
-  contractType: mysqlEnum("contract_type", ["permanent", "contract", "temporary", "part_time"]).default("permanent"),
+  contractType: varchar("contractType", { length: 50 }).default("permanent"),
   contractStartDate: date("contract_start_date"),
   contractEndDate: date("contract_end_date"),
   
   // الوظيفة
-  jobTitleId: int("job_title_id"),
-  departmentId: int("department_id"),
-  managerId: int("manager_id"),
+  jobTitleId: integer("job_title_id"),
+  departmentId: integer("department_id"),
+  managerId: integer("manager_id"),
   isManager: boolean("is_manager").default(false),
   
   // الموقع
   workLocation: varchar("work_location", { length: 100 }),
-  stationId: int("station_id"),
-  branchId: int("branch_id"),
+  stationId: integer("station_id"),
+  branchId: integer("branch_id"),
   
   // ساعات العمل
-  workSchedule: mysqlEnum("work_schedule", ["full_time", "shift", "flexible"]).default("full_time"),
-  workingHoursPerWeek: decimal("working_hours_per_week", { precision: 5, scale: 2 }).default("40"),
+  workSchedule: varchar("workSchedule", { length: 50 }).default("full_time"),
+  workingHoursPerWeek: numeric("working_hours_per_week", { precision: 5, scale: 2 }).default("40"),
   
   // الربط بالعمليات الميدانية
-  fieldWorkerId: int("field_worker_id"),
+  fieldWorkerId: integer("field_worker_id"),
   
   // الحالة
-  status: mysqlEnum("status", ["active", "inactive", "terminated", "suspended", "on_leave"]).default("active"),
+  status: varchar("status", { length: 50 }).default("active"),
   terminationDate: date("termination_date"),
   terminationReason: text("termination_reason"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // بيانات الراتب - Salary Details
-export const salaryDetails = mysqlTable("salary_details", {
-  id: int("id").autoincrement().primaryKey(),
-  employeeId: int("employee_id").notNull(),
+export const salaryDetails = pgTable("salary_details", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
   
   // الراتب الأساسي
-  basicSalary: decimal("basic_salary", { precision: 15, scale: 2 }).notNull(),
+  basicSalary: numeric("basic_salary", { precision: 15, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   
   // البدلات
-  housingAllowance: decimal("housing_allowance", { precision: 15, scale: 2 }).default("0"),
-  transportAllowance: decimal("transport_allowance", { precision: 15, scale: 2 }).default("0"),
-  foodAllowance: decimal("food_allowance", { precision: 15, scale: 2 }).default("0"),
-  phoneAllowance: decimal("phone_allowance", { precision: 15, scale: 2 }).default("0"),
-  otherAllowances: decimal("other_allowances", { precision: 15, scale: 2 }).default("0"),
+  housingAllowance: numeric("housing_allowance", { precision: 15, scale: 2 }).default("0"),
+  transportAllowance: numeric("transport_allowance", { precision: 15, scale: 2 }).default("0"),
+  foodAllowance: numeric("food_allowance", { precision: 15, scale: 2 }).default("0"),
+  phoneAllowance: numeric("phone_allowance", { precision: 15, scale: 2 }).default("0"),
+  otherAllowances: numeric("other_allowances", { precision: 15, scale: 2 }).default("0"),
   
   // إجمالي الراتب
-  totalSalary: decimal("total_salary", { precision: 15, scale: 2 }),
+  totalSalary: numeric("total_salary", { precision: 15, scale: 2 }),
   
   // طريقة الدفع
-  paymentMethod: mysqlEnum("payment_method", ["bank_transfer", "cash", "check"]).default("bank_transfer"),
+  paymentMethod: varchar("paymentMethod", { length: 50 }).default("bank_transfer"),
   bankName: varchar("bank_name", { length: 100 }),
   bankAccountNumber: varchar("bank_account_number", { length: 50 }),
   iban: varchar("iban", { length: 50 }),
@@ -2059,85 +1985,85 @@ export const salaryDetails = mysqlTable("salary_details", {
   isActive: boolean("is_active").default(true),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مسيرات الرواتب - Payroll Runs
-export const payrollRuns = mysqlTable("payroll_runs", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const payrollRuns = pgTable("payroll_runs", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   
   // الفترة
-  periodYear: int("period_year").notNull(),
-  periodMonth: int("period_month").notNull(),
+  periodYear: integer("period_year").notNull(),
+  periodMonth: integer("period_month").notNull(),
   periodStartDate: date("period_start_date").notNull(),
   periodEndDate: date("period_end_date").notNull(),
   
   // الإجماليات
-  totalBasicSalary: decimal("total_basic_salary", { precision: 15, scale: 2 }).default("0"),
-  totalAllowances: decimal("total_allowances", { precision: 15, scale: 2 }).default("0"),
-  totalDeductions: decimal("total_deductions", { precision: 15, scale: 2 }).default("0"),
-  totalNetSalary: decimal("total_net_salary", { precision: 15, scale: 2 }).default("0"),
-  employeeCount: int("employee_count").default(0),
+  totalBasicSalary: numeric("total_basic_salary", { precision: 15, scale: 2 }).default("0"),
+  totalAllowances: numeric("total_allowances", { precision: 15, scale: 2 }).default("0"),
+  totalDeductions: numeric("total_deductions", { precision: 15, scale: 2 }).default("0"),
+  totalNetSalary: numeric("total_net_salary", { precision: 15, scale: 2 }).default("0"),
+  employeeCount: integer("employee_count").default(0),
   
   // الحالة
-  status: mysqlEnum("status", ["draft", "calculated", "approved", "paid", "cancelled"]).default("draft"),
+  status: varchar("status", { length: 50 }).default("draft"),
   
   // الربط المحاسبي
-  journalEntryId: int("journal_entry_id"),
+  journalEntryId: integer("journal_entry_id"),
   
   calculatedAt: timestamp("calculated_at"),
-  calculatedBy: int("calculated_by"),
+  calculatedBy: integer("calculated_by"),
   approvedAt: timestamp("approved_at"),
-  approvedBy: int("approved_by"),
+  approvedBy: integer("approved_by"),
   paidAt: timestamp("paid_at"),
-  paidBy: int("paid_by"),
+  paidBy: integer("paid_by"),
   
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // بنود مسير الرواتب - Payroll Items
-export const payrollItems = mysqlTable("payroll_items", {
-  id: int("id").autoincrement().primaryKey(),
-  payrollRunId: int("payroll_run_id").notNull(),
-  employeeId: int("employee_id").notNull(),
+export const payrollItems = pgTable("payroll_items", {
+  id: serial("id").primaryKey(),
+  payrollRunId: integer("payroll_run_id").notNull(),
+  employeeId: integer("employee_id").notNull(),
   
   // الراتب الأساسي
-  basicSalary: decimal("basic_salary", { precision: 15, scale: 2 }).notNull(),
-  workingDays: int("working_days").default(30),
-  actualDays: int("actual_days").default(30),
+  basicSalary: numeric("basic_salary", { precision: 15, scale: 2 }).notNull(),
+  workingDays: integer("working_days").default(30),
+  actualDays: integer("actual_days").default(30),
   
   // البدلات
-  housingAllowance: decimal("housing_allowance", { precision: 15, scale: 2 }).default("0"),
-  transportAllowance: decimal("transport_allowance", { precision: 15, scale: 2 }).default("0"),
-  otherAllowances: decimal("other_allowances", { precision: 15, scale: 2 }).default("0"),
-  totalAllowances: decimal("total_allowances", { precision: 15, scale: 2 }).default("0"),
+  housingAllowance: numeric("housing_allowance", { precision: 15, scale: 2 }).default("0"),
+  transportAllowance: numeric("transport_allowance", { precision: 15, scale: 2 }).default("0"),
+  otherAllowances: numeric("other_allowances", { precision: 15, scale: 2 }).default("0"),
+  totalAllowances: numeric("total_allowances", { precision: 15, scale: 2 }).default("0"),
   
   // الإضافات
-  overtimeHours: decimal("overtime_hours", { precision: 10, scale: 2 }).default("0"),
-  overtimeAmount: decimal("overtime_amount", { precision: 15, scale: 2 }).default("0"),
-  bonuses: decimal("bonuses", { precision: 15, scale: 2 }).default("0"),
-  totalAdditions: decimal("total_additions", { precision: 15, scale: 2 }).default("0"),
+  overtimeHours: numeric("overtime_hours", { precision: 10, scale: 2 }).default("0"),
+  overtimeAmount: numeric("overtime_amount", { precision: 15, scale: 2 }).default("0"),
+  bonuses: numeric("bonuses", { precision: 15, scale: 2 }).default("0"),
+  totalAdditions: numeric("total_additions", { precision: 15, scale: 2 }).default("0"),
   
   // الخصومات
-  absenceDays: int("absence_days").default(0),
-  absenceDeduction: decimal("absence_deduction", { precision: 15, scale: 2 }).default("0"),
-  lateDeduction: decimal("late_deduction", { precision: 15, scale: 2 }).default("0"),
-  socialInsurance: decimal("social_insurance", { precision: 15, scale: 2 }).default("0"),
-  taxDeduction: decimal("tax_deduction", { precision: 15, scale: 2 }).default("0"),
-  loanDeduction: decimal("loan_deduction", { precision: 15, scale: 2 }).default("0"),
-  otherDeductions: decimal("other_deductions", { precision: 15, scale: 2 }).default("0"),
-  totalDeductions: decimal("total_deductions", { precision: 15, scale: 2 }).default("0"),
+  absenceDays: integer("absence_days").default(0),
+  absenceDeduction: numeric("absence_deduction", { precision: 15, scale: 2 }).default("0"),
+  lateDeduction: numeric("late_deduction", { precision: 15, scale: 2 }).default("0"),
+  socialInsurance: numeric("social_insurance", { precision: 15, scale: 2 }).default("0"),
+  taxDeduction: numeric("tax_deduction", { precision: 15, scale: 2 }).default("0"),
+  loanDeduction: numeric("loan_deduction", { precision: 15, scale: 2 }).default("0"),
+  otherDeductions: numeric("other_deductions", { precision: 15, scale: 2 }).default("0"),
+  totalDeductions: numeric("total_deductions", { precision: 15, scale: 2 }).default("0"),
   
   // الصافي
-  grossSalary: decimal("gross_salary", { precision: 15, scale: 2 }),
-  netSalary: decimal("net_salary", { precision: 15, scale: 2 }),
+  grossSalary: numeric("gross_salary", { precision: 15, scale: 2 }),
+  netSalary: numeric("net_salary", { precision: 15, scale: 2 }),
   
   // الحالة
-  status: mysqlEnum("status", ["calculated", "approved", "paid"]).default("calculated"),
+  status: varchar("status", { length: 50 }).default("calculated"),
   paidAt: timestamp("paid_at"),
   
   notes: text("notes"),
@@ -2145,57 +2071,57 @@ export const payrollItems = mysqlTable("payroll_items", {
 });
 
 // الحضور والانصراف - Attendance
-export const attendance = mysqlTable("attendance", {
-  id: int("id").autoincrement().primaryKey(),
-  employeeId: int("employee_id").notNull(),
-  businessId: int("business_id").notNull(),
+export const attendance = pgTable("attendance", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  businessId: integer("business_id").notNull(),
   
   attendanceDate: date("attendance_date").notNull(),
   
   // وقت الحضور
-  checkInTime: datetime("check_in_time"),
+  checkInTime: timestamp("check_in_time"),
   checkInLocation: varchar("check_in_location", { length: 255 }),
-  checkInLatitude: decimal("check_in_latitude", { precision: 10, scale: 8 }),
-  checkInLongitude: decimal("check_in_longitude", { precision: 11, scale: 8 }),
-  checkInMethod: mysqlEnum("check_in_method", ["manual", "biometric", "gps", "qr_code"]).default("manual"),
+  checkInLatitude: numeric("check_in_latitude", { precision: 10, scale: 8 }),
+  checkInLongitude: numeric("check_in_longitude", { precision: 11, scale: 8 }),
+  checkInMethod: varchar("checkInMethod", { length: 50 }).default("manual"),
   
   // وقت الانصراف
-  checkOutTime: datetime("check_out_time"),
+  checkOutTime: timestamp("check_out_time"),
   checkOutLocation: varchar("check_out_location", { length: 255 }),
-  checkOutLatitude: decimal("check_out_latitude", { precision: 10, scale: 8 }),
-  checkOutLongitude: decimal("check_out_longitude", { precision: 11, scale: 8 }),
-  checkOutMethod: mysqlEnum("check_out_method", ["manual", "biometric", "gps", "qr_code"]).default("manual"),
+  checkOutLatitude: numeric("check_out_latitude", { precision: 10, scale: 8 }),
+  checkOutLongitude: numeric("check_out_longitude", { precision: 11, scale: 8 }),
+  checkOutMethod: varchar("checkOutMethod", { length: 50 }).default("manual"),
   
   // الحسابات
-  totalHours: decimal("total_hours", { precision: 5, scale: 2 }),
-  overtimeHours: decimal("overtime_hours", { precision: 5, scale: 2 }).default("0"),
-  lateMinutes: int("late_minutes").default(0),
-  earlyLeaveMinutes: int("early_leave_minutes").default(0),
+  totalHours: numeric("total_hours", { precision: 5, scale: 2 }),
+  overtimeHours: numeric("overtime_hours", { precision: 5, scale: 2 }).default("0"),
+  lateMinutes: integer("late_minutes").default(0),
+  earlyLeaveMinutes: integer("early_leave_minutes").default(0),
   
   // الحالة
-  status: mysqlEnum("status", ["present", "absent", "late", "half_day", "leave", "holiday", "weekend"]).default("present"),
+  status: varchar("status", { length: 50 }).default("present"),
   
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // أنواع الإجازات - Leave Types
-export const leaveTypes = mysqlTable("leave_types", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const leaveTypes = pgTable("leave_types", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 100 }).notNull(),
   nameEn: varchar("name_en", { length: 100 }),
   
   // الرصيد السنوي
-  annualBalance: int("annual_balance").default(0),
+  annualBalance: integer("annual_balance").default(0),
   
   // الخصائص
   isPaid: boolean("is_paid").default(true),
   requiresApproval: boolean("requires_approval").default(true),
   allowsCarryOver: boolean("allows_carry_over").default(false),
-  maxCarryOverDays: int("max_carry_over_days").default(0),
+  maxCarryOverDays: integer("max_carry_over_days").default(0),
   
   // اللون
   color: varchar("color", { length: 20 }).default("#3B82F6"),
@@ -2205,56 +2131,56 @@ export const leaveTypes = mysqlTable("leave_types", {
 });
 
 // طلبات الإجازات - Leave Requests
-export const leaveRequests = mysqlTable("leave_requests", {
-  id: int("id").autoincrement().primaryKey(),
-  employeeId: int("employee_id").notNull(),
-  businessId: int("business_id").notNull(),
-  leaveTypeId: int("leave_type_id").notNull(),
+export const leaveRequests = pgTable("leave_requests", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  businessId: integer("business_id").notNull(),
+  leaveTypeId: integer("leave_type_id").notNull(),
   
   // الفترة
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
-  totalDays: int("total_days").notNull(),
+  totalDays: integer("total_days").notNull(),
   
   // السبب
   reason: text("reason"),
   attachmentPath: varchar("attachment_path", { length: 500 }),
   
   // الحالة
-  status: mysqlEnum("status", ["pending", "approved", "rejected", "cancelled"]).default("pending"),
+  status: varchar("status", { length: 50 }).default("pending"),
   
   // الموافقة
-  approvedBy: int("approved_by"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
   rejectionReason: text("rejection_reason"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // أرصدة الإجازات - Leave Balances
-export const leaveBalances = mysqlTable("leave_balances", {
-  id: int("id").autoincrement().primaryKey(),
-  employeeId: int("employee_id").notNull(),
-  leaveTypeId: int("leave_type_id").notNull(),
-  year: int("year").notNull(),
+export const leaveBalances = pgTable("leave_balances", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  leaveTypeId: integer("leave_type_id").notNull(),
+  year: integer("year").notNull(),
   
   // الرصيد
-  openingBalance: int("opening_balance").default(0),
-  earnedBalance: int("earned_balance").default(0),
-  usedBalance: int("used_balance").default(0),
-  adjustmentBalance: int("adjustment_balance").default(0),
-  remainingBalance: int("remaining_balance").default(0),
+  openingBalance: integer("opening_balance").default(0),
+  earnedBalance: integer("earned_balance").default(0),
+  usedBalance: integer("used_balance").default(0),
+  adjustmentBalance: integer("adjustment_balance").default(0),
+  remainingBalance: integer("remaining_balance").default(0),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // تقييمات الأداء - Performance Evaluations
-export const performanceEvaluations = mysqlTable("performance_evaluations", {
-  id: int("id").autoincrement().primaryKey(),
-  employeeId: int("employee_id").notNull(),
-  businessId: int("business_id").notNull(),
+export const performanceEvaluations = pgTable("performance_evaluations", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  businessId: integer("business_id").notNull(),
   
   // الفترة
   evaluationPeriod: varchar("evaluation_period", { length: 50 }).notNull(),
@@ -2262,15 +2188,15 @@ export const performanceEvaluations = mysqlTable("performance_evaluations", {
   periodEndDate: date("period_end_date").notNull(),
   
   // التقييم
-  overallScore: decimal("overall_score", { precision: 5, scale: 2 }),
-  performanceRating: mysqlEnum("performance_rating", ["exceptional", "exceeds", "meets", "needs_improvement", "unsatisfactory"]),
+  overallScore: numeric("overall_score", { precision: 5, scale: 2 }),
+  performanceRating: varchar("performanceRating", { length: 50 }),
   
   // المعايير
-  qualityScore: decimal("quality_score", { precision: 5, scale: 2 }),
-  productivityScore: decimal("productivity_score", { precision: 5, scale: 2 }),
-  attendanceScore: decimal("attendance_score", { precision: 5, scale: 2 }),
-  teamworkScore: decimal("teamwork_score", { precision: 5, scale: 2 }),
-  initiativeScore: decimal("initiative_score", { precision: 5, scale: 2 }),
+  qualityScore: numeric("quality_score", { precision: 5, scale: 2 }),
+  productivityScore: numeric("productivity_score", { precision: 5, scale: 2 }),
+  attendanceScore: numeric("attendance_score", { precision: 5, scale: 2 }),
+  teamworkScore: numeric("teamwork_score", { precision: 5, scale: 2 }),
+  initiativeScore: numeric("initiative_score", { precision: 5, scale: 2 }),
   
   // الملاحظات
   strengths: text("strengths"),
@@ -2280,44 +2206,44 @@ export const performanceEvaluations = mysqlTable("performance_evaluations", {
   employeeComments: text("employee_comments"),
   
   // المقيّم
-  evaluatedBy: int("evaluated_by").notNull(),
+  evaluatedBy: integer("evaluated_by").notNull(),
   evaluatedAt: timestamp("evaluated_at"),
   
   // الحالة
-  status: mysqlEnum("status", ["draft", "submitted", "reviewed", "acknowledged"]).default("draft"),
+  status: varchar("status", { length: 50 }).default("draft"),
   acknowledgedAt: timestamp("acknowledged_at"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // العقود - Contracts
-export const employeeContracts = mysqlTable("employee_contracts", {
-  id: int("id").autoincrement().primaryKey(),
-  employeeId: int("employee_id").notNull(),
-  businessId: int("business_id").notNull(),
+export const employeeContracts = pgTable("employee_contracts", {
+  id: serial("id").primaryKey(),
+  employeeId: integer("employee_id").notNull(),
+  businessId: integer("business_id").notNull(),
   
   contractNumber: varchar("contract_number", { length: 50 }).notNull(),
-  contractType: mysqlEnum("contract_type", ["permanent", "fixed_term", "temporary", "probation"]).default("permanent"),
+  contractType: varchar("contractType", { length: 50 }).default("permanent"),
   
   startDate: date("start_date").notNull(),
   endDate: date("end_date"),
   
   // شروط العقد
-  basicSalary: decimal("basic_salary", { precision: 15, scale: 2 }),
-  probationPeriodDays: int("probation_period_days").default(90),
-  noticePeriodDays: int("notice_period_days").default(30),
+  basicSalary: numeric("basic_salary", { precision: 15, scale: 2 }),
+  probationPeriodDays: integer("probation_period_days").default(90),
+  noticePeriodDays: integer("notice_period_days").default(30),
   
   // المستند
   documentPath: varchar("document_path", { length: 500 }),
   
   // الحالة
-  status: mysqlEnum("status", ["active", "expired", "terminated", "renewed"]).default("active"),
+  status: varchar("status", { length: 50 }).default("active"),
   terminationDate: date("termination_date"),
   terminationReason: text("termination_reason"),
   
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Types Export for HR System
@@ -2379,339 +2305,339 @@ export type InsertNoteCategory = typeof noteCategories.$inferInsert;
 // ============================================
 
 // المناطق - Areas
-export const areas = mysqlTable("areas", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  projectId: int("project_id"),
+export const areas = pgTable("areas", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  projectId: integer("project_id"),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
   address: text("address"),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // المربعات - Squares
-export const squares = mysqlTable("squares", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  areaId: int("area_id").notNull(),
+export const squares = pgTable("squares", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  areaId: integer("area_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الكابينات - Cabinets
-export const cabinets = mysqlTable("cabinets", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  squareId: int("square_id").notNull(),
+export const cabinets = pgTable("cabinets", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  squareId: integer("square_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  cabinetType: mysqlEnum("cabinet_type", ["main", "sub", "distribution"]).default("distribution"),
-  capacity: int("capacity"),
-  currentLoad: int("current_load").default(0),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  cabinetType: varchar("cabinetType", { length: 50 }).default("distribution"),
+  capacity: integer("capacity"),
+  currentLoad: integer("current_load").default(0),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // التعرفة - Tariffs
-export const tariffs = mysqlTable("tariffs", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const tariffs = pgTable("tariffs", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
-  tariffType: mysqlEnum("tariff_type", ["standard", "custom", "promotional", "contract"]).default("standard"),
-  serviceType: mysqlEnum("service_type", ["electricity", "water", "gas"]).default("electricity"),
-  slabs: json("slabs"),
-  fixedCharge: decimal("fixed_charge", { precision: 18, scale: 2 }).default("0"),
-  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).default("15"),
+  tariffType: varchar("tariffType", { length: 50 }).default("standard"),
+  serviceType: varchar("serviceType", { length: 50 }).default("electricity"),
+  slabs: jsonb("slabs"),
+  fixedCharge: numeric("fixed_charge", { precision: 18, scale: 2 }).default("0"),
+  vatRate: numeric("vat_rate", { precision: 5, scale: 2 }).default("15"),
   effectiveFrom: date("effective_from"),
   effectiveTo: date("effective_to"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // أنواع الرسوم - Fee Types
-export const feeTypes = mysqlTable("fee_types", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const feeTypes = pgTable("fee_types", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   description: text("description"),
-  feeType: mysqlEnum("fee_type", ["fixed", "percentage", "per_unit"]).default("fixed"),
-  amount: decimal("amount", { precision: 18, scale: 2 }).default("0"),
+  feeType: varchar("feeType", { length: 50 }).default("fixed"),
+  amount: numeric("amount", { precision: 18, scale: 2 }).default("0"),
   isRecurring: boolean("is_recurring").default(false),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // العملاء المحسن - Enhanced Customers
-export const customersEnhanced = mysqlTable("customers_enhanced", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  projectId: int("project_id"),
+export const customersEnhanced = pgTable("customers_enhanced", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  projectId: integer("project_id"),
   fullName: varchar("full_name", { length: 255 }).notNull(),
   mobileNo: varchar("mobile_no", { length: 50 }),
   phone: varchar("phone", { length: 50 }),
   email: varchar("email", { length: 255 }),
   address: text("address"),
   nationalId: varchar("national_id", { length: 50 }),
-  customerType: mysqlEnum("customer_type", ["residential", "commercial", "industrial", "government"]).default("residential"),
-  serviceTier: mysqlEnum("service_tier", ["basic", "premium", "vip"]).default("basic"),
-  status: mysqlEnum("cust_status", ["active", "inactive", "suspended", "closed"]).default("active"),
-  balanceDue: decimal("balance_due", { precision: 18, scale: 2 }).default("0"),
-  userId: int("user_id"),
+  customerType: varchar("customerType", { length: 50 }).default("residential"),
+  serviceTier: varchar("serviceTier", { length: 50 }).default("basic"),
+  status: varchar("status", { length: 50 }).default("active"),
+  balanceDue: numeric("balance_due", { precision: 18, scale: 2 }).default("0"),
+  userId: integer("user_id"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // محفظة العميل - Customer Wallet
-export const customerWallets = mysqlTable("customer_wallets", {
-  id: int("id").autoincrement().primaryKey(),
-  customerId: int("customer_id").notNull(),
-  balance: decimal("balance", { precision: 18, scale: 2 }).default("0"),
+export const customerWallets = pgTable("customer_wallets", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").notNull(),
+  balance: numeric("balance", { precision: 18, scale: 2 }).default("0"),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   lastTransactionDate: timestamp("last_transaction_date"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // معاملات العميل - Customer Transactions
-export const customerTransactionsNew = mysqlTable("customer_transactions_new", {
-  id: int("id").autoincrement().primaryKey(),
-  customerId: int("customer_id").notNull(),
-  walletId: int("wallet_id"),
-  transactionType: mysqlEnum("trans_type", ["payment", "refund", "charge", "adjustment", "deposit", "withdrawal"]).notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
-  balanceBefore: decimal("balance_before", { precision: 18, scale: 2 }),
-  balanceAfter: decimal("balance_after", { precision: 18, scale: 2 }),
+export const customerTransactionsNew = pgTable("customer_transactions_new", {
+  id: serial("id").primaryKey(),
+  customerId: integer("customer_id").notNull(),
+  walletId: integer("wallet_id"),
+  transactionType: varchar("transaction_type", { length: 50 }).notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+  balanceBefore: numeric("balance_before", { precision: 18, scale: 2 }),
+  balanceAfter: numeric("balance_after", { precision: 18, scale: 2 }),
   referenceType: varchar("reference_type", { length: 50 }),
-  referenceId: int("reference_id"),
+  referenceId: integer("reference_id"),
   description: text("description"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // العدادات المحسن - Enhanced Meters
-export const metersEnhanced = mysqlTable("meters_enhanced", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  customerId: int("customer_id"),
-  cabinetId: int("cabinet_id"),
-  tariffId: int("tariff_id"),
-  projectId: int("project_id"),
+export const metersEnhanced = pgTable("meters_enhanced", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  customerId: integer("customer_id"),
+  cabinetId: integer("cabinet_id"),
+  tariffId: integer("tariff_id"),
+  projectId: integer("project_id"),
   meterNumber: varchar("meter_number", { length: 50 }).notNull(),
   serialNumber: varchar("serial_number", { length: 100 }),
-  meterType: mysqlEnum("meter_type", ["electricity", "water", "gas"]).default("electricity"),
+  meterType: varchar("meterType", { length: 50 }).default("electricity"),
   brand: varchar("brand", { length: 100 }),
   model: varchar("model", { length: 100 }),
-  category: mysqlEnum("meter_category", ["offline", "iot", "code"]).default("offline"),
-  currentReading: decimal("current_reading", { precision: 15, scale: 3 }).default("0"),
-  previousReading: decimal("previous_reading", { precision: 15, scale: 3 }).default("0"),
-  balance: decimal("balance", { precision: 18, scale: 2 }).default("0"),
-  balanceDue: decimal("balance_due", { precision: 18, scale: 2 }).default("0"),
+  category: varchar("category", { length: 50 }).default("offline"),
+  currentReading: numeric("current_reading", { precision: 15, scale: 3 }).default("0"),
+  previousReading: numeric("previous_reading", { precision: 15, scale: 3 }).default("0"),
+  balance: numeric("balance", { precision: 18, scale: 2 }).default("0"),
+  balanceDue: numeric("balance_due", { precision: 18, scale: 2 }).default("0"),
   installationDate: date("installation_date"),
-  installationStatus: mysqlEnum("installation_status", ["new", "used", "not_installed"]).default("new"),
+  installationStatus: varchar("installationStatus", { length: 50 }).default("new"),
   signNumber: varchar("sign_number", { length: 50 }),
   signColor: varchar("sign_color", { length: 50 }),
-  status: mysqlEnum("meter_status", ["active", "inactive", "maintenance", "faulty", "not_installed"]).default("active"),
+  status: varchar("status", { length: 50 }).default("active"),
   isActive: boolean("is_active").default(true),
   iotDeviceId: varchar("iot_device_id", { length: 100 }),
   lastSyncTime: timestamp("last_sync_time"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // فترات الفوترة - Billing Periods
-export const billingPeriods = mysqlTable("billing_periods", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  projectId: int("project_id"),
+export const billingPeriods = pgTable("billing_periods", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  projectId: integer("project_id"),
   name: varchar("name", { length: 100 }).notNull(),
-  periodNumber: int("period_number"),
-  month: int("month"),
-  year: int("year"),
+  periodNumber: integer("period_number"),
+  month: integer("month"),
+  year: integer("year"),
   startDate: date("start_date").notNull(),
   endDate: date("end_date").notNull(),
-  status: mysqlEnum("period_status", ["pending", "active", "reading_phase", "billing_phase", "closed"]).default("pending"),
+  status: varchar("status", { length: 50 }).default("pending"),
   readingStartDate: date("reading_start_date"),
   readingEndDate: date("reading_end_date"),
   billingDate: date("billing_date"),
   dueDate: date("due_date"),
-  totalMeters: int("total_meters").default(0),
-  readMeters: int("read_meters").default(0),
-  billedMeters: int("billed_meters").default(0),
-  createdBy: int("created_by"),
-  closedBy: int("closed_by"),
+  totalMeters: integer("total_meters").default(0),
+  readMeters: integer("read_meters").default(0),
+  billedMeters: integer("billed_meters").default(0),
+  createdBy: integer("created_by"),
+  closedBy: integer("closed_by"),
   closedAt: timestamp("closed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // قراءات العدادات المحسن - Enhanced Meter Readings
-export const meterReadingsEnhanced = mysqlTable("meter_readings_enhanced", {
-  id: int("id").autoincrement().primaryKey(),
-  meterId: int("meter_id").notNull(),
-  billingPeriodId: int("billing_period_id").notNull(),
-  currentReading: decimal("current_reading", { precision: 15, scale: 3 }).notNull(),
-  previousReading: decimal("previous_reading", { precision: 15, scale: 3 }),
-  consumption: decimal("consumption", { precision: 15, scale: 3 }),
+export const meterReadingsEnhanced = pgTable("meter_readings_enhanced", {
+  id: serial("id").primaryKey(),
+  meterId: integer("meter_id").notNull(),
+  billingPeriodId: integer("billing_period_id").notNull(),
+  currentReading: numeric("current_reading", { precision: 15, scale: 3 }).notNull(),
+  previousReading: numeric("previous_reading", { precision: 15, scale: 3 }),
+  consumption: numeric("consumption", { precision: 15, scale: 3 }),
   readingDate: date("reading_date").notNull(),
-  readingType: mysqlEnum("reading_type", ["actual", "estimated", "adjusted"]).default("actual"),
-  status: mysqlEnum("reading_status", ["entered", "approved", "locked", "disputed"]).default("entered"),
+  readingType: varchar("readingType", { length: 50 }).default("actual"),
+  status: varchar("status", { length: 50 }).default("entered"),
   isEstimated: boolean("is_estimated").default(false),
-  images: json("images"),
-  readBy: int("read_by"),
-  approvedBy: int("approved_by"),
+  images: jsonb("images"),
+  readBy: integer("read_by"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الفواتير المحسن - Enhanced Invoices
-export const invoicesEnhanced = mysqlTable("invoices_enhanced", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  customerId: int("customer_id").notNull(),
-  meterId: int("meter_id"),
-  meterReadingId: int("meter_reading_id"),
-  billingPeriodId: int("billing_period_id"),
+export const invoicesEnhanced = pgTable("invoices_enhanced", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  customerId: integer("customer_id").notNull(),
+  meterId: integer("meter_id"),
+  meterReadingId: integer("meter_reading_id"),
+  billingPeriodId: integer("billing_period_id"),
   invoiceNo: varchar("invoice_no", { length: 50 }).notNull(),
   invoiceDate: date("invoice_date").notNull(),
   dueDate: date("due_date"),
   periodStart: date("period_start"),
   periodEnd: date("period_end"),
   meterNumber: varchar("meter_number", { length: 50 }),
-  previousReading: decimal("previous_reading", { precision: 15, scale: 3 }),
-  currentReading: decimal("current_reading", { precision: 15, scale: 3 }),
-  totalConsumptionKWH: decimal("total_consumption_kwh", { precision: 15, scale: 3 }),
-  priceKwh: decimal("price_kwh", { precision: 10, scale: 4 }),
-  consumptionAmount: decimal("consumption_amount", { precision: 18, scale: 2 }).default("0"),
-  fixedCharges: decimal("fixed_charges", { precision: 18, scale: 2 }).default("0"),
-  totalFees: decimal("total_fees", { precision: 18, scale: 2 }).default("0"),
-  vatRate: decimal("vat_rate", { precision: 5, scale: 2 }).default("15"),
-  vatAmount: decimal("vat_amount", { precision: 18, scale: 2 }).default("0"),
-  totalAmount: decimal("total_amount", { precision: 18, scale: 2 }).default("0"),
-  previousBalanceDue: decimal("previous_balance_due", { precision: 18, scale: 2 }).default("0"),
-  finalAmount: decimal("final_amount", { precision: 18, scale: 2 }).default("0"),
-  paidAmount: decimal("paid_amount", { precision: 18, scale: 2 }).default("0"),
-  balanceDue: decimal("balance_due", { precision: 18, scale: 2 }).default("0"),
-  status: mysqlEnum("invoice_status", ["generated", "partial", "approved", "locked", "paid", "cancelled"]).default("generated"),
-  invoiceType: mysqlEnum("invoice_type", ["partial", "final"]).default("final"),
-  approvedBy: int("approved_by"),
+  previousReading: numeric("previous_reading", { precision: 15, scale: 3 }),
+  currentReading: numeric("current_reading", { precision: 15, scale: 3 }),
+  totalConsumptionKWH: numeric("total_consumption_kwh", { precision: 15, scale: 3 }),
+  priceKwh: numeric("price_kwh", { precision: 10, scale: 4 }),
+  consumptionAmount: numeric("consumption_amount", { precision: 18, scale: 2 }).default("0"),
+  fixedCharges: numeric("fixed_charges", { precision: 18, scale: 2 }).default("0"),
+  totalFees: numeric("total_fees", { precision: 18, scale: 2 }).default("0"),
+  vatRate: numeric("vat_rate", { precision: 5, scale: 2 }).default("15"),
+  vatAmount: numeric("vat_amount", { precision: 18, scale: 2 }).default("0"),
+  totalAmount: numeric("total_amount", { precision: 18, scale: 2 }).default("0"),
+  previousBalanceDue: numeric("previous_balance_due", { precision: 18, scale: 2 }).default("0"),
+  finalAmount: numeric("final_amount", { precision: 18, scale: 2 }).default("0"),
+  paidAmount: numeric("paid_amount", { precision: 18, scale: 2 }).default("0"),
+  balanceDue: numeric("balance_due", { precision: 18, scale: 2 }).default("0"),
+  status: varchar("status", { length: 50 }).default("generated"),
+  invoiceType: varchar("invoiceType", { length: 50 }).default("final"),
+  approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // رسوم الفاتورة - Invoice Fees
-export const invoiceFees = mysqlTable("invoice_fees", {
-  id: int("id").autoincrement().primaryKey(),
-  invoiceId: int("invoice_id").notNull(),
-  feeTypeId: int("fee_type_id").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+export const invoiceFees = pgTable("invoice_fees", {
+  id: serial("id").primaryKey(),
+  invoiceId: integer("invoice_id").notNull(),
+  feeTypeId: integer("fee_type_id").notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // الصناديق - Cashboxes
-export const cashboxes = mysqlTable("cashboxes", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  branchId: int("branch_id"),
+export const cashboxes = pgTable("cashboxes", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  branchId: integer("branch_id"),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  balance: decimal("balance", { precision: 18, scale: 2 }).default("0"),
+  balance: numeric("balance", { precision: 18, scale: 2 }).default("0"),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  assignedTo: int("assigned_to"),
+  assignedTo: integer("assigned_to"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // طرق الدفع - Payment Methods
-export const paymentMethodsNew = mysqlTable("payment_methods_new", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const paymentMethodsNew = pgTable("payment_methods_new", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   name: varchar("name", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  methodType: mysqlEnum("method_type", ["cash", "card", "bank_transfer", "check", "online", "sadad", "wallet"]).default("cash"),
+  methodType: varchar("methodType", { length: 50 }).default("cash"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // المدفوعات المحسن - Enhanced Payments
-export const paymentsEnhanced = mysqlTable("payments_enhanced", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  customerId: int("customer_id").notNull(),
-  meterId: int("meter_id"),
-  invoiceId: int("invoice_id"),
-  cashboxId: int("cashbox_id"),
-  paymentMethodId: int("payment_method_id"),
+export const paymentsEnhanced = pgTable("payments_enhanced", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  customerId: integer("customer_id").notNull(),
+  meterId: integer("meter_id"),
+  invoiceId: integer("invoice_id"),
+  cashboxId: integer("cashbox_id"),
+  paymentMethodId: integer("payment_method_id"),
   paymentNumber: varchar("payment_number", { length: 50 }).notNull(),
   paymentDate: date("payment_date").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
-  balanceDueBefore: decimal("balance_due_before", { precision: 18, scale: 2 }),
-  balanceDueAfter: decimal("balance_due_after", { precision: 18, scale: 2 }),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+  balanceDueBefore: numeric("balance_due_before", { precision: 18, scale: 2 }),
+  balanceDueAfter: numeric("balance_due_after", { precision: 18, scale: 2 }),
   payerName: varchar("payer_name", { length: 255 }),
   referenceNumber: varchar("reference_number", { length: 100 }),
-  status: mysqlEnum("payment_status", ["pending", "completed", "failed", "refunded"]).default("completed"),
+  status: varchar("status", { length: 50 }).default("completed"),
   notes: text("notes"),
-  receivedBy: int("received_by"),
+  receivedBy: integer("received_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الإيصالات - Receipts
-export const receipts = mysqlTable("receipts", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  paymentId: int("payment_id").notNull(),
+export const receipts = pgTable("receipts", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  paymentId: integer("payment_id").notNull(),
   receiptNumber: varchar("receipt_number", { length: 50 }).notNull(),
   issueDate: date("issue_date").notNull(),
   description: text("description"),
-  printedBy: int("printed_by"),
+  printedBy: integer("printed_by"),
   printedAt: timestamp("printed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // أكواد الشحن المسبق - Prepaid Codes
-export const prepaidCodes = mysqlTable("prepaid_codes", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  meterId: int("meter_id"),
+export const prepaidCodes = pgTable("prepaid_codes", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  meterId: integer("meter_id"),
   code: varchar("code", { length: 100 }).notNull().unique(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
-  status: mysqlEnum("prepaid_status", ["active", "used", "expired", "cancelled"]).default("active"),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+  status: varchar("status", { length: 50 }).default("active"),
   usedAt: timestamp("used_at"),
   expiresAt: timestamp("expires_at"),
-  generatedBy: int("generated_by"),
+  generatedBy: integer("generated_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -2759,147 +2685,117 @@ export type InsertPrepaidCode = typeof prepaidCodes.$inferInsert;
 // ============================================
 
 // الموردين - Diesel Suppliers
-export const dieselSuppliers = mysqlTable("diesel_suppliers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const dieselSuppliers = pgTable("diesel_suppliers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   phone: varchar("phone", { length: 50 }),
   address: text("address"),
-  latitude: decimal("latitude", { precision: 10, scale: 8 }),
-  longitude: decimal("longitude", { precision: 11, scale: 8 }),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
   contactPerson: varchar("contact_person", { length: 100 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // الوايتات (صهاريج الديزل) - Diesel Tankers
-export const dieselTankers = mysqlTable("diesel_tankers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const dieselTankers = pgTable("diesel_tankers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   plateNumber: varchar("plate_number", { length: 20 }).notNull(),
-  capacity: decimal("capacity", { precision: 10, scale: 2 }).notNull(), // السعة الكلية
-  compartment1Capacity: decimal("compartment1_capacity", { precision: 10, scale: 2 }), // عين 1
-  compartment2Capacity: decimal("compartment2_capacity", { precision: 10, scale: 2 }), // عين 2
+  capacity: numeric("capacity", { precision: 10, scale: 2 }).notNull(), // السعة الكلية
+  compartment1Capacity: numeric("compartment1_capacity", { precision: 10, scale: 2 }), // عين 1
+  compartment2Capacity: numeric("compartment2_capacity", { precision: 10, scale: 2 }), // عين 2
   driverName: varchar("driver_name", { length: 100 }),
   driverPhone: varchar("driver_phone", { length: 50 }),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // خزانات المحطة - Station Tanks
-export const dieselTanks = mysqlTable("diesel_tanks", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id").notNull(),
+export const dieselTanks = pgTable("diesel_tanks", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   
   // نوع الخزان حسب الوظيفة
-  type: mysqlEnum("tank_type", [
-    "receiving",      // خزان استلام
-    "main",           // خزان رئيسي
-    "pre_output",     // خزان قبل طرمبة الخروج
-    "generator"       // خزان مولد
-  ]).notNull(),
+  type: varchar("tank_type", { length: 50 }).notNull(),
   
   // مادة الخزان
-  material: mysqlEnum("tank_material", [
-    "plastic",        // بلاستيك
-    "iron",           // حديد
-    "stainless_steel", // ستانلس ستيل
-    "fiberglass"      // فايبر جلاس
-  ]).default("plastic"),
+  material: varchar("tank_material", { length: 50 }).default("plastic"),
   
   // بيانات الخزان الفنية
   brand: varchar("brand", { length: 100 }),           // الماركة
   color: varchar("color", { length: 50 }),            // اللون
-  capacity: decimal("capacity", { precision: 10, scale: 2 }).notNull(), // السعة الكلية
-  height: decimal("height", { precision: 8, scale: 2 }),    // الارتفاع بالسنتيمتر
-  diameter: decimal("diameter", { precision: 8, scale: 2 }), // القطر بالسنتيمتر
-  deadStock: decimal("dead_stock", { precision: 10, scale: 2 }).default("0"), // الكمية الميتة
-  effectiveCapacity: decimal("effective_capacity", { precision: 10, scale: 2 }), // السعة الفعلية = السعة - الكمية الميتة
+  capacity: numeric("capacity", { precision: 10, scale: 2 }).notNull(), // السعة الكلية
+  height: numeric("height", { precision: 8, scale: 2 }),    // الارتفاع بالسنتيمتر
+  diameter: numeric("diameter", { precision: 8, scale: 2 }), // القطر بالسنتيمتر
+  deadStock: numeric("dead_stock", { precision: 10, scale: 2 }).default("0"), // الكمية الميتة
+  effectiveCapacity: numeric("effective_capacity", { precision: 10, scale: 2 }), // السعة الفعلية = السعة - الكمية الميتة
   
   // المستويات
-  currentLevel: decimal("current_level", { precision: 10, scale: 2 }).default("0"),
-  minLevel: decimal("min_level", { precision: 10, scale: 2 }).default("0"),
+  currentLevel: numeric("current_level", { precision: 10, scale: 2 }).default("0"),
+  minLevel: numeric("min_level", { precision: 10, scale: 2 }).default("0"),
   
   // عدد الفتحات
-  openingsCount: int("openings_count").default(1),
+  openingsCount: integer("openings_count").default(1),
   
   // ربط بمولد (للخزانات المرتبطة بمولد)
-  linkedGeneratorId: int("linked_generator_id"),
+  linkedGeneratorId: integer("linked_generator_id"),
   
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // فتحات الخزان - Tank Openings
-export const dieselTankOpenings = mysqlTable("diesel_tank_openings", {
-  id: int("id").autoincrement().primaryKey(),
-  tankId: int("tank_id").notNull(),
-  openingNumber: int("opening_number").notNull(),      // رقم الفتحة
-  position: mysqlEnum("position", [
-    "top",            // فوق
-    "bottom",         // تحت
-    "side"            // جانب
-  ]).notNull(),
-  usage: mysqlEnum("usage", [
-    "inlet",          // دخول
-    "outlet",         // خروج
-    "ventilation",    // تهوية
-    "measurement",    // قياس
-    "cleaning"        // تنظيف
-  ]).notNull(),
-  diameter: decimal("diameter", { precision: 6, scale: 2 }), // قطر الفتحة بالسنتيمتر
+export const dieselTankOpenings = pgTable("diesel_tank_openings", {
+  id: serial("id").primaryKey(),
+  tankId: integer("tank_id").notNull(),
+  openingNumber: integer("opening_number").notNull(),      // رقم الفتحة
+  position: varchar("position", { length: 50 }).notNull(),
+  usage: varchar("usage", { length: 50 }).notNull(),
+  diameter: numeric("diameter", { precision: 6, scale: 2 }), // قطر الفتحة بالسنتيمتر
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // مواصير التسليك - Diesel Pipes
-export const dieselPipes = mysqlTable("diesel_pipes", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id").notNull(),
+export const dieselPipes = pgTable("diesel_pipes", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
   
   // مادة المواصير
-  material: mysqlEnum("pipe_material", [
-    "iron",           // حديد
-    "plastic",        // بلاستيك
-    "copper",         // نحاس
-    "stainless_steel" // ستانلس ستيل
-  ]).default("iron"),
+  material: varchar("pipe_material", { length: 50 }).default("iron"),
   
-  diameter: decimal("diameter", { precision: 6, scale: 2 }),  // القطر بالسنتيمتر
-  length: decimal("length", { precision: 8, scale: 2 }),      // الطول بالمتر
+  diameter: numeric("diameter", { precision: 6, scale: 2 }),  // القطر بالسنتيمتر
+  length: numeric("length", { precision: 8, scale: 2 }),      // الطول بالمتر
   
   // حالة المواصير
-  condition: mysqlEnum("condition", [
-    "good",           // جيدة
-    "fair",           // متوسطة
-    "poor",           // سيئة
-    "needs_replacement" // تحتاج استبدال
-  ]).default("good"),
+  condition: varchar("condition", { length: 50 }).default("good"),
   
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // تهيئة مخطط الديزل للمحطة - Station Diesel Configuration
-export const stationDieselConfig = mysqlTable("station_diesel_config", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id").notNull().unique(), // محطة واحدة لها تهيئة واحدة
+export const stationDieselConfig = pgTable("station_diesel_config", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id").notNull().unique(), // محطة واحدة لها تهيئة واحدة
   
   // إعدادات الطرمبات
   hasIntakePump: boolean("has_intake_pump").default(false),      // هل يوجد طرمبة دخول؟
@@ -2908,191 +2804,164 @@ export const stationDieselConfig = mysqlTable("station_diesel_config", {
   outputPumpHasMeter: boolean("output_pump_has_meter").default(false), // طرمبة الخروج بعداد؟
   
   notes: text("notes"),
-  configuredBy: int("configured_by"),
+  configuredBy: integer("configured_by"),
   configuredAt: timestamp("configured_at").defaultNow(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مسار الديزل في المحطة - Station Diesel Path
 // يحدد ترتيب الأصول في مسار الديزل
-export const stationDieselPath = mysqlTable("station_diesel_path", {
-  id: int("id").autoincrement().primaryKey(),
-  configId: int("config_id").notNull(),             // مرتبط بتهيئة المحطة
-  sequenceOrder: int("sequence_order").notNull(),   // ترتيب في المسار
+export const stationDieselPath = pgTable("station_diesel_path", {
+  id: serial("id").primaryKey(),
+  configId: integer("config_id").notNull(),             // مرتبط بتهيئة المحطة
+  sequenceOrder: integer("sequence_order").notNull(),   // ترتيب في المسار
   
   // نوع العنصر في المسار
-  elementType: mysqlEnum("element_type", [
-    "receiving_tank",   // خزان استلام
-    "pipe",             // مواصير
-    "intake_pump",      // طرمبة دخول
-    "main_tank",        // خزان رئيسي
-    "pre_output_tank",  // خزان قبل طرمبة الخروج
-    "output_pump",      // طرمبة خروج
-    "generator_tank"    // خزان مولد
-  ]).notNull(),
+  elementType: varchar("element_type", { length: 50 }).notNull(),
   
   // معرف العنصر (خزان أو طرمبة أو مواصير)
-  tankId: int("tank_id"),
-  pumpId: int("pump_id"),
-  pipeId: int("pipe_id"),
+  tankId: integer("tank_id"),
+  pumpId: integer("pump_id"),
+  pipeId: integer("pipe_id"),
   
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // طرمبات العدادات - Pump Meters
-export const dieselPumpMeters = mysqlTable("diesel_pump_meters", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id"),
-  supplierId: int("supplier_id"), // للطرمبات عند المورد
+export const dieselPumpMeters = pgTable("diesel_pump_meters", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id"),
+  supplierId: integer("supplier_id"), // للطرمبات عند المورد
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  type: mysqlEnum("pump_type", [
-    "supplier",       // طرمبة المورد
-    "intake",         // طرمبة الدخول (الاستلام)
-    "output"          // طرمبة الخروج (التوزيع)
-  ]).notNull(),
+  type: varchar("pump_type", { length: 50 }).notNull(),
   serialNumber: varchar("serial_number", { length: 100 }),
-  currentReading: decimal("current_reading", { precision: 15, scale: 2 }).default("0"), // القراءة التسلسلية الحالية
+  currentReading: numeric("current_reading", { precision: 15, scale: 2 }).default("0"), // القراءة التسلسلية الحالية
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // مهام استلام الديزل - Diesel Receiving Tasks
-export const dieselReceivingTasks = mysqlTable("diesel_receiving_tasks", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id").notNull(),
+export const dieselReceivingTasks = pgTable("diesel_receiving_tasks", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id").notNull(),
   taskNumber: varchar("task_number", { length: 50 }).notNull(),
   taskDate: date("task_date").notNull(),
   
   // بيانات الموظف والوايت
-  employeeId: int("employee_id").notNull(), // فني المولدات
-  tankerId: int("tanker_id").notNull(),
-  supplierId: int("supplier_id").notNull(),
+  employeeId: integer("employee_id").notNull(), // فني المولدات
+  tankerId: integer("tanker_id").notNull(),
+  supplierId: integer("supplier_id").notNull(),
   
   // حالة المهمة
-  status: mysqlEnum("task_status", [
-    "pending",        // في الانتظار
-    "started",        // بدأت (ذهب للمورد)
-    "at_supplier",    // عند المورد
-    "loading",        // جاري التحميل
-    "returning",      // في طريق العودة
-    "at_station",     // وصل المحطة
-    "unloading",      // جاري التفريغ
-    "completed",      // مكتملة
-    "cancelled"       // ملغاة
-  ]).default("pending"),
+  status: varchar("task_status", { length: 50 }).default("pending"),
   
   // توقيتات التتبع
-  startTime: datetime("start_time"),           // وقت بدء المهمة
-  arrivalAtSupplierTime: datetime("arrival_at_supplier_time"), // وقت الوصول للمورد
-  loadingStartTime: datetime("loading_start_time"),   // وقت بدء التحميل
-  loadingEndTime: datetime("loading_end_time"),       // وقت انتهاء التحميل
-  departureFromSupplierTime: datetime("departure_from_supplier_time"), // وقت المغادرة من المورد
-  arrivalAtStationTime: datetime("arrival_at_station_time"), // وقت الوصول للمحطة
-  unloadingStartTime: datetime("unloading_start_time"), // وقت بدء التفريغ
-  unloadingEndTime: datetime("unloading_end_time"),     // وقت انتهاء التفريغ
-  completionTime: datetime("completion_time"),   // وقت إتمام المهمة
+  startTime: timestamp("start_time"),           // وقت بدء المهمة
+  arrivalAtSupplierTime: timestamp("arrival_at_supplier_time"), // وقت الوصول للمورد
+  loadingStartTime: timestamp("loading_start_time"),   // وقت بدء التحميل
+  loadingEndTime: timestamp("loading_end_time"),       // وقت انتهاء التحميل
+  departureFromSupplierTime: timestamp("departure_from_supplier_time"), // وقت المغادرة من المورد
+  arrivalAtStationTime: timestamp("arrival_at_station_time"), // وقت الوصول للمحطة
+  unloadingStartTime: timestamp("unloading_start_time"), // وقت بدء التفريغ
+  unloadingEndTime: timestamp("unloading_end_time"),     // وقت انتهاء التفريغ
+  completionTime: timestamp("completion_time"),   // وقت إتمام المهمة
   
   // قراءات طرمبة المورد (تسلسلية)
-  supplierPumpId: int("supplier_pump_id"),
-  supplierPumpReadingBefore: decimal("supplier_pump_reading_before", { precision: 15, scale: 2 }),
-  supplierPumpReadingAfter: decimal("supplier_pump_reading_after", { precision: 15, scale: 2 }),
+  supplierPumpId: integer("supplier_pump_id"),
+  supplierPumpReadingBefore: numeric("supplier_pump_reading_before", { precision: 15, scale: 2 }),
+  supplierPumpReadingAfter: numeric("supplier_pump_reading_after", { precision: 15, scale: 2 }),
   supplierPumpReadingBeforeImage: text("supplier_pump_reading_before_image"),
   supplierPumpReadingAfterImage: text("supplier_pump_reading_after_image"),
   
   // فاتورة المورد
   supplierInvoiceNumber: varchar("supplier_invoice_number", { length: 50 }),
   supplierInvoiceImage: text("supplier_invoice_image"),
-  supplierInvoiceAmount: decimal("supplier_invoice_amount", { precision: 18, scale: 2 }),
+  supplierInvoiceAmount: numeric("supplier_invoice_amount", { precision: 18, scale: 2 }),
   
   // الكمية المستلمة من المورد
-  quantityFromSupplier: decimal("quantity_from_supplier", { precision: 10, scale: 2 }),
-  compartment1Quantity: decimal("compartment1_quantity", { precision: 10, scale: 2 }), // كمية عين 1
-  compartment2Quantity: decimal("compartment2_quantity", { precision: 10, scale: 2 }), // كمية عين 2
+  quantityFromSupplier: numeric("quantity_from_supplier", { precision: 10, scale: 2 }),
+  compartment1Quantity: numeric("compartment1_quantity", { precision: 10, scale: 2 }), // كمية عين 1
+  compartment2Quantity: numeric("compartment2_quantity", { precision: 10, scale: 2 }), // كمية عين 2
   
   // قراءات طرمبة الدخول بالمحطة (تسلسلية)
-  intakePumpId: int("intake_pump_id"),
-  intakePumpReadingBefore: decimal("intake_pump_reading_before", { precision: 15, scale: 2 }),
-  intakePumpReadingAfter: decimal("intake_pump_reading_after", { precision: 15, scale: 2 }),
+  intakePumpId: integer("intake_pump_id"),
+  intakePumpReadingBefore: numeric("intake_pump_reading_before", { precision: 15, scale: 2 }),
+  intakePumpReadingAfter: numeric("intake_pump_reading_after", { precision: 15, scale: 2 }),
   intakePumpReadingBeforeImage: text("intake_pump_reading_before_image"),
   intakePumpReadingAfterImage: text("intake_pump_reading_after_image"),
   
   // الكمية المستلمة في المحطة
-  quantityReceivedAtStation: decimal("quantity_received_at_station", { precision: 10, scale: 2 }),
-  receivingTankId: int("receiving_tank_id"), // خزان الاستلام
+  quantityReceivedAtStation: numeric("quantity_received_at_station", { precision: 10, scale: 2 }),
+  receivingTankId: integer("receiving_tank_id"), // خزان الاستلام
   
   // الفرق (إن وجد)
-  quantityDifference: decimal("quantity_difference", { precision: 10, scale: 2 }),
+  quantityDifference: numeric("quantity_difference", { precision: 10, scale: 2 }),
   differenceNotes: text("difference_notes"),
   
   notes: text("notes"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // سجل قراءات الطرمبات - Pump Meter Readings Log
-export const dieselPumpReadings = mysqlTable("diesel_pump_readings", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  pumpMeterId: int("pump_meter_id").notNull(),
-  taskId: int("task_id"), // مرتبط بمهمة استلام
-  readingDate: datetime("reading_date").notNull(),
-  readingValue: decimal("reading_value", { precision: 15, scale: 2 }).notNull(), // القراءة التسلسلية
-  readingType: mysqlEnum("reading_type", ["before", "after"]).notNull(),
+export const dieselPumpReadings = pgTable("diesel_pump_readings", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  pumpMeterId: integer("pump_meter_id").notNull(),
+  taskId: integer("task_id"), // مرتبط بمهمة استلام
+  readingDate: timestamp("reading_date").notNull(),
+  readingValue: numeric("reading_value", { precision: 15, scale: 2 }).notNull(), // القراءة التسلسلية
+  readingType: varchar("readingType", { length: 50 }).notNull(),
   readingImage: text("reading_image"),
-  quantity: decimal("quantity", { precision: 10, scale: 2 }), // الكمية (الفرق بين القراءتين)
-  recordedBy: int("recorded_by"),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }), // الكمية (الفرق بين القراءتين)
+  recordedBy: integer("recorded_by"),
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // حركات الديزل بين الخزانات - Diesel Tank Movements
-export const dieselTankMovements = mysqlTable("diesel_tank_movements", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id").notNull(),
-  movementDate: datetime("movement_date").notNull(),
-  movementType: mysqlEnum("movement_type", [
-    "receiving",      // استلام من الوايت
-    "transfer",       // نقل بين خزانات
-    "consumption",    // استهلاك (للمولدات)
-    "adjustment"      // تعديل جرد
-  ]).notNull(),
-  fromTankId: int("from_tank_id"),
-  toTankId: int("to_tank_id"),
-  quantity: decimal("quantity", { precision: 10, scale: 2 }).notNull(),
-  taskId: int("task_id"), // مرتبط بمهمة استلام
-  outputPumpId: int("output_pump_id"), // طرمبة الخروج
-  outputPumpReadingBefore: decimal("output_pump_reading_before", { precision: 15, scale: 2 }),
-  outputPumpReadingAfter: decimal("output_pump_reading_after", { precision: 15, scale: 2 }),
-  generatorId: int("generator_id"), // للاستهلاك
+export const dieselTankMovements = pgTable("diesel_tank_movements", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id").notNull(),
+  movementDate: timestamp("movement_date").notNull(),
+  movementType: varchar("movement_type", { length: 50 }).notNull(),
+  fromTankId: integer("from_tank_id"),
+  toTankId: integer("to_tank_id"),
+  quantity: numeric("quantity", { precision: 10, scale: 2 }).notNull(),
+  taskId: integer("task_id"), // مرتبط بمهمة استلام
+  outputPumpId: integer("output_pump_id"), // طرمبة الخروج
+  outputPumpReadingBefore: numeric("output_pump_reading_before", { precision: 15, scale: 2 }),
+  outputPumpReadingAfter: numeric("output_pump_reading_after", { precision: 15, scale: 2 }),
+  generatorId: integer("generator_id"), // للاستهلاك
   notes: text("notes"),
-  recordedBy: int("recorded_by"),
+  recordedBy: integer("recorded_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 // استهلاك المولدات - Generator Diesel Consumption
-export const generatorDieselConsumption = mysqlTable("generator_diesel_consumption", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  stationId: int("station_id").notNull(),
-  generatorId: int("generator_id").notNull(),
+export const generatorDieselConsumption = pgTable("generator_diesel_consumption", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  stationId: integer("station_id").notNull(),
+  generatorId: integer("generator_id").notNull(),
   consumptionDate: date("consumption_date").notNull(),
-  rocketTankId: int("rocket_tank_id"), // خزان الصاروخ
-  startLevel: decimal("start_level", { precision: 10, scale: 2 }),
-  endLevel: decimal("end_level", { precision: 10, scale: 2 }),
-  quantityConsumed: decimal("quantity_consumed", { precision: 10, scale: 2 }).notNull(),
-  runningHours: decimal("running_hours", { precision: 8, scale: 2 }), // ساعات التشغيل
-  consumptionRate: decimal("consumption_rate", { precision: 8, scale: 2 }), // معدل الاستهلاك لتر/ساعة
+  rocketTankId: integer("rocket_tank_id"), // خزان الصاروخ
+  startLevel: numeric("start_level", { precision: 10, scale: 2 }),
+  endLevel: numeric("end_level", { precision: 10, scale: 2 }),
+  quantityConsumed: numeric("quantity_consumed", { precision: 10, scale: 2 }).notNull(),
+  runningHours: numeric("running_hours", { precision: 8, scale: 2 }), // ساعات التشغيل
+  consumptionRate: numeric("consumption_rate", { precision: 8, scale: 2 }), // معدل الاستهلاك لتر/ساعة
   notes: text("notes"),
-  recordedBy: int("recorded_by"),
+  recordedBy: integer("recorded_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
@@ -3128,9 +2997,9 @@ export type InsertGeneratorDieselConsumption = typeof generatorDieselConsumption
 // ============================================
 
 // الأنظمة الفرعية - Sub Systems
-export const customSubSystems = mysqlTable("custom_sub_systems", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const customSubSystems = pgTable("custom_sub_systems", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
@@ -3138,24 +3007,24 @@ export const customSubSystems = mysqlTable("custom_sub_systems", {
   color: varchar("color", { length: 20 }),
   icon: varchar("icon", { length: 50 }),
   isActive: boolean("is_active").default(true),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   businessIdx: index("css_business_idx").on(table.businessId),
   codeIdx: uniqueIndex("css_code_idx").on(table.businessId, table.code),
 }));
 
 // الخزائن - Treasuries (صناديق، بنوك، محافظ إلكترونية، صرافين)
-export const customTreasuries = mysqlTable("custom_treasuries", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  subSystemId: int("sub_system_id").notNull(),
+export const customTreasuries = pgTable("custom_treasuries", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  subSystemId: integer("sub_system_id").notNull(),
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  treasuryType: mysqlEnum("treasury_type", ["cash", "bank", "wallet", "exchange"]).notNull(),
-  accountId: int("account_id"),
+  treasuryType: varchar("treasury_type", { length: 50 }).notNull(),
+  accountId: integer("account_id"),
   // cash = صندوق، bank = بنك، wallet = محفظة إلكترونية، exchange = صراف
   bankName: varchar("bank_name", { length: 255 }),
   accountNumber: varchar("account_number", { length: 100 }),
@@ -3164,13 +3033,13 @@ export const customTreasuries = mysqlTable("custom_treasuries", {
   walletProvider: varchar("wallet_provider", { length: 100 }), // STC Pay, Apple Pay, etc.
   walletNumber: varchar("wallet_number", { length: 100 }),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  openingBalance: decimal("opening_balance", { precision: 18, scale: 2 }).default("0"),
-  currentBalance: decimal("current_balance", { precision: 18, scale: 2 }).default("0"),
+  openingBalance: numeric("opening_balance", { precision: 18, scale: 2 }).default("0"),
+  currentBalance: numeric("current_balance", { precision: 18, scale: 2 }).default("0"),
   description: text("description"),
   isActive: boolean("is_active").default(true),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   businessIdx: index("ct_business_idx").on(table.businessId),
   subSystemIdx: index("ct_subsystem_idx").on(table.subSystemId),
@@ -3179,18 +3048,18 @@ export const customTreasuries = mysqlTable("custom_treasuries", {
 }));
 
 // عملات الخزائن - Treasury Currencies (علاقة many-to-many)
-export const customTreasuryCurrencies = mysqlTable("custom_treasury_currencies", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  treasuryId: int("treasury_id").notNull(),
-  currencyId: int("currency_id").notNull(),
+export const customTreasuryCurrencies = pgTable("custom_treasury_currencies", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  treasuryId: integer("treasury_id").notNull(),
+  currencyId: integer("currency_id").notNull(),
   isDefault: boolean("is_default").default(false),
   isActive: boolean("is_active").default(true),
-  openingBalance: decimal("opening_balance", { precision: 15, scale: 2 }).default("0"),
-  currentBalance: decimal("current_balance", { precision: 15, scale: 2 }).default("0"),
-  createdBy: int("created_by"),
+  openingBalance: numeric("opening_balance", { precision: 15, scale: 2 }).default("0"),
+  currentBalance: numeric("current_balance", { precision: 15, scale: 2 }).default("0"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").onUpdateNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   treasuryIdx: index("idx_treasury_id").on(table.treasuryId),
   currencyIdx: index("idx_currency_id").on(table.currencyId),
@@ -3199,55 +3068,55 @@ export const customTreasuryCurrencies = mysqlTable("custom_treasury_currencies",
 }));
 
 // الحسابات الوسيطة - Intermediary Accounts
-export const customIntermediaryAccounts = mysqlTable("custom_intermediary_accounts", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  fromSubSystemId: int("from_sub_system_id").notNull(),
-  toSubSystemId: int("to_sub_system_id").notNull(),
+export const customIntermediaryAccounts = pgTable("custom_intermediary_accounts", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  fromSubSystemId: integer("from_sub_system_id").notNull(),
+  toSubSystemId: integer("to_sub_system_id").notNull(),
   code: varchar("code", { length: 50 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  balance: decimal("balance", { precision: 18, scale: 2 }).default("0"),
+  balance: numeric("balance", { precision: 18, scale: 2 }).default("0"),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // سندات القبض - Receipt Vouchers
-export const customReceiptVouchers = mysqlTable("custom_receipt_vouchers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  subSystemId: int("sub_system_id").notNull(),
+export const customReceiptVouchers = pgTable("custom_receipt_vouchers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  subSystemId: integer("sub_system_id").notNull(),
   voucherNumber: varchar("voucher_number", { length: 50 }).notNull(),
   voucherDate: date("voucher_date").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   // من أين (المصدر)
-  sourceType: mysqlEnum("source_type", ["person", "entity", "intermediary", "party", "other"]).notNull(),
+  sourceType: varchar("sourceType", { length: 50 }).notNull(),
   sourceName: varchar("source_name", { length: 255 }),
-  sourceIntermediaryId: int("source_intermediary_id"), // إذا كان من حساب وسيط
+  sourceIntermediaryId: integer("source_intermediary_id"), // إذا كان من حساب وسيط
   // === الحقول الجديدة ===
-  partyId: int("party_id"), // ربط بجدول الأطراف
-  categoryId: int("category_id"), // ربط بجدول التصنيفات
+  partyId: integer("party_id"), // ربط بجدول الأطراف
+  categoryId: integer("category_id"), // ربط بجدول التصنيفات
   // طريقة الدفع
-  paymentMethod: mysqlEnum("payment_method", ["cash", "check", "transfer", "card", "wallet", "other"]).default("cash"),
+  paymentMethod: varchar("paymentMethod", { length: 50 }).default("cash"),
   checkNumber: varchar("check_number", { length: 50 }),
   checkDate: date("check_date"),
   checkBank: varchar("check_bank", { length: 100 }),
   bankReference: varchar("bank_reference", { length: 100 }),
   // === نهاية الحقول الجديدة ===
   // إلى أين (الخزينة)
-  treasuryId: int("treasury_id").notNull(),
+  treasuryId: integer("treasury_id").notNull(),
   description: text("description"),
-  attachments: json("attachments"),
-  status: mysqlEnum("status", ["draft", "confirmed", "cancelled"]).default("draft"),
+  attachments: jsonb("attachments"),
+  status: varchar("status", { length: 50 }).default("draft"),
   isReconciled: boolean("is_reconciled").default(false),
-  reconciledWith: int("reconciled_with"), // رقم سند الصرف المطابق
+  reconciledWith: integer("reconciled_with"), // رقم سند الصرف المطابق
   reconciledAt: timestamp("reconciled_at"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   businessIdx: index("crv_business_idx").on(table.businessId),
   subSystemIdx: index("crv_subsystem_idx").on(table.subSystemId),
@@ -3259,41 +3128,41 @@ export const customReceiptVouchers = mysqlTable("custom_receipt_vouchers", {
 }));
 
 // سندات الصرف - Payment Vouchers
-export const customPaymentVouchers = mysqlTable("custom_payment_vouchers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  subSystemId: int("sub_system_id").notNull(),
+export const customPaymentVouchers = pgTable("custom_payment_vouchers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  subSystemId: integer("sub_system_id").notNull(),
   voucherNumber: varchar("voucher_number", { length: 50 }).notNull(),
   voucherDate: date("voucher_date").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  currencyId: int("currency_id"), // ربط بجدول العملات
+  currencyId: integer("currency_id"), // ربط بجدول العملات
   // من أين (الخزينة)
-  treasuryId: int("treasury_id").notNull(),
+  treasuryId: integer("treasury_id").notNull(),
   // إلى أين (الوجهة)
-  destinationType: mysqlEnum("destination_type", ["person", "entity", "intermediary", "party", "other"]).notNull(),
+  destinationType: varchar("destinationType", { length: 50 }).notNull(),
   destinationName: varchar("destination_name", { length: 255 }),
-  destinationIntermediaryId: int("destination_intermediary_id"), // إذا كان إلى حساب وسيط
+  destinationIntermediaryId: integer("destination_intermediary_id"), // إذا كان إلى حساب وسيط
   // === الحقول الجديدة ===
-  partyId: int("party_id"), // ربط بجدول الأطراف
-  categoryId: int("category_id"), // ربط بجدول التصنيفات
+  partyId: integer("party_id"), // ربط بجدول الأطراف
+  categoryId: integer("category_id"), // ربط بجدول التصنيفات
   // طريقة الدفع
-  paymentMethod: mysqlEnum("payment_method", ["cash", "check", "transfer", "card", "wallet", "other"]).default("cash"),
+  paymentMethod: varchar("paymentMethod", { length: 50 }).default("cash"),
   checkNumber: varchar("check_number", { length: 50 }),
   checkDate: date("check_date"),
   checkBank: varchar("check_bank", { length: 100 }),
   bankReference: varchar("bank_reference", { length: 100 }),
   // === نهاية الحقول الجديدة ===
   description: text("description"),
-  attachments: json("attachments"),
-  status: mysqlEnum("status", ["draft", "confirmed", "cancelled"]).default("draft"),
-  editCount: int("edit_count").default(0).notNull(),
+  attachments: jsonb("attachments"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  editCount: integer("edit_count").default(0).notNull(),
   isReconciled: boolean("is_reconciled").default(false),
-  reconciledWith: int("reconciled_with"), // رقم سند القبض المطابق
+  reconciledWith: integer("reconciled_with"), // رقم سند القبض المطابق
   reconciledAt: timestamp("reconciled_at"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   businessIdx: index("cpv_business_idx").on(table.businessId),
   subSystemIdx: index("cpv_subsystem_idx").on(table.subSystemId),
@@ -3305,32 +3174,32 @@ export const customPaymentVouchers = mysqlTable("custom_payment_vouchers", {
 }));
 
 // بنود سندات الصرف - Payment Voucher Lines (توزيع المبلغ على عدة حسابات)
-export const customPaymentVoucherLines = mysqlTable("custom_payment_voucher_lines", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
+export const customPaymentVoucherLines = pgTable("custom_payment_voucher_lines", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
 
-  paymentVoucherId: int("payment_voucher_id").notNull(),
-  lineOrder: int("line_order").default(0).notNull(),
+  paymentVoucherId: integer("payment_voucher_id").notNull(),
+  lineOrder: integer("line_order").default(0).notNull(),
 
   // تصنيفات الحساب (للعرض/الفلترة) - اختيارية لأن الحسابId يكفي
   accountType: varchar("account_type", { length: 50 }),
-  accountSubTypeId: int("account_sub_type_id"),
+  accountSubTypeId: integer("account_sub_type_id"),
 
   // الحساب (من دليل الحسابات v2)
-  accountId: int("account_id").notNull(),
+  accountId: integer("account_id").notNull(),
 
   // الحساب التحليلي المرتبط بالحساب (حساب ابن/تفصيلي) إن وجد
-  analyticAccountId: int("analytic_account_id"),
+  analyticAccountId: integer("analytic_account_id"),
 
   // الخزينة التحليلية المرتبطة بالحساب (صندوق/بنك/محفظة/صراف) إن وجد
-  analyticTreasuryId: int("analytic_treasury_id"),
+  analyticTreasuryId: integer("analytic_treasury_id"),
 
   // (اختياري للتوسع لاحقاً) مركز تكلفة إن وجد
-  costCenterId: int("cost_center_id"),
+  costCenterId: integer("cost_center_id"),
 
   // البيان والمبلغ
   description: text("description"),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
 
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
@@ -3343,40 +3212,40 @@ export const customPaymentVoucherLines = mysqlTable("custom_payment_voucher_line
 }));
 
 // المطابقات - Reconciliations
-export const customReconciliations = mysqlTable("custom_reconciliations", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  paymentVoucherId: int("payment_voucher_id").notNull(),
-  receiptVoucherId: int("receipt_voucher_id").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+export const customReconciliations = pgTable("custom_reconciliations", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  paymentVoucherId: integer("payment_voucher_id").notNull(),
+  receiptVoucherId: integer("receipt_voucher_id").notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  confidenceScore: mysqlEnum("confidence_score", ["high", "medium", "low"]).default("medium"),
-  status: mysqlEnum("status", ["pending", "confirmed", "rejected"]).default("pending"),
+  confidenceScore: varchar("confidenceScore", { length: 50 }).default("medium"),
+  status: varchar("status", { length: 50 }).default("pending"),
   notes: text("notes"),
-  confirmedBy: int("confirmed_by"),
+  confirmedBy: integer("confirmed_by"),
   confirmedAt: timestamp("confirmed_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // التحويلات بين الخزائن - Treasury Transfers
-export const customTreasuryTransfers = mysqlTable("custom_treasury_transfers", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  subSystemId: int("sub_system_id").notNull(),
+export const customTreasuryTransfers = pgTable("custom_treasury_transfers", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  subSystemId: integer("sub_system_id").notNull(),
   transferNumber: varchar("transfer_number", { length: 50 }).notNull(),
   transferDate: date("transfer_date").notNull(),
-  fromTreasuryId: int("from_treasury_id").notNull(),
-  toTreasuryId: int("to_treasury_id").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
+  fromTreasuryId: integer("from_treasury_id").notNull(),
+  toTreasuryId: integer("to_treasury_id").notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
-  exchangeRate: decimal("exchange_rate", { precision: 10, scale: 6 }).default("1"),
-  fees: decimal("fees", { precision: 18, scale: 2 }).default("0"),
+  exchangeRate: numeric("exchange_rate", { precision: 10, scale: 6 }).default("1"),
+  fees: numeric("fees", { precision: 18, scale: 2 }).default("0"),
   description: text("description"),
-  status: mysqlEnum("status", ["draft", "confirmed", "cancelled"]).default("draft"),
-  createdBy: int("created_by"),
+  status: varchar("status", { length: 50 }).default("draft"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Types للجداول الجديدة
@@ -3403,14 +3272,14 @@ export type InsertCustomTreasuryTransfer = typeof customTreasuryTransfers.$infer
 // ============================================
 
 // الأطراف - Parties (عملاء، موردين، موظفين، جهات)
-export const customParties = mysqlTable("custom_parties", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  subSystemId: int("sub_system_id"), // يمكن ربط الطرف بنظام فرعي محدد
+export const customParties = pgTable("custom_parties", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  subSystemId: integer("sub_system_id"), // يمكن ربط الطرف بنظام فرعي محدد
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  partyType: mysqlEnum("party_type", ["customer", "supplier", "employee", "partner", "government", "other"]).notNull(),
+  partyType: varchar("partyType", { length: 50 }).notNull(),
   // بيانات التواصل
   phone: varchar("phone", { length: 50 }),
   mobile: varchar("mobile", { length: 50 }),
@@ -3422,17 +3291,17 @@ export const customParties = mysqlTable("custom_parties", {
   taxNumber: varchar("tax_number", { length: 50 }),
   commercialRegister: varchar("commercial_register", { length: 50 }),
   // الحدود والأرصدة
-  creditLimit: decimal("credit_limit", { precision: 18, scale: 2 }).default("0"),
-  currentBalance: decimal("current_balance", { precision: 18, scale: 2 }).default("0"), // موجب = له، سالب = عليه
+  creditLimit: numeric("credit_limit", { precision: 18, scale: 2 }).default("0"),
+  currentBalance: numeric("current_balance", { precision: 18, scale: 2 }).default("0"), // موجب = له، سالب = عليه
   currency: varchar("currency", { length: 10 }).default("SAR"),
   // معلومات إضافية
   contactPerson: varchar("contact_person", { length: 255 }),
   notes: text("notes"),
-  tags: json("tags"),
+  tags: jsonb("tags"),
   isActive: boolean("is_active").default(true),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   businessIdx: index("cp_business_idx").on(table.businessId),
   subSystemIdx: index("cp_subsystem_idx").on(table.subSystemId),
@@ -3442,25 +3311,25 @@ export const customParties = mysqlTable("custom_parties", {
 }));
 
 // التصنيفات/البنود - Categories (بنود الإيرادات والمصروفات)
-export const customCategories = mysqlTable("custom_categories", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  subSystemId: int("sub_system_id"), // يمكن ربط التصنيف بنظام فرعي محدد
+export const customCategories = pgTable("custom_categories", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  subSystemId: integer("sub_system_id"), // يمكن ربط التصنيف بنظام فرعي محدد
   code: varchar("code", { length: 20 }).notNull(),
   nameAr: varchar("name_ar", { length: 255 }).notNull(),
   nameEn: varchar("name_en", { length: 255 }),
-  categoryType: mysqlEnum("category_type", ["income", "expense", "both"]).notNull(),
-  parentId: int("parent_id"), // للتصنيفات الهرمية
-  level: int("level").default(1),
+  categoryType: varchar("categoryType", { length: 50 }).notNull(),
+  parentId: integer("parent_id"), // للتصنيفات الهرمية
+  level: integer("level").default(1),
   color: varchar("color", { length: 20 }),
   icon: varchar("icon", { length: 50 }),
   description: text("description"),
   // ربط بالحساب المحاسبي (اختياري)
-  linkedAccountId: int("linked_account_id"),
+  linkedAccountId: integer("linked_account_id"),
   isActive: boolean("is_active").default(true),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 }, (table) => ({
   businessIdx: index("cc_business_idx").on(table.businessId),
   parentIdx: index("cc_parent_idx").on(table.parentId),
@@ -3469,29 +3338,22 @@ export const customCategories = mysqlTable("custom_categories", {
 }));
 
 // حركات الخزينة - Treasury Movements (سجل كل حركة على الخزينة)
-export const customTreasuryMovements = mysqlTable("custom_treasury_movements", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  treasuryId: int("treasury_id").notNull(),
-  movementType: mysqlEnum("movement_type", [
-    "receipt",        // قبض
-    "payment",        // صرف
-    "transfer_in",    // تحويل وارد
-    "transfer_out",   // تحويل صادر
-    "adjustment",     // تسوية
-    "opening"         // رصيد افتتاحي
-  ]).notNull(),
+export const customTreasuryMovements = pgTable("custom_treasury_movements", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  treasuryId: integer("treasury_id").notNull(),
+  movementType: varchar("movement_type", { length: 50 }).notNull(),
   movementDate: date("movement_date").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
-  balanceBefore: decimal("balance_before", { precision: 18, scale: 2 }).notNull(),
-  balanceAfter: decimal("balance_after", { precision: 18, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+  balanceBefore: numeric("balance_before", { precision: 18, scale: 2 }).notNull(),
+  balanceAfter: numeric("balance_after", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   // مرجع الحركة
   referenceType: varchar("reference_type", { length: 50 }), // 'receipt_voucher', 'payment_voucher', 'transfer'
-  referenceId: int("reference_id"),
+  referenceId: integer("reference_id"),
   referenceNumber: varchar("reference_number", { length: 50 }),
   description: text("description"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   treasuryIdx: index("ctm_treasury_idx").on(table.treasuryId),
@@ -3502,29 +3364,22 @@ export const customTreasuryMovements = mysqlTable("custom_treasury_movements", {
 }));
 
 // حركات الأطراف - Party Transactions (سجل كل حركة مع طرف)
-export const customPartyTransactions = mysqlTable("custom_party_transactions", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  partyId: int("party_id").notNull(),
-  transactionType: mysqlEnum("transaction_type", [
-    "receipt",        // قبض منه
-    "payment",        // صرف له
-    "invoice",        // فاتورة
-    "credit_note",    // إشعار دائن
-    "debit_note",     // إشعار مدين
-    "adjustment"      // تسوية
-  ]).notNull(),
+export const customPartyTransactions = pgTable("custom_party_transactions", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  partyId: integer("party_id").notNull(),
+  transactionType: varchar("transaction_type", { length: 50 }).notNull(),
   transactionDate: date("transaction_date").notNull(),
-  amount: decimal("amount", { precision: 18, scale: 2 }).notNull(),
-  balanceBefore: decimal("balance_before", { precision: 18, scale: 2 }).notNull(),
-  balanceAfter: decimal("balance_after", { precision: 18, scale: 2 }).notNull(),
+  amount: numeric("amount", { precision: 18, scale: 2 }).notNull(),
+  balanceBefore: numeric("balance_before", { precision: 18, scale: 2 }).notNull(),
+  balanceAfter: numeric("balance_after", { precision: 18, scale: 2 }).notNull(),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   // مرجع الحركة
   referenceType: varchar("reference_type", { length: 50 }),
-  referenceId: int("reference_id"),
+  referenceId: integer("reference_id"),
   referenceNumber: varchar("reference_number", { length: 50 }),
   description: text("description"),
-  createdBy: int("created_by"),
+  createdBy: integer("created_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 }, (table) => ({
   partyIdx: index("cpt_party_idx").on(table.partyId),
@@ -3535,16 +3390,16 @@ export const customPartyTransactions = mysqlTable("custom_party_transactions", {
 }));
 
 // إعدادات النظام المخصص - Custom System Settings
-export const customSettings = mysqlTable("custom_settings", {
-  id: int("id").autoincrement().primaryKey(),
-  businessId: int("business_id").notNull(),
-  subSystemId: int("sub_system_id"), // إعدادات خاصة بنظام فرعي
+export const customSettings = pgTable("custom_settings", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  subSystemId: integer("sub_system_id"), // إعدادات خاصة بنظام فرعي
   settingKey: varchar("setting_key", { length: 100 }).notNull(),
   settingValue: text("setting_value"),
-  settingType: mysqlEnum("setting_type", ["string", "number", "boolean", "json"]).default("string"),
+  settingType: varchar("settingType", { length: 50 }).default("string"),
   description: text("description"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 // Types للجداول الجديدة
@@ -3615,3 +3470,7 @@ export {
   type IntermediaryDailySummary,
   type InsertIntermediaryDailySummary,
 } from "./schemas/intermediarySystem";
+
+// Pricing Rules
+export { pricingRules } from "./schemas/pricing";
+export type { pricingRules as PricingRule } from "./schemas/pricing";

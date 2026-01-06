@@ -7,7 +7,9 @@ import {
   customAccounts, customTransactions, customNotes, customMemos, noteCategories,
   InsertCustomAccount, InsertCustomTransaction, InsertCustomNote, InsertCustomMemo,
   customParties, customCategories, customTreasuryMovements, customPartyTransactions, customSettings,
-  InsertCustomParty, InsertCustomCategory, InsertCustomTreasuryMovement, InsertCustomPartyTransaction, InsertCustomSetting
+  InsertCustomParty, InsertCustomCategory, InsertCustomTreasuryMovement, InsertCustomPartyTransaction, InsertCustomSetting,
+  customPaymentVouchers, customPaymentVoucherLines, customTreasuries,
+  customJournalEntries, customJournalEntryLines
 } from "../drizzle/schema";
 import { eq, and, desc, asc, like, sql } from "drizzle-orm";
 
@@ -72,42 +74,129 @@ import { eq, and, desc, asc, like, sql } from "drizzle-orm";
       const db = await getDb();
     if (!db) throw new Error("Database not available");
       if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
-      
-      // Get voucher
-      const voucher = await db.select({
+
+      // Get voucher + lines + treasury account
+      const [voucher] = await db.select({
         id: customPaymentVouchers.id,
-        treasuryId: customPaymentVouchers.treasuryId,
+        businessId: customPaymentVouchers.businessId,
+        subSystemId: customPaymentVouchers.subSystemId,
+        voucherNumber: customPaymentVouchers.voucherNumber,
+        voucherDate: customPaymentVouchers.voucherDate,
         amount: customPaymentVouchers.amount,
+        currencyId: customPaymentVouchers.currencyId,
+        currency: customPaymentVouchers.currency,
+        treasuryId: customPaymentVouchers.treasuryId,
+        description: customPaymentVouchers.description,
+        status: customPaymentVouchers.status,
+        journalEntryId: customPaymentVouchers.journalEntryId,
       }).from(customPaymentVouchers)
         .where(eq(customPaymentVouchers.id, input.id))
         .limit(1);
-      
-      if (!voucher[0]) {
+
+      if (!voucher) {
         throw new TRPCError({ code: 'NOT_FOUND', message: 'Voucher not found' });
       }
-      
-      // Update treasury balance
-      const treasury = await db.select({
+
+      const alreadyConfirmed = voucher.status === "confirmed";
+      if (alreadyConfirmed && voucher.journalEntryId) {
+        return { success: true, message: "Already confirmed with journal entry" };
+      }
+
+      const lines = await db.select({
+        id: customPaymentVoucherLines.id,
+        accountId: customPaymentVoucherLines.accountId,
+        amount: customPaymentVoucherLines.amount,
+        description: customPaymentVoucherLines.description,
+      }).from(customPaymentVoucherLines)
+        .where(eq(customPaymentVoucherLines.paymentVoucherId, input.id));
+
+      if (!lines.length) {
+        throw new TRPCError({ code: 'FAILED_PRECONDITION', message: 'لا توجد بنود في سند الصرف' });
+      }
+
+      const [treasury] = await db.select({
         id: customTreasuries.id,
         currentBalance: customTreasuries.currentBalance,
+        accountId: customTreasuries.accountId,
       }).from(customTreasuries)
-        .where(eq(customTreasuries.id, voucher[0].treasuryId))
+        .where(eq(customTreasuries.id, voucher.treasuryId))
         .limit(1);
-      
-      if (treasury[0]) {
-        const currentBalance = parseFloat(treasury[0].currentBalance || "0");
-        const amount = parseFloat(voucher[0].amount);
-        await db.update(customTreasuries)
-          .set({ currentBalance: (currentBalance - amount).toString() })
-          .where(eq(customTreasuries.id, voucher[0].treasuryId));
+
+      if (!treasury) {
+        throw new TRPCError({ code: 'FAILED_PRECONDITION', message: 'الخزينة غير موجودة' });
       }
-      
-      // Update voucher status
+
+      const currencyId = voucher.currencyId ?? 1;
+      const amountNum = parseFloat(String(voucher.amount || "0"));
+      const shouldUpdateBalance = !alreadyConfirmed; // لا نكرر خصم الرصيد إذا كان السند مؤكد مسبقاً
+      const entryNumber = `PV-JE-${voucher.voucherNumber || voucher.id}`;
+
+      // Create journal entry (posted)
+      const [entryRes] = await db.insert(customJournalEntries).values({
+        businessId: voucher.businessId,
+        subSystemId: voucher.subSystemId,
+        entryNumber,
+        entryDate: voucher.voucherDate,
+        entryType: "system_generated",
+        description: voucher.description || `سند صرف ${voucher.voucherNumber}`,
+        referenceType: "payment_voucher",
+        referenceId: voucher.id,
+        referenceNumber: voucher.voucherNumber,
+        status: "posted",
+        postedAt: new Date(),
+      });
+      const journalEntryId = entryRes.insertId;
+
+      // Lines: debit each voucher line, credit treasury
+      let lineOrder = 1;
+      for (const l of lines) {
+        const lineAmount = parseFloat(String(l.amount || "0"));
+        await db.insert(customJournalEntryLines).values({
+          businessId: voucher.businessId,
+          journalEntryId,
+          accountId: l.accountId,
+          debitAmount: lineAmount,
+          creditAmount: 0,
+          currencyId,
+          exchangeRate: 1,
+          debitAmountBase: lineAmount,
+          creditAmountBase: 0,
+          description: l.description,
+          lineOrder: lineOrder++,
+        });
+      }
+
+      // Credit treasury account (if mapped)
+      if (treasury.accountId) {
+        await db.insert(customJournalEntryLines).values({
+          businessId: voucher.businessId,
+          journalEntryId,
+          accountId: treasury.accountId,
+          debitAmount: 0,
+          creditAmount: amountNum,
+          currencyId,
+          exchangeRate: 1,
+          debitAmountBase: 0,
+          creditAmountBase: amountNum,
+          description: voucher.description || `صرف من خزينة ${treasury.id}`,
+          lineOrder: lineOrder++,
+        });
+      }
+
+      // Update treasury balance (مرة واحدة فقط)
+      if (shouldUpdateBalance) {
+        const currentBalance = parseFloat(String(treasury.currentBalance || "0"));
+        await db.update(customTreasuries)
+          .set({ currentBalance: (currentBalance - amountNum).toString() })
+          .where(eq(customTreasuries.id, voucher.treasuryId));
+      }
+
+      // Update voucher status + link journal entry
       await db.update(customPaymentVouchers)
-        .set({ status: "confirmed" })
+        .set({ status: "confirmed", journalEntryId })
         .where(eq(customPaymentVouchers.id, input.id));
-      
-      return { success: true };
+
+      return { success: true, journalEntryId };
     }),
 
   delete: protectedProcedure

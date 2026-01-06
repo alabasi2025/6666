@@ -30,3 +30,10 @@ checkCurrencies().catch(console.error);
 
 
 
+
+
+
+
+
+
+

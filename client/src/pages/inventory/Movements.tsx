@@ -270,7 +270,10 @@ export default function Movements({ businessId = 1 }: MovementsProps) {
                   <SelectItem value="all">جميع الأنواع</SelectItem>
                   {movementTypes.map((type) => (
                     <SelectItem key={type.value} value={type.value}>
-                      {type.label}
+                      <div className="flex items-center gap-2">
+                        <type.icon className="w-4 h-4" />
+                        <span>{type.label}</span>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -390,7 +393,10 @@ export default function Movements({ businessId = 1 }: MovementsProps) {
                   <SelectContent>
                     {movementTypes.map((type) => (
                       <SelectItem key={type.value} value={type.value}>
-                        {type.label}
+                        <div className="flex items-center gap-2">
+                          <type.icon className="w-4 h-4" />
+                          <span>{type.label}</span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>

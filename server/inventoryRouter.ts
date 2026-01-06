@@ -55,12 +55,34 @@ export const inventoryRouter = router({
         type: z.enum(["main", "spare_parts", "consumables", "transit", "quarantine"]).optional(),
         address: z.string().optional(),
         managerId: z.number().optional(),
+        accountId: z.number().optional(),
       }))
       .mutation(async ({ input }) => {
+        const businessId = input.businessId || 1;
+        const { accountId, ...warehouseData } = input;
+
+        // Validate account before creating warehouse (optional)
+        if (accountId) {
+          const account = await db.getAccountById(accountId);
+          if (!account || account.businessId !== businessId) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "الحساب المحدد غير موجود" });
+          }
+          if (account.systemModule !== "inventory" || account.accountType !== "sub") {
+            throw new TRPCError({ code: "BAD_REQUEST", message: "يجب اختيار حساب فرعي من نظام المخزون فقط" });
+          }
+          if (account.linkedEntityType || account.linkedEntityId) {
+            throw new TRPCError({ code: "CONFLICT", message: "الحساب المحدد مرتبط بكيان آخر" });
+          }
+        }
+
         const id = await db.createWarehouse({
-          ...input,
-          businessId: input.businessId || 1,
+          ...warehouseData,
+          businessId,
         });
+
+        if (accountId) {
+          await db.updateAccount(accountId, { linkedEntityType: "warehouse", linkedEntityId: id });
+        }
         return { success: true, id };
       }),
 
@@ -76,10 +98,45 @@ export const inventoryRouter = router({
         address: z.string().optional(),
         managerId: z.number().optional(),
         isActive: z.boolean().optional(),
+        accountId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
-        const { id, ...data } = input;
+        const { id, accountId, ...data } = input;
+
+        // Validate linking intent before applying changes (avoid partial updates on failure)
+        let businessId = 1;
+        if (accountId !== undefined) {
+          const warehouse = await db.getWarehouseById(id);
+          if (!warehouse) {
+            throw new TRPCError({ code: "NOT_FOUND", message: "المستودع غير موجود" });
+          }
+          businessId = warehouse.businessId || 1;
+
+          if (accountId !== null) {
+            const account = await db.getAccountById(accountId);
+            if (!account || account.businessId !== businessId) {
+              throw new TRPCError({ code: "NOT_FOUND", message: "الحساب المحدد غير موجود" });
+            }
+            if (account.systemModule !== "inventory" || account.accountType !== "sub") {
+              throw new TRPCError({ code: "BAD_REQUEST", message: "يجب اختيار حساب فرعي من نظام المخزون فقط" });
+            }
+            if (account.linkedEntityType && (account.linkedEntityType !== "warehouse" || account.linkedEntityId !== id)) {
+              throw new TRPCError({ code: "CONFLICT", message: "الحساب المحدد مرتبط بكيان آخر" });
+            }
+          }
+        }
+
         await db.updateWarehouse(id, data);
+
+        // If accountId is provided, we update the accounting link
+        if (accountId !== undefined) {
+          if (accountId === null) {
+            await db.clearWarehouseAccountLinks(businessId, id);
+          } else {
+            await db.clearWarehouseAccountLinks(businessId, id);
+            await db.updateAccount(accountId, { linkedEntityType: "warehouse", linkedEntityId: id });
+          }
+        }
         return { success: true };
       }),
 
