@@ -5,7 +5,7 @@
  * جميع المهام المجدولة في النظام
  * 
  * ملاحظة: يستخدم setInterval بدلاً من node-cron
- * TODO: تثبيت node-cron: npm install node-cron @types/node-cron
+ * تم تعطيل التنفيذ الفوري لمنع التكرار عند بدء التشغيل
  */
 
 import { logger } from "../utils/logger";
@@ -23,7 +23,11 @@ interface ScheduledJob {
   schedule: string; // للتوثيق فقط
   task: () => Promise<void>;
   interval?: NodeJS.Timeout;
+  timeout?: NodeJS.Timeout;
 }
+
+// متغير للتأكد من أن التهيئة تتم مرة واحدة فقط
+let isInitialized = false;
 
 export class CronJobsManager {
   private static jobs: Map<string, ScheduledJob> = new Map();
@@ -32,6 +36,13 @@ export class CronJobsManager {
    * تهيئة جميع Cron Jobs
    */
   static initialize() {
+    // منع التهيئة المتكررة
+    if (isInitialized) {
+      logger.warn("Cron Jobs already initialized, skipping...");
+      return;
+    }
+    
+    isInitialized = true;
     logger.info("Initializing Cron Jobs...");
 
     // Cron Jobs الحرجة
@@ -55,7 +66,6 @@ export class CronJobsManager {
       logger.info("Running auto-billing job...");
       try {
         // TODO: تنفيذ الفوترة التلقائية
-        // await BillingEngine.autoBillAllCustomers();
         logger.info("Auto-billing job completed");
       } catch (error: any) {
         logger.error("Auto-billing job failed", { error: error.message });
@@ -67,7 +77,6 @@ export class CronJobsManager {
       logger.info("Running charge-subsidies job...");
       try {
         // TODO: تنفيذ شحن الحصص المدعومة
-        // await SubsidyEngine.chargeMonthlyQuotas();
         logger.info("Charge-subsidies job completed");
       } catch (error: any) {
         logger.error("Charge-subsidies job failed", { error: error.message });
@@ -79,7 +88,6 @@ export class CronJobsManager {
       logger.info("Running generate-subsidy-report job...");
       try {
         // TODO: تنفيذ تقرير الدعم
-        // await SubsidyEngine.generateMonthlyReport();
         logger.info("Generate-subsidy-report job completed");
       } catch (error: any) {
         logger.error("Generate-subsidy-report job failed", { error: error.message });
@@ -102,7 +110,6 @@ export class CronJobsManager {
         for (const business of activeBusinesses) {
           try {
             // TODO: استدعاء دالة حساب الإهلاك
-            // await calculateMonthlyDepreciation(business.id);
             logger.info(`Monthly depreciation calculated for business ${business.id}`);
           } catch (error: any) {
             logger.error(`Failed to calculate depreciation for business ${business.id}`, {
@@ -127,7 +134,6 @@ export class CronJobsManager {
       logger.info("Running process-attendance job...");
       try {
         // TODO: معالجة سجلات الحضور من أجهزة البصمة
-        // await AttendanceEngine.processDailyAttendance();
         logger.info("Process-attendance job completed");
       } catch (error: any) {
         logger.error("Process-attendance job failed", { error: error.message });
@@ -139,14 +145,13 @@ export class CronJobsManager {
       logger.info("Running payment-reminders job...");
       try {
         // TODO: إرسال تذكيرات الدفع
-        // await NotificationEngine.sendPaymentReminders();
         logger.info("Payment-reminders job completed");
       } catch (error: any) {
         logger.error("Payment-reminders job failed", { error: error.message });
       }
     }, 9, 0); // 9:00 صباحاً
 
-    // 7. الصيانة الوقائية - منتصف الليل يومياً ✅
+    // 7. الصيانة الوقائية - منتصف الليل يومياً
     this.scheduleDailyJob("preventive-maintenance", "0 0 * * *", async () => {
       logger.info("Running preventive-maintenance job...");
       try {
@@ -188,7 +193,6 @@ export class CronJobsManager {
       logger.info("Running daily-prepaid-settlement job...");
       try {
         // TODO: تسوية عمليات الدفع المسبق اليومية
-        // await PrepaidEngine.settleDailyTransactions();
         logger.info("Daily-prepaid-settlement job completed");
       } catch (error: any) {
         logger.error("Daily-prepaid-settlement job failed", { error: error.message });
@@ -200,7 +204,6 @@ export class CronJobsManager {
       logger.info("Running check-device-connectivity job...");
       try {
         // TODO: فحص حالة الاتصال بالأجهزة (IoT, SCADA)
-        // await DeviceMonitor.checkAllDevices();
         logger.info("Check-device-connectivity job completed");
       } catch (error: any) {
         logger.error("Check-device-connectivity job failed", { error: error.message });
@@ -212,7 +215,6 @@ export class CronJobsManager {
       logger.info("Running daily-backup job...");
       try {
         // TODO: تنفيذ النسخ الاحتياطي
-        // await BackupEngine.createDailyBackup();
         logger.info("Daily-backup job completed");
       } catch (error: any) {
         logger.error("Daily-backup job failed", { error: error.message });
@@ -229,7 +231,6 @@ export class CronJobsManager {
       logger.info("Running daily-reports job...");
       try {
         // TODO: توليد التقارير اليومية
-        // await ReportEngine.generateDailyReports();
         logger.info("Daily-reports job completed");
       } catch (error: any) {
         logger.error("Daily-reports job failed", { error: error.message });
@@ -241,7 +242,6 @@ export class CronJobsManager {
       logger.info("Running cleanup-logs job...");
       try {
         // TODO: تنظيف السجلات القديمة
-        // await LogCleanup.cleanOldLogs();
         logger.info("Cleanup-logs job completed");
       } catch (error: any) {
         logger.error("Cleanup-logs job failed", { error: error.message });
@@ -253,7 +253,6 @@ export class CronJobsManager {
       logger.info("Running update-prices job...");
       try {
         // TODO: تحديث أسعار المواد والخدمات
-        // await PriceEngine.updateMonthlyPrices();
         logger.info("Update-prices job completed");
       } catch (error: any) {
         logger.error("Update-prices job failed", { error: error.message });
@@ -265,7 +264,6 @@ export class CronJobsManager {
       logger.info("Running daily-statistics job...");
       try {
         // TODO: تحديث الإحصائيات اليومية
-        // await StatisticsEngine.updateDailyStats();
         logger.info("Daily-statistics job completed");
       } catch (error: any) {
         logger.error("Daily-statistics job failed", { error: error.message });
@@ -277,7 +275,6 @@ export class CronJobsManager {
       logger.info("Running system-notifications job...");
       try {
         // TODO: فحص وإرسال إشعارات النظام
-        // await NotificationEngine.processSystemNotifications();
         logger.info("System-notifications job completed");
       } catch (error: any) {
         logger.error("System-notifications job failed", { error: error.message });
@@ -287,22 +284,28 @@ export class CronJobsManager {
 
   /**
    * جدولة مهمة بفترة زمنية ثابتة
+   * ملاحظة: لا يتم التنفيذ الفوري - فقط جدولة
    */
   private static scheduleJob(name: string, schedule: string, task: () => Promise<void>, intervalMs: number) {
+    // تحقق من عدم وجود المهمة مسبقاً
+    if (this.jobs.has(name)) {
+      logger.warn(`Job ${name} already exists, skipping...`);
+      return;
+    }
+
     const job: ScheduledJob = {
       name,
       schedule,
       task,
     };
 
-    // تنفيذ فوري ثم جدولة
-    task().catch((error) => logger.error(`Initial run of ${name} failed`, { error: error.message }));
-
+    // جدولة فقط بدون تنفيذ فوري
     job.interval = setInterval(() => {
       task().catch((error) => logger.error(`${name} job failed`, { error: error.message }));
     }, intervalMs);
 
     this.jobs.set(name, job);
+    logger.info(`Scheduled job: ${name} (interval: ${intervalMs}ms)`);
   }
 
   /**
@@ -315,6 +318,12 @@ export class CronJobsManager {
     hour: number,
     minute: number
   ) {
+    // تحقق من عدم وجود المهمة مسبقاً
+    if (this.jobs.has(name)) {
+      logger.warn(`Job ${name} already exists, skipping...`);
+      return;
+    }
+
     const job: ScheduledJob = {
       name,
       schedule,
@@ -333,7 +342,7 @@ export class CronJobsManager {
     const msUntilNext = scheduledTime.getTime() - now.getTime();
 
     // جدولة التنفيذ الأول
-    setTimeout(() => {
+    job.timeout = setTimeout(() => {
       task().catch((error) => logger.error(`${name} job failed`, { error: error.message }));
 
       // جدولة يومية بعد ذلك
@@ -343,6 +352,7 @@ export class CronJobsManager {
     }, msUntilNext);
 
     this.jobs.set(name, job);
+    logger.info(`Scheduled daily job: ${name} at ${hour}:${minute} (next run in ${Math.round(msUntilNext / 60000)} minutes)`);
   }
 
   /**
@@ -356,6 +366,12 @@ export class CronJobsManager {
     hour: number,
     minute: number
   ) {
+    // تحقق من عدم وجود المهمة مسبقاً
+    if (this.jobs.has(name)) {
+      logger.warn(`Job ${name} already exists, skipping...`);
+      return;
+    }
+
     const job: ScheduledJob = {
       name,
       schedule,
@@ -376,7 +392,7 @@ export class CronJobsManager {
     const msUntilNext = scheduledTime.getTime() - now.getTime();
 
     // جدولة التنفيذ الأول
-    setTimeout(() => {
+    job.timeout = setTimeout(() => {
       task().catch((error) => logger.error(`${name} job failed`, { error: error.message }));
 
       // جدولة أسبوعية بعد ذلك
@@ -386,6 +402,7 @@ export class CronJobsManager {
     }, msUntilNext);
 
     this.jobs.set(name, job);
+    logger.info(`Scheduled weekly job: ${name} on day ${dayOfWeek} at ${hour}:${minute}`);
   }
 
   /**
@@ -397,6 +414,12 @@ export class CronJobsManager {
     task: () => Promise<void>,
     dayOfMonth: number
   ) {
+    // تحقق من عدم وجود المهمة مسبقاً
+    if (this.jobs.has(name)) {
+      logger.warn(`Job ${name} already exists, skipping...`);
+      return;
+    }
+
     const job: ScheduledJob = {
       name,
       schedule,
@@ -416,7 +439,7 @@ export class CronJobsManager {
     const msUntilNext = scheduledTime.getTime() - now.getTime();
 
     // جدولة التنفيذ الأول
-    setTimeout(() => {
+    job.timeout = setTimeout(() => {
       task().catch((error) => logger.error(`${name} job failed`, { error: error.message }));
 
       // جدولة شهرية بعد ذلك (تقريبية - 30 يوم)
@@ -426,6 +449,7 @@ export class CronJobsManager {
     }, msUntilNext);
 
     this.jobs.set(name, job);
+    logger.info(`Scheduled monthly job: ${name} on day ${dayOfMonth}`);
   }
 
   /**
@@ -437,9 +461,13 @@ export class CronJobsManager {
       if (job.interval) {
         clearInterval(job.interval);
       }
+      if (job.timeout) {
+        clearTimeout(job.timeout);
+      }
       logger.info(`Stopped job: ${name}`);
     });
     this.jobs.clear();
+    isInitialized = false;
   }
 
   /**
@@ -448,9 +476,8 @@ export class CronJobsManager {
   static getJobStatus(name: string): { running: boolean; schedule?: string } | null {
     const job = this.jobs.get(name);
     if (!job) return null;
-
     return {
-      running: !!job.interval,
+      running: !!job.interval || !!job.timeout,
       schedule: job.schedule,
     };
   }
@@ -458,11 +485,11 @@ export class CronJobsManager {
   /**
    * جلب جميع Cron Jobs
    */
-  static getAllJobs(): Array<{ name: string; running: boolean; schedule: string }> {
+  static getAllJobs(): Array<{ name: string; schedule: string; running: boolean }> {
     return Array.from(this.jobs.entries()).map(([name, job]) => ({
       name,
-      running: !!job.interval,
       schedule: job.schedule,
+      running: !!job.interval || !!job.timeout,
     }));
   }
 }

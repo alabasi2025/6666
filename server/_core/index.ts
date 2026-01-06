@@ -150,13 +150,17 @@ async function startServer() {
     logger.warn("Failed to ensure default admin", { error: error instanceof Error ? error.message : error });
   }
 
-  // Initialize Cron Jobs
-  try {
-    const { CronJobsManager } = await import("../core/cron-jobs");
-    CronJobsManager.initialize();
-    logger.info("Cron Jobs initialized successfully");
-  } catch (error) {
-    logger.warn("Failed to initialize Cron Jobs", { error: error instanceof Error ? error.message : error });
+  // Initialize Cron Jobs - تعطيل في بيئة التطوير لتجنب التكرار مع tsx watch
+  if (process.env.NODE_ENV === "production") {
+    try {
+      const { CronJobsManager } = await import("../core/cron-jobs");
+      CronJobsManager.initialize();
+      logger.info("Cron Jobs initialized successfully");
+    } catch (error) {
+      logger.warn("Failed to initialize Cron Jobs", { error: error instanceof Error ? error.message : error });
+    }
+  } else {
+    logger.info("Cron Jobs disabled in development mode");
   }
 
   const host = process.env.HOST || "0.0.0.0";
