@@ -6,9 +6,12 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import EngineInfoDialog from "@/components/engines/EngineInfoDialog";
+import { resolvePageInfo } from "@/components/engines/pageInfoRegistry";
 
 export default function Register() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const pageInfo = resolvePageInfo(location);
   const [formData, setFormData] = useState({
     name: "",
     phone: "",
@@ -74,6 +77,9 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
+      <div className="absolute top-4 right-4 z-20">
+        <EngineInfoDialog info={pageInfo} />
+      </div>
       {/* Background Effects */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />

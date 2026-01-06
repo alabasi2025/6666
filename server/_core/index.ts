@@ -150,6 +150,15 @@ async function startServer() {
     logger.warn("Failed to ensure default admin", { error: error instanceof Error ? error.message : error });
   }
 
+  // Initialize Cron Jobs
+  try {
+    const { CronJobsManager } = await import("../core/cron-jobs");
+    CronJobsManager.initialize();
+    logger.info("Cron Jobs initialized successfully");
+  } catch (error) {
+    logger.warn("Failed to initialize Cron Jobs", { error: error instanceof Error ? error.message : error });
+  }
+
   const host = process.env.HOST || "0.0.0.0";
   server.listen(port, host, () => {
     logger.info(`Server running on http://${host}:${port}/`);

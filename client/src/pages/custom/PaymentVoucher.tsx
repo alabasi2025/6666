@@ -1253,7 +1253,8 @@ export default function PaymentVoucher({ subSystemId }: PaymentVoucherProps) {
 
                       const accountsForLine = accounts
                         .filter((acc: any) => {
-                          if (acc.accountType !== line.accountType) return false;
+                          // إذا كان accountType غير محدد في الحساب فلا نستبعده
+                          if (acc.accountType && acc.accountType !== line.accountType) return false;
                           if (line.accountSubTypeId) {
                             return acc.accountSubTypeId === parseInt(line.accountSubTypeId);
                           }

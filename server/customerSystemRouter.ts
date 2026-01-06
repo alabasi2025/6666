@@ -617,6 +617,26 @@ export const customerSystemRouter = router({
         }).where(eq(customersEnhanced.id, input.customerId));
       }
       
+      // إنشاء قيد محاسبي تلقائي
+      try {
+        const paymentId = result[0].insertId;
+        const { AutoJournalEngine } = await import("./core/auto-journal-engine");
+        
+        await AutoJournalEngine.onPaymentReceived({
+          id: paymentId,
+          businessId: input.businessId,
+          customerId: input.customerId,
+          invoiceId: input.invoiceId,
+          amount: parseFloat(input.amount),
+          paymentMethod: input.paymentMethod === "cash" ? "cash" : input.paymentMethod === "bank_transfer" ? "bank" : "card",
+          paymentDate: new Date(input.paymentDate),
+          createdBy: input.collectedBy,
+        });
+      } catch (error: any) {
+        // لا نرمي الخطأ - نكتفي بتسجيله
+        console.error("Failed to create auto journal entry for payment", error);
+      }
+      
       return { success: true, id: result[0].insertId, paymentNo };
     }),
 

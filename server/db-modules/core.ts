@@ -1,7 +1,8 @@
 
 import { eq, and, desc, asc, sql, like, or, isNull, count, inArray, ne, gte, lte } from "drizzle-orm";
 import { logger } from "./utils/logger";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import {
   InsertUser, users,
   businesses, InsertBusiness,
@@ -109,21 +110,29 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: Pool | null = null;
 let _connectionTested = false;
 
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      if (!_pool) {
+        _pool = new Pool({
+          connectionString: process.env.DATABASE_URL,
+        });
+      }
+      _db = drizzle(_pool);
       // Test connection
       if (!_connectionTested) {
         await _db.execute(sql`SELECT 1`);
-        logger.info("[Database] Connected successfully");
+        await _pool.query("SET client_encoding TO 'UTF8'");
+        logger.info("[Database] Connected successfully to PostgreSQL");
         _connectionTested = true;
       }
     } catch (error) {
       logger.warn("[Database] Failed to connect", { error });
       _db = null;
+      _pool = null;
       _connectionTested = false;
     }
   }

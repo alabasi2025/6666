@@ -1,7 +1,8 @@
 
 import { eq, and, desc, asc, sql, like, or, isNull, count, inArray, ne, gte, lte } from "drizzle-orm";
 import { logger } from "./utils/logger";
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import {
   InsertUser, users,
   businesses, InsertBusiness,
@@ -109,36 +110,33 @@ import {
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
+let _pool: Pool | null = null;
 let _connectionTested = false;
 
 export async function getDb() {
   // استخدام DATABASE_URL من process.env أو fallback افتراضي
-  const dbUrl = process.env.DATABASE_URL || "mysql://root@localhost:3306/energy_management";
+  const dbUrl = process.env.DATABASE_URL || "postgresql://postgres:774424555@localhost:5432/666666";
   
   if (!_db) {
     try {
-      // إضافة charset=utf8mb4 إلى connection string إذا لم يكن موجوداً
-      let finalDbUrl = dbUrl;
-      if (!finalDbUrl.includes('charset=')) {
-        const separator = finalDbUrl.includes('?') ? '&' : '?';
-        finalDbUrl = `${finalDbUrl}${separator}charset=utf8mb4`;
+      if (!_pool) {
+        _pool = new Pool({
+          connectionString: dbUrl,
+        });
       }
-      _db = drizzle(finalDbUrl);
+      _db = drizzle(_pool);
       // Test connection
       if (!_connectionTested) {
         await _db.execute(sql`SELECT 1`);
-        // ضبط charset بعد الاتصال - مهم جداً للنصوص العربية
-        await _db.execute(sql`SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci`);
-        await _db.execute(sql`SET CHARACTER SET utf8mb4`);
-        await _db.execute(sql`SET character_set_client = utf8mb4`);
-        await _db.execute(sql`SET character_set_connection = utf8mb4`);
-        await _db.execute(sql`SET character_set_results = utf8mb4`);
-        logger.info("[Database] Connected successfully with UTF-8 encoding");
+        // ضبط encoding للنصوص العربية في PostgreSQL
+        await _pool.query("SET client_encoding TO 'UTF8'");
+        logger.info("[Database] Connected successfully to PostgreSQL with UTF-8 encoding");
         _connectionTested = true;
       }
     } catch (error) {
       logger.warn("[Database] Failed to connect", { error });
       _db = null;
+      _pool = null;
       _connectionTested = false;
     }
   }
@@ -147,17 +145,17 @@ export async function getDb() {
 
 // Export db instance for synchronous use in routes
 // Initialize it with fallback to default connection
-const defaultDbUrl = "mysql://root@localhost:3306/energy_management";
+const defaultDbUrl = "postgresql://postgres:774424555@localhost:5432/666666";
 const dbUrl = process.env.DATABASE_URL || defaultDbUrl;
 
+let _syncPool: Pool | null = null;
 export const db: ReturnType<typeof drizzle> = (() => {
-  // إضافة charset=utf8mb4 إلى connection string إذا لم يكن موجوداً
-  let finalDbUrl = dbUrl;
-  if (!finalDbUrl.includes('charset=')) {
-    const separator = finalDbUrl.includes('?') ? '&' : '?';
-    finalDbUrl = `${finalDbUrl}${separator}charset=utf8mb4`;
+  if (!_syncPool) {
+    _syncPool = new Pool({
+      connectionString: dbUrl,
+    });
   }
-  return drizzle(finalDbUrl);
+  return drizzle(_syncPool);
 })();
 
 export async function testDatabaseConnection(): Promise<boolean> {
@@ -235,7 +233,8 @@ export async function upsertUser(user: InsertUser): Promise<void> {
       updateSet.lastSignedIn = new Date();
     }
 
-    await db.insert(users).values(values).onDuplicateKeyUpdate({
+    await db.insert(users).values(values).onConflictDoUpdate({
+      target: users.openId,
       set: updateSet,
     });
   } catch (error) {
@@ -350,9 +349,9 @@ export async function createUserWithPhone(data: { phone: string; password: strin
     name: data.name || data.phone,
     role: data.role || 'user',
     loginMethod: 'phone',
-  });
+  }).returning({ id: users.id });
   
-  return result[0].insertId;
+  return result[0]?.id;
 }
 
 export async function getUserById(id: number) {
@@ -426,8 +425,8 @@ export async function createBusiness(data: InsertBusiness) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(businesses).values(data);
-  return result[0].insertId;
+  const result = await db.insert(businesses).values(data).returning({ id: businesses.id });
+  return result[0]?.id;
 }
 
 export async function getBusinesses() {
@@ -575,8 +574,8 @@ export async function createBranch(data: InsertBranch) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(branches).values(data);
-  return result[0].insertId;
+  const result = await db.insert(branches).values(data).returning({ id: branches.id });
+  return result[0]?.id;
 }
 
 export async function getBranches(businessId?: number) {
@@ -632,8 +631,8 @@ export async function createStation(data: InsertStation) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const result = await db.insert(stations).values(data);
-  return result[0].insertId;
+  const result = await db.insert(stations).values(data).returning({ id: stations.id });
+  return result[0]?.id;
 }
 
 export async function getStations(businessId?: number, branchId?: number) {
@@ -715,9 +714,29 @@ export async function createAccount(data: InsertAccount) {
   return result[0].insertId;
 }
 
-export async function getAccounts(businessId: number) {
+export async function getAccounts(
+  businessId: number,
+  filters?: {
+    systemModule?: string;
+    accountType?: string;
+    isActive?: boolean;
+  }
+) {
   const db = await getDb();
   if (!db) return [];
+
+  const conditions = [eq(accounts.businessId, businessId)];
+  if (filters?.isActive === undefined) {
+    conditions.push(eq(accounts.isActive, true));
+  } else {
+    conditions.push(eq(accounts.isActive, filters.isActive));
+  }
+  if (filters?.systemModule) {
+    conditions.push(eq(accounts.systemModule, filters.systemModule as any));
+  }
+  if (filters?.accountType) {
+    conditions.push(eq(accounts.accountType, filters.accountType as any));
+  }
 
   return await db.select({
     id: accounts.id,
@@ -733,8 +752,10 @@ export async function getAccounts(businessId: number) {
     isParent: accounts.isParent,
     isActive: accounts.isActive,
     currentBalance: accounts.currentBalance,
+    linkedEntityType: accounts.linkedEntityType,
+    linkedEntityId: accounts.linkedEntityId,
   }).from(accounts)
-    .where(and(eq(accounts.businessId, businessId), eq(accounts.isActive, true)))
+    .where(and(...conditions))
     .orderBy(asc(accounts.code));
 }
 
@@ -3676,6 +3697,21 @@ export async function deleteAccount(id: number) {
   const db = await getDb();
   if (!db) return;
   await db.update(accounts).set({ isActive: false }).where(eq(accounts.id, id));
+}
+
+export async function clearWarehouseAccountLinks(businessId: number, warehouseId: number) {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(accounts)
+    .set({ linkedEntityType: null, linkedEntityId: null })
+    .where(
+      and(
+        eq(accounts.businessId, businessId),
+        eq(accounts.linkedEntityType, "warehouse" as any),
+        eq(accounts.linkedEntityId, warehouseId)
+      )
+    );
 }
 
 export async function getAccountsTree(businessId: number) {

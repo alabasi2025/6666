@@ -1,103 +1,12 @@
 {
   "version": "7",
-  "dialect": "mysql",
+  "dialect": "postgresql",
   "entries": [
     {
       "idx": 0,
-      "version": "5",
-      "when": 1766074152661,
-      "tag": "0000_supreme_hedge_knight",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "5",
-      "when": 1766074550724,
-      "tag": "0001_clumsy_galactus",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "5",
-      "when": 1766081698261,
-      "tag": "0002_windy_hydra",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "5",
-      "when": 1766082983907,
-      "tag": "0003_tired_lethal_legion",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "5",
-      "when": 1766084103699,
-      "tag": "0004_flat_namor",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "5",
-      "when": 1766085186081,
-      "tag": "0005_fast_shriek",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "5",
-      "when": 1766085494949,
-      "tag": "0006_productive_manta",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "5",
-      "when": 1766088889243,
-      "tag": "0007_powerful_runaways",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "5",
-      "when": 1766090188492,
-      "tag": "0008_nifty_corsair",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "5",
-      "when": 1766092091610,
-      "tag": "0009_reflective_lifeguard",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "5",
-      "when": 1766361156039,
-      "tag": "0010_ambitious_gateway",
-      "breakpoints": true
-    },
-    {
-      "idx": 11,
-      "version": "5",
-      "when": 1766366189245,
-      "tag": "0011_woozy_mystique",
-      "breakpoints": true
-    },
-    {
-      "idx": 12,
-      "version": "5",
-      "when": 1766532097894,
-      "tag": "0012_productive_bloodscream",
-      "breakpoints": true
-    },
-    {
-      "idx": 13,
-      "version": "5",
-      "when": 1766725934163,
-      "tag": "0013_blushing_diamondback",
+      "version": "7",
+      "when": 1767683322065,
+      "tag": "0000_mute_prism",
       "breakpoints": true
     }
   ]

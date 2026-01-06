@@ -5,8 +5,11 @@ import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   ArrowRight,
+  ArrowDownCircle,
+  ArrowUpCircle,
   Wallet,
   Receipt,
   ArrowLeftRight,
@@ -50,6 +53,10 @@ import {
   JournalEntriesPage,
   CurrenciesPage,
 } from "../CustomSystem/v2";
+import Warehouses from "../inventory/Warehouses";
+import Items from "../inventory/Items";
+import StockBalance from "../inventory/StockBalance";
+import Movements from "../inventory/Movements";
 import CustomNotes from "./CustomNotes";
 import CustomMemos from "./CustomMemos";
 import CustomTreasuries from "./CustomTreasuries";
@@ -157,6 +164,123 @@ function LedgerStatement({ subSystemId }: { subSystemId: number }) {
 
   const selectedAccount = accounts.find((a) => a.id === Number(accountId));
 
+  const formatDate = (val?: string | Date | null) => {
+    if (!val) return "";
+    const d = new Date(val);
+    return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+  };
+
+  const formatNumber = (num: number) =>
+    Number.isFinite(num) ? num.toLocaleString("ar-SA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00";
+
+  // مساعدة لإتاحة الكتابة اليدوية أو اختيار التاريخ من المنتقي
+  const dateInputProps = {
+    onFocus: (e: React.FocusEvent<HTMLInputElement>) => {
+      e.target.type = "date";
+    },
+    onBlur: (e: React.FocusEvent<HTMLInputElement>) => {
+      if (!e.target.value) e.target.type = "text";
+    },
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        fetchStatement();
+      }
+    },
+  };
+
+  const handlePrint = () => {
+    if (!statement.length) {
+      toast.error("لا توجد بيانات للطباعة");
+      return;
+    }
+    const doc = window.open("", "_blank", "noopener,noreferrer");
+    if (!doc) {
+      toast.error("تعذر فتح نافذة الطباعة");
+      return;
+    }
+
+    const accountLabel = selectedAccount
+      ? `${selectedAccount.accountCode} - ${selectedAccount.accountNameAr}`
+      : `الحساب ${accountId}`;
+
+    const periodLabel =
+      (fromDate ? `من ${fromDate}` : "") + (toDate ? `${fromDate ? " " : ""}إلى ${toDate}` : "");
+
+    const rowsHtml = statement
+      .map(
+        (row) => `
+        <tr>
+          <td>${row.entryNumber || row.entryId}</td>
+          <td>${formatDate(row.entryDate)}</td>
+          <td>${row.description || ""}</td>
+          <td>${formatNumber(row.debit)}</td>
+          <td>${formatNumber(row.credit)}</td>
+          <td>${formatNumber(row.balance)}</td>
+        </tr>`
+      )
+      .join("");
+
+    const totalDebit = statement.reduce((s, r) => s + (Number(r.debit) || 0), 0);
+    const totalCredit = statement.reduce((s, r) => s + (Number(r.credit) || 0), 0);
+
+    const html = `
+      <html dir="rtl" lang="ar">
+      <head>
+        <meta charset="UTF-8" />
+        <title>كشف حساب</title>
+        <style>
+          body { font-family: "Cairo", Arial, sans-serif; background: #f8fafc; color: #0f172a; padding: 20px; }
+          h1 { margin: 0 0 12px 0; }
+          .meta { margin-bottom: 12px; }
+          .meta div { margin: 4px 0; }
+          table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+          th, td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: right; font-size: 13px; }
+          th { background: #f1f5f9; }
+          tfoot td { font-weight: 700; background: #fff7ed; }
+        </style>
+      </head>
+      <body>
+        <h1>كشف حساب</h1>
+        <div class="meta">
+          <div><strong>الحساب:</strong> ${accountLabel}</div>
+          <div><strong>الفترة:</strong> ${periodLabel || "كل الفترات"}</div>
+          <div><strong>تاريخ الطباعة:</strong> ${new Date().toLocaleString("ar-SA")}</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>رقم القيد</th>
+              <th>التاريخ</th>
+              <th>الوصف</th>
+              <th>مدين</th>
+              <th>دائن</th>
+              <th>الرصيد</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHtml}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">الإجمالي</td>
+              <td>${formatNumber(totalDebit)}</td>
+              <td>${formatNumber(totalCredit)}</td>
+              <td>${formatNumber(totalDebit - totalCredit)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </body>
+      </html>
+    `;
+
+    doc.document.open();
+    doc.document.write(html);
+    doc.document.close();
+    doc.focus();
+    doc.print();
+  };
+
   return (
     <Card className="bg-slate-900/60 border-slate-800">
       <CardHeader>
@@ -187,18 +311,22 @@ function LedgerStatement({ subSystemId }: { subSystemId: number }) {
           <div className="space-y-2">
             <Label className="text-slate-200">من تاريخ</Label>
             <Input
-              type="date"
+              type="text"
+              placeholder="yyyy-mm-dd"
               value={fromDate}
               onChange={(e) => setFromDate(e.target.value)}
+              {...dateInputProps}
               className="bg-slate-800 border-slate-700 text-white"
             />
           </div>
           <div className="space-y-2">
             <Label className="text-slate-200">إلى تاريخ</Label>
             <Input
-              type="date"
+              type="text"
+              placeholder="yyyy-mm-dd"
               value={toDate}
               onChange={(e) => setToDate(e.target.value)}
+              {...dateInputProps}
               className="bg-slate-800 border-slate-700 text-white"
             />
           </div>
@@ -206,6 +334,11 @@ function LedgerStatement({ subSystemId }: { subSystemId: number }) {
             <Button onClick={fetchStatement} disabled={loading} className="w-full">
               {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <FileText className="h-4 w-4 mr-2" />}
               عرض كشف الحساب
+            </Button>
+          </div>
+          <div className="flex items-end">
+            <Button variant="outline" onClick={handlePrint} disabled={!statement.length} className="w-full border-slate-700 text-white">
+              طباعة
             </Button>
           </div>
         </div>
@@ -284,12 +417,18 @@ function InventoryTabContent({
   subSystemId,
   businessId,
   subSystemName,
+  initialTab = "overview",
 }: {
   subSystemId: number;
   businessId: number;
   subSystemName?: string;
+  initialTab?: "overview" | "warehouses" | "items" | "stock" | "movements";
 }) {
-  const [inventoryTab, setInventoryTab] = useState<"overview" | "warehouses" | "items" | "stock" | "movements">("overview");
+  const [inventoryTab, setInventoryTab] = useState<"overview" | "warehouses" | "items" | "stock" | "movements">(initialTab);
+
+  useEffect(() => {
+    setInventoryTab(initialTab);
+  }, [initialTab]);
 
   const {
     data: inventoryStats,
@@ -359,8 +498,8 @@ function InventoryTabContent({
   const movementTypeMap: Record<string, { label: string; color: string; Icon: any }> = {
     receipt: { label: "استلام", color: "text-green-400", Icon: ArrowDownCircle },
     issue: { label: "صرف", color: "text-red-400", Icon: ArrowUpCircle },
-    transfer_in: { label: "تحويل وارد", color: "text-blue-400", Icon: RefreshCwIcon },
-    transfer_out: { label: "تحويل صادر", color: "text-indigo-400", Icon: RefreshCwIcon },
+    transfer_in: { label: "تحويل وارد", color: "text-blue-400", Icon: RefreshCw },
+    transfer_out: { label: "تحويل صادر", color: "text-indigo-400", Icon: RefreshCw },
     adjustment_in: { label: "تسوية زيادة", color: "text-emerald-400", Icon: ArrowDownCircle },
     adjustment_out: { label: "تسوية نقص", color: "text-amber-400", Icon: ArrowUpCircle },
     return: { label: "مرتجع", color: "text-teal-400", Icon: ArrowDownCircle },
@@ -496,8 +635,8 @@ function InventoryTabContent({
                       <p className="text-slate-400 text-sm">لا توجد حركات مسجلة</p>
                     ) : (
                     movementsWithNames.map((mov: any) => {
-                        const map = movementTypeMap[mov.movementType] || { label: mov.movementType, color: "text-slate-400", Icon: RefreshCwIcon };
-                        const Icon = map.Icon || RefreshCwIcon;
+                        const map = movementTypeMap[mov.movementType] || { label: mov.movementType, color: "text-slate-400", Icon: RefreshCw };
+                        const Icon = map.Icon || RefreshCw;
                         return (
                           <div key={mov.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-800/60 border border-slate-700">
                             <div>
@@ -2352,28 +2491,25 @@ export default function SubSystemDetails({ activeTab: externalActiveTab, onTabCh
 
 
           {/* Inventory Tab - نظام المخزون */}
-          {activeTab === "inventory" && (
+          {(activeTab === "inventory" ||
+            activeTab === "inventory-warehouses" ||
+            activeTab === "inventory-items" ||
+            activeTab === "inventory-movements") && (
             <div className="space-y-4">
-              <Card className="bg-slate-900/50 border-slate-800">
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-500 to-gray-500 flex items-center justify-center">
-                      <Package className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-white">نظام المخزون</CardTitle>
-                      <CardDescription>إدارة المخزون والمنتجات</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-12">
-                    <Package className="h-16 w-16 text-slate-400 mx-auto mb-4 opacity-50" />
-                    <p className="text-slate-400 text-lg">صفحة نظام المخزون قيد التطوير</p>
-                    <p className="text-slate-500 text-sm mt-2">سيتم إضافة ميزات إدارة المخزون قريباً</p>
-                  </div>
-                </CardContent>
-              </Card>
+              <InventoryTabContent
+                subSystemId={parseInt(id || "0")}
+                businessId={1}
+                subSystemName={subSystem?.nameAr}
+                initialTab={
+                  activeTab === "inventory-warehouses"
+                    ? "warehouses"
+                    : activeTab === "inventory-items"
+                      ? "items"
+                      : activeTab === "inventory-movements"
+                        ? "movements"
+                        : "overview"
+                }
+              />
             </div>
           )}
 

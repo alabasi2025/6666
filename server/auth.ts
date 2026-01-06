@@ -1,17 +1,21 @@
 import bcrypt from 'bcrypt';
-import { drizzle } from "drizzle-orm/mysql2";
-import { eq, sql } from "drizzle-orm";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { eq, sql, inArray } from "drizzle-orm";
+import { Pool } from "pg";
 import { users } from "../drizzle/schema";
 import { logger } from './utils/logger';
 
 const SALT_ROUNDS = 10;
 
 let _db: ReturnType<typeof drizzle> | null = null;
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
+      _db = drizzle(pool);
     } catch (error) {
       logger.warn("[Auth] Failed to connect to database", { error: error instanceof Error ? error.message : error });
       _db = null;
@@ -78,9 +82,9 @@ export async function registerUser(data: {
       role: data.role || 'user',
       loginMethod: 'local',
       isActive: true,
-    });
+    }).returning({ id: users.id });
 
-    return { success: true, userId: result[0].insertId };
+    return { success: true, userId: result[0]?.id };
   } catch (error: any) {
     logger.error("[Auth] Registration error", { error: error.message || error });
     return { success: false, error: error.message || "حدث خطأ أثناء التسجيل" };
@@ -260,7 +264,7 @@ export async function ensureDefaultAdmin(): Promise<void> {
   try {
     // التحقق من وجود أي مستخدم admin أو super_admin
     const adminUsers = await db.select({ id: users.id, role: users.role }).from(users).where(
-      sql`${users.role} IN ('admin', 'super_admin')`
+      inArray(users.role, ['admin', 'super_admin'])
     ).limit(1);
 
     if (adminUsers.length === 0) {

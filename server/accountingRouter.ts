@@ -54,7 +54,11 @@ export const accountingRouter = router({
         isActive: z.boolean().optional(),
       }))
       .query(async ({ input }) => {
-        return await db.getAccounts(input.businessId || 1);
+        return await db.getAccounts(input.businessId || 1, {
+          systemModule: input.systemModule,
+          accountType: input.accountType,
+          isActive: input.isActive,
+        });
       }),
 
     /**
@@ -204,6 +208,8 @@ export const accountingRouter = router({
         isBankAccount: z.boolean().optional(),
         currency: z.string().optional(),
         description: z.string().optional(),
+        linkedEntityType: z.string().nullable().optional(),
+        linkedEntityId: z.number().nullable().optional(),
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;

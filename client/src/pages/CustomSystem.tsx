@@ -25,6 +25,8 @@ import { useState, useRef, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import { cn } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
+import EngineInfoDialog from "@/components/engines/EngineInfoDialog";
+import { resolvePageInfo } from "@/components/engines/pageInfoRegistry";
 
 // Custom System Pages
 import CustomDashboard from "./custom/CustomDashboard";
@@ -299,6 +301,30 @@ const subSystemNavigationItems = [
     icon: Package,
     description: "إدارة المخزون والمنتجات",
     color: "from-slate-500 to-gray-500",
+    isGroup: true,
+    children: [
+      {
+        id: "inventory-warehouses",
+        title: "المستودعات",
+        icon: Building2,
+        description: "إدارة المستودعات",
+        color: "from-slate-500 to-gray-500",
+      },
+      {
+        id: "inventory-items",
+        title: "الأصناف",
+        icon: ClipboardList,
+        description: "إدارة أصناف المخزون",
+        color: "from-slate-500 to-gray-500",
+      },
+      {
+        id: "inventory-movements",
+        title: "حركات المخزون",
+        icon: Activity,
+        description: "عرض حركات المخزون",
+        color: "from-slate-500 to-gray-500",
+      },
+    ],
   },
   {
     id: "suppliers",
@@ -334,6 +360,7 @@ const subSystemNavigationItems = [
 export default function CustomSystem() {
   const [location, setLocation] = useLocation();
   const { data: user, isLoading: loading } = trpc.auth.me.useQuery();
+  const pageInfo = resolvePageInfo(location);
   
   const logout = () => {
     window.location.href = '/login';
@@ -344,6 +371,7 @@ export default function CustomSystem() {
   const [subSystemActiveTab, setSubSystemActiveTab] = useState("overview");
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "financial-system": true,
+    inventory: true,
   });
 
   useEffect(() => {
@@ -594,6 +622,7 @@ export default function CustomSystem() {
 
             {/* Right Section */}
             <div className="flex items-center gap-2">
+              <EngineInfoDialog info={pageInfo} />
               {/* Sub-system Switcher */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -813,6 +842,29 @@ export default function CustomSystem() {
                     if (item.isGroup && item.children) {
                       const isGroupActive = item.children.some((child: any) => subSystemActiveTab === child.id);
                       const isGroupExpanded = expandedGroups[item.id] ?? true;
+                      const getGroupTheme = () => {
+                        switch (item.id) {
+                          case "inventory":
+                            return {
+                              headerActive:
+                                "bg-gradient-to-l from-slate-500/20 to-gray-500/10 text-slate-200 border-l-4 border-slate-500/50",
+                              iconBgActive: "bg-slate-500/20",
+                              iconTextActive: "text-slate-300",
+                              chevron: "text-slate-300",
+                              childrenBorder: "border-slate-500/20",
+                            };
+                          default:
+                            return {
+                              headerActive:
+                                "bg-gradient-to-l from-emerald-500/20 to-teal-500/10 text-emerald-300 border-l-4 border-emerald-500/50",
+                              iconBgActive: "bg-emerald-500/20",
+                              iconTextActive: "text-emerald-300",
+                              chevron: "text-emerald-300",
+                              childrenBorder: "border-emerald-500/20",
+                            };
+                        }
+                      };
+                      const groupTheme = getGroupTheme();
                       return (
                         <div key={item.id} className="space-y-1">
                           {/* عنوان المجموعة مع زر طي/فتح */}
@@ -825,17 +877,17 @@ export default function CustomSystem() {
                             className={cn(
                               "w-full flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-bold transition-all",
                               isGroupActive || isGroupExpanded
-                                ? "bg-gradient-to-l from-emerald-500/20 to-teal-500/10 text-emerald-300 border-l-4 border-emerald-500/50"
+                                ? groupTheme.headerActive
                                 : "text-zinc-500 border-l-4 border-transparent hover:bg-zinc-800/40"
                             )}
                           >
                             <div className={cn(
                               "flex items-center justify-center w-9 h-9 rounded-lg",
-                              isGroupActive ? "bg-emerald-500/20" : "bg-zinc-800/50"
+                              isGroupActive ? groupTheme.iconBgActive : "bg-zinc-800/50"
                             )}>
                               <item.icon className={cn(
                                 "h-4 w-4",
-                                isGroupActive ? "text-emerald-300" : "text-zinc-500"
+                                isGroupActive ? groupTheme.iconTextActive : "text-zinc-500"
                               )} />
                             </div>
                             <span className="flex-1 text-right">{item.title}</span>
@@ -843,13 +895,13 @@ export default function CustomSystem() {
                               className={cn(
                                 "h-4 w-4 transition-transform",
                                 isGroupExpanded ? "" : "-rotate-90",
-                                "text-emerald-300"
+                                groupTheme.chevron
                               )}
                             />
                           </button>
                           {/* عناصر المجموعة */}
                           {isGroupExpanded && (
-                            <div className="mr-4 space-y-1 border-r-2 border-emerald-500/20 pr-2">
+                            <div className={cn("mr-4 space-y-1 border-r-2 pr-2", groupTheme.childrenBorder)}>
                               {item.children.map((child: any) => {
                                 const isActive = subSystemActiveTab === child.id;
                                 const getChildColorClasses = () => {
@@ -901,6 +953,30 @@ export default function CustomSystem() {
                                         text: 'text-emerald-400',
                                         border: 'border-emerald-500/30',
                                         glow: 'shadow-emerald-500/20'
+                                      };
+                                    case 'inventory-warehouses':
+                                      return {
+                                        activeBg: 'bg-gradient-to-l from-slate-500 to-gray-500',
+                                        iconBg: 'bg-slate-500/20',
+                                        text: 'text-slate-400',
+                                        border: 'border-slate-500/30',
+                                        glow: 'shadow-slate-500/20'
+                                      };
+                                    case 'inventory-items':
+                                      return {
+                                        activeBg: 'bg-gradient-to-l from-slate-500 to-gray-500',
+                                        iconBg: 'bg-slate-500/20',
+                                        text: 'text-slate-400',
+                                        border: 'border-slate-500/30',
+                                        glow: 'shadow-slate-500/20'
+                                      };
+                                    case 'inventory-movements':
+                                      return {
+                                        activeBg: 'bg-gradient-to-l from-slate-500 to-gray-500',
+                                        iconBg: 'bg-slate-500/20',
+                                        text: 'text-slate-400',
+                                        border: 'border-slate-500/30',
+                                        glow: 'shadow-slate-500/20'
                                       };
                                     default:
                                       return { 

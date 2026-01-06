@@ -10,10 +10,13 @@ import {
 } from "lucide-react";
 import { useEffect } from "react";
 import { useLocation } from "wouter";
+import EngineInfoDialog from "@/components/engines/EngineInfoDialog";
+import { resolvePageInfo } from "@/components/engines/pageInfoRegistry";
 
 export default function Home() {
   const { isAuthenticated, loading } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const pageInfo = resolvePageInfo(location);
 
   // Fetch public stats from API
   const { data: billingStats } = (trpc.billing as any).stats?.useQuery?.(
@@ -86,6 +89,7 @@ export default function Home() {
             <span className="font-bold text-lg text-foreground">نظام إدارة الطاقة</span>
           </div>
           <div className="flex items-center gap-4">
+            <EngineInfoDialog info={pageInfo} />
             <Button variant="ghost" onClick={() => setLocation("/login")}>
               تسجيل الدخول
             </Button>
