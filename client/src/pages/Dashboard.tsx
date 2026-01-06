@@ -22,7 +22,7 @@ import {
   Settings, LogOut, Menu, X, ChevronLeft, Bell,
   TrendingUp, TrendingDown, DollarSign, Wrench,
   Home, Search, HelpCircle, Moon, Sun, Truck, Users2, Clock, CalendarDays, Wallet,
-  Loader2, Navigation, Smartphone, AlertTriangle
+  Loader2, Navigation, Smartphone
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
