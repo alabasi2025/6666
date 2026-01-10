@@ -8,7 +8,7 @@
 
 import { eq, and } from "drizzle-orm";
 import { getDb } from "../db";
-import { accounts, journalEntries, journalEntryLines, fiscalPeriods } from "../../drizzle/schemas/accounting";
+import { accounts, journalEntries, journalEntryLines, fiscalPeriods } from "../../drizzle/schema";
 import { logger } from "../utils/logger";
 
 // ============================================
@@ -296,6 +296,193 @@ export class AutoJournalEngine {
    * عند استلام دفعة
    * مدين: نقد/بنك | دائن: العملاء
    */
+  /**
+   * معالجة شحن عداد STS
+   */
+  /**
+   * عند شحن عداد STS
+   * مدين: نقد/بنك | دائن: إيراد دفع مسبق
+   */
+  static async onSTSRecharge(recharge: {
+    id: number;
+    businessId: number;
+    branchId?: number;
+    customerId: number;
+    meterId: number;
+    amount: number;
+    kwhGenerated?: number;
+    bankId?: number;
+    rechargeDate: Date;
+    createdBy: number;
+  }): Promise<number> {
+    try {
+      const periodId = await this.getCurrentPeriod(recharge.businessId);
+
+      const bankAccountId = recharge.bankId
+        ? await this.getAccountByCode(recharge.businessId, `111${recharge.bankId}`)
+        : await this.getAccountByCode(recharge.businessId, "1110"); // بنك افتراضي
+
+      const prepaidRevenueAccountId = await this.getAccountByCode(recharge.businessId, "4101"); // إيراد دفع مسبق
+
+      if (!bankAccountId || !prepaidRevenueAccountId) {
+        throw new Error("الحسابات المحاسبية غير موجودة");
+      }
+
+      const entryId = await this.createJournalEntry({
+        businessId: recharge.businessId,
+        branchId: recharge.branchId,
+        entryDate: recharge.rechargeDate,
+        periodId,
+        type: "receipt",
+        sourceModule: "sts",
+        sourceId: recharge.id,
+        description: `شحن STS - عداد #${recharge.meterId}${recharge.kwhGenerated ? ` - ${recharge.kwhGenerated.toFixed(2)} KWH` : ""}`,
+        lines: [
+          {
+            accountId: bankAccountId,
+            debit: recharge.amount.toFixed(2),
+            description: `شحن STS - عداد #${recharge.meterId}`,
+          },
+          {
+            accountId: prepaidRevenueAccountId,
+            credit: recharge.amount.toFixed(2),
+            description: `إيراد دفع مسبق - عداد #${recharge.meterId}${recharge.kwhGenerated ? ` (${recharge.kwhGenerated.toFixed(2)} KWH)` : ""}`,
+          },
+        ],
+        createdBy: recharge.createdBy,
+      });
+
+      return entryId;
+    } catch (error: any) {
+      logger.error("Failed to create journal entry for STS recharge", {
+        error: error.message,
+        rechargeId: recharge.id,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * عند شحن رصيد ACREL (Prepaid)
+   * مدين: نقد/بنك | دائن: إيراد دفع مسبق
+   */
+  static async onAcrelRecharge(recharge: {
+    id: number;
+    businessId: number;
+    branchId?: number;
+    customerId: number;
+    meterId: number;
+    amount: number;
+    bankId?: number;
+    rechargeDate: Date;
+    createdBy: number;
+  }): Promise<number> {
+    try {
+      const periodId = await this.getCurrentPeriod(recharge.businessId);
+
+      const bankAccountId = recharge.bankId
+        ? await this.getAccountByCode(recharge.businessId, `111${recharge.bankId}`)
+        : await this.getAccountByCode(recharge.businessId, "1110"); // بنك افتراضي
+
+      const prepaidRevenueAccountId = await this.getAccountByCode(recharge.businessId, "4101"); // إيراد دفع مسبق
+
+      if (!bankAccountId || !prepaidRevenueAccountId) {
+        throw new Error("الحسابات المحاسبية غير موجودة");
+      }
+
+      const entryId = await this.createJournalEntry({
+        businessId: recharge.businessId,
+        branchId: recharge.branchId,
+        entryDate: recharge.rechargeDate,
+        periodId,
+        type: "receipt",
+        sourceModule: "acrel",
+        sourceId: recharge.id,
+        description: `شحن ACREL - عداد #${recharge.meterId}`,
+        lines: [
+          {
+            accountId: bankAccountId,
+            debit: recharge.amount.toFixed(2),
+            description: `شحن ACREL - عداد #${recharge.meterId}`,
+          },
+          {
+            accountId: prepaidRevenueAccountId,
+            credit: recharge.amount.toFixed(2),
+            description: `إيراد دفع مسبق - عداد #${recharge.meterId}`,
+          },
+        ],
+        createdBy: recharge.createdBy,
+      });
+
+      return entryId;
+    } catch (error: any) {
+      logger.error("Failed to create journal entry for ACREL recharge", {
+        error: error.message,
+        rechargeId: recharge.id,
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * عند الوصول لحد الائتمان (Credit Limit Reached)
+   * مدين: مصروفات (خسارة محتملة) | دائن: مخصصات
+   */
+  static async onCreditLimitReached(data: {
+    meterId: number;
+    businessId: number;
+    branchId?: number;
+    customerId: number;
+    meterType: "acrel" | "sts";
+    creditLimit: number;
+    currentDebt: number;
+    disconnectedAt: Date;
+    createdBy: number;
+  }): Promise<number> {
+    try {
+      const periodId = await this.getCurrentPeriod(data.businessId);
+
+      const expenseAccountId = await this.getAccountByCode(data.businessId, "5100"); // مصروفات عامة
+      const provisionAccountId = await this.getAccountByCode(data.businessId, "2300"); // مخصصات
+
+      if (!expenseAccountId || !provisionAccountId) {
+        throw new Error("الحسابات المحاسبية غير موجودة");
+      }
+
+      const entryId = await this.createJournalEntry({
+        businessId: data.businessId,
+        branchId: data.branchId,
+        entryDate: data.disconnectedAt,
+        periodId,
+        type: "auto",
+        sourceModule: data.meterType,
+        sourceId: data.meterId,
+        description: `وصول لحد الائتمان - عداد #${data.meterId} - عميل #${data.customerId}`,
+        lines: [
+          {
+            accountId: expenseAccountId,
+            debit: data.currentDebt.toFixed(2),
+            description: `خسارة محتملة - وصول لحد الائتمان`,
+          },
+          {
+            accountId: provisionAccountId,
+            credit: data.currentDebt.toFixed(2),
+            description: `مخصص للديون المشكوك في تحصيلها`,
+          },
+        ],
+        createdBy: data.createdBy,
+      });
+
+      return entryId;
+    } catch (error: any) {
+      logger.error("Failed to create journal entry for credit limit reached", {
+        error: error.message,
+        meterId: data.meterId,
+      });
+      throw error;
+    }
+  }
+
   static async onPaymentReceived(payment: {
     id: number;
     businessId: number;
@@ -366,67 +553,6 @@ export class AutoJournalEngine {
     }
   }
 
-  /**
-   * عند شحن STS
-   * مدين: بنك | دائن: إيراد دفع مسبق
-   */
-  static async onSTSRecharge(recharge: {
-    id: number;
-    businessId: number;
-    branchId?: number;
-    customerId: number;
-    meterId: number;
-    amount: number;
-    bankId?: number;
-    rechargeDate: Date;
-    createdBy: number;
-  }): Promise<number> {
-    try {
-      const periodId = await this.getCurrentPeriod(recharge.businessId);
-
-      const bankAccountId = recharge.bankId
-        ? await this.getAccountByCode(recharge.businessId, `111${recharge.bankId}`)
-        : await this.getAccountByCode(recharge.businessId, "1110"); // بنك افتراضي
-
-      const prepaidRevenueAccountId = await this.getAccountByCode(recharge.businessId, "4101"); // إيراد دفع مسبق
-
-      if (!bankAccountId || !prepaidRevenueAccountId) {
-        throw new Error("الحسابات المحاسبية غير موجودة");
-      }
-
-      const entryId = await this.createJournalEntry({
-        businessId: recharge.businessId,
-        branchId: recharge.branchId,
-        entryDate: recharge.rechargeDate,
-        periodId,
-        type: "receipt",
-        sourceModule: "sts",
-        sourceId: recharge.id,
-        description: `شحن STS - عداد #${recharge.meterId}`,
-        lines: [
-          {
-            accountId: bankAccountId,
-            debit: recharge.amount.toFixed(2),
-            description: `شحن STS - عداد #${recharge.meterId}`,
-          },
-          {
-            accountId: prepaidRevenueAccountId,
-            credit: recharge.amount.toFixed(2),
-            description: `إيراد دفع مسبق - عداد #${recharge.meterId}`,
-          },
-        ],
-        createdBy: recharge.createdBy,
-      });
-
-      return entryId;
-    } catch (error: any) {
-      logger.error("Failed to create journal entry for STS recharge", {
-        error: error.message,
-        rechargeId: recharge.id,
-      });
-      throw error;
-    }
-  }
 
   /**
    * عند استلام بضائع (GRN)
@@ -803,4 +929,5 @@ export class AutoJournalEngine {
     }
   }
 }
+
 

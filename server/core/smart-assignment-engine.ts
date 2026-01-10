@@ -7,8 +7,8 @@
 
 import { eq, and, sql } from "drizzle-orm";
 import { getDb } from "../db";
-import { fieldWorkers, fieldOperations, workerLocations } from "../../drizzle/schemas/field-ops";
-import { workOrders } from "../../drizzle/schemas/maintenance";
+import { fieldWorkers, fieldOperations, workerLocations } from "../../drizzle/schema";
+import { workOrders } from "../../drizzle/schema";
 import { logger } from "../utils/logger";
 
 // ============================================
@@ -171,11 +171,44 @@ export class SmartAssignmentEngine {
         .from(fieldWorkers)
         .where(and(...conditions));
 
-      // فلترة حسب المهارات المطلوبة
+      // ✅ فلترة حسب المهارات المطلوبة
       let filteredWorkers = workers;
       if (requiredSkills && requiredSkills.length > 0) {
-        // TODO: تنفيذ فلترة حسب المهارات من حقل skills (JSON)
-        // حالياً نرجع جميع العاملين المتاحين
+        // جلب جميع العاملين مع مهاراتهم
+        const workersWithSkills = await db
+          .select({
+            id: fieldWorkers.id,
+            skills: fieldWorkers.skills,
+          })
+          .from(fieldWorkers)
+          .where(and(
+            eq(fieldWorkers.businessId, businessId),
+            eq(fieldWorkers.status, "available"),
+            eq(fieldWorkers.isActive, true)
+          ));
+
+        // فلترة العاملين الذين لديهم المهارات المطلوبة
+        filteredWorkers = workers.filter((worker) => {
+          const workerWithSkills = workersWithSkills.find((w) => w.id === worker.workerId);
+          if (!workerWithSkills || !workerWithSkills.skills) {
+            return false; // لا مهارات = لا يتطابق
+          }
+
+          const workerSkills = typeof workerWithSkills.skills === 'string' 
+            ? JSON.parse(workerWithSkills.skills) 
+            : workerWithSkills.skills;
+          
+          // التحقق من وجود جميع المهارات المطلوبة
+          const skillsArray = Array.isArray(workerSkills) ? workerSkills : 
+                             (typeof workerSkills === 'object' ? Object.keys(workerSkills) : []);
+          
+          return requiredSkills.every((requiredSkill) =>
+            skillsArray.some((skill: any) => 
+              (typeof skill === 'string' ? skill.toLowerCase() : String(skill).toLowerCase())
+                .includes(requiredSkill.toLowerCase())
+            )
+          );
+        });
       }
 
       // فلترة العاملين الذين لديهم موقع GPS
@@ -387,4 +420,6 @@ export class SmartAssignmentEngine {
     }
   }
 }
+
+
 

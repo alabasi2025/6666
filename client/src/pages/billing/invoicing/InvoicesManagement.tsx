@@ -14,7 +14,12 @@ import { Search, RefreshCw, FileText, CheckCircle, Printer, Eye, Download, Dolla
 interface Invoice {
   id: number;
   invoiceNumber: string;
+  invoiceNo?: string;
   customerId: number;
+  subscriptionAccountId?: number;
+  subscriptionAccountNumber?: string;
+  subscriptionAccountName?: string;
+  subscriptionAccountType?: 'sts' | 'iot' | 'regular' | 'government_support';
   customerName: string;
   accountNumber: string;
   meterId: number;
@@ -29,9 +34,11 @@ interface Invoice {
   totalAmount: string;
   paidAmount: string;
   remainingAmount: string;
+  balanceDue?: string;
   status: string;
   dueDate: string;
   issueDate: string;
+  invoiceDate?: string;
   isPaid: boolean;
   isApproved: boolean;
 }
@@ -99,16 +106,18 @@ export default function InvoicesManagement() {
   };
 
   const filteredInvoices = invoices.filter((invoice) => {
+    const invoiceNumber = (invoice as any).invoiceNumber || (invoice as any).invoiceNo || '';
     const matchesSearch =
-      (invoice as any).invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (invoice as any).customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (invoice as any).accountNumber.toLowerCase().includes(searchTerm.toLowerCase());
+      invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice as any).customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice as any).accountNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (invoice as any).subscriptionAccountNumber?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || 
-      (filterStatus === "paid" && (invoice as any).isPaid) ||
-      (filterStatus === "unpaid" && !(invoice as any).isPaid) ||
-      (filterStatus === "approved" && (invoice as any).isApproved) ||
-      (filterStatus === "pending" && !(invoice as any).isApproved);
-    const matchesPeriod = filterPeriod === "all" || (invoice as any).billingPeriodId.toString() === filterPeriod;
+      (filterStatus === "paid" && ((invoice as any).isPaid || (invoice as any).status === 'paid')) ||
+      (filterStatus === "unpaid" && !(invoice as any).isPaid && (invoice as any).status !== 'paid') ||
+      (filterStatus === "approved" && ((invoice as any).isApproved || (invoice as any).status === 'approved')) ||
+      (filterStatus === "pending" && !(invoice as any).isApproved && (invoice as any).status === 'draft');
+    const matchesPeriod = filterPeriod === "all" || (invoice as any).billingPeriodId?.toString() === filterPeriod;
     return matchesSearch && matchesStatus && matchesPeriod;
   });
 
@@ -241,6 +250,7 @@ export default function InvoicesManagement() {
                 </TableHead>
                 <TableHead>رقم الفاتورة</TableHead>
                 <TableHead>العميل</TableHead>
+                <TableHead>حساب المشترك</TableHead>
                 <TableHead>العداد</TableHead>
                 <TableHead>الفترة</TableHead>
                 <TableHead>الاستهلاك</TableHead>
@@ -254,11 +264,11 @@ export default function InvoicesManagement() {
             <TableBody>
               {invoicesQuery.isLoading ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8">جاري التحميل...</TableCell>
+                  <TableCell colSpan={12} className="text-center py-8">جاري التحميل...</TableCell>
                 </TableRow>
               ) : filteredInvoices.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-8">لا توجد فواتير</TableCell>
+                  <TableCell colSpan={12} className="text-center py-8">لا توجد فواتير</TableCell>
                 </TableRow>
               ) : (
                 filteredInvoices.map((invoice) => (
@@ -270,12 +280,33 @@ export default function InvoicesManagement() {
                         disabled={(invoice as any).isApproved}
                       />
                     </TableCell>
-                    <TableCell className="font-medium">{(invoice as any).invoiceNumber}</TableCell>
+                    <TableCell className="font-medium">{(invoice as any).invoiceNumber || (invoice as any).invoiceNo}</TableCell>
                     <TableCell>
                       <div>
                         <div className="font-medium">{(invoice as any).customerName}</div>
                         <div className="text-xs text-muted-foreground">{(invoice as any).accountNumber}</div>
                       </div>
+                    </TableCell>
+                    <TableCell>
+                      {(invoice as any).subscriptionAccountNumber ? (
+                        <div>
+                          <div className="font-medium text-sm">{(invoice as any).subscriptionAccountNumber}</div>
+                          {(invoice as any).subscriptionAccountName && (
+                            <div className="text-xs text-muted-foreground">{(invoice as any).subscriptionAccountName}</div>
+                          )}
+                          {(invoice as any).subscriptionAccountType && (
+                            <Badge variant="outline" className="text-xs mt-1">
+                              {(invoice as any).subscriptionAccountType === 'sts' ? 'STS' : 
+                               (invoice as any).subscriptionAccountType === 'iot' ? 'IoT' : 
+                               (invoice as any).subscriptionAccountType === 'regular' ? 'عادي' : 
+                               (invoice as any).subscriptionAccountType === 'government_support' ? 'دعم حكومي' : 
+                               (invoice as any).subscriptionAccountType}
+                            </Badge>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">-</span>
+                      )}
                     </TableCell>
                     <TableCell>{(invoice as any).meterNumber}</TableCell>
                     <TableCell>{(invoice as any).billingPeriodName}</TableCell>
@@ -327,12 +358,34 @@ export default function InvoicesManagement() {
                 </div>
               </div>
 
-              {/* معلومات العميل */}
+              {/* معلومات العميل وحساب المشترك */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-muted-foreground">العميل</Label>
                   <p className="font-semibold">{selectedInvoice.customerName}</p>
                   <p className="text-sm text-muted-foreground">رقم الحساب: {selectedInvoice.accountNumber}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">حساب المشترك</Label>
+                  {(selectedInvoice as any).subscriptionAccountNumber ? (
+                    <>
+                      <p className="font-semibold">{(selectedInvoice as any).subscriptionAccountNumber}</p>
+                      {(selectedInvoice as any).subscriptionAccountName && (
+                        <p className="text-sm text-muted-foreground">{(selectedInvoice as any).subscriptionAccountName}</p>
+                      )}
+                      {(selectedInvoice as any).subscriptionAccountType && (
+                        <Badge variant="outline" className="mt-1">
+                          {(selectedInvoice as any).subscriptionAccountType === 'sts' ? 'STS' : 
+                           (selectedInvoice as any).subscriptionAccountType === 'iot' ? 'IoT' : 
+                           (selectedInvoice as any).subscriptionAccountType === 'regular' ? 'عادي' : 
+                           (selectedInvoice as any).subscriptionAccountType === 'government_support' ? 'دعم حكومي' : 
+                           (selectedInvoice as any).subscriptionAccountType}
+                        </Badge>
+                      )}
+                    </>
+                  ) : (
+                    <p className="text-muted-foreground text-sm">-</p>
+                  )}
                 </div>
                 <div>
                   <Label className="text-muted-foreground">العداد</Label>
@@ -379,7 +432,7 @@ export default function InvoicesManagement() {
                 </div>
                 <div className="flex justify-between text-red-600 font-bold">
                   <span>المتبقي</span>
-                  <span>{parseFloat(selectedInvoice.remainingAmount).toLocaleString()} ر.س</span>
+                  <span>{parseFloat(selectedInvoice.remainingAmount || (selectedInvoice as any).balanceDue || "0").toLocaleString()} ر.س</span>
                 </div>
               </div>
 
@@ -388,7 +441,7 @@ export default function InvoicesManagement() {
                   <Printer className="h-4 w-4 ml-2" />
                   طباعة
                 </Button>
-                {selectedInvoice.isApproved && !selectedInvoice.isPaid && (
+                {((selectedInvoice as any).isApproved || (selectedInvoice as any).status === 'approved') && !((selectedInvoice as any).isPaid || (selectedInvoice as any).status === 'paid') && (
                   <Button>
                     <DollarSign className="h-4 w-4 ml-2" />
                     تحصيل

@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit, Trash2, Search, RefreshCw, FileText, CheckCircle, XCircle, Upload, Download, Eye } from "lucide-react";
+import { Edit, Trash2, Search, RefreshCw, FileText, CheckCircle, XCircle, Upload, Download, Eye, Zap, Loader2 } from "lucide-react";
 
 interface MeterReading {
   id: number;
@@ -137,6 +137,51 @@ export default function MeterReadingsManagement() {
       readingType: "manual",
       notes: "",
     });
+  };
+
+  const [pullingReading, setPullingReading] = useState<number | null>(null);
+
+  const handlePullAcrelReading = async (meterId: number, meterNumber: string) => {
+    setPullingReading(meterId);
+    try {
+      // البحث عن عداد ACREL المرتبط
+      const meter = (metersQuery.data as any)?.find((m: any) => m.id === meterId);
+      if (!meter || meter.externalIntegrationType !== "acrel" || !meter.acrelMeterId) {
+        alert("هذا العداد غير مرتبط بـ ACREL");
+        setPullingReading(null);
+        return;
+      }
+
+      // سحب القراءة من ACREL
+      const reading = await trpc.developer.integrations.acrel.meters.getReading.query({
+        meterId: parseInt(meter.acrelMeterId),
+      });
+
+      if (reading) {
+        // حفظ القراءة في النظام
+        const activePeriods = periodsQuery.data?.filter((p: any) => p.status === "reading_phase" || p.status === "active") || [];
+        const currentPeriod = activePeriods[0]; // استخدام الفترة النشطة
+        if (currentPeriod) {
+          await createReadingMutation.mutateAsync({
+            meterId,
+            billingPeriodId: currentPeriod.id,
+            currentReading: (reading as any).energy?.toString() || (reading as any).totalEnergy?.toString() || "0",
+            readingDate: new Date().toISOString().split("T")[0],
+            readingType: "automatic",
+            notes: `قراءة تلقائية من ACREL - ${new Date().toLocaleString("ar-SA")}`,
+          } as any);
+          readingsQuery.refetch();
+          alert("تم سحب القراءة من ACREL بنجاح");
+        } else {
+          alert("لا توجد فترة فوترة نشطة");
+        }
+      }
+    } catch (error: any) {
+      console.error("Error pulling ACREL reading:", error);
+      alert("فشل في سحب القراءة: " + (error.message || "خطأ غير معروف"));
+    } finally {
+      setPullingReading(null);
+    }
   };
 
   const toggleSelection = (id: number) => {
@@ -342,6 +387,29 @@ export default function MeterReadingsManagement() {
                             <Button variant="ghost" size="icon" onClick={() => setSelectedReading(reading)} title="عرض">
                               <Eye className="h-4 w-4" />
                             </Button>
+                            {/* زر سحب قراءة ACREL - يظهر فقط للعدادات المرتبطة بـ ACREL */}
+                            {(() => {
+                              const meter = (metersQuery.data as any)?.find((m: any) => m.id === (reading as any).meterId);
+                              if (meter && meter.externalIntegrationType === "acrel" && !(reading as any).isApproved) {
+                                return (
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handlePullAcrelReading((reading as any).meterId, (reading as any).meterNumber)}
+                                    title="سحب قراءة من ACREL"
+                                    disabled={pullingReading === (reading as any).meterId}
+                                    className="text-blue-500"
+                                  >
+                                    {pullingReading === (reading as any).meterId ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Zap className="h-4 w-4" />
+                                    )}
+                                  </Button>
+                                );
+                              }
+                              return null;
+                            })()}
                             {!(reading as any).isApproved && (
                               <>
                                 <Button variant="ghost" size="icon" onClick={() => setEditingReading(reading)} title="تعديل">
@@ -383,12 +451,50 @@ export default function MeterReadingsManagement() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>العداد *</Label>
+                    <div className="flex items-center justify-between">
+                      <Label>العداد *</Label>
+                      {(() => {
+                        const selectedMeter = metersQuery.data?.find((m: any) => m.id.toString() === (formData as any).meterId);
+                        if (selectedMeter && (selectedMeter as any).externalIntegrationType === "acrel") {
+                          return (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePullAcrelReading(parseInt((formData as any).meterId), (selectedMeter as any).meterNumber)}
+                              disabled={pullingReading === parseInt((formData as any).meterId)}
+                              className="text-xs"
+                            >
+                              {pullingReading === parseInt((formData as any).meterId) ? (
+                                <>
+                                  <Loader2 className="h-3 w-3 ml-1 animate-spin" />
+                                  جاري السحب...
+                                </>
+                              ) : (
+                                <>
+                                  <Zap className="h-3 w-3 ml-1" />
+                                  سحب من ACREL
+                                </>
+                              )}
+                            </Button>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
                     <Select value={(formData as any).meterId} onValueChange={(v) => setFormData({ ...formData, meterId: v })}>
                       <SelectTrigger><SelectValue placeholder="اختر العداد" /></SelectTrigger>
                       <SelectContent>
                         {metersQuery.data?.map(m => (
-                          <SelectItem key={m.id} value={m.id.toString()}>{m.meterNumber} - {m.customerName}</SelectItem>
+                          <SelectItem key={m.id} value={m.id.toString()}>
+                            {m.meterNumber} - {m.customerName}
+                            {(m as any).externalIntegrationType === "acrel" && (
+                              <span className="text-xs text-blue-500 mr-1"> (ACREL)</span>
+                            )}
+                            {(m as any).externalIntegrationType === "sts" && (
+                              <span className="text-xs text-green-500 mr-1"> (STS)</span>
+                            )}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>

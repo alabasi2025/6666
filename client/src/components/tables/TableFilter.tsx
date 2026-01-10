@@ -442,7 +442,7 @@ export function QuickFilter({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">الكل</SelectItem>
+          <SelectItem value="all">الكل</SelectItem>
           {options.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               {opt.label}

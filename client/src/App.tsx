@@ -4,6 +4,7 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { BusinessProvider } from "./contexts/BusinessContext";
 import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
@@ -40,19 +41,21 @@ function App() {
   return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
-        <TooltipProvider>
-          <Toaster 
-            position="top-center"
-            toastOptions={{
-              style: {
-                background: 'oklch(0.17 0.02 260)',
-                border: '1px solid oklch(0.28 0.02 260)',
-                color: 'oklch(0.95 0.01 260)',
-              },
-            }}
-          />
-          <Router />
-        </TooltipProvider>
+        <BusinessProvider defaultBusinessId={1}>
+          <TooltipProvider>
+            <Toaster 
+              position="top-center"
+              toastOptions={{
+                style: {
+                  background: 'oklch(0.17 0.02 260)',
+                  border: '1px solid oklch(0.28 0.02 260)',
+                  color: 'oklch(0.95 0.01 260)',
+                },
+              }}
+            />
+            <Router />
+          </TooltipProvider>
+        </BusinessProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

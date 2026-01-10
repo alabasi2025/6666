@@ -80,6 +80,92 @@ export const NotificationTemplates: Record<string, NotificationTemplate> = {
     channels: ['in-app', 'email', 'push'],
     variables: ['documentType', 'documentNumber'],
   },
+
+  // ============================================
+  // ACREL Integration Notifications
+  // ============================================
+  ACREL_READING_RECEIVED: {
+    id: 'acrel_reading_received',
+    name: 'قراءة ACREL مستلمة',
+    titleTemplate: 'ACREL Reading Received',
+    titleTemplateAr: 'تم استلام قراءة ACREL',
+    messageTemplate: 'New reading received from ACREL meter #{{meterNumber}}. Energy: {{energy}} kWh',
+    messageTemplateAr: 'تم استلام قراءة جديدة من عداد ACREL #{{meterNumber}}. الطاقة: {{energy}} كيلووات ساعة',
+    channels: ['in-app', 'email'],
+    variables: ['meterNumber', 'energy'],
+  },
+
+  ACREL_METER_OFFLINE: {
+    id: 'acrel_meter_offline',
+    name: 'عداد ACREL غير متصل',
+    titleTemplate: 'ACREL Meter Offline',
+    titleTemplateAr: 'عداد ACREL غير متصل',
+    messageTemplate: 'ACREL meter #{{meterNumber}} is offline. Last seen: {{lastSeen}}',
+    messageTemplateAr: 'عداد ACREL #{{meterNumber}} غير متصل. آخر ظهور: {{lastSeen}}',
+    channels: ['in-app', 'email', 'sms'],
+    variables: ['meterNumber', 'lastSeen'],
+  },
+
+  ACREL_RECHARGE_SUCCESS: {
+    id: 'acrel_recharge_success',
+    name: 'شحن ACREL ناجح',
+    titleTemplate: 'ACREL Recharge Successful',
+    titleTemplateAr: 'تم شحن عداد ACREL بنجاح',
+    messageTemplate: 'Successfully recharged ACREL meter #{{meterNumber}} with {{amount}} SAR',
+    messageTemplateAr: 'تم شحن عداد ACREL #{{meterNumber}} بمبلغ {{amount}} ريال بنجاح',
+    channels: ['in-app', 'email'],
+    variables: ['meterNumber', 'amount'],
+  },
+
+  // ============================================
+  // STS Integration Notifications
+  // ============================================
+  STS_RECHARGE_SUCCESS: {
+    id: 'sts_recharge_success',
+    name: 'شحن STS ناجح',
+    titleTemplate: 'STS Recharge Successful',
+    titleTemplateAr: 'تم شحن عداد STS بنجاح',
+    messageTemplate: 'Successfully recharged STS meter #{{meterNumber}}. Generated {{kwh}} kWh',
+    messageTemplateAr: 'تم شحن عداد STS #{{meterNumber}} بنجاح. تم توليد {{kwh}} كيلووات ساعة',
+    channels: ['in-app', 'email'],
+    variables: ['meterNumber', 'kwh'],
+  },
+
+  STS_LOW_BALANCE: {
+    id: 'sts_low_balance',
+    name: 'رصيد STS منخفض',
+    titleTemplate: 'STS Low Balance',
+    titleTemplateAr: 'رصيد STS منخفض',
+    messageTemplate: 'STS meter #{{meterNumber}} has low balance. Remaining: {{remainingKwh}} kWh',
+    messageTemplateAr: 'عداد STS #{{meterNumber}} لديه رصيد منخفض. المتبقي: {{remainingKwh}} كيلووات ساعة',
+    channels: ['in-app', 'email', 'sms'],
+    variables: ['meterNumber', 'remainingKwh'],
+  },
+
+  // ============================================
+  // Credit Limit Notifications
+  // ============================================
+  CREDIT_LIMIT_WARNING: {
+    id: 'credit_limit_warning',
+    name: 'تحذير اقتراب حد الائتمان',
+    titleTemplate: 'Credit Limit Warning',
+    titleTemplateAr: 'تحذير: اقتراب حد الائتمان',
+    messageTemplate: 'Meter #{{meterNumber}} is approaching credit limit. Current debt: {{currentDebt}} SAR, Limit: {{creditLimit}} SAR',
+    messageTemplateAr: 'العداد #{{meterNumber}} يقترب من حد الائتمان. الدين الحالي: {{currentDebt}} ريال، الحد: {{creditLimit}} ريال',
+    channels: ['in-app', 'email', 'sms'],
+    variables: ['meterNumber', 'currentDebt', 'creditLimit'],
+  },
+
+  CREDIT_LIMIT_REACHED: {
+    id: 'credit_limit_reached',
+    name: 'تم الوصول لحد الائتمان',
+    titleTemplate: 'Credit Limit Reached',
+    titleTemplateAr: 'تم الوصول لحد الائتمان',
+    messageTemplate: 'Meter #{{meterNumber}} has reached credit limit. Meter will be disconnected automatically.',
+    messageTemplateAr: 'العداد #{{meterNumber}} وصل لحد الائتمان. سيتم إطفاء العداد تلقائياً.',
+    channels: ['in-app', 'email', 'sms'],
+    variables: ['meterNumber'],
+  },
 };
 
 export function getTemplate(templateId: string): NotificationTemplate | undefined {

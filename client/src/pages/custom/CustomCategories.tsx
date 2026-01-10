@@ -734,8 +734,8 @@ export default function CustomCategories({ businessId, subSystemId }: CustomCate
                     <FormItem>
                       <FormLabel>التصنيف الأب (اختياري)</FormLabel>
                       <Select 
-                        onValueChange={(value) => field.onChange(value ? parseInt(value) : null)} 
-                        value={field.value?.toString() || ""}
+                        onValueChange={(value) => field.onChange(value && value !== "none" ? parseInt(value) : null)} 
+                        value={field.value?.toString() || "none"}
                       >
                         <FormControl>
                           <SelectTrigger className="bg-slate-900/50 border-slate-600">
@@ -743,7 +743,7 @@ export default function CustomCategories({ businessId, subSystemId }: CustomCate
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="">بدون تصنيف أب (رئيسي)</SelectItem>
+                          <SelectItem value="none">بدون تصنيف أب (رئيسي)</SelectItem>
                           {parentCategories.map((cat: any) => (
                             <SelectItem key={cat.id} value={cat.id.toString()}>
                               {cat.code} - {cat.nameAr}

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useBusinessId } from "@/contexts/BusinessContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -95,10 +96,10 @@ export default function STSManagement() {
     notes: "",
   });
 
-  const businessId = 1; // TODO: Get from context
+  const businessId = useBusinessId();
 
   // Fetch STS meters
-  const { data, isLoading, refetch } = trpc.sts.meters.list.useQuery({
+  const { data, isLoading, refetch } = trpc.developer.integrations.sts.meters.list.useQuery({
     businessId,
     status: statusFilter !== "all" ? statusFilter as any : undefined,
     search: search || undefined,
@@ -111,7 +112,7 @@ export default function STSManagement() {
   });
 
   // Create mutation
-  const createMutation = trpc.sts.meters.create.useMutation({
+  const createMutation = trpc.developer.integrations.sts.meters.create.useMutation({
     onSuccess: () => {
       toast.success("تم إنشاء عداد STS بنجاح");
       setIsCreateDialogOpen(false);
@@ -124,7 +125,7 @@ export default function STSManagement() {
   });
 
   // Link mutation
-  const linkMutation = trpc.sts.meters.linkToCustomer.useMutation({
+  const linkMutation = trpc.developer.integrations.sts.meters.linkToCustomer.useMutation({
     onSuccess: () => {
       toast.success("تم ربط العداد بنجاح");
       setIsLinkDialogOpen(false);
@@ -226,7 +227,7 @@ export default function STSManagement() {
                       <SelectValue placeholder="اختر العميل" />
                     </SelectTrigger>
                     <SelectContent>
-                      {customers?.map((customer: any) => (
+                      {(customers?.data || []).map((customer: any) => (
                         <SelectItem key={customer.id} value={customer.id.toString()}>
                           {customer.nameAr || customer.fullName}
                         </SelectItem>
@@ -341,8 +342,9 @@ export default function STSManagement() {
                 <TableRow>
                   <TableHead>رقم العداد STS</TableHead>
                   <TableHead>العميل</TableHead>
-                  <TableHead>الرقم التسلسلي</TableHead>
-                  <TableHead>الرصيد</TableHead>
+                  <TableHead>نوع الدفع</TableHead>
+                  <TableHead>الرصيد/الكيلوهات</TableHead>
+                  <TableHead>حد الائتمان</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>الإجراءات</TableHead>
                 </TableRow>
@@ -352,8 +354,36 @@ export default function STSManagement() {
                   <TableRow key={meter.id}>
                     <TableCell className="font-medium">{meter.sts_meter_number}</TableCell>
                     <TableCell>{meter.customer_name || "غير مرتبط"}</TableCell>
-                    <TableCell>{meter.serial_number || "-"}</TableCell>
-                    <TableCell>{parseFloat(meter.current_balance || 0).toFixed(2)} ر.س</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">
+                        {meter.payment_mode === "postpaid" && "دفع آجل"}
+                        {meter.payment_mode === "prepaid" && "دفع مسبق"}
+                        {meter.payment_mode === "credit" && "ائتمان"}
+                        {!meter.payment_mode && "غير محدد"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {meter.payment_mode === "prepaid" ? (
+                        <span className="text-primary font-medium">
+                          {parseFloat(meter.remaining_kwh || 0).toFixed(2)} KWH
+                        </span>
+                      ) : meter.payment_mode === "credit" ? (
+                        <span className="text-red-500 font-medium">
+                          {parseFloat(meter.current_debt || 0).toFixed(2)} ر.س
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {meter.payment_mode === "credit" ? (
+                        <span className="text-sm">
+                          {parseFloat(meter.credit_limit || 0).toFixed(2)} ر.س
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={
@@ -389,6 +419,14 @@ export default function STSManagement() {
                           onClick={() => setLocation(`/dashboard/sts/charging?meterId=${meter.id}`)}
                         >
                           شحن
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setLocation(`/dashboard/sts/meters/${meter.id}/payment-settings`)}
+                          title="إعدادات الدفع"
+                        >
+                          <CreditCard className="w-4 h-4" />
                         </Button>
                       </div>
                     </TableCell>

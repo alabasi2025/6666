@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useBusinessId } from "@/contexts/BusinessContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -43,11 +44,18 @@ const GOV_SUPPORT_DASHBOARD_INFO = {
 export default function GovernmentSupportDashboard() {
   const [location] = useLocation();
   const { toast } = useToast();
-  const businessId = 1; // TODO: Get from context
+  const businessId = useBusinessId();
 
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
+
+  // Determine current page based on location
+  const isCustomersPage = location.includes("/customers");
+  const isQuotasPage = location.includes("/quotas");
+  const isConsumptionPage = location.includes("/consumption");
+  const isReportsPage = location.includes("/reports");
+  const isDashboard = !isCustomersPage && !isQuotasPage && !isConsumptionPage && !isReportsPage;
 
   // Fetch monthly report
   const { data: monthlyReport, isLoading } = trpc.governmentSupport.reports.getMonthlyReport.useQuery({
@@ -63,8 +71,158 @@ export default function GovernmentSupportDashboard() {
     limit: 1,
   });
 
+  // Fetch customers list for customers page
+  const { data: customersList } = trpc.governmentSupport.customers.list.useQuery({
+    businessId,
+    page: 1,
+    limit: 50,
+  }, { enabled: isCustomersPage });
+
   const currentPageInfo = resolvePageInfo(location);
 
+  // Render different content based on current path
+  if (isCustomersPage) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Users className="w-8 h-8 text-blue-500" />
+              بيانات الدعم
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              إدارة بيانات الدعم للمشتركين
+            </p>
+          </div>
+          <EngineInfoDialog info={currentPageInfo} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>قائمة العملاء المدعومين</CardTitle>
+            <CardDescription>عرض وإدارة بيانات الدعم للعملاء</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {customersList?.data ? (
+              <div className="space-y-2">
+                {customersList.data.map((customer: any) => (
+                  <div key={customer.id} className="p-4 border rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">{customer.name_ar || customer.name}</h3>
+                        <p className="text-sm text-muted-foreground">رقم العداد: {customer.meter_number}</p>
+                      </div>
+                      <Badge>{customer.status === "active" ? "نشط" : "غير نشط"}</Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">لا توجد بيانات</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isQuotasPage) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Calendar className="w-8 h-8 text-blue-500" />
+              الحصص
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              إدارة الحصص الشهرية
+            </p>
+          </div>
+          <EngineInfoDialog info={currentPageInfo} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>الحصص الشهرية</CardTitle>
+            <CardDescription>إدارة الحصص المخصصة للعملاء</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">قيد التطوير - سيتم إضافة إدارة الحصص قريباً</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isConsumptionPage) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <TrendingUp className="w-8 h-8 text-blue-500" />
+              تتبع الاستهلاك
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              تتبع استهلاك الدعم
+            </p>
+          </div>
+          <EngineInfoDialog info={currentPageInfo} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>تتبع الاستهلاك المدعوم</CardTitle>
+            <CardDescription>مراقبة استهلاك الدعم للعملاء</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">قيد التطوير - سيتم إضافة تتبع الاستهلاك قريباً</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isReportsPage) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Shield className="w-8 h-8 text-blue-500" />
+              التقارير
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              تقارير صندوق الدعم
+            </p>
+          </div>
+          <EngineInfoDialog info={currentPageInfo} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>تقارير الدعم الحكومي</CardTitle>
+            <CardDescription>عرض التقارير الشهرية والسنوية</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {monthlyReport && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-muted-foreground">الاستهلاك المدعوم</p>
+                    <p className="text-2xl font-bold">{parseFloat(monthlyReport.supported_consumption || 0).toFixed(2)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">مبلغ الدعم</p>
+                    <p className="text-2xl font-bold">{parseFloat(monthlyReport.total_support_amount || 0).toFixed(2)} ر.س</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Default dashboard view
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">

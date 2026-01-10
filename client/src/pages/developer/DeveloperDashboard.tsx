@@ -5,7 +5,7 @@ import { trpc } from "@/lib/trpc";
 import { 
   Plug, Key, Bell, Brain, Activity, Webhook,
   CheckCircle, XCircle, Clock, AlertTriangle,
-  ArrowUpRight, RefreshCw, Settings
+  ArrowUpRight, RefreshCw, Settings, Zap, Smartphone
 } from "lucide-react";
 import { Link } from "wouter";
 
@@ -67,6 +67,26 @@ export default function DeveloperDashboard() {
       bgColor: "bg-cyan-500/10",
       link: "/dashboard/developer/ai/predictions",
     },
+    {
+      title: "عدادات ACREL",
+      value: stats?.acrelMetersOnline || 0,
+      total: stats?.acrelMetersTotal || 0,
+      icon: Zap,
+      color: "text-blue-500",
+      bgColor: "bg-blue-500/10",
+      link: "/dashboard/acrel/meters",
+      badge: stats?.acrelMetersOnline ? "متصل" : undefined,
+    },
+    {
+      title: "عدادات STS",
+      value: stats?.stsMetersActive || 0,
+      total: stats?.stsMetersTotal || 0,
+      icon: Smartphone,
+      color: "text-purple-500",
+      bgColor: "bg-purple-500/10",
+      link: "/dashboard/sts/meters",
+      badge: stats?.stsMetersActive ? "نشط" : undefined,
+    },
   ];
 
   const quickActions = [
@@ -91,7 +111,7 @@ export default function DeveloperDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {statCards.map((stat) => (
           <Link key={stat.title} href={stat.link}>
             <Card className="cursor-pointer hover:shadow-md transition-shadow">

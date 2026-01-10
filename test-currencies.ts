@@ -37,3 +37,8 @@ checkCurrencies().catch(console.error);
 
 
 
+
+
+
+
+

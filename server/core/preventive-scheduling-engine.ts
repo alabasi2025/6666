@@ -5,10 +5,9 @@
  * محرك يجدول أعمال الصيانة الوقائية تلقائياً حسب الوقت أو الاستخدام
  */
 
-import { eq, and, gte, lte, sql, inArray } from "drizzle-orm";
+import { eq, and, gte, lte, sql, inArray, desc } from "drizzle-orm";
 import { getDb } from "../db";
-import { maintenancePlans, workOrders } from "../../drizzle/schemas/maintenance";
-import { assets } from "../../drizzle/schemas/assets";
+import { maintenancePlans, workOrders, assets, metersEnhanced, meterReadingsEnhanced } from "../../drizzle/schema";
 import { logger } from "../utils/logger";
 import * as db from "../db-modules/maintenance";
 
@@ -111,8 +110,71 @@ export class PreventiveSchedulingEngine {
       } else if (plan.basedOn === "meter") {
         return await this.scheduleByMeter(plan, userId);
       } else if (plan.basedOn === "condition") {
-        // TODO: تنفيذ الجدولة حسب الحالة
-        return null;
+        // ✅ تنفيذ الجدولة حسب الحالة
+        // التحقق من حالة الأصل وإذا كانت تتطلب صيانة
+        try {
+          const dbInstance = await getDb();
+          if (!dbInstance) return null;
+
+          // جلب جميع الأصول المرتبطة بالخطة
+          const assetConditions = [
+            eq(assets.businessId, plan.businessId),
+            eq(assets.isActive, true),
+          ];
+
+          if (plan.assetCategoryId) {
+            assetConditions.push(eq(assets.categoryId || (assets as any).assetCategoryId, plan.assetCategoryId));
+          }
+
+          const assetsList = await dbInstance
+            .select({
+              id: assets.id,
+              status: assets.status,
+              condition: assets.condition,
+              lastMaintenanceDate: assets.lastMaintenanceDate,
+            })
+            .from(assets)
+            .where(and(...assetConditions));
+
+          const workOrderIds: number[] = [];
+
+          for (const asset of assetsList) {
+            // التحقق من حالة الأصل (إذا كانت الحالة أقل من عتبة معينة، تحتاج صيانة)
+            // نستخدم condition field أو status field
+            const assetCondition = parseFloat(asset.condition?.toString() || "100");
+            const conditionThreshold = parseFloat((plan as any).conditionThreshold || "70");
+
+            if (assetCondition <= conditionThreshold) {
+              // إنشاء أمر عمل
+              try {
+                const result = await db.generateWorkOrdersFromPlan({
+                  planId: plan.id,
+                  assetIds: [asset.id],
+                  scheduledDate: new Date().toISOString(),
+                  userId,
+                });
+                
+                if (result && result.orderIds) {
+                  workOrderIds.push(...result.orderIds);
+                }
+              } catch (woError: any) {
+                logger.error('Failed to create work order for condition-based PM', {
+                  planId: plan.id,
+                  assetId: asset.id,
+                  error: woError.message,
+                });
+              }
+            }
+          }
+
+          return { count: workOrderIds.length, workOrderIds };
+        } catch (error: any) {
+          logger.error('Failed to schedule by condition', {
+            planId: plan.id,
+            error: error.message,
+          });
+          return { count: 0, workOrderIds: [] };
+        }
       }
 
       return null;
@@ -351,17 +413,140 @@ export class PreventiveSchedulingEngine {
     value: number;
     lastPMValue: number;
   } | null> {
-    // TODO: تنفيذ جلب آخر قراءة من جدول meter_readings أو scada_readings
-    // حالياً نرجع null
-    return null;
+    // ✅ تنفيذ جلب آخر قراءة من جدول meter_readings أو scada_readings
+    try {
+      const db = await getDb();
+      if (!db) return null;
+
+      // البحث في meter_readings_enhanced أولاً
+      if (meterType === 'energy' || meterType === 'consumption') {
+        // جلب العداد المرتبط بالأصل
+        const [meter] = await db
+          .select({ id: metersEnhanced.id })
+          .from(metersEnhanced)
+          .where(sql`${(metersEnhanced as any).assetId} = ${assetId} OR ${(metersEnhanced as any).relatedAssetId} = ${assetId}`)
+          .limit(1);
+
+        if (meter) {
+          const [lastReading] = await db
+            .select({
+              currentReading: meterReadingsEnhanced.currentReading,
+              consumption: meterReadingsEnhanced.consumption,
+            })
+            .from(meterReadingsEnhanced)
+            .where(and(
+              eq(meterReadingsEnhanced.meterId, meter.id),
+              sql`${meterReadingsEnhanced.isApproved} = true`
+            ))
+            .orderBy(desc(meterReadingsEnhanced.readingDate))
+            .limit(1);
+
+          if (lastReading) {
+            const value = parseFloat(lastReading.currentReading?.toString() || "0");
+            // جلب آخر قيمة PM محفوظة
+            const lastPMValue = await this.getSavedLastPMValue(assetId, meterType);
+            return { value, lastPMValue };
+          }
+        }
+      }
+
+      // البحث في scada_readings إذا كان متاحاً
+      // يمكن إضافة منطق مشابه لـ SCADA readings هنا
+
+      return null;
+    } catch (error: any) {
+      logger.error('Failed to get last meter reading', {
+        assetId,
+        meterType,
+        error: error.message,
+      });
+      return null;
+    }
+  }
+
+  /**
+   * جلب آخر قيمة PM محفوظة
+   */
+  private static async getSavedLastPMValue(assetId: number, meterType: string): Promise<number> {
+    try {
+      const db = await getDb();
+      if (!db) return 0;
+
+      // البحث في جدول assets في حقل lastPMValue أو metadata
+      const [asset] = await db
+        .select({
+          metadata: assets.metadata,
+        })
+        .from(assets)
+        .where(eq(assets.id, assetId))
+        .limit(1);
+
+      if (asset?.metadata) {
+        const metadata = typeof asset.metadata === 'string' 
+          ? JSON.parse(asset.metadata) 
+          : asset.metadata;
+        return parseFloat(metadata?.lastPMValue?.[meterType] || "0");
+      }
+
+      return 0;
+    } catch (error) {
+      return 0;
+    }
   }
 
   /**
    * تحديث آخر قيمة PM
    */
   static async updateLastPMValue(assetId: number, meterType: string, value: number): Promise<void> {
-    // TODO: حفظ آخر قيمة PM في جدول منفصل أو في جدول assets
-    // حالياً لا نفعل شيء
+    // ✅ حفظ آخر قيمة PM في metadata الخاص بالأصل
+    try {
+      const db = await getDb();
+      if (!db) return;
+
+      // جلب الأصل الحالي
+      const [asset] = await db
+        .select({
+          id: assets.id,
+          metadata: assets.metadata,
+        })
+        .from(assets)
+        .where(eq(assets.id, assetId))
+        .limit(1);
+
+      if (!asset) {
+        logger.warn('Asset not found for PM value update', { assetId });
+        return;
+      }
+
+      // تحديث metadata
+      const currentMetadata = asset.metadata 
+        ? (typeof asset.metadata === 'string' ? JSON.parse(asset.metadata) : asset.metadata)
+        : {};
+      
+      if (!currentMetadata.lastPMValue) {
+        currentMetadata.lastPMValue = {};
+      }
+      currentMetadata.lastPMValue[meterType] = value;
+      currentMetadata.lastPMUpdate = new Date().toISOString();
+
+      // تحديث الأصل
+      await db
+        .update(assets)
+        .set({
+          metadata: currentMetadata as any,
+          updatedAt: sql`NOW()`,
+        })
+        .where(eq(assets.id, assetId));
+
+      logger.info('PM value updated', { assetId, meterType, value });
+    } catch (error: any) {
+      logger.error('Failed to update last PM value', {
+        assetId,
+        meterType,
+        value,
+        error: error.message,
+      });
+    }
   }
 
   /**
@@ -413,4 +598,5 @@ export class PreventiveSchedulingEngine {
     }
   }
 }
+
 

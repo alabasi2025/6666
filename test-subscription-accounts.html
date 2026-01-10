@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>اختبار صفحة حسابات المشترك</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f5f5f5;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .link {
+            display: block;
+            padding: 15px;
+            margin: 10px 0;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+        }
+        .link:hover {
+            background: #0056b3;
+        }
+        .info {
+            background: #e7f3ff;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            border-left: 4px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>🔍 اختبار صفحة حسابات المشترك</h1>
+        
+        <div class="info">
+            <strong>📝 التعليمات:</strong>
+            <ol>
+                <li>تأكد من أن الخادم يعمل على <code>http://localhost:8000</code></li>
+                <li>انقر على الروابط أدناه لفتح الصفحات</li>
+                <li>إذا كانت الصفحة سوداء، افتح Developer Tools (F12) وتحقق من Console</li>
+            </ol>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ ملاحظة:</strong> يجب استبدال رقم العميل (<code>6</code>) برقم عميل موجود في قاعدة البيانات
+        </div>
+
+        <h2>🔗 الروابط للاختبار:</h2>
+        
+        <a href="http://localhost:8000/dashboard/billing/subscription-accounts/6" target="_blank" class="link">
+            1️⃣ صفحة حسابات المشترك للعميل رقم 6
+        </a>
+
+        <a href="http://localhost:8000/dashboard/billing/customers" target="_blank" class="link">
+            2️⃣ قائمة العملاء (لاختيار عميل أولاً)
+        </a>
+
+        <a href="http://localhost:8000/dashboard/billing/customers/6" target="_blank" class="link">
+            3️⃣ تفاصيل العميل رقم 6 (مع تبويب حسابات المشترك)
+        </a>
+
+        <a href="http://localhost:8000/dashboard" target="_blank" class="link">
+            4️⃣ لوحة التحكم الرئيسية
+        </a>
+
+        <div class="card" style="margin-top: 30px;">
+            <h3>🔧 التحقق من الخادم:</h3>
+            <button onclick="checkServer()" style="padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">
+                اختبار الاتصال بالخادم
+            </button>
+            <div id="serverStatus" style="margin-top: 10px; padding: 10px; border-radius: 4px;"></div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <h3>📊 معلومات Debug:</h3>
+            <pre id="debugInfo" style="background: #f5f5f5; padding: 10px; border-radius: 4px; overflow-x: auto;"></pre>
+        </div>
+    </div>
+
+    <script>
+        // فتح الصفحة الرئيسية تلقائياً بعد 2 ثانية
+        setTimeout(() => {
+            window.open('http://localhost:8000/dashboard/billing/subscription-accounts/6', '_blank');
+        }, 2000);
+
+        // التحقق من الخادم
+        async function checkServer() {
+            const statusDiv = document.getElementById('serverStatus');
+            statusDiv.innerHTML = 'جاري التحقق...';
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/health', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    statusDiv.innerHTML = '<span style="color: green;">✅ الخادم يعمل بشكل صحيح</span>';
+                } else {
+                    statusDiv.innerHTML = '<span style="color: orange;">⚠️ الخادم يستجيب لكن هناك مشكلة</span>';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '<span style="color: red;">❌ الخادم غير متاح: ' + error.message + '</span>';
+            }
+        }
+
+        // معلومات Debug
+        document.getElementById('debugInfo').textContent = JSON.stringify({
+            url: window.location.href,
+            host: window.location.host,
+            protocol: window.location.protocol,
+            timestamp: new Date().toISOString()
+        }, null, 2);
+    </script>
+</body>
+</html>

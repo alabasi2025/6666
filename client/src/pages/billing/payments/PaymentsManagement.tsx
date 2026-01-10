@@ -11,25 +11,33 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Search, RefreshCw, DollarSign, Printer, Eye, Receipt, CreditCard, Banknote, Building } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface Payment {
   id: number;
-  receiptNumber: string;
+  paymentNumber?: string;
+  receiptNumber?: string;
   customerId: number;
+  subscriptionAccountId?: number;
+  subscriptionAccountNumber?: string;
+  subscriptionAccountName?: string;
+  subscriptionAccountType?: 'sts' | 'iot' | 'regular' | 'government_support';
   customerName: string;
   accountNumber: string;
   invoiceId?: number;
   invoiceNumber?: string;
   amount: string;
-  paymentMethod: string;
+  paymentMethod?: string;
+  paymentMethodId?: number;
   paymentDate: string;
   referenceNumber?: string;
   cashboxId?: number;
   cashboxName?: string;
   bankId?: number;
   bankName?: string;
+  status?: string;
   notes?: string;
-  createdBy: string;
+  createdBy?: string;
   createdAt: string;
 }
 
@@ -257,6 +265,7 @@ export default function PaymentsManagement() {
                   <TableRow>
                     <TableHead>رقم الإيصال</TableHead>
                     <TableHead>العميل</TableHead>
+                    <TableHead>حساب المشترك</TableHead>
                     <TableHead>رقم الفاتورة</TableHead>
                     <TableHead>المبلغ</TableHead>
                     <TableHead>طريقة الدفع</TableHead>
@@ -268,28 +277,49 @@ export default function PaymentsManagement() {
                 <TableBody>
                   {paymentsQuery.isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">جاري التحميل...</TableCell>
+                      <TableCell colSpan={9} className="text-center py-8">جاري التحميل...</TableCell>
                     </TableRow>
                   ) : filteredPayments.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={8} className="text-center py-8">لا توجد مدفوعات</TableCell>
+                      <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">لا توجد مدفوعات</TableCell>
                     </TableRow>
                   ) : (
                     filteredPayments.map((payment) => (
                       <TableRow key={(payment as any).id}>
-                        <TableCell className="font-medium">{(payment as any).receiptNumber}</TableCell>
+                        <TableCell className="font-medium">{(payment as any).receiptNumber || (payment as any).paymentNumber || '-'}</TableCell>
                         <TableCell>
                           <div>
                             <div className="font-medium">{(payment as any).customerName}</div>
                             <div className="text-xs text-muted-foreground">{(payment as any).accountNumber}</div>
                           </div>
                         </TableCell>
+                        <TableCell>
+                          {(payment as any).subscriptionAccountNumber ? (
+                            <div>
+                              <div className="font-medium text-sm">{(payment as any).subscriptionAccountNumber}</div>
+                              {(payment as any).subscriptionAccountName && (
+                                <div className="text-xs text-muted-foreground">{(payment as any).subscriptionAccountName}</div>
+                              )}
+                              {(payment as any).subscriptionAccountType && (
+                                <Badge variant="outline" className="text-xs mt-1">
+                                  {(payment as any).subscriptionAccountType === 'sts' ? 'STS' : 
+                                   (payment as any).subscriptionAccountType === 'iot' ? 'IoT' : 
+                                   (payment as any).subscriptionAccountType === 'regular' ? 'عادي' : 
+                                   (payment as any).subscriptionAccountType === 'government_support' ? 'دعم حكومي' : 
+                                   (payment as any).subscriptionAccountType}
+                                </Badge>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-muted-foreground text-sm">-</span>
+                          )}
+                        </TableCell>
                         <TableCell>{(payment as any).invoiceNumber || "-"}</TableCell>
-                        <TableCell className="font-semibold text-green-600">{parseFloat((payment as any).amount).toLocaleString()} ر.س</TableCell>
+                        <TableCell className="font-semibold text-green-600">{parseFloat((payment as any).amount || "0").toLocaleString()} ر.س</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {getPaymentMethodIcon((payment as any).paymentMethod)}
-                            {getPaymentMethodLabel((payment as any).paymentMethod)}
+                            {getPaymentMethodIcon((payment as any).paymentMethod || (payment as any).paymentMethodId)}
+                            {getPaymentMethodLabel((payment as any).paymentMethod || (payment as any).paymentMethodId)}
                           </div>
                         </TableCell>
                         <TableCell>{new Date((payment as any).paymentDate).toLocaleDateString("ar-SA")}</TableCell>

@@ -7,8 +7,8 @@
 
 import { eq, and } from "drizzle-orm";
 import { getDb } from "../db";
-import { pricingRules } from "../../drizzle/schemas/pricing";
 import { logger } from "../utils/logger";
+import { pricingRules } from "../../drizzle/schema";
 
 // ============================================
 // Types
@@ -165,17 +165,17 @@ export class PricingEngine {
         depositAmount: data.depositAmount.toFixed(2),
         depositRequired: data.depositRequired,
         active: true,
-        notes: data.notes,
+        notes: data.notes || null,
         createdBy: data.createdBy,
-      });
+      }).returning({ id: pricingRules.id });
 
       logger.info("Pricing rule created", {
-        id: result.insertId,
+        id: result.id,
         meterType: data.meterType,
         usageType: data.usageType,
       });
 
-      return result.insertId;
+      return result.id;
     } catch (error: any) {
       logger.error("Failed to create pricing rule", {
         error: error.message,
@@ -256,4 +256,5 @@ export class PricingEngine {
     }
   }
 }
+
 

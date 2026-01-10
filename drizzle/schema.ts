@@ -331,6 +331,25 @@ export const assets = pgTable("assets", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// سجل الإهلاك - Depreciation History
+export const depreciationHistory = pgTable("depreciation_history", {
+  id: serial("id").primaryKey(),
+  assetId: integer("asset_id").notNull(),
+  businessId: integer("business_id").notNull(),
+  depreciationDate: date("depreciation_date").notNull(),
+  depreciationAmount: numeric("depreciation_amount", { precision: 18, scale: 2 }).notNull(),
+  bookValueBefore: numeric("book_value_before", { precision: 18, scale: 2 }).notNull(),
+  bookValueAfter: numeric("book_value_after", { precision: 18, scale: 2 }).notNull(),
+  accumulatedDepreciation: numeric("accumulated_depreciation", { precision: 18, scale: 2 }).notNull(),
+  method: varchar("method", { length: 50 }), // straight_line, declining_balance
+  notes: text("notes"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  assetIdx: index("dh_asset_idx").on(table.assetId),
+  businessIdx: index("dh_business_idx").on(table.businessId),
+  dateIdx: index("dh_date_idx").on(table.depreciationDate),
+}));
+
 // حركات الأصول
 export const assetMovements = pgTable("asset_movements", {
   id: serial("id").primaryKey(),
@@ -988,6 +1007,48 @@ export const integrationLogs = pgTable("integration_logs", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
+// سجلات أوامر ACREL - ACREL Command Logs
+export const acrelCommandLogs = pgTable("acrel_command_logs", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id"),
+  meterId: integer("meter_id"),
+  acrelMeterId: varchar("acrel_meter_id", { length: 255 }),
+  commandType: varchar("command_type", { length: 50 }).notNull(), // disconnect, reconnect, setTariff, etc.
+  commandData: jsonb("command_data"), // بيانات الأمر (parameters)
+  responseData: jsonb("response_data"), // استجابة ACREL API
+  status: varchar("status", { length: 50 }).notNull(), // executed, failed, pending
+  errorMessage: text("error_message"),
+  executedBy: integer("executed_by"),
+  executedAt: timestamp("executed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  meterIdx: index("acl_meter_idx").on(table.meterId),
+  commandTypeIdx: index("acl_command_type_idx").on(table.commandType),
+  statusIdx: index("acl_status_idx").on(table.status),
+  createdAtIdx: index("acl_created_at_idx").on(table.createdAt),
+}));
+
+// سجلات أوامر STS - STS Command Logs
+export const stsCommandLogs = pgTable("sts_command_logs", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id"),
+  meterId: integer("meter_id"),
+  stsMeterId: varchar("sts_meter_id", { length: 255 }),
+  commandType: varchar("command_type", { length: 50 }).notNull(), // charge, disconnect, reconnect, etc.
+  commandData: jsonb("command_data"),
+  responseData: jsonb("response_data"),
+  status: varchar("status", { length: 50 }).notNull(),
+  errorMessage: text("error_message"),
+  executedBy: integer("executed_by"),
+  executedAt: timestamp("executed_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  meterIdx: index("scl_meter_idx").on(table.meterId),
+  commandTypeIdx: index("scl_command_type_idx").on(table.commandType),
+  statusIdx: index("scl_status_idx").on(table.status),
+  createdAtIdx: index("scl_created_at_idx").on(table.createdAt),
+}));
+
 // نظام الأحداث - Events System
 export const systemEvents = pgTable("system_events", {
   id: serial("id").primaryKey(),
@@ -1063,6 +1124,32 @@ export const apiLogs = pgTable("api_logs", {
   errorMessage: text("error_message"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// سجلات الرسائل (SMS/WhatsApp/Email) - Messaging Logs
+export const messagingLogs = pgTable("messaging_logs", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id"),
+  channel: varchar("channel", { length: 20 }).notNull(), // sms, whatsapp, email
+  recipient: varchar("recipient", { length: 255 }).notNull(),
+  message: text("message"),
+  subject: varchar("subject", { length: 255 }), // للـ email
+  status: varchar("status", { length: 20 }).notNull(), // sent, failed, pending, delivered, read
+  messageId: varchar("message_id", { length: 255 }), // من المزود (Twilio SID, etc)
+  provider: varchar("provider", { length: 50 }), // twilio, unifonic, sendgrid, etc
+  cost: numeric("cost", { precision: 10, scale: 4 }), // التكلفة بالريال
+  error: text("error"), // رسالة الخطأ في حالة الفشل
+  metadata: jsonb("metadata"), // بيانات إضافية (customer_id, invoice_id, etc)
+  sentAt: timestamp("sent_at"),
+  deliveredAt: timestamp("delivered_at"),
+  readAt: timestamp("read_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+}, (table) => ({
+  businessIdx: index("ml_business_idx").on(table.businessId),
+  channelIdx: index("ml_channel_idx").on(table.channel),
+  statusIdx: index("ml_status_idx").on(table.status),
+  recipientIdx: index("ml_recipient_idx").on(table.recipient),
+  createdAtIdx: index("ml_created_at_idx").on(table.createdAt),
+}));
 
 // نماذج الذكاء الاصطناعي - AI Models
 export const aiModels = pgTable("ai_models", {
@@ -2389,20 +2476,48 @@ export const feeTypes = pgTable("fee_types", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// قواعد التسعير - Pricing Rules
+export const pricingRules = pgTable("pricing_rules", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  meterType: varchar("meter_type", { length: 50 }).notNull(), // 'traditional', 'sts', 'iot'
+  usageType: varchar("usage_type", { length: 50 }).notNull(), // 'residential', 'commercial', 'industrial'
+  subscriptionFee: numeric("subscription_fee", { precision: 18, scale: 2 }).default("0"),
+  depositAmount: numeric("deposit_amount", { precision: 18, scale: 2 }).default("0"),
+  depositRequired: boolean("deposit_required").default(true),
+  active: boolean("active").default(true),
+  notes: text("notes"),
+  createdBy: integer("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  businessMeterUsageIdx: index("pricing_rules_business_meter_usage_idx").on(table.businessId, table.meterType, table.usageType),
+  activeIdx: index("pricing_rules_active_idx").on(table.active),
+}));
+
 // العملاء المحسن - Enhanced Customers
 export const customersEnhanced = pgTable("customers_enhanced", {
   id: serial("id").primaryKey(),
   businessId: integer("business_id").notNull(),
   projectId: integer("project_id"),
+  branchId: integer("branch_id"),
+  stationId: integer("station_id"),
+  accountNumber: varchar("account_number", { length: 50 }),
   fullName: varchar("full_name", { length: 255 }).notNull(),
+  fullNameEn: varchar("full_name_en", { length: 255 }),
   mobileNo: varchar("mobile_no", { length: 50 }),
   phone: varchar("phone", { length: 50 }),
+  phone2: varchar("phone2", { length: 50 }),
   email: varchar("email", { length: 255 }),
   address: text("address"),
   nationalId: varchar("national_id", { length: 50 }),
-  customerType: varchar("customerType", { length: 50 }).default("residential"),
-  serviceTier: varchar("serviceTier", { length: 50 }).default("basic"),
+  latitude: numeric("latitude", { precision: 10, scale: 8 }),
+  longitude: numeric("longitude", { precision: 11, scale: 8 }),
+  customerType: varchar("customer_type", { length: 50 }).default("individual"),
+  category: varchar("category", { length: 50 }).default("residential"),
+  serviceTier: varchar("service_tier", { length: 50 }).default("basic"),
   status: varchar("status", { length: 50 }).default("active"),
+  balance: numeric("balance", { precision: 18, scale: 2 }).default("0"),
   balanceDue: numeric("balance_due", { precision: 18, scale: 2 }).default("0"),
   userId: integer("user_id"),
   isActive: boolean("is_active").default(true),
@@ -2410,10 +2525,50 @@ export const customersEnhanced = pgTable("customers_enhanced", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+// حسابات المشترك - Subscription Accounts
+export const subscriptionAccounts = pgTable("subscription_accounts", {
+  id: serial("id").primaryKey(),
+  businessId: integer("business_id").notNull(),
+  customerId: integer("customer_id").notNull().references(() => customersEnhanced.id),
+  accountNumber: varchar("account_number", { length: 50 }).notNull().unique(),
+  accountType: varchar("account_type", { length: 50 }).notNull(), // 'sts', 'iot', 'regular', 'government_support'
+  accountName: varchar("account_name", { length: 255 }),
+  tariffId: integer("tariff_id"),
+  serviceType: varchar("service_type", { length: 50 }).default("electricity"), // 'electricity', 'water', 'gas'
+  accountingAccountId: integer("accounting_account_id"),
+  balance: numeric("balance", { precision: 18, scale: 2 }).default("0"),
+  balanceDue: numeric("balance_due", { precision: 18, scale: 2 }).default("0"),
+  creditLimit: numeric("credit_limit", { precision: 18, scale: 2 }).default("0"),
+  depositAmount: numeric("deposit_amount", { precision: 18, scale: 2 }).default("0"),
+  paymentMode: varchar("payment_mode", { length: 50 }).default("prepaid"), // 'prepaid', 'postpaid', 'hybrid'
+  billingCycle: varchar("billing_cycle", { length: 50 }).default("monthly"), // 'monthly', 'quarterly', 'annual'
+  status: varchar("status", { length: 50 }).default("active"), // 'active', 'suspended', 'closed', 'pending'
+  // بيانات خاصة بالدعم الحكومي
+  supportType: varchar("support_type", { length: 50 }),
+  supportPercentage: numeric("support_percentage", { precision: 5, scale: 2 }),
+  maxSupportAmount: numeric("max_support_amount", { precision: 18, scale: 2 }),
+  monthlyQuota: numeric("monthly_quota", { precision: 15, scale: 3 }),
+  // ربط مع STS
+  stsMeterId: integer("sts_meter_id"),
+  // ربط مع IoT
+  iotDeviceId: varchar("iot_device_id", { length: 100 }),
+  // معلومات إضافية
+  activationDate: date("activation_date"),
+  expirationDate: date("expiration_date"),
+  notes: text("notes"),
+  createdBy: integer("created_by"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+}, (table) => ({
+  customerIdIdx: index("subscription_accounts_customer_id_idx").on(table.customerId),
+  accountTypeIdx: index("subscription_accounts_account_type_idx").on(table.accountType),
+  accountNumberIdx: index("subscription_accounts_account_number_idx").on(table.accountNumber),
+}));
+
 // محفظة العميل - Customer Wallet
 export const customerWallets = pgTable("customer_wallets", {
   id: serial("id").primaryKey(),
-  customerId: integer("customer_id").notNull(),
+  customerId: integer("customer_id").notNull().references(() => customersEnhanced.id),
   balance: numeric("balance", { precision: 18, scale: 2 }).default("0"),
   currency: varchar("currency", { length: 10 }).default("SAR"),
   lastTransactionDate: timestamp("last_transaction_date"),
@@ -2441,7 +2596,8 @@ export const customerTransactionsNew = pgTable("customer_transactions_new", {
 export const metersEnhanced = pgTable("meters_enhanced", {
   id: serial("id").primaryKey(),
   businessId: integer("business_id").notNull(),
-  customerId: integer("customer_id"),
+  customerId: integer("customer_id"), // للتوافق مع الكود القديم (deprecated - سيستخدم subscription_account_id)
+  subscriptionAccountId: integer("subscription_account_id").references(() => subscriptionAccounts.id), // الحقل الرئيسي الجديد
   cabinetId: integer("cabinet_id"),
   tariffId: integer("tariff_id"),
   projectId: integer("project_id"),
@@ -2465,7 +2621,9 @@ export const metersEnhanced = pgTable("meters_enhanced", {
   lastSyncTime: timestamp("last_sync_time"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  subscriptionAccountIdIdx: index("meters_subscription_account_id_idx").on(table.subscriptionAccountId),
+}));
 
 // فترات الفوترة - Billing Periods
 export const billingPeriods = pgTable("billing_periods", {
@@ -2505,6 +2663,7 @@ export const meterReadingsEnhanced = pgTable("meter_readings_enhanced", {
   readingType: varchar("readingType", { length: 50 }).default("actual"),
   status: varchar("status", { length: 50 }).default("entered"),
   isEstimated: boolean("is_estimated").default(false),
+  isApproved: boolean("is_approved").default(false),
   images: jsonb("images"),
   readBy: integer("read_by"),
   approvedBy: integer("approved_by"),
@@ -2518,7 +2677,8 @@ export const meterReadingsEnhanced = pgTable("meter_readings_enhanced", {
 export const invoicesEnhanced = pgTable("invoices_enhanced", {
   id: serial("id").primaryKey(),
   businessId: integer("business_id").notNull(),
-  customerId: integer("customer_id").notNull(),
+  customerId: integer("customer_id").notNull(), // للتوافق مع الكود القديم (deprecated - سيستخدم subscription_account_id)
+  subscriptionAccountId: integer("subscription_account_id").references(() => subscriptionAccounts.id), // الحقل الرئيسي الجديد - العمليات تحدث على حساب المشترك
   meterId: integer("meter_id"),
   meterReadingId: integer("meter_reading_id"),
   billingPeriodId: integer("billing_period_id"),
@@ -2550,7 +2710,9 @@ export const invoicesEnhanced = pgTable("invoices_enhanced", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  subscriptionAccountIdIdx: index("invoices_subscription_account_id_idx").on(table.subscriptionAccountId),
+}));
 
 // رسوم الفاتورة - Invoice Fees
 export const invoiceFees = pgTable("invoice_fees", {
@@ -2595,7 +2757,8 @@ export const paymentMethodsNew = pgTable("payment_methods_new", {
 export const paymentsEnhanced = pgTable("payments_enhanced", {
   id: serial("id").primaryKey(),
   businessId: integer("business_id").notNull(),
-  customerId: integer("customer_id").notNull(),
+  customerId: integer("customer_id").notNull(), // للتوافق مع الكود القديم (deprecated - سيستخدم subscription_account_id)
+  subscriptionAccountId: integer("subscription_account_id").references(() => subscriptionAccounts.id), // الحقل الرئيسي الجديد - العمليات تحدث على حساب المشترك
   meterId: integer("meter_id"),
   invoiceId: integer("invoice_id"),
   cashboxId: integer("cashbox_id"),
@@ -2612,7 +2775,9 @@ export const paymentsEnhanced = pgTable("payments_enhanced", {
   receivedBy: integer("received_by"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (table) => ({
+  subscriptionAccountIdIdx: index("payments_subscription_account_id_idx").on(table.subscriptionAccountId),
+}));
 
 // الإيصالات - Receipts
 export const receipts = pgTable("receipts", {
@@ -2652,6 +2817,8 @@ export type Tariff = typeof tariffs.$inferSelect;
 export type InsertTariff = typeof tariffs.$inferInsert;
 export type FeeType = typeof feeTypes.$inferSelect;
 export type InsertFeeType = typeof feeTypes.$inferInsert;
+export type SubscriptionAccount = typeof subscriptionAccounts.$inferSelect;
+export type InsertSubscriptionAccount = typeof subscriptionAccounts.$inferInsert;
 export type CustomerEnhanced = typeof customersEnhanced.$inferSelect;
 export type InsertCustomerEnhanced = typeof customersEnhanced.$inferInsert;
 export type CustomerWallet = typeof customerWallets.$inferSelect;
@@ -3418,59 +3585,5 @@ export type InsertCustomSetting = typeof customSettings.$inferInsert;
 // النظام المخصص v2.2.0 - Custom System v2.2.0
 // ============================================
 
-// Re-export الجداول الجديدة من customSystemV2.ts
-export {
-  customCurrencies,
-  customExchangeRates,
-  customAccountSubTypes,
-  customAccountCurrencies,
-  customAccountBalances,
-  customJournalEntries,
-  customJournalEntryLines,
-  customReceipts,
-  customPayments,
-  type CustomCurrency,
-  type InsertCustomCurrency,
-  type CustomExchangeRate,
-  type InsertCustomExchangeRate,
-  type CustomAccountSubType,
-  type InsertCustomAccountSubType,
-  type CustomAccountCurrency,
-  type InsertCustomAccountCurrency,
-  type CustomAccountBalance,
-  type InsertCustomAccountBalance,
-  type CustomJournalEntry,
-  type InsertCustomJournalEntry,
-  type CustomJournalEntryLine,
-  type InsertCustomJournalEntryLine,
-  type CustomReceipt,
-  type InsertCustomReceipt,
-  type CustomPayment,
-  type InsertCustomPayment,
-  customAccountTypes,
-  type CustomAccountType,
-  type InsertCustomAccountType,
-} from "./schemas/customSystemV2";
-
-// Re-export نظام الوسيط - Intermediary System
-export {
-  intermediaryAccounts,
-  intermediaryAccountSubSystems,
-  intermediaryAccountMovements,
-  intermediaryReconciliations,
-  intermediaryDailySummary,
-  type IntermediaryAccount,
-  type InsertIntermediaryAccount,
-  type IntermediaryAccountSubSystem,
-  type InsertIntermediaryAccountSubSystem,
-  type IntermediaryAccountMovement,
-  type InsertIntermediaryAccountMovement,
-  type IntermediaryReconciliation,
-  type InsertIntermediaryReconciliation,
-  type IntermediaryDailySummary,
-  type InsertIntermediaryDailySummary,
-} from "./schemas/intermediarySystem";
-
-// Pricing Rules
-export { pricingRules } from "./schemas/pricing";
-export type { pricingRules as PricingRule } from "./schemas/pricing";
+// Note: customSystemV2, intermediarySystem, and pricing schemas have been removed
+// These tables need to be recreated in PostgreSQL format if needed

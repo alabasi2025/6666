@@ -10,7 +10,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Edit, Trash2, Search, RefreshCw, Users, Eye, Ban, CheckCircle, Key, Wallet, FileText } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { Edit, Trash2, Search, RefreshCw, Users, Eye, Ban, CheckCircle, Key, Wallet, FileText, AlertTriangle, History, RefreshCcw } from "lucide-react";
+import { useBusinessId } from "@/contexts/BusinessContext";
 
 interface Customer {
   id: number;
@@ -32,6 +35,7 @@ interface Customer {
 }
 
 export default function CustomersManagement() {
+  const { toast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -42,6 +46,11 @@ export default function CustomersManagement() {
   const [showResetPasswordDialog, setShowResetPasswordDialog] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCategory, setFilterCategory] = useState<string>("all");
+  const [showLinkStationDialog, setShowLinkStationDialog] = useState(false);
+  const [showLinkBranchDialog, setShowLinkBranchDialog] = useState(false);
+  const [selectedStations, setSelectedStations] = useState<number[]>([]);
+  const [selectedBranches, setSelectedBranches] = useState<number[]>([]);
+  const [formSelectedBranches, setFormSelectedBranches] = useState<number[]>([]); // ✅ الفروع المختارة في النموذج
   
   const [formData, setFormData] = useState({
     accountNumber: "",
@@ -49,12 +58,18 @@ export default function CustomersManagement() {
     fullNameEn: "",
     customerType: "individual",
     category: "residential",
+    serviceTier: "basic" as "basic" | "premium" | "vip",
     phone: "",
     phone2: "",
     email: "",
     nationalId: "",
     address: "",
+    branchId: undefined as number | undefined,
+    stationId: undefined as number | undefined,
   });
+
+  const [primaryBranchId, setPrimaryBranchId] = useState<number | null>(null);
+  const [primaryStationId, setPrimaryStationId] = useState<number | null>(null);
 
   const [newPassword, setNewPassword] = useState("");
 
@@ -64,6 +79,34 @@ export default function CustomersManagement() {
   const deleteCustomerMutation = trpc.billing.deleteCustomer.useMutation();
   const toggleCustomerStatusMutation = trpc.billing.toggleCustomerStatus.useMutation();
   const resetCustomerPasswordMutation = trpc.billing.resetCustomerPassword.useMutation();
+  
+  // ✅ تحديث حالة العملاء
+  const updateCustomerStatusMutation = trpc.customerSystem.updateCustomerStatus.useMutation();
+  const updateAllCustomersStatusMutation = trpc.customerSystem.updateAllCustomersStatus.useMutation();
+  const getCustomerStatusQuery = trpc.customerSystem.getCustomerStatus.useQuery(
+    { customerId: selectedCustomer?.id || 0 },
+    { enabled: !!selectedCustomer }
+  );
+  const getCustomerStatusHistoryQuery = trpc.customerSystem.getCustomerStatusHistory.useQuery(
+    { customerId: selectedCustomer?.id || 0 },
+    { enabled: !!selectedCustomer }
+  );
+  
+  const businessId = useBusinessId();
+  
+  // استعلامات الربط
+  const stationsQuery = trpc.station.list.useQuery();
+  const branchesQuery = trpc.branch.list.useQuery();
+  const linkStationsMutation = trpc.customerSystem.linkCustomerToStations.useMutation();
+  const linkBranchesMutation = trpc.customerSystem.linkCustomerToBranches.useMutation();
+  const customerStationsQuery = trpc.customerSystem.getCustomerStations.useQuery(
+    { customerId: selectedCustomer?.id || 0 },
+    { enabled: !!selectedCustomer }
+  );
+  const customerBranchesQuery = trpc.customerSystem.getCustomerBranches.useQuery(
+    { customerId: selectedCustomer?.id || 0 },
+    { enabled: !!selectedCustomer }
+  );
 
   useEffect(() => {
     if (customersQuery.data) {
@@ -81,17 +124,40 @@ export default function CustomersManagement() {
         fullNameEn: (formData as any).fullNameEn || undefined,
         customerType: (formData as any).customerType as any,
         category: (formData as any).category as any,
+        serviceTier: (formData as any).serviceTier as any,
         phone: (formData as any).phone,
         phone2: (formData as any).phone2 || undefined,
         email: (formData as any).email || undefined,
         nationalId: (formData as any).nationalId || undefined,
         address: (formData as any).address || undefined,
+        branchId: (formData as any).branchId || undefined,
+        stationId: (formData as any).stationId || undefined,
       };
       
       if (editingCustomer) {
         await updateCustomerMutation.mutateAsync({ id: editingCustomer.id, ...data } as any);
       } else {
-        await createCustomerMutation.mutateAsync(data);
+        const result = await createCustomerMutation.mutateAsync({ ...data, businessId } as any);
+        
+        // ✅ ربط الفروع المختارة بالعميل الجديد
+        if (result?.id && formSelectedBranches.length > 0) {
+          try {
+            await linkBranchesMutation.mutateAsync({
+              customerId: result.id,
+              branchIds: formSelectedBranches,
+            });
+            toast({
+              title: "تم بنجاح",
+              description: `تم إنشاء العميل وربط ${formSelectedBranches.length} فرع(أ) بنجاح`,
+            });
+          } catch (linkError: any) {
+            toast({
+              title: "تحذير",
+              description: `تم إنشاء العميل لكن فشل ربط الفروع: ${linkError.message}`,
+              variant: "destructive",
+            });
+          }
+        }
       }
       customersQuery.refetch();
       resetForm();
@@ -111,11 +177,14 @@ export default function CustomersManagement() {
       fullNameEn: (customer as any).fullNameEn || "",
       customerType: (customer as any).customerType,
       category: (customer as any).category,
+      serviceTier: (customer as any).serviceTier || "basic",
       phone: (customer as any).phone,
       phone2: (customer as any).phone2 || "",
       email: (customer as any).email || "",
       nationalId: (customer as any).nationalId || "",
       address: (customer as any).address || "",
+      branchId: (customer as any).branchId,
+      stationId: (customer as any).stationId,
     });
     setActiveTab("add");
   };
@@ -154,6 +223,36 @@ export default function CustomersManagement() {
     }
   };
 
+  const handleLinkStations = async () => {
+    if (!selectedCustomer || selectedStations.length === 0) return;
+    try {
+      await linkStationsMutation.mutateAsync({
+        customerId: selectedCustomer.id,
+        stationIds: selectedStations,
+      });
+      customerStationsQuery.refetch();
+      setShowLinkStationDialog(false);
+      setSelectedStations([]);
+    } catch (error) {
+      console.error("Error linking stations:", error);
+    }
+  };
+
+  const handleLinkBranches = async () => {
+    if (!selectedCustomer || selectedBranches.length === 0) return;
+    try {
+      await linkBranchesMutation.mutateAsync({
+        customerId: selectedCustomer.id,
+        branchIds: selectedBranches,
+      });
+      customerBranchesQuery.refetch();
+      setShowLinkBranchDialog(false);
+      setSelectedBranches([]);
+    } catch (error) {
+      console.error("Error linking branches:", error);
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       accountNumber: "",
@@ -161,13 +260,19 @@ export default function CustomersManagement() {
       fullNameEn: "",
       customerType: "individual",
       category: "residential",
+      serviceTier: "basic",
       phone: "",
       phone2: "",
       email: "",
       nationalId: "",
       address: "",
+      branchId: undefined,
+      stationId: undefined,
     });
     setEditingCustomer(null);
+    setPrimaryBranchId(null);
+    setPrimaryStationId(null);
+    setFormSelectedBranches([]); // ✅ إعادة تعيين الفروع المختارة
   };
 
   const generateAccountNumber = () => {
@@ -187,14 +292,64 @@ export default function CustomersManagement() {
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const getStatusLabel = (status: string, isActive: boolean) => {
-    if (!isActive) return { label: "محظور", color: "bg-red-100 text-red-800" };
-    const statuses: Record<string, { label: string; color: string }> = {
-      active: { label: "نشط", color: "bg-green-100 text-green-800" },
-      pending: { label: "معلق", color: "bg-yellow-100 text-yellow-800" },
-      suspended: { label: "موقوف", color: "bg-orange-100 text-orange-800" },
+  const getStatusLabel = (status: string, isActive: boolean, balanceDue?: number) => {
+    if (!isActive) return { label: "محظور", color: "bg-red-100 text-red-800", icon: Ban };
+    const statuses: Record<string, { label: string; color: string; icon: any }> = {
+      active: { label: "نشط", color: "bg-green-100 text-green-800", icon: CheckCircle },
+      inactive: { label: "غير نشط", color: "bg-gray-100 text-gray-800", icon: Ban },
+      suspended: { label: "موقوف", color: "bg-orange-100 text-orange-800", icon: AlertTriangle },
+      disconnected: { label: "مفصول", color: "bg-red-100 text-red-800", icon: Ban },
+      pending: { label: "معلق", color: "bg-yellow-100 text-yellow-800", icon: AlertTriangle },
+      closed: { label: "مغلق", color: "bg-gray-100 text-gray-800", icon: Ban },
     };
-    return statuses[status] || { label: status, color: "bg-gray-100 text-gray-800" };
+    return statuses[status] || { label: status, color: "bg-gray-100 text-gray-800", icon: AlertTriangle };
+  };
+
+  // ✅ تحديث حالة عميل واحد
+  const handleUpdateCustomerStatus = async (customerId: number) => {
+    try {
+      await updateCustomerStatusMutation.mutateAsync({
+        customerId,
+        sendNotification: true,
+      });
+      customersQuery.refetch();
+      if (selectedCustomer?.id === customerId) {
+        getCustomerStatusQuery.refetch();
+        getCustomerStatusHistoryQuery.refetch();
+      }
+      toast({
+        title: "تم التحديث",
+        description: "تم تحديث حالة العميل بنجاح",
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل تحديث حالة العميل",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // ✅ تحديث حالة جميع العملاء
+  const handleUpdateAllCustomersStatus = async () => {
+    if (!confirm("هل أنت متأكد من تحديث حالة جميع العملاء؟")) return;
+    try {
+      const result = await updateAllCustomersStatusMutation.mutateAsync({
+        businessId,
+        sendNotification: true,
+      });
+      customersQuery.refetch();
+      toast({
+        title: "تم التحديث",
+        description: `تم تحديث حالة ${result.totalUpdated} عميل من أصل ${result.totalProcessed}`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "خطأ",
+        description: error.message || "فشل تحديث حالة العملاء",
+        variant: "destructive",
+      });
+    }
   };
 
   const getCategoryLabel = (category: string) => {
@@ -224,10 +379,16 @@ export default function CustomersManagement() {
           <h1 className="text-2xl font-bold">إدارة العملاء</h1>
           <p className="text-muted-foreground">إضافة وتعديل وإدارة بيانات العملاء</p>
         </div>
-        <Button onClick={() => setActiveTab("add")}>
-          <Users className="h-4 w-4 ml-2" />
-          إضافة عميل
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={handleUpdateAllCustomersStatus} disabled={updateAllCustomersStatusMutation.isPending}>
+            <RefreshCcw className="h-4 w-4 ml-2" />
+            {updateAllCustomersStatusMutation.isPending ? "جاري التحديث..." : "تحديث حالات العملاء"}
+          </Button>
+          <Button onClick={() => setActiveTab("add")}>
+            <Users className="h-4 w-4 ml-2" />
+            إضافة عميل
+          </Button>
+        </div>
       </div>
 
       {/* إحصائيات سريعة */}
@@ -315,6 +476,7 @@ export default function CustomersManagement() {
                     <TableHead>الفئة</TableHead>
                     <TableHead>الهاتف</TableHead>
                     <TableHead>الرصيد</TableHead>
+                    <TableHead>الرصيد المستحق</TableHead>
                     <TableHead>العدادات</TableHead>
                     <TableHead>الحالة</TableHead>
                     <TableHead>الإجراءات</TableHead>
@@ -323,15 +485,17 @@ export default function CustomersManagement() {
                 <TableBody>
                   {customersQuery.isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">جاري التحميل...</TableCell>
+                      <TableCell colSpan={10} className="text-center py-8">جاري التحميل...</TableCell>
                     </TableRow>
                   ) : filteredCustomers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">لا يوجد عملاء</TableCell>
+                      <TableCell colSpan={10} className="text-center py-8">لا يوجد عملاء</TableCell>
                     </TableRow>
                   ) : (
                     filteredCustomers.map((customer) => {
-                      const status = getStatusLabel((customer as any).status, (customer as any).isActive);
+                      const balanceDue = parseFloat((customer as any).balanceDue || "0");
+                      const status = getStatusLabel((customer as any).status, (customer as any).isActive, balanceDue);
+                      const StatusIcon = status.icon;
                       return (
                         <TableRow key={(customer as any).id}>
                           <TableCell className="font-medium">{(customer as any).accountNumber}</TableCell>
@@ -344,25 +508,38 @@ export default function CustomersManagement() {
                           <TableCell>{getCustomerTypeLabel((customer as any).customerType)}</TableCell>
                           <TableCell>{getCategoryLabel((customer as any).category)}</TableCell>
                           <TableCell dir="ltr">{(customer as any).phone}</TableCell>
-                          <TableCell className={parseFloat((customer as any).balance) < 0 ? "text-red-600" : "text-green-600"}>
-                            {parseFloat((customer as any).balance).toLocaleString()} ر.س
+                          <TableCell className={parseFloat((customer as any).balance || "0") < 0 ? "text-red-600" : "text-green-600"}>
+                            {parseFloat((customer as any).balance || "0").toLocaleString()} ر.س
+                          </TableCell>
+                          <TableCell className={balanceDue > 0 ? "text-red-600 font-semibold" : "text-green-600"}>
+                            {balanceDue > 0 ? (
+                              <div className="flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                {balanceDue.toLocaleString()} ر.س
+                              </div>
+                            ) : (
+                              "0.00 ر.س"
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline">{(customer as any).meters?.length || 0}</Badge>
                           </TableCell>
                           <TableCell>
-                            <span className={`px-2 py-1 rounded-full text-xs ${status.color}`}>{status.label}</span>
+                            <Badge className={`${status.color} flex items-center gap-1 w-fit`}>
+                              <StatusIcon className="h-3 w-3" />
+                              {status.label}
+                            </Badge>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <Button variant="ghost" size="icon" onClick={() => { setSelectedCustomer(customer); setShowDetailsDialog(true); }} title="عرض التفاصيل">
                                 <Eye className="h-4 w-4" />
                               </Button>
+                              <Button variant="ghost" size="icon" onClick={() => handleUpdateCustomerStatus((customer as any).id)} title="تحديث الحالة" disabled={updateCustomerStatusMutation.isPending}>
+                                <RefreshCcw className="h-4 w-4 text-blue-500" />
+                              </Button>
                               <Button variant="ghost" size="icon" onClick={() => handleEdit(customer)} title="تعديل">
                                 <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button variant="ghost" size="icon" onClick={() => { setSelectedCustomer(customer); setShowResetPasswordDialog(true); }} title="إعادة تعيين كلمة المرور">
-                                <Key className="h-4 w-4 text-blue-500" />
                               </Button>
                               <Button variant="ghost" size="icon" onClick={() => handleToggleStatus(customer)} title={(customer as any).isActive ? "حظر" : "تفعيل"}>
                                 {(customer as any).isActive ? <Ban className="h-4 w-4 text-orange-500" /> : <CheckCircle className="h-4 w-4 text-green-500" />}
@@ -430,6 +607,17 @@ export default function CustomersManagement() {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label>مستوى الخدمة</Label>
+                    <Select value={(formData as any).serviceTier} onValueChange={(v) => setFormData({ ...formData, serviceTier: v as any })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="basic">أساسي</SelectItem>
+                        <SelectItem value="premium">مميز</SelectItem>
+                        <SelectItem value="vip">VIP</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
                     <Label>رقم الهاتف *</Label>
                     <Input value={(formData as any).phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} required dir="ltr" />
                   </div>
@@ -444,6 +632,56 @@ export default function CustomersManagement() {
                   <div className="space-y-2">
                     <Label>رقم الهوية</Label>
                     <Input value={(formData as any).nationalId} onChange={(e) => setFormData({ ...formData, nationalId: e.target.value })} />
+                  </div>
+                  <div className="space-y-2 md:col-span-2 lg:col-span-3">
+                    <Label>الفروع المرتبطة</Label>
+                    <div className="border rounded-lg p-4 max-h-48 overflow-y-auto bg-muted/50">
+                      {branchesQuery.isLoading ? (
+                        <p className="text-sm text-muted-foreground">جاري تحميل الفروع...</p>
+                      ) : branchesQuery.data?.data && branchesQuery.data.data.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {branchesQuery.data.data.map((branch: any) => (
+                            <label key={branch.id} className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-background rounded cursor-pointer">
+                              <Checkbox
+                                checked={formSelectedBranches.includes(branch.id)}
+                                onCheckedChange={(checked) => {
+                                  if (checked) {
+                                    setFormSelectedBranches([...formSelectedBranches, branch.id]);
+                                  } else {
+                                    setFormSelectedBranches(formSelectedBranches.filter(id => id !== branch.id));
+                                  }
+                                }}
+                              />
+                              <span className="flex-1 text-sm font-medium">{branch.nameAr}</span>
+                              {branch.city && (
+                                <Badge variant="outline" className="text-xs">{branch.city}</Badge>
+                              )}
+                            </label>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">لا توجد فروع متاحة</p>
+                      )}
+                    </div>
+                    {formSelectedBranches.length > 0 && (
+                      <p className="text-xs text-muted-foreground">
+                        تم اختيار {formSelectedBranches.length} فرع(أ)
+                      </p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>المحطة</Label>
+                    <Select value={formData.stationId?.toString() || "none"} onValueChange={(v) => setFormData({ ...formData, stationId: v === "none" ? undefined : parseInt(v) })}>
+                      <SelectTrigger><SelectValue placeholder="اختر المحطة" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">بدون محطة</SelectItem>
+                        {stationsQuery.data?.data?.map((station: any) => (
+                          <SelectItem key={station.id} value={station.id.toString()}>
+                            {station.nameAr}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2 md:col-span-2 lg:col-span-3">
                     <Label>العنوان</Label>
@@ -494,22 +732,151 @@ export default function CustomersManagement() {
                   <p dir="ltr">{selectedCustomer.email || "-"}</p>
                 </div>
                 <div>
+                  <Label className="text-muted-foreground">رقم الهوية</Label>
+                  <p>{selectedCustomer.nationalId || "-"}</p>
+                </div>
+                <div>
                   <Label className="text-muted-foreground">الرصيد</Label>
-                  <p className={`font-semibold ${parseFloat(selectedCustomer.balance) < 0 ? "text-red-600" : "text-green-600"}`}>
-                    {parseFloat(selectedCustomer.balance).toLocaleString()} ر.س
+                  <p className={`font-semibold ${parseFloat(selectedCustomer.balance || "0") < 0 ? "text-red-600" : "text-green-600"}`}>
+                    {parseFloat(selectedCustomer.balance || "0").toLocaleString()} ر.س
                   </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الرصيد المستحق</Label>
+                  <p className={`font-semibold ${getCustomerStatusQuery.data?.balanceDue && getCustomerStatusQuery.data.balanceDue > 0 ? "text-red-600" : "text-green-600"}`}>
+                    {getCustomerStatusQuery.data?.balanceDue ? (
+                      <div className="flex items-center gap-1">
+                        <AlertTriangle className="h-4 w-4" />
+                        {getCustomerStatusQuery.data.balanceDue.toLocaleString()} ر.س
+                      </div>
+                    ) : (
+                      "0.00 ر.س"
+                    )}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground">الحالة</Label>
+                  {(() => {
+                    const status = getStatusLabel(selectedCustomer.status, selectedCustomer.isActive, getCustomerStatusQuery.data?.balanceDue);
+                    const StatusIcon = status.icon;
+                    return (
+                      <Badge className={`${status.color} flex items-center gap-1 w-fit mt-1`}>
+                        <StatusIcon className="h-3 w-3" />
+                        {status.label}
+                      </Badge>
+                    );
+                  })()}
                 </div>
                 <div>
                   <Label className="text-muted-foreground">تاريخ التسجيل</Label>
                   <p>{new Date(selectedCustomer.createdAt).toLocaleDateString("ar-SA")}</p>
                 </div>
               </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (selectedCustomer) {
+                      handleUpdateCustomerStatus(selectedCustomer.id);
+                    }
+                  }}
+                  disabled={updateCustomerStatusMutation.isPending}
+                >
+                  <RefreshCcw className="h-4 w-4 ml-2" />
+                  {updateCustomerStatusMutation.isPending ? "جاري التحديث..." : "تحديث الحالة"}
+                </Button>
+              </div>
+              
+              {/* ✅ تاريخ تغييرات الحالة */}
+              {getCustomerStatusHistoryQuery.data && getCustomerStatusHistoryQuery.data.data.length > 0 && (
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <Label className="text-lg font-semibold flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      تاريخ تغييرات الحالة
+                    </Label>
+                  </div>
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {getCustomerStatusHistoryQuery.data.data.map((history: any, index: number) => {
+                      const oldStatus = getStatusLabel(history.old_status, true, history.balance_due);
+                      const newStatus = getStatusLabel(history.new_status, true, history.balance_due);
+                      const OldStatusIcon = oldStatus.icon;
+                      const NewStatusIcon = newStatus.icon;
+                      return (
+                        <div key={index} className="p-3 border rounded-lg bg-muted/50">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <OldStatusIcon className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm text-muted-foreground">{oldStatus.label}</span>
+                              <span className="text-muted-foreground">→</span>
+                              <NewStatusIcon className="h-4 w-4" />
+                              <Badge className={`${newStatus.color} flex items-center gap-1`}>
+                                {newStatus.label}
+                              </Badge>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(history.changed_at).toLocaleString("ar-SA")}
+                            </span>
+                          </div>
+                          {history.balance_due > 0 && (
+                            <div className="text-sm text-muted-foreground">
+                              الرصيد المستحق: <span className="font-semibold text-red-600">{parseFloat(history.balance_due || "0").toLocaleString()} ر.س</span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              
               {selectedCustomer.address && (
                 <div>
                   <Label className="text-muted-foreground">العنوان</Label>
                   <p>{selectedCustomer.address}</p>
                 </div>
               )}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-muted-foreground">المحطات المرتبطة</Label>
+                  <Button size="sm" variant="outline" onClick={() => setShowLinkStationDialog(true)}>
+                    ربط محطات
+                  </Button>
+                </div>
+                {customerStationsQuery.data && customerStationsQuery.data.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {customerStationsQuery.data.map((station: any) => (
+                      <div key={station.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span>{station.name}</span>
+                        <Badge variant="outline">{station.type}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">لا توجد محطات مرتبطة</p>
+                )}
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <Label className="text-muted-foreground">الفروع المرتبطة</Label>
+                  <Button size="sm" variant="outline" onClick={() => setShowLinkBranchDialog(true)}>
+                    ربط فروع
+                  </Button>
+                </div>
+                {customerBranchesQuery.data && customerBranchesQuery.data.length > 0 ? (
+                  <div className="mt-2 space-y-2">
+                    {customerBranchesQuery.data.map((branch: any) => (
+                      <div key={branch.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                        <span>{branch.name}</span>
+                        <Badge variant="outline">{branch.city}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground">لا توجد فروع مرتبطة</p>
+                )}
+              </div>
               <div>
                 <Label className="text-muted-foreground">العدادات المرتبطة</Label>
                 {selectedCustomer.meters && selectedCustomer.meters.length > 0 ? (
@@ -527,6 +894,126 @@ export default function CustomersManagement() {
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog ربط المحطات */}
+      <Dialog open={showLinkStationDialog} onOpenChange={setShowLinkStationDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>ربط المحطات بالعميل</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>تصفية حسب الفرع (اختياري)</Label>
+              <Select value={formData.branchId?.toString() || "all"} onValueChange={(v) => setFormData({ ...formData, branchId: v === "all" ? undefined : parseInt(v) })}>
+                <SelectTrigger><SelectValue placeholder="كل الفروع" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">كل الفروع</SelectItem>
+                  {branchesQuery.data?.data?.map((branch: any) => (
+                    <SelectItem key={branch.id} value={branch.id.toString()}>
+                      {branch.nameAr}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>اختر المحطات</Label>
+              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                {stationsQuery.data?.data?.filter((station: any) => !formData.branchId || station.branchId === formData.branchId).map((station: any) => (
+                  <label key={station.id} className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-muted rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedStations.includes(station.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedStations([...selectedStations, station.id]);
+                        } else {
+                          setSelectedStations(selectedStations.filter(id => id !== station.id));
+                          if (primaryStationId === station.id) setPrimaryStationId(null);
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="flex-1">{station.nameAr}</span>
+                    {selectedStations.includes(station.id) && (
+                      <label className="flex items-center gap-2 text-sm text-blue-600">
+                        <input
+                          type="radio"
+                          name="primaryStation"
+                          checked={primaryStationId === station.id}
+                          onChange={() => setPrimaryStationId(station.id)}
+                          className="h-4 w-4"
+                        />
+                        أساسي
+                      </label>
+                    )}
+                    <Badge variant="outline">{station.type}</Badge>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowLinkStationDialog(false)}>إلغاء</Button>
+              <Button onClick={handleLinkStations} disabled={selectedStations.length === 0}>
+                ربط ({selectedStations.length})
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog ربط الفروع */}
+      <Dialog open={showLinkBranchDialog} onOpenChange={setShowLinkBranchDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>ربط الفروع بالعميل</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>اختر الفروع</Label>
+              <div className="mt-2 space-y-2 max-h-64 overflow-y-auto">
+                {branchesQuery.data?.data?.map((branch: any) => (
+                  <label key={branch.id} className="flex items-center space-x-2 space-x-reverse p-2 hover:bg-muted rounded cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedBranches.includes(branch.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedBranches([...selectedBranches, branch.id]);
+                        } else {
+                          setSelectedBranches(selectedBranches.filter(id => id !== branch.id));
+                          if (primaryBranchId === branch.id) setPrimaryBranchId(null);
+                        }
+                      }}
+                      className="h-4 w-4"
+                    />
+                    <span className="flex-1">{branch.nameAr}</span>
+                    {selectedBranches.includes(branch.id) && (
+                      <label className="flex items-center gap-2 text-sm text-blue-600">
+                        <input
+                          type="radio"
+                          name="primaryBranch"
+                          checked={primaryBranchId === branch.id}
+                          onChange={() => setPrimaryBranchId(branch.id)}
+                          className="h-4 w-4"
+                        />
+                        أساسي
+                      </label>
+                    )}
+                    <Badge variant="outline">{branch.city}</Badge>
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowLinkBranchDialog(false)}>إلغاء</Button>
+              <Button onClick={handleLinkBranches} disabled={selectedBranches.length === 0}>
+                ربط ({selectedBranches.length})
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
 

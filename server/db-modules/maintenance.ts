@@ -4,9 +4,9 @@
 
 import { eq, and, asc, sql, inArray, ne, count, gte, lte, desc } from "drizzle-orm";
 import { getDb } from "../db";
-import { maintenancePlans, workOrders, workOrderTasks } from "../../drizzle/schemas/maintenance";
-import { assets } from "../../drizzle/schemas/assets";
-import { employees } from "../../drizzle/schemas/hr";
+import { maintenancePlans, workOrders, workOrderTasks } from "../../drizzle/schema";
+import { assets } from "../../drizzle/schema";
+import { employees } from "../../drizzle/schema";
 
 export async function updateWorkOrder(id: number, data: any) {
   const db = await getDb();
@@ -325,3 +325,4 @@ export async function getTechnicianWorkload(data: { technicianId: number; startD
     totalHours: 0,
   };
 }
+

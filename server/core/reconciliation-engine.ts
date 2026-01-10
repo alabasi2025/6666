@@ -9,7 +9,7 @@
 
 import { eq, and, sql, or, desc, asc, gte, lte, inArray } from "drizzle-orm";
 import { getDb } from "../db";
-import { accounts, journalEntries, journalEntryLines, fiscalPeriods } from "../../drizzle/schemas/accounting";
+import { accounts, journalEntries, journalEntryLines, fiscalPeriods } from "../../drizzle/schema";
 import { logger } from "../utils/logger";
 
 // ============================================
@@ -553,4 +553,5 @@ export class ReconciliationEngine {
     }
   }
 }
+
 

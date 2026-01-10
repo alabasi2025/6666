@@ -7,6 +7,10 @@ import { logger } from "./utils/logger";
 // ============================================
 // Messaging Router - تكامل SMS/WhatsApp
 // ============================================
+// 
+// ملاحظة: هذا Router جزء من نظام المطور (Developer System)
+// جميع التكاملات الخارجية يجب أن تكون في developer.integrations
+// ============================================
 
 export const messagingRouter = router({
   // ============================================
@@ -196,25 +200,86 @@ export const messagingRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         try {
-          // Using synchronous db instance
+          const db = await getDb();
+          if (!db) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "قاعدة البيانات غير متاحة",
+            });
+          }
 
-          // TODO: تنفيذ منطق إرسال الفاتورة
-          // هذا يحتاج:
-          // 1. جلب بيانات الفاتورة والعميل
-          // 2. جلب القالب (أو استخدام الافتراضي)
-          // 3. ملء القالب بالبيانات
-          // 4. إرسال الرسالة عبر المزود
-          // 5. حفظ سجل الرسالة
+          // ✅ 1. جلب بيانات الفاتورة والعميل
+          const invoice = await db.query.invoicesEnhanced.findFirst({
+            where: (invoices, { eq }) => eq(invoices.id, input.invoiceId),
+            with: {
+              customer: true,
+            },
+          });
 
+          if (!invoice) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "الفاتورة غير موجودة",
+            });
+          }
+
+          if (!invoice.customer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "العميل غير موجود",
+            });
+          }
+
+          // ✅ 2-4. إرسال الرسالة عبر القناة المحددة
+          const { smsChannel } = await import("./notifications/channels/sms");
+          const { whatsappChannel } = await import("./notifications/channels/whatsapp");
+          const { emailChannel } = await import("./notifications/channels/email");
+
+          const invoiceData = {
+            invoiceNumber: invoice.invoiceNumber,
+            customerName: invoice.customer.nameAr,
+            totalAmount: parseFloat(invoice.totalAmount),
+            dueDate: invoice.dueDate ? new Date(invoice.dueDate).toISOString().split('T')[0] : '',
+          };
+
+          let result: any = { success: false, channel: input.channel };
+
+          if (input.channel === 'sms' && invoice.customer.phone) {
+            result = await smsChannel.send(
+              {
+                id: Date.now(),
+                type: 'invoice',
+                titleAr: 'فاتورة جديدة',
+                messageAr: `فاتورة رقم ${invoiceData.invoiceNumber} بمبلغ ${invoiceData.totalAmount} ريال. تاريخ الاستحقاق: ${invoiceData.dueDate}`,
+                priority: 'normal',
+                createdAt: new Date(),
+              },
+              { phone: invoice.customer.phone }
+            );
+          } else if (input.channel === 'whatsapp' && invoice.customer.phone) {
+            const success = await whatsappChannel.sendInvoice(invoice.customer.phone, invoiceData);
+            result = { success, channel: 'whatsapp' };
+          } else if (input.channel === 'email' && invoice.customer.email) {
+            result = await emailChannel.sendInvoice(invoice.customer.email, invoiceData);
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `القناة ${input.channel} غير متاحة أو بيانات العميل غير مكتملة`,
+            });
+          }
+
+          // ✅ 5. حفظ سجل الرسالة (يتم تلقائياً في logMessage)
+          
           return {
-            success: true,
+            success: result.success,
             message: "تم إرسال الفاتورة بنجاح",
+            messageId: result.messageId,
           };
         } catch (error: any) {
           logger.error("Error sending invoice:", error);
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "فشل في إرسال الفاتورة",
+            code: error.code || "INTERNAL_SERVER_ERROR",
+            message: error.message || "فشل في إرسال الفاتورة",
           });
         }
       }),
@@ -232,20 +297,100 @@ export const messagingRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         try {
-          // Using synchronous db instance
+          const db = await getDb();
+          if (!db) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "قاعدة البيانات غير متاحة",
+            });
+          }
 
-          // TODO: تنفيذ منطق إرسال التذكير
-          // مشابه لإرسال الفاتورة
+          // جلب بيانات العميل
+          const customer = await db.query.customersEnhanced.findFirst({
+            where: (customers, { eq }) => eq(customers.id, input.customerId),
+          });
+
+          if (!customer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "العميل غير موجود",
+            });
+          }
+
+          // جلب بيانات الفاتورة إن وجدت
+          let invoice: any = null;
+          if (input.invoiceId) {
+            invoice = await db.query.invoicesEnhanced.findFirst({
+              where: (invoices, { eq }) => eq(invoices.id, input.invoiceId),
+            });
+          }
+
+          // إرسال التذكير عبر القناة المحددة
+          const { smsChannel } = await import("./notifications/channels/sms");
+          const { whatsappChannel } = await import("./notifications/channels/whatsapp");
+          const { emailChannel } = await import("./notifications/channels/email");
+
+          let result: any = { success: false };
+
+          if (input.channel === 'sms' && customer.phone) {
+            const message = invoice
+              ? `تذكير: الفاتورة ${invoice.invoiceNumber} بقيمة ${invoice.totalAmount} ريال متأخرة. يرجى السداد.`
+              : `عزيزي ${customer.nameAr}، لديك فاتورة متأخرة. يرجى السداد في أقرب وقت.`;
+
+            result = await smsChannel.send(
+              {
+                id: Date.now(),
+                type: 'payment_reminder',
+                titleAr: 'تذكير بالدفع',
+                messageAr: message,
+                priority: 'high',
+                createdAt: new Date(),
+              },
+              { phone: customer.phone }
+            );
+          } else if (input.channel === 'whatsapp' && customer.phone && invoice) {
+            const daysOverdue = invoice.dueDate
+              ? Math.floor((new Date().getTime() - new Date(invoice.dueDate).getTime()) / (1000 * 60 * 60 * 24))
+              : 0;
+            
+            const success = await whatsappChannel.sendPaymentReminder(customer.phone, {
+              customerName: customer.nameAr,
+              invoiceNumber: invoice.invoiceNumber,
+              totalAmount: parseFloat(invoice.totalAmount),
+              daysOverdue,
+            });
+            result = { success, channel: 'whatsapp' };
+          } else if (input.channel === 'email' && customer.email) {
+            result = await emailChannel.send(
+              {
+                id: Date.now(),
+                type: 'payment_reminder',
+                titleAr: 'تذكير بالدفع',
+                messageAr: invoice
+                  ? `عزيزي ${customer.nameAr}، لديك فاتورة متأخرة رقم ${invoice.invoiceNumber} بقيمة ${invoice.totalAmount} ريال. يرجى السداد في أقرب وقت.`
+                  : `عزيزي ${customer.nameAr}، لديك فاتورة متأخرة. يرجى السداد في أقرب وقت.`,
+                priority: 'high',
+                createdAt: new Date(),
+              },
+              { email: customer.email }
+            );
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `القناة ${input.channel} غير متاحة أو بيانات العميل غير مكتملة`,
+            });
+          }
 
           return {
-            success: true,
+            success: result.success,
             message: "تم إرسال التذكير بنجاح",
+            messageId: result.messageId,
           };
         } catch (error: any) {
           logger.error("Error sending reminder:", error);
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "فشل في إرسال التذكير",
+            code: error.code || "INTERNAL_SERVER_ERROR",
+            message: error.message || "فشل في إرسال التذكير",
           });
         }
       }),
@@ -263,19 +408,95 @@ export const messagingRouter = router({
       )
       .mutation(async ({ input, ctx }) => {
         try {
-          // Using synchronous db instance
+          const db = await getDb();
+          if (!db) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "قاعدة البيانات غير متاحة",
+            });
+          }
 
-          // TODO: تنفيذ منطق إرسال تأكيد الدفع
+          // جلب بيانات الدفعة والعميل
+          const payment = await db.query.paymentsEnhanced.findFirst({
+            where: (payments, { eq }) => eq(payments.id, input.paymentId),
+            with: {
+              customer: true,
+              invoice: true,
+            },
+          });
+
+          if (!payment) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "الدفعة غير موجودة",
+            });
+          }
+
+          if (!payment.customer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "العميل غير موجود",
+            });
+          }
+
+          // إرسال التأكيد عبر القناة المحددة
+          const { smsChannel } = await import("./notifications/channels/sms");
+          const { whatsappChannel } = await import("./notifications/channels/whatsapp");
+          const { emailChannel } = await import("./notifications/channels/email");
+
+          const paymentData = {
+            customerName: payment.customer.nameAr,
+            amount: parseFloat(payment.amount),
+            receiptNumber: payment.receiptNumber || payment.id.toString(),
+            invoiceNumber: payment.invoice?.invoiceNumber,
+          };
+
+          let result: any = { success: false };
+
+          if (input.channel === 'sms' && payment.customer.phone) {
+            result = await smsChannel.send(
+              {
+                id: Date.now(),
+                type: 'payment_confirmation',
+                titleAr: 'تأكيد الدفع',
+                messageAr: `تم استلام دفعتكم بنجاح: ${paymentData.amount} ريال. رقم الإيصال: ${paymentData.receiptNumber}`,
+                priority: 'normal',
+                createdAt: new Date(),
+              },
+              { phone: payment.customer.phone }
+            );
+          } else if (input.channel === 'whatsapp' && payment.customer.phone) {
+            const success = await whatsappChannel.sendPaymentConfirmation(payment.customer.phone, paymentData);
+            result = { success, channel: 'whatsapp' };
+          } else if (input.channel === 'email' && payment.customer.email) {
+            result = await emailChannel.send(
+              {
+                id: Date.now(),
+                type: 'payment_confirmation',
+                titleAr: 'تأكيد الدفع',
+                messageAr: `عزيزي ${paymentData.customerName}، تم استلام دفعتكم بنجاح بمبلغ ${paymentData.amount} ريال. رقم الإيصال: ${paymentData.receiptNumber}`,
+                priority: 'normal',
+                createdAt: new Date(),
+              },
+              { email: payment.customer.email }
+            );
+          } else {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: `القناة ${input.channel} غير متاحة أو بيانات العميل غير مكتملة`,
+            });
+          }
 
           return {
-            success: true,
+            success: result.success,
             message: "تم إرسال تأكيد الدفع بنجاح",
+            messageId: result.messageId,
           };
         } catch (error: any) {
           logger.error("Error sending payment confirmation:", error);
           throw new TRPCError({
-            code: "INTERNAL_SERVER_ERROR",
-            message: "فشل في إرسال تأكيد الدفع",
+            code: error.code || "INTERNAL_SERVER_ERROR",
+            message: error.message || "فشل في إرسال تأكيد الدفع",
           });
         }
       }),
@@ -342,11 +563,38 @@ export const messagingRouter = router({
 
           const messageId = (result as any).insertId;
 
-          // TODO: إرسال الرسالة عبر المزود
-          // هذا يحتاج:
-          // 1. جلب المزود الافتراضي
-          // 2. إرسال الرسالة عبر API المزود
-          // 3. تحديث حالة الرسالة
+          // ✅ إرسال الرسالة عبر المزود
+          try {
+            const { notificationService } = await import("./notifications/notification-service");
+            
+            // إرسال الرسالة عبر notificationService
+            await notificationService.send({
+              businessId: input.businessId,
+              channels: input.channels || [input.channel],
+              recipients: [input.recipient],
+              template: 'custom',
+              data: {
+                message: input.message,
+                subject: input.subject,
+              },
+            });
+            
+            // تحديث حالة الرسالة
+            await db.execute(
+              "UPDATE sms_messages SET status = 'sent', sent_at = NOW() WHERE id = ?",
+              [messageId]
+            );
+          } catch (sendError: any) {
+            logger.error('Failed to send custom message via provider', {
+              messageId,
+              error: sendError.message,
+            });
+            // تحديث حالة الرسالة بالفشل
+            await db.execute(
+              "UPDATE sms_messages SET status = 'failed', error_message = ? WHERE id = ?",
+              [sendError.message || 'فشل الإرسال', messageId]
+            );
+          }
 
           return {
             id: messageId,
@@ -460,7 +708,36 @@ export const messagingRouter = router({
             [input.messageId]
           );
 
-          // TODO: إعادة إرسال الرسالة عبر المزود
+          // ✅ إعادة إرسال الرسالة عبر المزود
+          try {
+            const { notificationService } = await import("./notifications/notification-service");
+            
+            // إعادة إرسال الرسالة
+            await notificationService.send({
+              businessId: message.business_id || 1,
+              channels: [message.channel || 'sms'],
+              recipients: [message.recipient],
+              template: message.template || 'custom',
+              data: message.data ? (typeof message.data === 'string' ? JSON.parse(message.data) : message.data) : {},
+            });
+            
+            // تحديث حالة الرسالة
+            await db.execute(
+              "UPDATE sms_messages SET status = 'sent', sent_at = NOW(), retry_count = retry_count + 1 WHERE id = ?",
+              [input.messageId]
+            );
+          } catch (retryError: any) {
+            logger.error('Failed to retry sending message', {
+              messageId: input.messageId,
+              error: retryError.message,
+            });
+            
+            // تحديث حالة الرسالة بالفشل
+            await db.execute(
+              "UPDATE sms_messages SET status = 'failed', error_message = ? WHERE id = ?",
+              [retryError.message || 'فشل إعادة الإرسال', input.messageId]
+            );
+          }
 
           return {
             success: true,

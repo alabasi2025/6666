@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { useBusinessId } from "@/contexts/BusinessContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
@@ -40,11 +41,17 @@ const TRANSITION_DASHBOARD_INFO = {
 export default function TransitionDashboard() {
   const [location] = useLocation();
   const { toast } = useToast();
-  const businessId = 1; // TODO: Get from context
+  const businessId = useBusinessId();
 
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
   const currentMonth = currentDate.getMonth() + 1;
+
+  // Determine current page based on location
+  const isNotificationsPage = location.includes("/notifications");
+  const isBillingPage = location.includes("/billing");
+  const isAlertsPage = location.includes("/alerts");
+  const isDashboard = !isNotificationsPage && !isBillingPage && !isAlertsPage;
 
   // Fetch dashboard data
   const { data, isLoading } = trpc.transitionSupport.monitoring.getDashboard.useQuery({
@@ -59,10 +66,121 @@ export default function TransitionDashboard() {
     severity: "critical",
     status: "active",
     limit: 5,
-  });
+  }, { enabled: isDashboard || isAlertsPage });
+
+  // Fetch all alerts for alerts page
+  const { data: allAlerts } = trpc.transitionSupport.monitoring.getAlerts.useQuery({
+    businessId,
+    limit: 100,
+  }, { enabled: isAlertsPage });
 
   const currentPageInfo = resolvePageInfo(location);
 
+  // Render different content based on current path
+  if (isNotificationsPage) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Bell className="w-8 h-8 text-orange-500" />
+              الإشعارات
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              إدارة الإشعارات الاستباقية
+            </p>
+          </div>
+          <EngineInfoDialog info={currentPageInfo} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>الإشعارات الاستباقية</CardTitle>
+            <CardDescription>إدارة الإشعارات المرسلة للعملاء</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">قيد التطوير - سيتم إضافة إدارة الإشعارات قريباً</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isBillingPage) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <FileText className="w-8 h-8 text-orange-500" />
+              تعديلات الفوترة
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              تعديلات الفوترة للمرحلة الانتقالية
+            </p>
+          </div>
+          <EngineInfoDialog info={currentPageInfo} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>تعديلات الفوترة</CardTitle>
+            <CardDescription>إدارة التعديلات على الفواتير خلال المرحلة الانتقالية</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">قيد التطوير - سيتم إضافة تعديلات الفوترة قريباً</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (isAlertsPage) {
+    return (
+      <div className="container mx-auto p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <AlertTriangle className="w-8 h-8 text-orange-500" />
+              التنبيهات
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              إدارة التنبيهات
+            </p>
+          </div>
+          <EngineInfoDialog info={currentPageInfo} />
+        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>جميع التنبيهات</CardTitle>
+            <CardDescription>عرض وإدارة جميع التنبيهات</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {allAlerts && allAlerts.length > 0 ? (
+              <div className="space-y-2">
+                {allAlerts.map((alert: any) => (
+                  <div key={alert.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{alert.title}</div>
+                      <div className="text-sm text-muted-foreground">{alert.customer_name || "غير محدد"}</div>
+                    </div>
+                    <Badge variant={alert.severity === "critical" ? "destructive" : "default"}>
+                      {alert.severity === "critical" && "حرج"}
+                      {alert.severity === "error" && "خطأ"}
+                      {alert.severity === "warning" && "تحذير"}
+                      {alert.severity === "info" && "معلومات"}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-muted-foreground">لا توجد تنبيهات</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Default dashboard view
   return (
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">

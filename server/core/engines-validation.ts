@@ -4,9 +4,11 @@
  */
 
 import { getDb } from "../db";
-import { accounts, fiscalPeriods } from "../../drizzle/schemas/accounting";
-import { pricingRules } from "../../drizzle/schemas/pricing";
-import { businesses } from "../../drizzle/schemas/organization";
+import { accounts, fiscalPeriods } from "../../drizzle/schema";
+// DISABLED: pricing system needs migration to PostgreSQL
+import { pgTable, serial } from "drizzle-orm/pg-core";
+const pricingRules = pgTable("pricing_rules_disabled", { id: serial("id").primaryKey() });
+import { businesses } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 import { logger } from "../utils/logger";
 
@@ -302,4 +304,6 @@ export class EnginesValidator {
     }
   }
 }
+
+
 

@@ -1,109 +1,45 @@
--- ============================================================================
--- إصلاح الجداول المفقودة في النظام المخصص
--- Missing Tables Fix for Custom System
--- التاريخ: 2 يناير 2026
--- ============================================================================
+-- Create custom_account_types table
+CREATE TABLE IF NOT EXISTS custom_account_types (
+  id SERIAL PRIMARY KEY,
+  business_id INT NOT NULL,
+  sub_system_id INT,
+  type_code VARCHAR(50) NOT NULL,
+  type_name_ar VARCHAR(100) NOT NULL,
+  type_name_en VARCHAR(100),
+  description TEXT,
+  color VARCHAR(20),
+  icon VARCHAR(50),
+  display_order INT DEFAULT 0 NOT NULL,
+  is_active BOOLEAN DEFAULT TRUE NOT NULL,
+  is_system_type BOOLEAN DEFAULT FALSE NOT NULL,
+  created_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
 
-SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE INDEX IF NOT EXISTS cat_business_idx ON custom_account_types(business_id);
+CREATE INDEX IF NOT EXISTS cat_type_code_idx ON custom_account_types(type_code);
+CREATE UNIQUE INDEX IF NOT EXISTS cat_business_code_unique ON custom_account_types(business_id, type_code);
+CREATE INDEX IF NOT EXISTS cat_is_active_idx ON custom_account_types(is_active);
+CREATE INDEX IF NOT EXISTS cat_display_order_idx ON custom_account_types(display_order);
 
--- ============================================================================
--- 1. جدول custom_transactions (إذا لم يكن موجوداً)
--- ============================================================================
-CREATE TABLE IF NOT EXISTS `custom_transactions` (
-  `id` INT AUTO_INCREMENT NOT NULL,
-  `business_id` INT NOT NULL,
-  `transaction_number` VARCHAR(50) NOT NULL,
-  `transaction_date` DATE NOT NULL,
-  `account_id` INT NOT NULL,
-  `transaction_type` ENUM('debit', 'credit') NOT NULL,
-  `amount` DECIMAL(18,2) NOT NULL DEFAULT 0.00,
-  `currency` VARCHAR(10) DEFAULT 'SAR',
-  `description` TEXT,
-  `reference_type` VARCHAR(50),
-  `reference_id` INT,
-  `notes` TEXT,
-  `created_by` INT,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `ctx_business_idx` (`business_id`),
-  INDEX `ctx_account_idx` (`account_id`),
-  INDEX `ctx_date_idx` (`transaction_date`),
-  INDEX `ctx_type_idx` (`transaction_type`),
-  INDEX `ctx_reference_idx` (`reference_type`, `reference_id`),
-  UNIQUE INDEX `ctx_number_unique` (`business_id`, `transaction_number`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+-- Insert default account types
+INSERT INTO custom_account_types (business_id, type_code, type_name_ar, type_name_en, color, icon, display_order, is_active, is_system_type)
+SELECT 1, 'asset', 'أصول', 'Assets', '#10b981', 'TrendingUp', 1, TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM custom_account_types WHERE business_id = 1 AND type_code = 'asset');
 
--- ============================================================================
--- 2. جدول custom_treasury_movements (إذا لم يكن موجوداً)
--- ============================================================================
-CREATE TABLE IF NOT EXISTS `custom_treasury_movements` (
-  `id` INT AUTO_INCREMENT NOT NULL,
-  `business_id` INT NOT NULL,
-  `sub_system_id` INT NOT NULL,
-  `treasury_id` INT NOT NULL,
-  `currency_id` INT NOT NULL,
-  `movement_date` DATE NOT NULL,
-  `movement_type` ENUM('in','out','transfer','opening','closing','adjustment') NOT NULL,
-  `amount` DECIMAL(18,2) NOT NULL DEFAULT 0.00,
-  `exchange_rate` DECIMAL(18,6) DEFAULT 1.000000,
-  `amount_in_base_currency` DECIMAL(18,2),
-  `reference_type` VARCHAR(50),
-  `reference_id` INT,
-  `party_id` INT,
-  `from_treasury_id` INT,
-  `to_treasury_id` INT,
-  `description` TEXT,
-  `notes` TEXT,
-  `status` ENUM('pending','approved','rejected','cancelled') DEFAULT 'pending',
-  `approved_by` INT,
-  `approved_at` TIMESTAMP NULL,
-  `created_by` INT,
-  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  PRIMARY KEY (`id`),
-  INDEX `ctm_business_idx` (`business_id`),
-  INDEX `ctm_subsystem_idx` (`sub_system_id`),
-  INDEX `ctm_treasury_idx` (`treasury_id`),
-  INDEX `ctm_currency_idx` (`currency_id`),
-  INDEX `ctm_date_idx` (`movement_date`),
-  INDEX `ctm_type_idx` (`movement_type`),
-  INDEX `ctm_status_idx` (`status`),
-  INDEX `ctm_party_idx` (`party_id`),
-  INDEX `ctm_reference_idx` (`reference_type`, `reference_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+INSERT INTO custom_account_types (business_id, type_code, type_name_ar, type_name_en, color, icon, display_order, is_active, is_system_type)
+SELECT 1, 'liability', 'التزامات', 'Liabilities', '#ef4444', 'TrendingDown', 2, TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM custom_account_types WHERE business_id = 1 AND type_code = 'liability');
 
--- ============================================================================
--- 3. إضافة Foreign Keys (اختياري - قد يفشل إذا كانت البيانات غير متسقة)
--- ============================================================================
+INSERT INTO custom_account_types (business_id, type_code, type_name_ar, type_name_en, color, icon, display_order, is_active, is_system_type)
+SELECT 1, 'equity', 'حقوق ملكية', 'Equity', '#8b5cf6', 'Users', 3, TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM custom_account_types WHERE business_id = 1 AND type_code = 'equity');
 
--- Foreign Keys لـ custom_transactions
-ALTER TABLE `custom_transactions`
-  ADD CONSTRAINT `fk_ctx_business` 
-    FOREIGN KEY (`business_id`) REFERENCES `businesses`(`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_ctx_account` 
-    FOREIGN KEY (`account_id`) REFERENCES `custom_accounts`(`id`) ON DELETE CASCADE;
+INSERT INTO custom_account_types (business_id, type_code, type_name_ar, type_name_en, color, icon, display_order, is_active, is_system_type)
+SELECT 1, 'revenue', 'إيرادات', 'Revenue', '#3b82f6', 'ArrowUpCircle', 4, TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM custom_account_types WHERE business_id = 1 AND type_code = 'revenue');
 
--- Foreign Keys لـ custom_treasury_movements
-ALTER TABLE `custom_treasury_movements`
-  ADD CONSTRAINT `fk_ctm_business` 
-    FOREIGN KEY (`business_id`) REFERENCES `businesses`(`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_ctm_treasury` 
-    FOREIGN KEY (`treasury_id`) REFERENCES `custom_treasuries`(`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_ctm_currency` 
-    FOREIGN KEY (`currency_id`) REFERENCES `custom_currencies`(`id`) ON DELETE RESTRICT;
-
--- Foreign Keys لـ custom_treasury_currencies (إذا لم تكن موجودة)
-ALTER TABLE `custom_treasury_currencies`
-  ADD CONSTRAINT `fk_ctc_treasury` 
-    FOREIGN KEY (`treasury_id`) REFERENCES `custom_treasuries`(`id`) ON DELETE CASCADE,
-  ADD CONSTRAINT `fk_ctc_currency` 
-    FOREIGN KEY (`currency_id`) REFERENCES `custom_currencies`(`id`) ON DELETE RESTRICT,
-  ADD CONSTRAINT `fk_ctc_business` 
-    FOREIGN KEY (`business_id`) REFERENCES `businesses`(`id`) ON DELETE CASCADE;
-
--- ============================================================================
--- تم الانتهاء
--- ============================================================================
-SELECT 'تم إنشاء/تحديث الجداول بنجاح!' as message;
-
+INSERT INTO custom_account_types (business_id, type_code, type_name_ar, type_name_en, color, icon, display_order, is_active, is_system_type)
+SELECT 1, 'expense', 'مصروفات', 'Expenses', '#f59e0b', 'ArrowDownCircle', 5, TRUE, TRUE
+WHERE NOT EXISTS (SELECT 1 FROM custom_account_types WHERE business_id = 1 AND type_code = 'expense');

@@ -14,8 +14,10 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { 
   Plus, Search, Plug, Settings, Trash2, Eye, RefreshCw,
-  CheckCircle, XCircle, AlertTriangle, Clock, ExternalLink
+  CheckCircle, XCircle, AlertTriangle, Clock, ExternalLink,
+  Zap, Smartphone, CreditCard
 } from "lucide-react";
+import { Link } from "wouter";
 
 const integrationTypes = [
   { value: "payment_gateway", label: "بوابة دفع" },
@@ -131,6 +133,61 @@ export default function Integrations() {
 
   return (
     <div className="space-y-6">
+      {/* Quick Integration Cards */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <Link href="/dashboard/acrel/meters">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-semibold">عدادات ACREL</CardTitle>
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Zap className="h-5 w-5 text-blue-500" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                إدارة عدادات ACREL IoT (ADL200, ADW300) - القراءات التلقائية، إعدادات الدفع، والتعرفات المتعددة
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1">
+                  <Zap className="h-4 w-4 ml-2" />
+                  إدارة العدادات
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1">
+                  <Settings className="h-4 w-4 ml-2" />
+                  الإعدادات
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        <Link href="/dashboard/sts/meters">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg font-semibold">عدادات STS</CardTitle>
+              <div className="p-2 rounded-lg bg-purple-500/10">
+                <Smartphone className="h-5 w-5 text-purple-500" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground mb-3">
+                إدارة عدادات Smart Token System - شحن الرصيد، إعدادات الدفع، والتعرفات المتعددة
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="flex-1">
+                  <Smartphone className="h-4 w-4 ml-2" />
+                  إدارة العدادات
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1">
+                  <CreditCard className="h-4 w-4 ml-2" />
+                  الشحن
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

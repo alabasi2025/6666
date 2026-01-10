@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useBusinessId } from "@/contexts/BusinessContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,8 +15,16 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, RefreshCw, CheckCircle, XCircle } from "lucide-react";
+import { CreditCard, RefreshCw, CheckCircle, XCircle, Copy, Check } from "lucide-react";
 import EngineInfoDialog from "@/components/engines/EngineInfoDialog";
 import { resolvePageInfo } from "@/components/engines/pageInfoRegistry";
 
@@ -59,8 +68,12 @@ export default function STSCharging() {
   const [selectedMeterId, setSelectedMeterId] = useState<number | null>(null);
   const [chargeAmount, setChargeAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("");
+  const [selectedTariffId, setSelectedTariffId] = useState<string>("");
+  const [showTokenDialog, setShowTokenDialog] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState<string>("");
+  const [copied, setCopied] = useState(false);
 
-  const businessId = 1; // TODO: Get from context
+  const businessId = useBusinessId();
 
   // Get meterId from URL params
   useEffect(() => {
@@ -72,27 +85,34 @@ export default function STSCharging() {
   }, [location]);
 
   // Fetch STS meters
-  const { data: metersData } = trpc.sts.meters.list.useQuery({
+  const { data: metersData } = trpc.developer.integrations.sts.meters.list.useQuery({
     businessId,
     status: "active",
   });
 
   // Fetch charge requests
-  const { data, isLoading, refetch } = trpc.sts.charging.list.useQuery({
+  const { data, isLoading, refetch } = trpc.developer.integrations.sts.charging.list.useQuery({
     businessId,
     stsMeterId: selectedMeterId || undefined,
   });
 
+  // Fetch tariff schedule for selected meter
+  const { data: tariffSchedule } = trpc.developer.integrations.sts.tariff.getSchedule.useQuery(
+    { meterId: selectedMeterId! },
+    { enabled: !!selectedMeterId }
+  );
+
   // Create charge mutation
-  const createChargeMutation = trpc.sts.charging.createCharge.useMutation({
+  const createChargeMutation = trpc.developer.integrations.sts.charging.createCharge.useMutation({
     onSuccess: (result) => {
       toast.success("تم إنشاء طلب الشحن بنجاح");
       setChargeAmount("");
       setPaymentMethod("");
       refetch();
-      // Navigate to token view
-      if (result.id) {
-        // TODO: Show token dialog or navigate to token page
+      // ✅ عرض توكن الشحن في dialog
+      if (result.token || result.stsToken) {
+        setGeneratedToken(result.token || result.stsToken || "");
+        setShowTokenDialog(true);
       }
     },
     onError: (error) => {
@@ -100,8 +120,18 @@ export default function STSCharging() {
     },
   });
 
+  // ✅ نسخ التوكن إلى الحافظة
+  const handleCopyToken = async () => {
+    if (generatedToken) {
+      await navigator.clipboard.writeText(generatedToken);
+      setCopied(true);
+      toast.success("تم نسخ التوكن");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
   // Verify charge mutation
-  const verifyChargeMutation = trpc.sts.charging.verifyCharge.useMutation({
+  const verifyChargeMutation = trpc.developer.integrations.sts.charging.verifyCharge.useMutation({
     onSuccess: () => {
       toast.success("تم التحقق من حالة الشحن");
       refetch();
@@ -130,6 +160,7 @@ export default function STSCharging() {
       stsMeterId: selectedMeterId,
       amount: parseFloat(chargeAmount),
       paymentMethod: paymentMethod || undefined,
+      tariffId: selectedTariffId || undefined,
     });
   };
 
@@ -199,6 +230,26 @@ export default function STSCharging() {
               />
             </div>
           </div>
+          {tariffSchedule?.schedule && tariffSchedule.schedule.length > 0 && (
+            <div className="mt-4">
+              <Label>اختر التعرفة (اختياري)</Label>
+              <select
+                className="w-full p-2 border rounded-md"
+                value={selectedTariffId}
+                onChange={(e) => setSelectedTariffId(e.target.value)}
+              >
+                <option value="">استخدام التعرفة الافتراضية</option>
+                {tariffSchedule.schedule.map((tariff: any, index: number) => (
+                  <option key={index} value={index.toString()}>
+                    {tariff.startTime} - {tariff.endTime}: {tariff.pricePerKWH.toFixed(3)} ر.س/KWH
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground mt-1">
+                ملاحظة: STS يولد كيلوهات وليس رصيد نقدي. سيتم حساب الكيلوهات بناءً على التعرفة المختارة.
+              </p>
+            </div>
+          )}
           <div className="mt-4">
             <Button
               onClick={handleCreateCharge}
@@ -239,6 +290,7 @@ export default function STSCharging() {
                   <TableHead>العميل</TableHead>
                   <TableHead>العداد</TableHead>
                   <TableHead>المبلغ</TableHead>
+                  <TableHead>الكيلوهات المولدة</TableHead>
                   <TableHead>الحالة</TableHead>
                   <TableHead>التاريخ</TableHead>
                   <TableHead>الإجراءات</TableHead>
@@ -251,6 +303,15 @@ export default function STSCharging() {
                     <TableCell>{request.customer_name || "-"}</TableCell>
                     <TableCell>{request.sts_meter_number || "-"}</TableCell>
                     <TableCell>{parseFloat(request.amount || 0).toFixed(2)} ر.س</TableCell>
+                    <TableCell>
+                      {request.kwh_generated ? (
+                        <span className="text-primary font-medium">
+                          {parseFloat(request.kwh_generated).toFixed(2)} KWH
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         variant={

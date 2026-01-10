@@ -302,13 +302,74 @@ export const transitionSupportRouter = router({
         try {
           // Using synchronous db instance
 
-          // TODO: تنفيذ منطق إرسال الإشعار عبر القنوات المختلفة
-          // هذا يحتاج:
+          // ✅ تنفيذ منطق إرسال الإشعار عبر القنوات المختلفة
           // 1. جلب بيانات الإشعار
-          // 2. جلب بيانات العميل (الهاتف، البريد)
-          // 3. إرسال عبر SMS/Email/WhatsApp حسب sendVia
-          // 4. تحديث حالة الإشعار
+          const [notification] = await db.execute(
+            `SELECT * FROM transition_support_notifications WHERE id = ?`,
+            [input.id]
+          );
+          
+          if (!notification || (notification as any[]).length === 0) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "الإشعار غير موجود",
+            });
+          }
 
+          const notif = (notification as any[])[0];
+
+          // 2. جلب بيانات العميل (الهاتف، البريد)
+          const { customersEnhanced } = await import("../../drizzle/schema");
+          const { eq } = await import("drizzle-orm");
+          const [customer] = await db
+            .select({
+              id: customersEnhanced.id,
+              mobileNo: customersEnhanced.mobileNo,
+              email: customersEnhanced.email,
+              businessId: customersEnhanced.businessId,
+            })
+            .from(customersEnhanced)
+            .where(eq(customersEnhanced.id, notif.customerId))
+            .limit(1);
+
+          if (!customer) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: "العميل غير موجود",
+            });
+          }
+
+          // 3. إرسال عبر SMS/Email/WhatsApp حسب sendVia
+          const { notificationService } = await import("../notifications/notification-service");
+          const channels: any[] = [];
+          
+          if (notif.sendVia?.includes('sms') && customer.mobileNo) {
+            channels.push('sms');
+          }
+          if (notif.sendVia?.includes('email') && customer.email) {
+            channels.push('email');
+          }
+          if (notif.sendVia?.includes('whatsapp') && customer.mobileNo) {
+            channels.push('whatsapp');
+          }
+
+          const recipients = [{
+            phone: customer.mobileNo,
+            email: customer.email,
+            businessId: customer.businessId,
+          }];
+
+          await notificationService.send(
+            'info',
+            notif.titleEn || 'Transition Support Notification',
+            notif.titleAr || 'إشعار دعم المرحلة الانتقالية',
+            notif.messageEn || notif.messageAr || '',
+            notif.messageAr || '',
+            recipients,
+            { channels }
+          );
+
+          // 4. تحديث حالة الإشعار
           await db.execute(
             `UPDATE transition_support_notifications 
              SET status = 'sent', sent_at = NOW() 
@@ -459,18 +520,94 @@ export const transitionSupportRouter = router({
         try {
           // Using synchronous db instance
 
-          // TODO: تنفيذ منطق تطبيق قواعد المرحلة الانتقالية
-          // هذا يحتاج:
-          // 1. جلب القواعد النشطة
-          // 2. تقييم الشروط لكل قاعدة
-          // 3. تطبيق الإجراءات المطلوبة
-          // 4. إنشاء تعديلات الفوترة تلقائياً
+          // ✅ تنفيذ منطق تطبيق قواعد المرحلة الانتقالية
+          let appliedCount = 0;
 
-          return {
-            success: true,
-            message: "تم تطبيق قواعد المرحلة الانتقالية بنجاح",
-            appliedCount: 0, // سيتم تحديثه بعد التنفيذ
-          };
+          try {
+            // 1. جلب القواعد النشطة
+            const ruleIds = input.ruleIds && input.ruleIds.length > 0
+              ? input.ruleIds
+              : null;
+
+            let rulesQuery = `
+              SELECT * FROM transition_support_rules
+              WHERE business_id = ? AND is_active = true
+            `;
+            const params: any[] = [input.businessId];
+
+            if (ruleIds) {
+              rulesQuery += ` AND id IN (${ruleIds.map(() => '?').join(',')})`;
+              params.push(...ruleIds);
+            }
+
+            const [rules] = await db.execute(rulesQuery, params);
+            const activeRules = rules as any[];
+
+            // 2. تقييم الشروط لكل قاعدة
+            for (const rule of activeRules) {
+              try {
+                // التحقق من الشروط (مثال: تاريخ البدء والانتهاء)
+                const now = new Date();
+                const startDate = rule.startDate ? new Date(rule.startDate) : null;
+                const endDate = rule.endDate ? new Date(rule.endDate) : null;
+
+                if (startDate && now < startDate) continue;
+                if (endDate && now > endDate) continue;
+
+                // 3. تطبيق الإجراءات المطلوبة
+                if (rule.actionType === 'discount' || rule.actionType === 'subsidy') {
+                  // جلب العملاء المؤهلين
+                  const customerQuery = rule.customerIds
+                    ? `SELECT id FROM customers WHERE id IN (${JSON.parse(rule.customerIds).map(() => '?').join(',')}) AND business_id = ?`
+                    : `SELECT id FROM customers WHERE business_id = ? AND is_active = true`;
+
+                  const customerParams = rule.customerIds
+                    ? [...JSON.parse(rule.customerIds), input.businessId]
+                    : [input.businessId];
+
+                  const [customers] = await db.execute(customerQuery, customerParams);
+                  const customerList = customers as any[];
+
+                  // 4. إنشاء تعديلات الفوترة تلقائياً
+                  for (const customer of customerList) {
+                    await db.execute(
+                      `INSERT INTO transition_support_billing_adjustments (
+                        business_id, customer_id, rule_id, adjustment_type,
+                        amount, description, status, created_by
+                      ) VALUES (?, ?, ?, ?, ?, ?, 'draft', ?)`,
+                      [
+                        input.businessId,
+                        customer.id,
+                        rule.id,
+                        rule.actionType,
+                        rule.amount || 0,
+                        rule.description || `تعديل تلقائي - ${rule.nameAr}`,
+                        ctx.user?.id || 1,
+                      ]
+                    );
+                    appliedCount++;
+                  }
+                }
+              } catch (ruleError: any) {
+                logger.error('Failed to apply transition rule', {
+                  ruleId: rule.id,
+                  error: ruleError.message,
+                });
+              }
+            }
+
+            return {
+              success: true,
+              message: "تم تطبيق قواعد المرحلة الانتقالية بنجاح",
+              appliedCount,
+            };
+          } catch (error: any) {
+            logger.error('Failed to apply transition rules', {
+              error: error.message,
+              businessId: input.businessId,
+            });
+            throw error;
+          }
         } catch (error: any) {
           logger.error("Error applying transition rules:", error);
           throw new TRPCError({

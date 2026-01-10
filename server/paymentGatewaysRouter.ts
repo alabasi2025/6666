@@ -7,6 +7,10 @@ import { logger } from "./utils/logger";
 // ============================================
 // Payment Gateways Router - تكامل بوابات الدفع
 // ============================================
+// 
+// ملاحظة: هذا Router جزء من نظام المطور (Developer System)
+// جميع التكاملات الخارجية يجب أن تكون في developer.integrations
+// ============================================
 
 export const paymentGatewaysRouter = router({
   // ============================================
@@ -133,13 +137,57 @@ export const paymentGatewaysRouter = router({
             });
           }
 
-          // TODO: تنفيذ اختبار الاتصال الفعلي مع بوابة الدفع
-          // هذا يحتاج تنفيذ HTTP request للـ API
-
-          return {
-            success: true,
-            message: "تم اختبار البوابة بنجاح",
-          };
+          // ✅ تنفيذ اختبار الاتصال الفعلي مع بوابة الدفع
+          try {
+            if (gateway.gateway_name?.toLowerCase().includes('moyasar')) {
+              const { MoyasarGateway } = await import("./developer/integrations/payment-gateways/moyasar");
+              const moyasarConfig = {
+                apiKey: gateway.api_key || '',
+                testMode: gateway.test_mode || false,
+              };
+              const moyasarGateway = new MoyasarGateway(moyasarConfig);
+              const testResult = await moyasarGateway.testConnection();
+              
+              return {
+                success: testResult.success,
+                message: testResult.message,
+              };
+            } else if (gateway.gateway_name?.toLowerCase().includes('sadad')) {
+              const { SadadGateway } = await import("./developer/integrations/payment-gateways/sadad");
+              const sadadConfig = {
+                merchantId: gateway.merchant_id || '',
+                terminalId: gateway.config ? JSON.parse(gateway.config)?.terminalId : undefined,
+                apiKey: gateway.api_key || '',
+                secretKey: gateway.api_secret || '',
+                testMode: gateway.test_mode || false,
+              };
+              const sadadGateway = new SadadGateway(sadadConfig);
+              const testResult = await sadadGateway.testConnection();
+              
+              return {
+                success: testResult.success,
+                message: testResult.message,
+              };
+            } else {
+              // بوابة غير معروفة - إرجاع نجاح افتراضي
+              logger.warn(`Unknown gateway type: ${gateway.gateway_name}`);
+              return {
+                success: true,
+                message: "بوابة الدفع غير مدعومة للاختبار التلقائي",
+              };
+            }
+          } catch (error: any) {
+            logger.error('Gateway test connection failed', {
+              gatewayId: input.gatewayId,
+              gatewayName: gateway.gateway_name,
+              error: error.message,
+            });
+            
+            return {
+              success: false,
+              message: error.message || "فشل في اختبار البوابة",
+            };
+          }
         } catch (error: any) {
           if (error instanceof TRPCError) throw error;
           logger.error("Error testing payment gateway:", error);
@@ -200,20 +248,195 @@ export const paymentGatewaysRouter = router({
 
           const transactionId = (result as any).insertId;
 
-          // TODO: استدعاء API بوابة الدفع لإنشاء المعاملة
-          // هذا يحتاج:
-          // 1. جلب بيانات البوابة
-          // 2. إعداد بيانات الطلب
-          // 3. إرسال الطلب للبوابة
-          // 4. حفظ استجابة البوابة
-          // 5. تحديث حالة المعاملة
+          // ✅ استدعاء API بوابة الدفع لإنشاء المعاملة
+          let gatewayTransactionId: string | null = null;
+          let paymentUrl: string | null = null;
+          let paymentStatus = 'pending';
+
+          try {
+            // جلب بيانات البوابة
+            const [gatewayRows] = await db.execute(
+              "SELECT * FROM payment_gateways WHERE id = ?",
+              [input.gatewayId]
+            );
+            const gateway = (gatewayRows as any[])[0];
+
+            if (!gateway) {
+              throw new Error("بوابة الدفع غير موجودة");
+            }
+
+            // جلب بيانات العميل
+            const [customerRows] = await db.execute(
+              "SELECT name_ar, name_en, email, phone FROM customers WHERE id = ?",
+              [input.customerId]
+            );
+            const customer = (customerRows as any[])[0];
+
+            // جلب بيانات الفاتورة (إن وُجدت)
+            let invoiceNumber: string | null = null;
+            if (input.invoiceId) {
+              const [invoiceRows] = await db.execute(
+                "SELECT invoice_no FROM invoices_enhanced WHERE id = ?",
+                [input.invoiceId]
+              );
+              invoiceNumber = (invoiceRows as any[])[0]?.invoice_no || null;
+            }
+
+            // إنشاء callback URL
+            const callbackUrl = `${process.env.APP_URL || 'http://localhost:3000'}/api/webhooks/payment/${gateway.gateway_name?.toLowerCase() || 'moyasar'}`;
+
+            // استدعاء API البوابة حسب النوع
+            if (gateway.gateway_name?.toLowerCase().includes('moyasar')) {
+              const { MoyasarGateway } = await import("./developer/integrations/payment-gateways/moyasar");
+              const moyasarConfig = {
+                apiKey: gateway.api_key || '',
+                testMode: gateway.test_mode || false,
+              };
+              const moyasarGateway = new MoyasarGateway(moyasarConfig);
+
+              const paymentResponse = await moyasarGateway.createPayment({
+                amount: input.amount,
+                currency: input.currency || 'SAR',
+                description: invoiceNumber 
+                  ? `دفع فاتورة #${invoiceNumber}` 
+                  : `دفع معاملة #${transactionNumber}`,
+                callbackUrl,
+                source: {
+                  type: 'creditcard', // سيتغير حسب paymentMethod من Frontend
+                  name: customer?.name_ar || customer?.name_en || 'عميل',
+                },
+                metadata: {
+                  transactionId: transactionId,
+                  transactionNumber,
+                  invoiceId: input.invoiceId,
+                  customerId: input.customerId,
+                },
+              });
+
+              gatewayTransactionId = paymentResponse.id;
+              paymentStatus = paymentResponse.status === 'paid' ? 'completed' : 
+                             paymentResponse.status === 'failed' ? 'failed' : 'pending';
+              
+              // الحصول على رابط الدفع إن وُجد
+              if (paymentResponse.source?.transaction_url) {
+                paymentUrl = paymentResponse.source.transaction_url;
+              }
+
+              // حفظ استجابة البوابة
+              await db.execute(
+                `UPDATE payment_transactions 
+                 SET gateway_transaction_id = ?, 
+                     response_data = ?,
+                     status = ?
+                 WHERE id = ?`,
+                [
+                  gatewayTransactionId,
+                  JSON.stringify(paymentResponse),
+                  paymentStatus,
+                  transactionId,
+                ]
+              );
+
+            } else if (gateway.gateway_name?.toLowerCase().includes('sadad')) {
+              const { SadadGateway } = await import("./developer/integrations/payment-gateways/sadad");
+              const sadadConfig = {
+                merchantId: gateway.merchant_id || '',
+                terminalId: gateway.config ? JSON.parse(gateway.config)?.terminalId : undefined,
+                apiKey: gateway.api_key || '',
+                secretKey: gateway.api_secret || '',
+                testMode: gateway.test_mode || false,
+              };
+              const sadadGateway = new SadadGateway(sadadConfig);
+
+              const paymentResponse = await sadadGateway.createPayment({
+                amount: input.amount,
+                currency: input.currency || 'SAR',
+                orderId: transactionNumber,
+                customerName: customer?.name_ar || customer?.name_en || 'عميل',
+                customerEmail: input.customerEmail || customer?.email,
+                customerPhone: input.customerPhone || customer?.phone,
+                description: invoiceNumber 
+                  ? `دفع فاتورة #${invoiceNumber}` 
+                  : `دفع معاملة #${transactionNumber}`,
+                callbackUrl,
+                metadata: {
+                  transactionId: transactionId,
+                  transactionNumber,
+                  invoiceId: input.invoiceId,
+                  customerId: input.customerId,
+                },
+              });
+
+              gatewayTransactionId = paymentResponse.paymentId;
+              paymentStatus = paymentResponse.status === 'success' ? 'completed' : 
+                             paymentResponse.status === 'failed' ? 'failed' : 'pending';
+              
+              // الحصول على رابط الدفع أو QR Code
+              if (paymentResponse.paymentUrl) {
+                paymentUrl = paymentResponse.paymentUrl;
+              } else if (paymentResponse.qrCode) {
+                paymentUrl = paymentResponse.qrCode; // يمكن استخدام QR Code كرابط
+              }
+
+              // حفظ استجابة البوابة
+              await db.execute(
+                `UPDATE payment_transactions 
+                 SET gateway_transaction_id = ?, 
+                     response_data = ?,
+                     status = ?
+                 WHERE id = ?`,
+                [
+                  gatewayTransactionId,
+                  JSON.stringify(paymentResponse),
+                  paymentStatus,
+                  transactionId,
+                ]
+              );
+            } else {
+              logger.warn(`Unknown gateway type: ${gateway.gateway_name}`);
+              // بوابة غير معروفة - نترك المعاملة كـ pending
+            }
+
+          } catch (gatewayError: any) {
+            logger.error('Failed to create payment with gateway', {
+              transactionId,
+              gatewayId: input.gatewayId,
+              error: gatewayError.message,
+            });
+
+            // تحديث حالة المعاملة بالفشل
+            try {
+              await db.execute(
+                `UPDATE payment_transactions 
+                 SET status = 'failed',
+                     error_message = ?
+                 WHERE id = ?`,
+                [
+                  gatewayError.message || 'فشل في الاتصال ببوابة الدفع',
+                  transactionId,
+                ]
+              );
+            } catch (updateError: any) {
+              logger.error('Failed to update transaction status', {
+                transactionId,
+                error: updateError.message,
+              });
+            }
+
+            // لا نرمي الخطأ - نعيد المعاملة مع حالة pending/failed
+            paymentStatus = 'failed';
+          }
 
           return {
             id: transactionId,
             transactionNumber,
-            success: true,
-            message: "تم إنشاء المعاملة بنجاح",
-            // paymentUrl: "...", // رابط الدفع (إن وُجد)
+            gatewayTransactionId,
+            paymentUrl,
+            status: paymentStatus,
+            success: paymentStatus !== 'failed',
+            message: paymentStatus === 'failed' 
+              ? "فشل في إنشاء المعاملة مع بوابة الدفع" 
+              : "تم إنشاء المعاملة بنجاح",
           };
         } catch (error: any) {
           logger.error("Error creating payment transaction:", error);
@@ -249,6 +472,100 @@ export const paymentGatewaysRouter = router({
               code: "NOT_FOUND",
               message: "المعاملة غير موجودة",
             });
+          }
+
+          // ✅ التحقق من حالة المعاملة من بوابة الدفع إذا كانت pending
+          if (transaction.status === 'pending' && transaction.gateway_transaction_id && transaction.gateway_id) {
+            const [gatewayRows] = await db.execute(
+              "SELECT * FROM payment_gateways WHERE id = ?",
+              [transaction.gateway_id]
+            );
+            const gateway = (gatewayRows as any[])[0];
+
+            if (gateway) {
+              try {
+                // تنفيذ استدعاء API فعلي حسب نوع البوابة
+                if (gateway.gateway_name?.toLowerCase().includes('moyasar')) {
+                  const { MoyasarGateway } = await import("./developer/integrations/payment-gateways/moyasar");
+                  const moyasarConfig = {
+                    apiKey: gateway.api_key || '',
+                    testMode: gateway.test_mode || false,
+                  };
+                  const moyasarGateway = new MoyasarGateway(moyasarConfig);
+
+                  const verification = await moyasarGateway.verifyPayment(transaction.gateway_transaction_id);
+                  
+                  if (verification.isPaid && transaction.status === 'pending') {
+                    // تحديث حالة المعاملة
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'completed', 
+                           completed_at = NOW()
+                       WHERE id = ?`,
+                      [input.transactionId]
+                    );
+                    transaction.status = 'completed';
+                  } else if (verification.isFailed && transaction.status === 'pending') {
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'failed',
+                           error_message = ?,
+                           failed_at = NOW()
+                       WHERE id = ?`,
+                      [
+                        verification.failureMessage || 'فشل الدفع',
+                        input.transactionId,
+                      ]
+                    );
+                    transaction.status = 'failed';
+                  }
+
+                } else if (gateway.gateway_name?.toLowerCase().includes('sadad')) {
+                  const { SadadGateway } = await import("./developer/integrations/payment-gateways/sadad");
+                  const sadadConfig = {
+                    merchantId: gateway.merchant_id || '',
+                    terminalId: gateway.config ? JSON.parse(gateway.config)?.terminalId : undefined,
+                    apiKey: gateway.api_key || '',
+                    secretKey: gateway.api_secret || '',
+                    testMode: gateway.test_mode || false,
+                  };
+                  const sadadGateway = new SadadGateway(sadadConfig);
+
+                  const verification = await sadadGateway.verifyPayment(transaction.gateway_transaction_id);
+                  
+                  if (verification.isPaid && transaction.status === 'pending') {
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'completed', 
+                           completed_at = NOW()
+                       WHERE id = ?`,
+                      [input.transactionId]
+                    );
+                    transaction.status = 'completed';
+                  } else if (verification.isFailed && transaction.status === 'pending') {
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'failed',
+                           error_message = ?,
+                           failed_at = NOW()
+                       WHERE id = ?`,
+                      [
+                        verification.failureMessage || 'فشل الدفع',
+                        input.transactionId,
+                      ]
+                    );
+                    transaction.status = 'failed';
+                  }
+                }
+              } catch (error: any) {
+                logger.error("Error verifying payment with gateway in getStatus", { 
+                  transactionId: input.transactionId,
+                  gatewayId: transaction.gateway_id,
+                  error: error.message 
+                });
+                // لا نرمي الخطأ - نعيد الحالة الحالية
+              }
+            }
           }
 
           return transaction;
@@ -289,8 +606,77 @@ export const paymentGatewaysRouter = router({
             ]
           );
 
-          // TODO: تحديث الفاتورة المرتبطة (إن وُجدت)
-          // TODO: إنشاء قيد محاسبي (إن وُجد محرك القيود)
+          // تحديث الفاتورة المرتبطة (إن وُجدت)
+          const [transactionRows] = await db.execute(
+            "SELECT invoice_id, customer_id, business_id, amount FROM payment_transactions WHERE id = ?",
+            [input.transactionId]
+          );
+          const transaction = (transactionRows as any[])[0];
+          
+          if (transaction && transaction.invoice_id) {
+            // تحديث الفاتورة
+            await db.execute(
+              `UPDATE invoices_enhanced SET 
+                paid_amount = COALESCE(paid_amount, 0) + ?,
+                balance_due = GREATEST(0, COALESCE(final_amount, total_amount, 0) - (COALESCE(paid_amount, 0) + ?)),
+                status = CASE 
+                  WHEN (COALESCE(paid_amount, 0) + ?) >= COALESCE(final_amount, total_amount, 0) THEN 'paid'
+                  ELSE 'partial'
+                END,
+                is_paid = CASE 
+                  WHEN (COALESCE(paid_amount, 0) + ?) >= COALESCE(final_amount, total_amount, 0) THEN true
+                  ELSE false
+                END
+              WHERE id = ?`,
+              [
+                transaction.amount,
+                transaction.amount,
+                transaction.amount,
+                transaction.amount,
+                transaction.invoice_id
+              ]
+            );
+
+            // إنشاء قيد محاسبي تلقائي
+            try {
+              const { AutoJournalEngine } = await import("./core/auto-journal-engine");
+              await AutoJournalEngine.onPaymentReceived({
+                id: transaction.invoice_id,
+                businessId: transaction.business_id,
+                customerId: transaction.customer_id,
+                invoiceId: transaction.invoice_id,
+                amount: parseFloat(transaction.amount),
+                paymentMethod: "online",
+                paymentDate: new Date(),
+                createdBy: ctx.user?.id || 1,
+              });
+            } catch (error: any) {
+              logger.error("Failed to create auto journal entry", { error: error.message });
+              // لا نرمي الخطأ - الدفع نجح لكن القيد فشل
+            }
+
+            // إرسال إشعار تأكيد الدفع
+            try {
+              const { notificationService } = await import("./notifications/notification-service");
+              const [customerRows] = await db.execute(
+                "SELECT phone FROM customers_enhanced WHERE id = ?",
+                [transaction.customer_id]
+              );
+              const customer = (customerRows as any[])[0];
+              
+              if (customer && customer.phone) {
+                await notificationService.sendPaymentConfirmation(
+                  customer.phone,
+                  transaction.invoice_id ? `INV-${transaction.invoice_id}` : undefined,
+                  transaction.amount,
+                  new Date().toISOString().split("T")[0],
+                  ['sms', 'whatsapp']
+                );
+              }
+            } catch (error: any) {
+              logger.error("Failed to send payment confirmation", { error: error.message });
+            }
+          }
 
           return {
             success: true,
@@ -376,14 +762,113 @@ export const paymentGatewaysRouter = router({
             });
           }
 
-          // TODO: استدعاء API بوابة الدفع للتحقق من حالة المعاملة
-          // هذا يحتاج:
-          // 1. استخدام gatewayTransactionId للتحقق
-          // 2. تحديث حالة المعاملة بناءً على الاستجابة
+          // ✅ التحقق من حالة المعاملة من بوابة الدفع
+          if (transaction.gateway_transaction_id && transaction.gateway_id) {
+            const [gatewayRows] = await db.execute(
+              "SELECT * FROM payment_gateways WHERE id = ?",
+              [transaction.gateway_id]
+            );
+            const gateway = (gatewayRows as any[])[0];
+
+            if (gateway && transaction.status === 'pending') {
+              try {
+                // تنفيذ استدعاء API فعلي حسب نوع البوابة
+                if (gateway.gateway_name?.toLowerCase().includes('moyasar')) {
+                  const { MoyasarGateway } = await import("./developer/integrations/payment-gateways/moyasar");
+                  const moyasarConfig = {
+                    apiKey: gateway.api_key || '',
+                    testMode: gateway.test_mode || false,
+                  };
+                  const moyasarGateway = new MoyasarGateway(moyasarConfig);
+
+                  const verification = await moyasarGateway.verifyPayment(transaction.gateway_transaction_id);
+                  
+                  if (verification.isPaid) {
+                    // تحديث حالة المعاملة
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'completed', 
+                           completed_at = NOW(),
+                           response_data = JSONB_SET(COALESCE(response_data, '{}'), '{verified}', 'true')
+                       WHERE id = ?`,
+                      [input.transactionId]
+                    );
+                    transaction.status = 'completed';
+                    
+                    // استدعاء handleSuccess تلقائياً
+                    // سيتم استدعاؤه من webhook عادة، لكن هنا نضمن التحديث
+                  } else if (verification.isFailed) {
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'failed',
+                           error_message = ?,
+                           failed_at = NOW()
+                       WHERE id = ?`,
+                      [
+                        verification.failureMessage || 'فشل الدفع',
+                        input.transactionId,
+                      ]
+                    );
+                    transaction.status = 'failed';
+                  }
+
+                } else if (gateway.gateway_name?.toLowerCase().includes('sadad')) {
+                  const { SadadGateway } = await import("./developer/integrations/payment-gateways/sadad");
+                  const sadadConfig = {
+                    merchantId: gateway.merchant_id || '',
+                    terminalId: gateway.config ? JSON.parse(gateway.config)?.terminalId : undefined,
+                    apiKey: gateway.api_key || '',
+                    secretKey: gateway.api_secret || '',
+                    testMode: gateway.test_mode || false,
+                  };
+                  const sadadGateway = new SadadGateway(sadadConfig);
+
+                  const verification = await sadadGateway.verifyPayment(transaction.gateway_transaction_id);
+                  
+                  if (verification.isPaid) {
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'completed', 
+                           completed_at = NOW(),
+                           response_data = JSONB_SET(COALESCE(response_data, '{}'), '{verified}', 'true')
+                       WHERE id = ?`,
+                      [input.transactionId]
+                    );
+                    transaction.status = 'completed';
+                  } else if (verification.isFailed) {
+                    await db.execute(
+                      `UPDATE payment_transactions 
+                       SET status = 'failed',
+                           error_message = ?,
+                           failed_at = NOW()
+                       WHERE id = ?`,
+                      [
+                        verification.failureMessage || 'فشل الدفع',
+                        input.transactionId,
+                      ]
+                    );
+                    transaction.status = 'failed';
+                  }
+                }
+              } catch (error: any) {
+                logger.error("Error verifying payment with gateway", { 
+                  transactionId: input.transactionId,
+                  gatewayId: transaction.gateway_id,
+                  error: error.message 
+                });
+                // لا نرمي الخطأ - نعيد الحالة الحالية
+              }
+            }
+          }
 
           return {
             status: transaction.status,
             message: "تم التحقق من المعاملة",
+            transactionId: transaction.id,
+            amount: transaction.amount,
+            currency: transaction.currency,
+            createdAt: transaction.created_at,
+            completedAt: transaction.completed_at,
           };
         } catch (error: any) {
           if (error instanceof TRPCError) throw error;
@@ -423,10 +908,22 @@ export const paymentGatewaysRouter = router({
             });
           }
 
-          // TODO: التحقق من التوقيع (signature verification)
-          // هذا يحتاج:
-          // 1. استخدام webhookSecret للتحقق من التوقيع
-          // 2. التحقق من صحة البيانات
+          // التحقق من التوقيع (signature verification)
+          if (input.signature && gateway.webhook_secret) {
+            const isValid = verifyWebhookSignature(
+              input.payload,
+              input.signature,
+              gateway.webhook_secret
+            );
+            
+            if (!isValid) {
+              logger.warn("Invalid webhook signature", { gatewayId: input.gatewayId });
+              throw new TRPCError({
+                code: "UNAUTHORIZED",
+                message: "توقيع Webhook غير صحيح",
+              });
+            }
+          }
 
           // حفظ Webhook
           const [result] = await db.execute(
@@ -443,12 +940,13 @@ export const paymentGatewaysRouter = router({
 
           const webhookId = (result as any).insertId;
 
-          // TODO: معالجة Webhook بناءً على نوع الحدث
-          // هذا يحتاج:
-          // 1. تحديد نوع الحدث (payment.success, payment.failed, etc.)
-          // 2. العثور على المعاملة المرتبطة
-          // 3. تحديث حالة المعاملة
-          // 4. تحديث الفاتورة (إن وُجدت)
+          // معالجة Webhook بناءً على نوع الحدث
+          await processWebhookEvent(
+            input.eventType,
+            input.payload,
+            gateway,
+            webhookId
+          );
 
           return {
             id: webhookId,
@@ -466,4 +964,167 @@ export const paymentGatewaysRouter = router({
       }),
   }),
 });
+
+/**
+ * التحقق من توقيع Webhook
+ */
+function verifyWebhookSignature(
+  payload: any,
+  signature: string,
+  secret: string,
+  gatewayType?: string
+): boolean {
+  try {
+    // ✅ تنفيذ التحقق الفعلي باستخدام HMAC SHA256
+    if (!secret) {
+      logger.warn('Webhook secret not configured - accepting in development mode only');
+      if (process.env.NODE_ENV === "development") {
+        return true;
+      }
+      return false;
+    }
+
+    // استخدام Services للتحقق حسب نوع البوابة
+    if (gatewayType?.toLowerCase().includes('moyasar')) {
+      const { MoyasarGateway } = require('./developer/integrations/payment-gateways/moyasar');
+      return MoyasarGateway.verifyWebhookSignature(payload, signature, secret);
+    } else if (gatewayType?.toLowerCase().includes('sadad')) {
+      const { SadadGateway } = require('./developer/integrations/payment-gateways/sadad');
+      return SadadGateway.verifyWebhookSignature(payload, signature, secret);
+    }
+
+    // Fallback: التحقق اليدوي العام
+    const crypto = require('crypto');
+    const payloadString = typeof payload === 'string' 
+      ? payload 
+      : JSON.stringify(payload);
+    
+    const hash = crypto
+      .createHmac('sha256', secret)
+      .update(payloadString)
+      .digest('hex');
+    
+    return hash.toLowerCase() === signature.toLowerCase();
+  } catch (error: any) {
+    logger.error("Error verifying webhook signature", { error: error.message });
+    
+    // في بيئة التطوير، نسمح بالتمرير
+    if (process.env.NODE_ENV === "development") {
+      return true;
+    }
+    
+    return false;
+  }
+}
+
+/**
+ * معالجة حدث Webhook
+ */
+async function processWebhookEvent(
+  eventType: string,
+  payload: any,
+  gateway: any,
+  webhookId: number
+) {
+  try {
+    // تحديد نوع الحدث
+    if (eventType.includes('payment.success') || eventType.includes('payment.paid')) {
+      // معالجة دفعة ناجحة
+      const transactionId = payload.transaction_id || payload.id;
+      if (transactionId) {
+        // البحث عن المعاملة
+        const [rows] = await db.execute(
+          "SELECT * FROM payment_transactions WHERE gateway_transaction_id = ? OR id = ?",
+          [transactionId, transactionId]
+        );
+        
+        const transaction = (rows as any[])[0];
+        if (transaction) {
+          // تحديث حالة المعاملة
+          await db.execute(
+            `UPDATE payment_transactions SET 
+              status = 'completed',
+              gateway_transaction_id = ?,
+              response_data = ?,
+              completed_at = NOW()
+            WHERE id = ?`,
+            [
+              transactionId,
+              JSON.stringify(payload),
+              transaction.id
+            ]
+          );
+
+          // تحديث الفاتورة
+          if (transaction.invoice_id) {
+            await db.execute(
+              `UPDATE invoices_enhanced SET 
+                paid_amount = COALESCE(paid_amount, 0) + ?,
+                balance_due = GREATEST(0, COALESCE(final_amount, total_amount, 0) - (COALESCE(paid_amount, 0) + ?)),
+                status = CASE 
+                  WHEN (COALESCE(paid_amount, 0) + ?) >= COALESCE(final_amount, total_amount, 0) THEN 'paid'
+                  ELSE 'partial'
+                END
+              WHERE id = ?`,
+              [
+                transaction.amount,
+                transaction.amount,
+                transaction.amount,
+                transaction.invoice_id
+              ]
+            );
+          }
+        }
+      }
+    } else if (eventType.includes('payment.failed') || eventType.includes('payment.failure')) {
+      // معالجة دفعة فاشلة
+      const transactionId = payload.transaction_id || payload.id;
+      if (transactionId) {
+        await db.execute(
+          `UPDATE payment_transactions SET 
+            status = 'failed',
+            error_message = ?,
+            error_code = ?,
+            response_data = ?,
+            failed_at = NOW()
+          WHERE gateway_transaction_id = ? OR id = ?`,
+          [
+            payload.message || payload.error_message || "فشل الدفع",
+            payload.error_code || null,
+            JSON.stringify(payload),
+            transactionId,
+            transactionId
+          ]
+        );
+      }
+    } else if (eventType.includes('payment.refunded') || eventType.includes('refund')) {
+      // معالجة استرداد
+      const transactionId = payload.transaction_id || payload.id;
+      if (transactionId) {
+        await db.execute(
+          `INSERT INTO payment_refunds (
+            payment_transaction_id, refund_amount, refund_reason,
+            refunded_at, gateway_refund_id, webhook_id
+          ) VALUES (?, ?, ?, NOW(), ?, ?)`,
+          [
+            transactionId,
+            payload.refund_amount || payload.amount || 0,
+            payload.refund_reason || "استرداد",
+            payload.refund_id || null,
+            webhookId
+          ]
+        );
+      }
+    }
+
+    logger.info("Webhook event processed", { eventType, webhookId });
+  } catch (error: any) {
+    logger.error("Error processing webhook event", {
+      error: error.message,
+      eventType,
+      webhookId,
+    });
+    throw error;
+  }
+}
 

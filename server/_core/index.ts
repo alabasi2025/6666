@@ -12,7 +12,8 @@ import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
 import { getHealthStatus, getLivenessStatus, getReadinessStatus, getMetrics } from "../utils/health";
 import { logger } from '../utils/logger';
-import customSystemV2Router from "../routes/customSystem/v2";
+// DISABLED: Custom System V2 needs migration to PostgreSQL
+// import customSystemV2Router from "../routes/customSystem/v2";
 import { authenticateRequest } from "../middleware/auth";
 import { ensureDefaultAdmin } from "../auth";
 
@@ -116,8 +117,8 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
   
-  // Custom System v2.2.0 API Routes
-  app.use("/api/custom-system/v2", authenticateRequest, apiLimiter, customSystemV2Router);
+  // Custom System v2.2.0 API Routes - DISABLED until migration to PostgreSQL
+  // app.use("/api/custom-system/v2", authenticateRequest, apiLimiter, customSystemV2Router);
   
   // tRPC API
   app.use(
@@ -150,17 +151,25 @@ async function startServer() {
     logger.warn("Failed to ensure default admin", { error: error instanceof Error ? error.message : error });
   }
 
-  // Initialize Cron Jobs - تعطيل في بيئة التطوير لتجنب التكرار مع tsx watch
-  if (process.env.NODE_ENV === "production") {
+  // Initialize Cron Jobs - يمكن تفعيلها في Development Mode عبر ENABLE_CRON_JOBS=true
+  const shouldEnableCronJobs = process.env.NODE_ENV === "production" || process.env.ENABLE_CRON_JOBS === "true";
+  
+  if (shouldEnableCronJobs) {
     try {
       const { CronJobsManager } = await import("../core/cron-jobs");
       CronJobsManager.initialize();
-      logger.info("Cron Jobs initialized successfully");
+      logger.info("Cron Jobs initialized successfully", {
+        mode: process.env.NODE_ENV,
+        enabledByFlag: process.env.ENABLE_CRON_JOBS === "true"
+      });
     } catch (error) {
       logger.warn("Failed to initialize Cron Jobs", { error: error instanceof Error ? error.message : error });
     }
   } else {
-    logger.info("Cron Jobs disabled in development mode");
+    logger.info("Cron Jobs disabled in development mode (set ENABLE_CRON_JOBS=true to enable)", {
+      mode: process.env.NODE_ENV,
+      enableFlag: process.env.ENABLE_CRON_JOBS
+    });
   }
 
   const host = process.env.HOST || "0.0.0.0";

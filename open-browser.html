@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الطاقة - Energy Management System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+        }
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .status {
+            background: rgba(76, 175, 80, 0.3);
+            border: 2px solid #4CAF50;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .links {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-top: 30px;
+        }
+        a {
+            display: block;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            padding: 15px 25px;
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-size: 1.1em;
+        }
+        a:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+        .info {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        .auto-open {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>⚡ نظام إدارة الطاقة</h1>
+        <div class="status">
+            <h2>✅ النظام جاهز للاستخدام!</h2>
+            <p>الخادم يعمل على: <strong>http://localhost:8000</strong></p>
+        </div>
+        
+        <div class="links">
+            <a href="http://localhost:8000" target="_blank">
+                🏠 الصفحة الرئيسية
+            </a>
+            <a href="http://localhost:8000/dashboard" target="_blank">
+                📊 لوحة التحكم
+            </a>
+            <a href="http://localhost:8000/dashboard/billing/customers" target="_blank">
+                👥 إدارة العملاء
+            </a>
+            <a href="http://localhost:8000/dashboard/billing/subscription-accounts/1" target="_blank">
+                💳 حسابات المشترك (لعميل رقم 1)
+            </a>
+            <a href="http://localhost:8000/dashboard/billing/invoices" target="_blank">
+                📄 إدارة الفواتير
+            </a>
+            <a href="http://localhost:8000/dashboard/billing/payments" target="_blank">
+                💰 إدارة المدفوعات
+            </a>
+        </div>
+        
+        <div class="info">
+            <h3>📝 ملاحظات مهمة:</h3>
+            <ul style="list-style-position: inside; margin-top: 10px;">
+                <li>تأكد من أن الخادم يعمل قبل فتح الروابط</li>
+                <li>استبدل الرقم <code>1</code> في رابط حسابات المشترك برقم العميل المطلوب</li>
+                <li>يمكنك استخدام DEMO_MODE إذا لم يكن لديك قاعدة بيانات</li>
+            </ul>
+        </div>
+        
+        <div class="auto-open">
+            <p>سيتم فتح الصفحة الرئيسية تلقائياً خلال 3 ثوانٍ...</p>
+        </div>
+    </div>
+    
+    <script>
+        // فتح الصفحة الرئيسية تلقائياً بعد 3 ثوانٍ
+        setTimeout(() => {
+            window.open('http://localhost:8000', '_blank');
+        }, 3000);
+    </script>
+</body>
+</html>

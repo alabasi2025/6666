@@ -53,4 +53,17 @@ export type ResourceType =
   | 'role'
   | 'report'
   | 'settings'
-  | 'business';
+  | 'business'
+  | 'area'
+  | 'square'
+  | 'cabinet'
+  | 'tariff'
+  | 'fee_type'
+  | 'customer'
+  | 'meter'
+  | 'meter_reading'
+  | 'invoice'
+  | 'payment'
+  | 'billing_period'
+  | 'cashbox'
+  | 'payment_method';

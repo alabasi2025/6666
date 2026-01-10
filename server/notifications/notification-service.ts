@@ -11,6 +11,7 @@ import {
 import { inAppChannel } from './channels/in-app';
 import { emailChannel } from './channels/email';
 import { smsChannel } from './channels/sms';
+import { whatsappChannel } from './channels/whatsapp';
 import { getTemplate, renderTemplate } from './templates';
 
 class NotificationService {
@@ -18,6 +19,7 @@ class NotificationService {
     'in-app': inAppChannel,
     'email': emailChannel,
     'sms': smsChannel,
+    'whatsapp': whatsappChannel,
   };
 
   /**
@@ -94,6 +96,124 @@ class NotificationService {
    */
   getUserNotifications(userId: number, unreadOnly = false) {
     return inAppChannel.getNotifications(userId, unreadOnly);
+  }
+
+  /**
+   * إرسال فاتورة تلقائياً عبر SMS/WhatsApp
+   */
+  async sendInvoice(
+    invoiceId: number,
+    customerPhone: string,
+    invoiceNumber: string,
+    totalAmount: string,
+    dueDate: string,
+    channels: NotificationChannelType[] = ['sms', 'whatsapp']
+  ): Promise<NotificationResult[]> {
+    const titleAr = "فاتورة جديدة";
+    const messageAr = `عزيزي العميل، تم إصدار فاتورة جديدة برقم ${invoiceNumber} بمبلغ ${totalAmount} ريال. تاريخ الاستحقاق: ${dueDate}`;
+
+    return this.send(
+      'info',
+      'New Invoice',
+      titleAr,
+      `New invoice ${invoiceNumber} for ${totalAmount} SAR. Due date: ${dueDate}`,
+      messageAr,
+      [{ phone: customerPhone }],
+      { channels }
+    );
+  }
+
+  /**
+   * إرسال تذكير بالدفع
+   */
+  async sendPaymentReminder(
+    customerPhone: string,
+    invoiceNumber: string,
+    amount: string,
+    daysOverdue: number,
+    channels: NotificationChannelType[] = ['sms', 'whatsapp']
+  ): Promise<NotificationResult[]> {
+    const titleAr = "تذكير بالدفع";
+    const messageAr = daysOverdue > 0
+      ? `تذكير: فاتورة ${invoiceNumber} متأخرة ${daysOverdue} يوم. المبلغ المستحق: ${amount} ريال. يرجى السداد في أقرب وقت.`
+      : `تذكير: فاتورة ${invoiceNumber} مستحقة اليوم. المبلغ: ${amount} ريال. يرجى السداد.`;
+
+    return this.send(
+      'warning',
+      'Payment Reminder',
+      titleAr,
+      `Reminder: Invoice ${invoiceNumber} ${daysOverdue > 0 ? `overdue ${daysOverdue} days` : 'due today'}. Amount: ${amount} SAR.`,
+      messageAr,
+      [{ phone: customerPhone }],
+      { channels }
+    );
+  }
+
+  /**
+   * إرسال تأكيد الدفع
+   */
+  async sendPaymentConfirmation(
+    customerPhone: string,
+    invoiceNumber: string,
+    paidAmount: string,
+    paymentDate: string,
+    channels: NotificationChannelType[] = ['sms', 'whatsapp']
+  ): Promise<NotificationResult[]> {
+    const titleAr = "تأكيد الدفع";
+    const messageAr = `تم استلام دفعتك بنجاح. رقم الفاتورة: ${invoiceNumber}، المبلغ: ${paidAmount} ريال، تاريخ الدفع: ${paymentDate}. شكراً لك.`;
+
+    return this.send(
+      'success',
+      'Payment Confirmation',
+      titleAr,
+      `Payment confirmed. Invoice: ${invoiceNumber}, Amount: ${paidAmount} SAR, Date: ${paymentDate}. Thank you.`,
+      messageAr,
+      [{ phone: customerPhone }],
+      { channels }
+    );
+  }
+
+  /**
+   * إرسال مع إعادة المحاولة
+   */
+  async sendWithRetry(
+    type: NotificationType,
+    title: string,
+    titleAr: string,
+    message: string,
+    messageAr: string,
+    recipients: NotificationRecipient[],
+    options: SendNotificationOptions & { maxRetries?: number; retryDelay?: number } = {}
+  ): Promise<NotificationResult[]> {
+    const maxRetries = options.maxRetries || 3;
+    const retryDelay = options.retryDelay || 1000; // 1 second
+    let lastResults: NotificationResult[] = [];
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const results = await this.send(type, title, titleAr, message, messageAr, recipients, options);
+        
+        // التحقق من النجاح
+        const allSucceeded = results.every(r => r.success);
+        if (allSucceeded) {
+          return results;
+        }
+
+        lastResults = results;
+
+        // إذا لم تكن المحاولة الأخيرة، انتظر ثم أعد المحاولة
+        if (attempt < maxRetries) {
+          await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+        }
+      } catch (error) {
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        await new Promise(resolve => setTimeout(resolve, retryDelay * attempt));
+      }
+    }
+
+    return lastResults;
   }
 
   /**

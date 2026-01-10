@@ -13,6 +13,7 @@ import { hrRouter } from "./hrRouter";
 import { customSystemRouter } from "./customSystemRouter";
 import { customerSystemRouter } from "./customerSystemRouter";
 import { billingRouter } from "./billingRouter";
+import { subscriptionAccountsRouter } from "./subscriptionAccountsRouter";
 import { assetsRouter } from "./assetsRouter";
 import { accountingRouter } from "./accountingRouter";
 import { inventoryRouter } from "./inventoryRouter";
@@ -27,8 +28,13 @@ import { governmentSupportRouter } from "./governmentSupportRouter";
 import { transitionSupportRouter } from "./transitionSupportRouter";
 import { paymentGatewaysRouter } from "./paymentGatewaysRouter";
 import { messagingRouter } from "./messagingRouter";
+import { serialNumbersRouter } from "./serialNumbersRouter";
+import { defectiveComponentsRouter } from "./defectiveComponentsRouter";
+import { reportsRouter } from "./reportsRouter";
+import { approvalsRouter } from "./approvalsRouter";
 import { logger } from './utils/logger';
 import { AutoJournalEngine } from "./core/auto-journal-engine";
+import { mobileAppsRouter } from "./mobileAppsRouter";
 import { PricingEngine } from "./core/pricing-engine";
 import { ReconciliationEngine } from "./core/reconciliation-engine";
 import { PreventiveSchedulingEngine } from "./core/preventive-scheduling-engine";
@@ -1111,6 +1117,334 @@ export const appRouter = router({
         .query(async ({ input }) => {
           return await db.getIntegrationLogs(input.integrationId, input.limit);
         }),
+
+      // Payment Gateways - تكامل بوابات الدفع
+      paymentGateways: paymentGatewaysRouter,
+
+      // Messaging - تكامل SMS/WhatsApp
+      messaging: messagingRouter,
+
+      // STS - تكامل عدادات STS
+      sts: stsRouter,
+
+      // ACREL - تكامل عدادات ACREL IoT
+      acrel: router({
+        // ============================================
+        // إدارة العدادات ACREL
+        // ============================================
+        meters: router({
+          // قائمة العدادات
+          list: protectedProcedure
+            .input(
+              z.object({
+                businessId: z.number(),
+                meterType: z.enum(["ADL200", "ADW300"]).optional(),
+                paymentMode: z.enum(["postpaid", "prepaid", "credit"]).optional(),
+                connectionType: z.enum(["wifi", "rs485", "mqtt"]).optional(),
+                status: z.enum(["online", "offline", "maintenance"]).optional(),
+              })
+            )
+            .query(async ({ input }) => {
+              try {
+                const database = await getDb();
+                if (!database) throw new Error("Database not available");
+
+                // ✅ استخدام PostgreSQL placeholders ($1, $2) بدلاً من MySQL (?)
+                let query = "SELECT * FROM acrel_meters WHERE business_id = $1";
+                const params: any[] = [input.businessId];
+                let paramIndex = 2;
+
+                if (input.meterType) {
+                  query += ` AND meter_type = $${paramIndex}`;
+                  params.push(input.meterType);
+                  paramIndex++;
+                }
+
+                if (input.paymentMode) {
+                  query += ` AND payment_mode = $${paramIndex}`;
+                  params.push(input.paymentMode);
+                  paramIndex++;
+                }
+
+                if (input.connectionType) {
+                  query += ` AND connection_type = $${paramIndex}`;
+                  params.push(input.connectionType);
+                  paramIndex++;
+                }
+
+                if (input.status) {
+                  query += ` AND status = $${paramIndex}`;
+                  params.push(input.status);
+                  paramIndex++;
+                }
+
+                query += " ORDER BY created_at DESC";
+
+                // ✅ استخدام sql.raw للـ query مع params
+                const result = await database.execute(sql.raw(query), params);
+                return (result.rows || []) as any[];
+              } catch (error: any) {
+                logger.error("Error fetching ACREL meters:", error);
+                throw new TRPCError({
+                  code: "INTERNAL_SERVER_ERROR",
+                  message: "فشل في جلب عدادات ACREL",
+                });
+              }
+            }),
+
+          // معلومات العداد
+          getInfo: protectedProcedure
+            .input(z.object({ meterId: z.number() }))
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getMeterInfo(input.meterId);
+            }),
+
+          // قراءة العداد
+          getReading: protectedProcedure
+            .input(z.object({ meterId: z.number() }))
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getReading(input.meterId);
+            }),
+
+          // فصل العداد
+          disconnect: adminProcedure
+            .input(z.object({ meterId: z.number(), reason: z.string().optional() }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.disconnectMeter(input.meterId, input.reason);
+            }),
+
+          // إعادة توصيل العداد
+          reconnect: adminProcedure
+            .input(z.object({ meterId: z.number() }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.reconnectMeter(input.meterId);
+            }),
+
+          // تغيير التعرفة
+          setTariff: adminProcedure
+            .input(z.object({ meterId: z.number(), tariffId: z.string() }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.setTariff(input.meterId, input.tariffId);
+            }),
+
+          // ربط بشبكة WiFi
+          connectToWiFi: adminProcedure
+            .input(z.object({ meterId: z.number(), networkId: z.string(), password: z.string() }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.connectToWiFi(input.meterId, input.networkId, input.password);
+            }),
+
+          // تفعيل MQTT
+          enableMQTT: adminProcedure
+            .input(z.object({ meterId: z.number(), mqttBroker: z.string(), mqttTopic: z.string() }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.enableMQTT(input.meterId, input.mqttBroker, input.mqttTopic);
+            }),
+        }),
+
+        // ============================================
+        // محولات التيار (CT) - للـ ADW300
+        // ============================================
+        ct: router({
+          // إعداد محولات التيار الخارجية
+          configure: adminProcedure
+            .input(
+              z.object({
+                meterId: z.number(),
+                ct1Size: z.number(),
+                ct2Size: z.number(),
+                ct3Size: z.number(),
+                ct1CoreType: z.enum(["split", "solid"]),
+                ct2CoreType: z.enum(["split", "solid"]),
+                ct3CoreType: z.enum(["split", "solid"]),
+              })
+            )
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.configureExternalCTs(
+                input.meterId,
+                input.ct1Size as any,
+                input.ct2Size as any,
+                input.ct3Size as any,
+                input.ct1CoreType,
+                input.ct2CoreType,
+                input.ct3CoreType
+              );
+            }),
+
+          // تحديث معلومات محولات التيار
+          update: adminProcedure
+            .input(z.object({ meterId: z.number(), ctInfo: z.any() }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.updateCTInfo(input.meterId, input.ctInfo);
+            }),
+        }),
+
+        // ============================================
+        // أنظمة الدفع
+        // ============================================
+        payment: router({
+          // تعيين نوع الدفع
+          setMode: adminProcedure
+            .input(z.object({ meterId: z.number(), mode: z.enum(["postpaid", "prepaid", "credit"]) }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              
+              if (input.mode === "postpaid") {
+                await acrelService.setPrepaidMode(input.meterId, false);
+                return await acrelService.setPostpaidMode(input.meterId, true);
+              } else if (input.mode === "prepaid") {
+                await acrelService.setPostpaidMode(input.meterId, false);
+                return await acrelService.setPrepaidMode(input.meterId, true);
+              } else {
+                // credit = postpaid + credit limit
+                await acrelService.setPrepaidMode(input.meterId, false);
+                return await acrelService.setPostpaidMode(input.meterId, true);
+              }
+            }),
+
+          // شحن الرصيد (للمسبق الدفع)
+          recharge: protectedProcedure
+            .input(z.object({ meterId: z.number(), amount: z.number() }))
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.rechargeBalance(input.meterId, input.amount);
+            }),
+
+          // جلب معلومات الرصيد
+          getBalance: protectedProcedure
+            .input(z.object({ meterId: z.number() }))
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getPrepaidBalance(input.meterId);
+            }),
+
+          // إعداد حد الائتمان
+          setCreditLimit: adminProcedure
+            .input(
+              z.object({
+                meterId: z.number(),
+                creditLimit: z.number(),
+                autoDisconnect: z.boolean().default(true),
+              })
+            )
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.setCreditLimit(
+                input.meterId,
+                input.creditLimit,
+                input.autoDisconnect
+              );
+            }),
+
+          // جلب معلومات الائتمان
+          getCreditInfo: protectedProcedure
+            .input(z.object({ meterId: z.number() }))
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getCreditInfo(input.meterId);
+            }),
+
+          // جلب نوع الدفع الحالي
+          getMode: protectedProcedure
+            .input(z.object({ meterId: z.number() }))
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getPaymentMode(input.meterId);
+            }),
+        }),
+
+        // ============================================
+        // التعرفات المتعددة (8 تعرفات)
+        // ============================================
+        tariff: router({
+          // إعداد جدول التعرفات
+          setSchedule: adminProcedure
+            .input(
+              z.object({
+                meterId: z.number(),
+                tariffs: z
+                  .array(
+                    z.object({
+                      tariffId: z.string(),
+                      name: z.string(),
+                      startTime: z.string(),
+                      endTime: z.string(),
+                      pricePerKWH: z.number(),
+                      isActive: z.boolean(),
+                    })
+                  )
+                  .max(8),
+                effectiveDate: z.string().optional(),
+              })
+            )
+            .mutation(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.setMultiTariffSchedule(input.meterId, {
+                meterId: input.meterId.toString(),
+                tariffs: input.tariffs,
+                effectiveDate: input.effectiveDate,
+              });
+            }),
+
+          // جلب جدول التعرفات
+          getSchedule: protectedProcedure
+            .input(z.object({ meterId: z.number() }))
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getMultiTariffSchedule(input.meterId);
+            }),
+        }),
+
+        // ============================================
+        // مراقبة البنية التحتية
+        // ============================================
+        monitoring: router({
+          // جلب بيانات البنية التحتية
+          getMetrics: protectedProcedure
+            .input(
+              z.object({
+                deviceType: z.enum(["generator", "cable", "meter_panel", "solar_panel"]).optional(),
+              })
+            )
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getInfrastructureMetrics(input.deviceType);
+            }),
+
+          // جلب قراءات عدادات المراقبة
+          getMeterReadings: protectedProcedure
+            .input(z.object({ deviceId: z.string() }))
+            .query(async ({ input }) => {
+              const { acrelService } = await import("./developer/integrations/acrel-service");
+              return await acrelService.getMonitoringReadings(input.deviceId);
+            }),
+        }),
+
+        // ============================================
+        // اختبار الاتصال
+        // ============================================
+        api: router({
+          // اختبار الاتصال
+          testConnection: adminProcedure.mutation(async () => {
+            const { acrelService } = await import("./developer/integrations/acrel-service");
+            const isConnected = await acrelService.testConnection();
+            return {
+              success: isConnected,
+              message: isConnected ? "الاتصال بنجاح" : "فشل الاتصال",
+              timestamp: new Date().toISOString(),
+            };
+          }),
+        }),
+      }),
     }),
 
     // Events System
@@ -1512,6 +1846,7 @@ export const appRouter = router({
   customSystem: customSystemRouter,
   customerSystem: customerSystemRouter,
   billing: billingRouter,
+  subscriptionAccounts: subscriptionAccountsRouter,
   // Asset Management System - نظام إدارة الأصول
   assets: assetsRouter,
   // Accounting System - النظام المحاسبي
@@ -1530,16 +1865,18 @@ export const appRouter = router({
   intermediarySystem: intermediarySystemRouter,
   // Custom Account Types - أنواع الحسابات المخصصة
   customAccountTypes: customAccountTypesRouter,
-  // STS System - نظام عدادات STS
-  sts: stsRouter,
   // Government Support - إدارة الدعم الحكومي
   governmentSupport: governmentSupportRouter,
   // Transition Support - دعم المرحلة الانتقالية
   transitionSupport: transitionSupportRouter,
-  // Payment Gateways - تكامل بوابات الدفع
-  paymentGateways: paymentGatewaysRouter,
-  // Messaging - تكامل SMS/WhatsApp
-  messaging: messagingRouter,
+  // Serial Numbers - الأرقام التسلسلية
+  serialNumbers: serialNumbersRouter,
+  // Defective Components - المكونات التالفة
+  defectiveComponents: defectiveComponentsRouter,
+  // Reports - التقارير المتقدمة
+  reports: reportsRouter,
+  // Approvals - نظام الموافقات
+  approvals: approvalsRouter,
 
   // ============================================
   // Pricing Engine - محرك التسعير
@@ -1599,6 +1936,15 @@ export const appRouter = router({
         .mutation(async ({ input }) => {
           const { id, ...data } = input;
           await PricingEngine.updateRule(id, data);
+          return { success: true };
+        }),
+
+      delete: protectedProcedure
+        .input(z.object({
+          id: z.number(),
+        }))
+        .mutation(async ({ input }) => {
+          await PricingEngine.updateRule(input.id, { active: false });
           return { success: true };
         }),
     }),
@@ -1809,7 +2155,7 @@ export const appRouter = router({
           const db = await getDb();
           if (!db) throw new Error("Database not available");
 
-          const { journalEntries, journalEntryLines, accounts } = await import("../drizzle/schemas/accounting");
+          const { journalEntries, journalEntryLines, accounts } = await import("../drizzle/schema");
           const { eq, and, gte, lte, desc } = await import("drizzle-orm");
 
           const conditions = [eq(journalEntries.businessId, input.businessId)];
@@ -1885,7 +2231,7 @@ export const appRouter = router({
           const db = await getDb();
           if (!db) throw new Error("Database not available");
 
-          const { journalEntries, journalEntryLines, accounts } = await import("../drizzle/schemas/accounting");
+          const { journalEntries, journalEntryLines, accounts } = await import("../drizzle/schema");
           const { eq } = await import("drizzle-orm");
 
           const [entry] = await db
@@ -1932,7 +2278,7 @@ export const appRouter = router({
         const db = await getDb();
         if (!db) throw new Error("Database not available");
 
-          const { journalEntries } = await import("../drizzle/schemas/accounting");
+          const { journalEntries } = await import("../drizzle/schema");
           const { eq, and, gte, lte, count, sql } = await import("drizzle-orm");
 
         const conditions = [eq(journalEntries.businessId, input.businessId)];
@@ -1963,6 +2309,11 @@ export const appRouter = router({
   }),
 
   // ============================================
+  // Mobile Apps - تطبيقات الجوال
+  // ============================================
+  mobileApps: mobileAppsRouter,
+
+  // ============================================
   // Health Check - فحص صحة المحركات
   // ============================================
   health: router({
@@ -1977,3 +2328,4 @@ export const appRouter = router({
 });
 
 export type AppRouter = typeof appRouter;
+

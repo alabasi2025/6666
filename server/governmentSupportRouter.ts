@@ -365,18 +365,67 @@ export const governmentSupportRouter = router({
         try {
           const db = getDb();
 
-          // TODO: تنفيذ منطق حساب الحصص الشهرية
-          // هذا يحتاج:
-          // 1. جلب جميع العملاء المدعومين النشطين
-          // 2. حساب الاستهلاك لكل عميل
-          // 3. توزيع الحصص حسب الفئات
-          // 4. تحديث الحصص المخصصة والمستخدمة
+          // ✅ تنفيذ منطق حساب الحصص الشهرية
+          let calculatedCount = 0;
 
-          return {
-            success: true,
-            message: "تم حساب الحصص الشهرية بنجاح",
-            calculatedCount: 0, // سيتم تحديثه بعد التنفيذ
-          };
+          try {
+            // 1. جلب جميع العملاء المدعومين النشطين
+            const [supportedCustomers] = await db.execute(
+              `SELECT * FROM government_support_customers 
+               WHERE business_id = ? AND is_active = true AND is_supported = true`,
+              [input.businessId]
+            );
+            
+            const customers = supportedCustomers as any[];
+
+            // 2. حساب الاستهلاك لكل عميل
+            for (const customer of customers) {
+              try {
+                // جلب استهلاك العميل للشهر المحدد
+                const [consumption] = await db.execute(
+                  `SELECT SUM(total_consumption) as total 
+                   FROM government_support_consumption 
+                   WHERE business_id = ? AND customer_id = ? 
+                   AND YEAR(consumption_date) = ? AND MONTH(consumption_date) = ?`,
+                  [input.businessId, customer.customer_id, input.year, input.month]
+                );
+
+                const totalConsumption = parseFloat((consumption as any[])[0]?.total || "0");
+
+                // 3. توزيع الحصص حسب الفئات
+                const quota = parseFloat(customer.monthly_quota || "0");
+                const supportedConsumption = Math.min(totalConsumption, quota);
+                const unsupportedConsumption = Math.max(0, totalConsumption - quota);
+
+                // 4. تحديث الحصص المخصصة والمستخدمة
+                await db.execute(
+                  `UPDATE government_support_customers 
+                   SET quota_used = ?, remaining_quota = ?, updated_at = NOW() 
+                   WHERE id = ?`,
+                  [supportedConsumption, Math.max(0, quota - supportedConsumption), customer.id]
+                );
+
+                calculatedCount++;
+              } catch (customerError: any) {
+                logger.error('Failed to calculate quota for customer', {
+                  customerId: customer.customer_id,
+                  error: customerError.message,
+                });
+              }
+            }
+
+            return {
+              success: true,
+              message: "تم حساب الحصص الشهرية بنجاح",
+              calculatedCount,
+            };
+          } catch (error: any) {
+            logger.error('Failed to calculate monthly quotas', {
+              error: error.message,
+              businessId: input.businessId,
+            });
+            throw error;
+          }
         } catch (error: any) {
           logger.error("Error calculating monthly quotas:", error);
           throw new TRPCError({
@@ -659,20 +708,76 @@ export const governmentSupportRouter = router({
         try {
           const db = getDb();
 
-          // TODO: تنفيذ تقرير صندوق الدعم الكامل
-          // هذا يحتاج:
-          // 1. إجمالي الميزانية المخصصة
-          // 2. إجمالي المبلغ المستخدم
-          // 3. المبلغ المتبقي
-          // 4. التوزيع حسب الفئات
-          // 5. التوزيع حسب المناطق
+          // ✅ تنفيذ تقرير صندوق الدعم الكامل
+          try {
+            // 1. إجمالي الميزانية المخصصة
+            const [totalBudgetResult] = await db.execute(
+              `SELECT COALESCE(SUM(total_quota), 0) as total 
+               FROM government_support_quotas 
+               WHERE business_id = ? AND year = ? AND month BETWEEN ? AND ?`,
+              [
+                input.businessId,
+                new Date(input.startDate).getFullYear(),
+                new Date(input.startDate).getMonth() + 1,
+                new Date(input.endDate).getMonth() + 1,
+              ]
+            );
+            const totalBudget = parseFloat((totalBudgetResult as any[])[0]?.total || "0");
 
-          return {
-            totalBudget: 0,
-            usedBudget: 0,
-            remainingBudget: 0,
-            utilization: 0,
-          };
+            // 2. إجمالي المبلغ المستخدم
+            const [usedBudgetResult] = await db.execute(
+              `SELECT COALESCE(SUM(support_amount), 0) as total 
+               FROM government_support_consumption 
+               WHERE business_id = ? AND consumption_date BETWEEN ? AND ?`,
+              [input.businessId, input.startDate, input.endDate]
+            );
+            const usedBudget = parseFloat((usedBudgetResult as any[])[0]?.total || "0");
+
+            // 3. المبلغ المتبقي
+            const remainingBudget = Math.max(0, totalBudget - usedBudget);
+
+            // 4. التوزيع حسب الفئات
+            const [categoryDistribution] = await db.execute(
+              `SELECT 
+                 gsc.category,
+                 COUNT(*) as customer_count,
+                 SUM(gsc.monthly_quota) as allocated,
+                 SUM(gsc.quota_used) as used
+               FROM government_support_customers gsc
+               WHERE gsc.business_id = ? AND gsc.is_active = true
+               GROUP BY gsc.category`,
+              [input.businessId]
+            );
+
+            // 5. التوزيع حسب المناطق (إذا كان متوفراً)
+            const [regionDistribution] = await db.execute(
+              `SELECT 
+                 gsq.region,
+                 SUM(gsq.total_quota) as allocated,
+                 SUM(gsq.used_quota) as used
+               FROM government_support_quotas gsq
+               WHERE gsq.business_id = ? AND gsq.region IS NOT NULL
+               GROUP BY gsq.region`,
+              [input.businessId]
+            );
+
+            const utilization = totalBudget > 0 ? (usedBudget / totalBudget) * 100 : 0;
+
+            return {
+              totalBudget,
+              usedBudget,
+              remainingBudget,
+              utilization: Math.round(utilization * 100) / 100,
+              categoryDistribution: categoryDistribution as any[],
+              regionDistribution: regionDistribution as any[],
+            };
+          } catch (error: any) {
+            logger.error('Failed to generate fund report', {
+              error: error.message,
+              businessId: input.businessId,
+            });
+            throw error;
+          }
         } catch (error: any) {
           logger.error("Error generating fund report:", error);
           throw new TRPCError({

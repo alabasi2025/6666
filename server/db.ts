@@ -115,7 +115,8 @@ let _connectionTested = false;
 
 export async function getDb() {
   // استخدام DATABASE_URL من process.env أو fallback افتراضي
-  const dbUrl = process.env.DATABASE_URL || "postgresql://postgres:774424555@localhost:5432/666666";
+  // PostgreSQL 18 يستخدم المنفذ 5433 (PostgreSQL 16 يستخدم 5432)
+  const dbUrl = process.env.DATABASE_URL || "postgresql://postgres:774424555@localhost:5433/666666";
   
   if (!_db) {
     try {
@@ -145,7 +146,8 @@ export async function getDb() {
 
 // Export db instance for synchronous use in routes
 // Initialize it with fallback to default connection
-const defaultDbUrl = "postgresql://postgres:774424555@localhost:5432/666666";
+// PostgreSQL 18 يستخدم المنفذ 5433 (PostgreSQL 16 يستخدم 5432)
+const defaultDbUrl = "postgresql://postgres:774424555@localhost:5433/666666";
 const dbUrl = process.env.DATABASE_URL || defaultDbUrl;
 
 let _syncPool: Pool | null = null;
@@ -1465,22 +1467,29 @@ export async function createIntegration(data: InsertIntegration) {
 }
 
 export async function getIntegrations(businessId: number, filters?: { type?: string; isActive?: boolean }) {
-  const db = await getDb();
-  if (!db) return [];
+  try {
+    const db = await getDb();
+    if (!db) return [];
 
-  let conditions = [eq(integrations.businessId, businessId)];
-  if (filters?.type) conditions.push(eq(integrations.integrationType, filters.type as any));
-  if (filters?.isActive !== undefined) conditions.push(eq(integrations.isActive, filters.isActive));
+    let conditions = [eq(integrations.businessId, businessId)];
+    if (filters?.type) conditions.push(eq(integrations.integrationType, filters.type as any));
+    if (filters?.isActive !== undefined) conditions.push(eq(integrations.isActive, filters.isActive));
 
-  return await db.select({
-    id: integrations.id,
-    businessId: integrations.businessId,
-    name: integrations.name,
-    integrationType: integrations.integrationType,
-    status: integrations.status,
-    isActive: integrations.isActive,
-    createdAt: integrations.createdAt,
-  }).from(integrations).where(and(...conditions)).orderBy(desc(integrations.createdAt));
+    const result = await db.select({
+      id: integrations.id,
+      businessId: integrations.businessId,
+      name: integrations.name,
+      integrationType: integrations.integrationType,
+      status: integrations.status,
+      isActive: integrations.isActive,
+      createdAt: integrations.createdAt,
+    }).from(integrations).where(and(...conditions)).orderBy(desc(integrations.createdAt));
+    
+    return result || [];
+  } catch (error: any) {
+    logger.error("Error fetching integrations:", error);
+    return [];
+  }
 }
 
 export async function getIntegrationById(id: number) {
@@ -2066,6 +2075,10 @@ export async function getDeveloperDashboardStats(businessId: number) {
     activeAlerts: 0,
     totalPredictions: 0,
     aiModels: 0,
+    acrelMetersTotal: 0,
+    acrelMetersOnline: 0,
+    stsMetersTotal: 0,
+    stsMetersActive: 0,
   };
 
   const [
@@ -2079,6 +2092,10 @@ export async function getDeveloperDashboardStats(businessId: number) {
     activeAlerts,
     totalPredictions,
     aiModelsCount,
+    acrelMetersTotal,
+    acrelMetersOnline,
+    stsMetersTotal,
+    stsMetersActive,
   ] = await Promise.all([
     db.select({ count: count() }).from(integrations).where(eq(integrations.businessId, businessId)),
     db.select({ count: count() }).from(integrations).where(and(eq(integrations.businessId, businessId), eq(integrations.isActive, true))),
@@ -2090,6 +2107,44 @@ export async function getDeveloperDashboardStats(businessId: number) {
     db.select({ count: count() }).from(technicalAlerts).where(and(eq(technicalAlerts.businessId, businessId), eq(technicalAlerts.status, 'active'))),
     db.select({ count: count() }).from(aiPredictions).where(eq(aiPredictions.businessId, businessId)),
     db.select({ count: count() }).from(aiModels).where(eq(aiModels.businessId, businessId)),
+    // ACREL meters stats
+    (async () => {
+      try {
+        const { acrelMeters } = await import("../drizzle/schemas/acrel");
+        const result = await db.select({ count: count() }).from(acrelMeters).where(eq(acrelMeters.businessId, businessId));
+        return result;
+      } catch {
+        return [{ count: 0 }];
+      }
+    })(),
+    (async () => {
+      try {
+        const { acrelMeters } = await import("../drizzle/schemas/acrel");
+        const result = await db.select({ count: count() }).from(acrelMeters).where(and(eq(acrelMeters.businessId, businessId), eq(acrelMeters.status, 'online')));
+        return result;
+      } catch {
+        return [{ count: 0 }];
+      }
+    })(),
+    // STS meters stats
+    (async () => {
+      try {
+        const { stsMeters } = await import("../drizzle/schemas/sts");
+        const result = await db.select({ count: count() }).from(stsMeters).where(eq(stsMeters.businessId, businessId));
+        return result;
+      } catch {
+        return [{ count: 0 }];
+      }
+    })(),
+    (async () => {
+      try {
+        const { stsMeters } = await import("../drizzle/schemas/sts");
+        const result = await db.select({ count: count() }).from(stsMeters).where(and(eq(stsMeters.businessId, businessId), eq(stsMeters.status, 'active')));
+        return result;
+      } catch {
+        return [{ count: 0 }];
+      }
+    })(),
   ]);
 
   return {
@@ -2103,6 +2158,10 @@ export async function getDeveloperDashboardStats(businessId: number) {
     activeAlerts: activeAlerts[0]?.count || 0,
     totalPredictions: totalPredictions[0]?.count || 0,
     aiModels: aiModelsCount[0]?.count || 0,
+    acrelMetersTotal: acrelMetersTotal[0]?.count || 0,
+    acrelMetersOnline: acrelMetersOnline[0]?.count || 0,
+    stsMetersTotal: stsMetersTotal[0]?.count || 0,
+    stsMetersActive: stsMetersActive[0]?.count || 0,
   };
 }
 

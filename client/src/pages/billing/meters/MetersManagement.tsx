@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Edit, Trash2, Search, RefreshCw, Gauge, QrCode, Link, Eye, UserPlus } from "lucide-react";
+import { Edit, Trash2, Search, RefreshCw, Gauge, QrCode, Link, Eye, UserPlus, Settings, Smartphone, Zap, Wallet } from "lucide-react";
 
 interface Meter {
   id: number;
@@ -41,8 +41,10 @@ export default function MetersManagement() {
   const [selectedMeter, setSelectedMeter] = useState<Meter | null>(null);
   const [showLinkDialog, setShowLinkDialog] = useState(false);
   const [showQRDialog, setShowQRDialog] = useState(false);
+  const [showAccountDialog, setShowAccountDialog] = useState(false);
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [filterCabinetId, setFilterCabinetId] = useState<string>("all");
+  const [filterMeterType, setFilterMeterType] = useState<string>("all");
   
   const [formData, setFormData] = useState({
     meterNumber: "",
@@ -72,6 +74,16 @@ export default function MetersManagement() {
   const updateMeterMutation = trpc.billing.updateMeter.useMutation();
   const deleteMeterMutation = trpc.billing.deleteMeter.useMutation();
   const linkMeterToCustomerMutation = trpc.billing.linkMeterToCustomer.useMutation();
+  
+  // استعلامات حساب العداد
+  const meterAccountQuery = trpc.customerSystem.getMeterAccount.useQuery(
+    { meterId: selectedMeter?.id || 0 },
+    { enabled: !!selectedMeter && showAccountDialog }
+  );
+  const meterTransactionsQuery = trpc.customerSystem.getMeterTransactions.useQuery(
+    { meterId: selectedMeter?.id || 0, page: 1, limit: 10 },
+    { enabled: !!selectedMeter && showAccountDialog }
+  );
 
   useEffect(() => {
     if (metersQuery.data) {
@@ -177,14 +189,18 @@ export default function MetersManagement() {
     setEditingMeter(null);
   };
 
-  const filteredMeters = meters.filter((meter) => {
+  const filteredMeters = meters.filter((meter: any) => {
     const matchesSearch =
       meter.meterNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       meter.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       meter.customer?.fullName.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === "all" || meter.status === filterStatus;
     const matchesCabinet = filterCabinetId === "all" || meter.cabinetId?.toString() === filterCabinetId;
-    return matchesSearch && matchesStatus && matchesCabinet;
+    const matchesMeterType = filterMeterType === "all" || 
+      (filterMeterType === "traditional" && (!meter.externalIntegrationType || meter.externalIntegrationType === "none")) ||
+      (filterMeterType === "acrel" && meter.externalIntegrationType === "acrel") ||
+      (filterMeterType === "sts" && meter.externalIntegrationType === "sts");
+    return matchesSearch && matchesStatus && matchesCabinet && matchesMeterType;
   });
 
   const getStatusLabel = (status: string) => {
@@ -199,7 +215,17 @@ export default function MetersManagement() {
     return statuses[status] || { label: status, color: "bg-gray-100 text-gray-800" };
   };
 
-  const getMeterTypeLabel = (type: string) => {
+  const getMeterTypeLabel = (meter: any) => {
+    // تحديد نوع العداد حسب التكامل الخارجي
+    if (meter.externalIntegrationType === "acrel") {
+      if (meter.acrelMeterType === "ADL200") return "ACREL ADL200";
+      if (meter.acrelMeterType === "ADW300") return "ACREL ADW300";
+      return "ACREL";
+    }
+    if (meter.externalIntegrationType === "sts") {
+      return "STS";
+    }
+    // أنواع العدادات التقليدية
     const types: Record<string, string> = {
       single_phase: "أحادي الطور",
       three_phase: "ثلاثي الطور",
@@ -207,7 +233,16 @@ export default function MetersManagement() {
       smart: "ذكي",
       mechanical: "ميكانيكي",
     };
-    return types[type] || type;
+    return types[meter.meterType] || meter.meterType || "تقليدي";
+  };
+
+  const getPaymentModeLabel = (mode: string) => {
+    const modes: Record<string, string> = {
+      postpaid: "دفع آجل",
+      prepaid: "دفع مسبق",
+      credit: "ائتمان",
+    };
+    return modes[mode] || "-";
   };
 
   const getServiceTypeLabel = (type: string) => {
@@ -273,6 +308,17 @@ export default function MetersManagement() {
                     ))}
                   </SelectContent>
                 </Select>
+                <Select value={filterMeterType} onValueChange={setFilterMeterType}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="نوع العداد" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">جميع الأنواع</SelectItem>
+                    <SelectItem value="traditional">تقليدي</SelectItem>
+                    <SelectItem value="acrel">ACREL</SelectItem>
+                    <SelectItem value="sts">STS</SelectItem>
+                  </SelectContent>
+                </Select>
                 <div className="relative">
                   <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input placeholder="بحث..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pr-9 w-64" />
@@ -288,7 +334,8 @@ export default function MetersManagement() {
                   <TableRow>
                     <TableHead>رقم العداد</TableHead>
                     <TableHead>الرقم التسلسلي</TableHead>
-                    <TableHead>النوع</TableHead>
+                    <TableHead>نوع العداد</TableHead>
+                    <TableHead>نوع الدفع</TableHead>
                     <TableHead>الخدمة</TableHead>
                     <TableHead>الكابينة</TableHead>
                     <TableHead>العميل</TableHead>
@@ -300,11 +347,11 @@ export default function MetersManagement() {
                 <TableBody>
                   {metersQuery.isLoading ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">جاري التحميل...</TableCell>
+                      <TableCell colSpan={10} className="text-center py-8">جاري التحميل...</TableCell>
                     </TableRow>
                   ) : filteredMeters.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={9} className="text-center py-8">لا توجد عدادات</TableCell>
+                      <TableCell colSpan={10} className="text-center py-8">لا توجد عدادات</TableCell>
                     </TableRow>
                   ) : (
                     filteredMeters.map((meter) => {
@@ -313,7 +360,22 @@ export default function MetersManagement() {
                         <TableRow key={meter.id}>
                           <TableCell className="font-medium">{meter.meterNumber}</TableCell>
                           <TableCell>{meter.serialNumber || "-"}</TableCell>
-                          <TableCell>{getMeterTypeLabel(meter.meterType)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              {meter.externalIntegrationType === "acrel" && <Zap className="h-3 w-3 text-blue-500" />}
+                              {meter.externalIntegrationType === "sts" && <Smartphone className="h-3 w-3 text-green-500" />}
+                              <span>{getMeterTypeLabel(meter)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            {meter.paymentMode ? (
+                              <Badge variant="outline" className="text-xs">
+                                {getPaymentModeLabel(meter.paymentMode)}
+                              </Badge>
+                            ) : (
+                              "-"
+                            )}
+                          </TableCell>
                           <TableCell>{getServiceTypeLabel(meter.serviceType)}</TableCell>
                           <TableCell>{meter.cabinet?.name || "-"}</TableCell>
                           <TableCell>
@@ -337,9 +399,25 @@ export default function MetersManagement() {
                               <Button variant="ghost" size="icon" onClick={() => handleEdit(meter)} title="تعديل">
                                 <Edit className="h-4 w-4" />
                               </Button>
+                              {meter.externalIntegrationType === "acrel" && (
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  onClick={() => window.location.href = `/dashboard/acrel/meters/${meter.acrelMeterId || meter.id}`}
+                                  title="إعدادات ACREL"
+                                  className="text-blue-500"
+                                >
+                                  <Settings className="h-4 w-4" />
+                                </Button>
+                              )}
                               {!meter.customerId && (
                                 <Button variant="ghost" size="icon" onClick={() => { setSelectedMeter(meter); setShowLinkDialog(true); }} title="ربط بعميل">
                                   <UserPlus className="h-4 w-4 text-blue-500" />
+                                </Button>
+                              )}
+                              {meter.customerId && (
+                                <Button variant="ghost" size="icon" onClick={() => { setSelectedMeter(meter); setShowAccountDialog(true); }} title="حساب العداد">
+                                  <Wallet className="h-4 w-4 text-green-500" />
                                 </Button>
                               )}
                               <Button variant="ghost" size="icon" onClick={() => { setSelectedMeter(meter); setShowQRDialog(true); }} title="QR Code">
@@ -542,6 +620,83 @@ export default function MetersManagement() {
                 {loading ? "جاري الربط..." : "ربط"}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog حساب العداد */}
+      <Dialog open={showAccountDialog} onOpenChange={setShowAccountDialog}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>حساب العداد - {selectedMeter?.meterNumber}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* معلومات الحساب */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">معلومات الحساب</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-muted-foreground">العميل</Label>
+                    <p className="font-semibold">{selectedMeter?.customer?.fullName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">رقم الحساب</Label>
+                    <p className="font-semibold">{selectedMeter?.customer?.accountNumber}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">رصيد العداد</Label>
+                    <p className={`font-semibold text-lg ${
+                      parseFloat(meterAccountQuery.data?.balance || "0") < 0 ? "text-red-600" : "text-green-600"
+                    }`}>
+                      {parseFloat(meterAccountQuery.data?.balance || "0").toLocaleString()} ر.س
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* الحركات الأخيرة */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">آخر الحركات</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {meterTransactionsQuery.isLoading ? (
+                  <p className="text-center py-4">جاري التحميل...</p>
+                ) : meterTransactionsQuery.data?.data?.length === 0 ? (
+                  <p className="text-center text-muted-foreground py-4">لا توجد حركات</p>
+                ) : (
+                  <div className="space-y-2">
+                    {meterTransactionsQuery.data?.data?.map((transaction: any) => (
+                      <div key={transaction.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                        <div className="flex-1">
+                          <p className="font-medium">{transaction.transactionType === "charge" ? "شحن" : 
+                            transaction.transactionType === "invoice" ? "فاتورة" : 
+                            transaction.transactionType === "payment" ? "دفعة" : transaction.transactionType}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(transaction.transactionDate).toLocaleDateString("ar-SA")}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className={`font-semibold ${
+                            parseFloat(transaction.amount) > 0 ? "text-green-600" : "text-red-600"
+                          }`}>
+                            {parseFloat(transaction.amount) > 0 ? "+" : ""}
+                            {parseFloat(transaction.amount).toLocaleString()} ر.س
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            الرصيد: {parseFloat(transaction.balanceAfter || "0").toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
         </DialogContent>
       </Dialog>

@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Radio, Plus, Search, Edit, Trash2, Zap, Activity, MapPin, Settings } from "lucide-react";
+import { useLocation as useWouterLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 
@@ -32,6 +33,7 @@ interface Station {
 }
 
 export default function Stations() {
+  const [, setLocation] = useWouterLocation();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBranch, setSelectedBranch] = useState<string>("all");
@@ -587,6 +589,14 @@ export default function Stations() {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setLocation(`/dashboard/organization/stations/${station.id}/settings`)}
+                          title="إعدادات المحطة"
+                        >
+                          <Settings className="h-4 w-4" />
+                        </Button>
                         <Button variant="ghost" size="icon" onClick={() => handleEdit(station as any)}>
                           <Edit className="h-4 w-4" />
                         </Button>
